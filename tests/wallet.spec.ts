@@ -1,6 +1,7 @@
 import { bitcoinEncode, bitcoinDecode, toHexString } from "../src/utils";
-import { abiCallContractOperation, Transaction, Wallet } from "../src/Wallet";
+import { Transaction, Wallet } from "../src/Wallet";
 import { Contract } from "../src/Contract";
+import { abiCallContractOperation } from "../src/abi";
 
 const privateKeyHex =
   "3941804bde6bf02302f55fd21849ace5e84cb094af67a003c027de0280ee2e24";
@@ -97,7 +98,7 @@ describe("Wallet and Contract", () => {
         nonce: 0,
         operations: [
           {
-            type: abiCallContractOperation.name,
+            type: abiCallContractOperation.name as string,
             value: operation,
           },
         ],
