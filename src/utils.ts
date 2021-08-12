@@ -24,7 +24,11 @@ export function decodeBase58(bs58: string): Uint8Array {
   return multibase.decode(`z${bs58}`);
 }
 
-function bitcoinEncode(buffer: Uint8Array, type: string, compressed = false) {
+export function bitcoinEncode(
+  buffer: Uint8Array,
+  type: string,
+  compressed = false
+) {
   let bufferCheck;
   let prefixBuffer;
   let offsetChecksum;
@@ -58,8 +62,18 @@ function bitcoinEncode(buffer: Uint8Array, type: string, compressed = false) {
   return encodeBase58(bufferCheck);
 }
 
-export function copyUint8Array(source: Uint8Array, target: Uint8Array, targetStart: number, sourceStart: number, sourceEnd: number) {
-  for (let cursorSource = sourceStart; cursorSource < sourceEnd; cursorSource += 1) {
+export function copyUint8Array(
+  source: Uint8Array,
+  target: Uint8Array,
+  targetStart: number,
+  sourceStart: number,
+  sourceEnd: number
+) {
+  for (
+    let cursorSource = sourceStart;
+    cursorSource < sourceEnd;
+    cursorSource += 1
+  ) {
     const cursorTarget = targetStart + cursorSource - sourceStart;
     target[cursorTarget] = source[cursorSource];
   }

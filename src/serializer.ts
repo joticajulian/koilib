@@ -1,4 +1,4 @@
-import VariableBlob from "./variableblob";
+import VariableBlob from "./VariableBlob";
 
 export interface Abi {
   type: string | Abi[];
@@ -15,7 +15,10 @@ export function serialize(data: unknown, abi: Abi) {
   if (Array.isArray(abi.type)) {
     const _data = data as Record<string, unknown>;
     abi.type.forEach((key: Abi) => {
-      const { buffer /*, dataBuffer */ } = serialize(_data[key.name as string], key);
+      const { buffer /*, dataBuffer */ } = serialize(
+        _data[key.name as string],
+        key
+      );
       // vb.dataBuffer[key.name] = dataBuffer;
       vb.write(buffer);
     });
@@ -40,8 +43,10 @@ export function serialize(data: unknown, abi: Abi) {
       vb.serializeVarint(data.length);
       // aux.serializeVarint(data.length); vb.dataBuffer.size = aux.buffer.toString();
       // vb.dataBuffer.items = [];
+      if (!abi.subAbi)
+        throw new Error(`subAbi undefined in ${JSON.stringify(abi)}`);
       data.forEach((item) => {
-        const itemSerialized = serialize(item, abi.subAbi);
+        const itemSerialized = serialize(item, abi.subAbi as Abi);
         vb.write(itemSerialized.buffer);
         // vb.dataBuffer.items.push(itemSerialized.dataBuffer);
       });
@@ -49,6 +54,7 @@ export function serialize(data: unknown, abi: Abi) {
     }
     case "variant": {
       const _data = data as { type: string; value: unknown };
+      if (!abi.variants) throw new Error("Abi variants are not defined");
       const variantId = abi.variants.findIndex((v) => v.name === _data.type);
       if (variantId < 0) throw new Error(`Variant ${_data.type} not found`);
       if (!abi.variants[variantId])
@@ -164,17 +170,17 @@ export function serialize(data: unknown, abi: Abi) {
 export function deserialize(buffer: VariableBlob | string, abi: Abi): unknown {
   const vb = typeof buffer === "string" ? new VariableBlob(buffer) : buffer;
 
-  let data;
-  if (Array.isArray(abi)) {
-    data = {};
-    abi.forEach((key) => {
-      data[key.name] = deserialize(vb, key);
+  if (Array.isArray(abi.type)) {
+    const data: Record<string, unknown> = {};
+    abi.type.forEach((key) => {
+      data[key.name as string] = deserialize(vb, key);
     });
     return data;
   }
 
   switch (abi.type) {
     case "opaque": {
+      if (!abi.subAbi) throw new Error("subAbi not defined");
       const blob = vb.deserializeBuffer();
       const subVb = new VariableBlob(blob);
       return deserialize(subVb, abi.subAbi);
@@ -183,13 +189,13 @@ export function deserialize(buffer: VariableBlob | string, abi: Abi): unknown {
       const size = vb.deserializeVarint();
       const data = [];
       for (let i = 0; i < size; i += 1) {
-        const item = deserialize(vb, abi.subAbi);
+        const item = deserialize(vb, abi.subAbi as Abi);
         data.push(item);
       }
     }
     case "variant": {
       const variantId = vb.deserializeVarint();
-      const abiVariant = abi.variants[variantId];
+      const abiVariant = (abi.variants as Abi[])[variantId];
       const value = deserialize(vb, abiVariant);
       const type = abiVariant.name;
       return { type, value };

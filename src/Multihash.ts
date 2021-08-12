@@ -1,4 +1,4 @@
-import VariableBlob from "./variableblob";
+import VariableBlob from "./VariableBlob";
 
 export class Multihash {
   id: number;
