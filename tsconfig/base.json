@@ -1,0 +1,16 @@
+{
+  "files": ["../src/wallet.ts"],
+  "compilerOptions": {
+    "lib": ["ES6", "DOM"],
+    "strict": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "sourceMap": false,
+    "removeComments": true,
+    "moduleResolution": "node",
+    "declaration": true,
+    "skipLibCheck": true
+  }
+}

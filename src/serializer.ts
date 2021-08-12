@@ -1,12 +1,5 @@
-import VariableBlob from "./VariableBlob";
-
-export interface Abi {
-  type: string | Abi[];
-  name?: string;
-  size?: number;
-  subAbi?: Abi;
-  variants?: Abi[];
-}
+import { Abi } from "./abi";
+import { VariableBlob } from "./VariableBlob";
 
 export function serialize(data: unknown, abi: Abi) {
   const vb = new VariableBlob();

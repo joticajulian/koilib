@@ -83,7 +83,7 @@ export function bitcoinDecode(value: string) {
   const buffer = decodeBase58(value);
   const privateKey = new Uint8Array(32);
   const checksum = new Uint8Array(4);
-  const prefix = buffer[0];
+  // const prefix = buffer[0];
   copyUint8Array(buffer, privateKey, 0, 1, 33);
   if (value[0] !== "5") {
     // compressed

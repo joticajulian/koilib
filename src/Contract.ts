@@ -1,4 +1,5 @@
-import { Abi, deserialize, serialize } from "./serializer";
+import { Abi } from "./abi";
+import { deserialize, serialize } from "./serializer";
 import VariableBlob from "./VariableBlob";
 
 export interface Entries {

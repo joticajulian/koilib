@@ -1,0 +1,71 @@
+{
+  "name": "koilib",
+  "version": "1.0.0",
+  "description": "JS Koinos Library",
+  "author": "Julian Gonzalez",
+  "repository": {
+    "url": "https://github.com/joticajulian/koilib.git"
+  },
+  "homepage": "https://github.com/joticajulian/koilib.git",
+  "bugs": {
+    "url": "https://github.com/joticajulian/koilib/issues"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/node/cjs/index.js",
+  "module": "./dist/node/esm/index.js",
+  "browser": "./dist/browser/index.js",
+  "scripts": {
+    "audit": "audit-ci",
+    "build": "tsc",
+    "build:node": "rimraf dist/node/cjs && tsc -p ./tsconfig/node-cjs.json",
+    "build:node-esm": "rimraf dist/node/esm && tsc -p ./tsconfig/node-esm.json",
+    "build:browser": "rimraf dist/browser && tsc -p ./tsconfig/browser.json",
+    "build-all": "rimraf dist && yarn build:node && yarn build:node-esm && yarn build:browser",
+    "bundle": "webpack --mode=production",
+    "clean": "rimraf dist coverage",
+    "lint": "yarn lint:prettier && yarn lint:eslint && yarn lint:tsc",
+    "lint:prettier": "prettier . --check",
+    "lint:eslint": "eslint . --ext .js,.ts",
+    "lint:tsc": "tsc --noEmit --incremental false",
+    "test": "jest"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "browser": "./dist/browser/wallet.js",
+      "import": "./dist/node/esm/wallet.js",
+      "require": "./dist/node/cjs/wallet.js"
+    }
+  },
+  "dependencies": {
+    "js-sha256": "^0.9.0",
+    "multibase": "^4.0.4",
+    "noble-ripemd160": "^0.2.0",
+    "noble-secp256k1": "^1.2.9"
+  },
+  "devDependencies": {
+    "@tsconfig/node12": "^1.0.9",
+    "@types/jest": "^26.0.24",
+    "@types/node": "^16.4.10",
+    "@typescript-eslint/eslint-plugin": "^4.29.0",
+    "@typescript-eslint/parser": "^4.29.0",
+    "audit-ci": "^4.1.0",
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-typescript": "^12.3.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-jest": "^24.4.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "jest": "^27.0.6",
+    "jest-puppeteer": "^5.0.4",
+    "prettier": "^2.3.2",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^27.0.4",
+    "ts-loader": "^9.2.5",
+    "typescript": "^4.3.5",
+    "webpack": "^5.48.0",
+    "webpack-cli": "^4.7.2"
+  }
+}
