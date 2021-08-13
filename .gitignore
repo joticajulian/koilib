@@ -1,2 +1,4 @@
 node_modules
-dist
+dist/*
+!dist/koinos.min.js
+!dist/koinos.min.js.LICENSE.txt

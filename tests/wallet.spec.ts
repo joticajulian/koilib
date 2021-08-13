@@ -1,7 +1,8 @@
 import { bitcoinEncode, bitcoinDecode, toHexString } from "../src/utils";
-import { Transaction, Wallet } from "../src/Wallet";
+import { Transaction, Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
-import { abiCallContractOperation } from "../src/abi";
+import { Wallet } from "../src/Wallet";
+import { Provider } from "../src/Provider";
 
 const privateKeyHex =
   "3941804bde6bf02302f55fd21849ace5e84cb094af67a003c027de0280ee2e24";
@@ -52,8 +53,8 @@ describe("Wallet and Contract", () => {
 
   it("should compute address", () => {
     expect.assertions(2);
-    const wallet1 = new Wallet(privateKeyHex);
-    const wallet2 = new Wallet(privateKeyHex, false);
+    const wallet1 = new Signer(privateKeyHex);
+    const wallet2 = new Signer(privateKeyHex, false);
     expect(wallet1.address).toBe(addressCompressed);
     expect(wallet2.address).toBe(address);
   });
@@ -73,9 +74,12 @@ describe("Wallet and Contract", () => {
     const opDecoded = contract.decodeOperation(opEncoded);
 
     expect(opEncoded).toStrictEqual({
-      contract_id: contract.id,
-      entry_point: 1,
-      args: expect.any(String) as string,
+      type: "koinos::protocol::call_contract_operation",
+      value: {
+        contract_id: contract.id,
+        entry_point: 1,
+        args: expect.any(String) as string,
+      },
     });
 
     expect(opDecoded).toStrictEqual(opTransfer);
@@ -83,7 +87,7 @@ describe("Wallet and Contract", () => {
 
   it("should sign a transaction", async () => {
     expect.assertions(1);
-    const wallet = new Wallet(privateKeyHex);
+    const signer = new Signer(privateKeyHex);
     const operation = contract.encodeOperation({
       name: "transfer",
       args: {
@@ -96,19 +100,39 @@ describe("Wallet and Contract", () => {
       active_data: {
         resource_limit: 1000000,
         nonce: 0,
-        operations: [
-          {
-            type: abiCallContractOperation.name as string,
-            value: operation,
-          },
-        ],
+        operations: [operation],
       },
     };
-    await wallet.signTransaction(transaction);
+    await signer.signTransaction(transaction);
     expect(transaction).toStrictEqual({
       id: expect.any(String) as string,
       active_data: expect.objectContaining({}) as unknown,
       signature_data: expect.any(String) as string,
     } as Transaction);
+  });
+
+  it("should create a wallet and sign a transaction", async () => {
+    const wallet = new Wallet({
+      signer: new Signer(privateKeyHex),
+      contract,
+      provider: new Provider("http://45.56.104.152:8080"),
+    });
+
+    const operation = wallet.encodeOperation({
+      name: "transfer",
+      args: {
+        from: "alice",
+        to: "bob",
+        value: BigInt(1000),
+      },
+    });
+
+    const tx = await wallet.newTransaction({
+      getNonce: false,
+      operations: [operation],
+    });
+
+    wallet.signTransaction(tx);
+    wallet.sendTransaction(tx);
   });
 });

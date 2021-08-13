@@ -1,4 +1,4 @@
-export * from "./Wallet";
+export * from "./Signer";
 export * from "./Contract";
 export * from "./VariableBlob";
 export * from "./Multihash";

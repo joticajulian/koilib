@@ -1,85 +1,90 @@
-import { sha256 } from "js-sha256";
-import * as secp from "noble-secp256k1";
-import { abiActiveData } from "./abi";
-import Multihash from "./Multihash";
-import { serialize } from "./serializer";
-import {
-  bitcoinAddress,
-  bitcoinDecode,
-  toHexString,
-  toUint8Array,
-} from "./utils";
-import { VariableBlob } from "./VariableBlob";
-
-export interface Transaction {
-  id?: string;
-  active_data?: {
-    resource_limit?: string | number | bigint;
-    nonce?: string | number | bigint;
-    operations?: {
-      type: string;
-      value: unknown;
-    }[];
-    [x: string]: unknown;
-  };
-  passive_data?: {
-    [x: string]: unknown;
-  };
-  signature_data?: string;
-  [x: string]: unknown;
-}
+import Contract, { DecodedOperation, EncodedOperation } from "./Contract";
+import { Provider } from "./Provider";
+import Signer, { Transaction } from "./Signer";
 
 export class Wallet {
-  compressed: boolean;
-  privateKey: string | number | bigint | Uint8Array;
-  publicKey: string | Uint8Array;
-  address: string;
+  public signer?: Signer;
+  public contract?: Contract;
+  public provider?: Provider;
+
   constructor(
-    privateKey: string | number | bigint | Uint8Array,
-    compressed = true
-  ) {
-    this.compressed = compressed;
-    this.privateKey = privateKey;
-    if (typeof privateKey === "string") {
-      this.publicKey = secp.getPublicKey(privateKey, this.compressed);
-      this.address = bitcoinAddress(
-        toUint8Array(this.publicKey),
-        this.compressed
-      );
-    } else {
-      this.publicKey = secp.getPublicKey(privateKey, this.compressed);
-      this.address = bitcoinAddress(this.publicKey, this.compressed);
+    opts: {
+      signer?: Signer;
+      contract?: Contract;
+      provider?: Provider;
+    } = {
+      signer: undefined,
+      contract: undefined,
+      provider: undefined,
     }
+  ) {
+    this.signer = opts.signer;
+    this.contract = opts.contract;
+    this.provider = opts.provider;
   }
 
-  static fromWif(wif: string) {
-    const privateKey = bitcoinDecode(wif);
-    return new Wallet(toHexString(privateKey));
+  async newTransaction(
+    opts: {
+      resource_limit?: number | bigint | string;
+      operations?: EncodedOperation[];
+      getNonce?: boolean;
+    } = {
+      resource_limit: 1000000,
+      operations: [],
+      getNonce: true,
+    }
+  ): Promise<Transaction> {
+    const nonce = opts.getNonce ? await this.getNonce(this.getAddress()) : 0;
+    const resource_limit = opts.resource_limit ? opts.resource_limit : 1000000;
+    const operations = opts.operations ? opts.operations : [];
+
+    return {
+      active_data: {
+        resource_limit,
+        nonce,
+        operations,
+      },
+    };
   }
 
-  static fromSeed(seed: string) {
-    const privateKey = sha256(seed);
-    return new Wallet(privateKey);
+  // Signer
+
+  getAddress() {
+    if (!this.signer) throw new Error("Signer is undefined");
+    return this.signer.getAddress();
   }
 
   async signTransaction(tx: Transaction) {
-    const blobActiveData = serialize(tx.active_data, abiActiveData);
-    const hash = sha256(blobActiveData.buffer);
-    const [hex, recovery] = await secp.sign(hash, this.privateKey, {
-      recovered: true,
-      canonical: true,
-    });
+    if (!this.signer) throw new Error("Signer is undefined");
+    return this.signer.signTransaction(tx);
+  }
 
-    // compact signature
-    const { r, s } = secp.Signature.fromHex(hex);
-    const rHex = r.toString(16).padStart(64, "0");
-    const sHex = s.toString(16).padStart(64, "0");
-    const recId = (recovery + 31).toString(16).padStart(2, "0");
-    tx.signature_data = new VariableBlob(
-      toUint8Array(recId + rHex + sHex)
-    ).toString();
-    tx.id = new Multihash(toUint8Array(hash)).toString();
-    return tx;
+  // Contract
+
+  encodeOperation(op: DecodedOperation): EncodedOperation {
+    if (!this.contract) throw new Error("Contract is undefined");
+    return this.contract.encodeOperation(op);
+  }
+
+  decodeOperation(op: EncodedOperation): DecodedOperation {
+    if (!this.contract) throw new Error("Contract is undefined");
+    return this.contract.decodeOperation(op);
+  }
+
+  // Provider
+
+  async call(method: string, params: unknown) {
+    if (!this.provider) throw new Error("Provider is undefined");
+    return this.provider.call(method, params);
+  }
+
+  async getNonce(address: string) {
+    if (!this.provider) throw new Error("Provider is undefined");
+    return this.provider.getNonce(address);
+  }
+
+  async sendTransaction(transaction: Transaction) {
+    return this.provider?.sendTransaction(transaction);
   }
 }
 
