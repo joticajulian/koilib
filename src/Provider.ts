@@ -1,4 +1,5 @@
 import multibase from "multibase";
+import { EncodedOperation } from "./Contract";
 import { Transaction } from "./Signer";
 
 export class Provider {
@@ -36,5 +37,12 @@ export class Provider {
 
   async sendTransaction(transaction: Transaction) {
     return this.call("chain.submit_transaction", { transaction });
+  }
+
+  async readContract(operation: EncodedOperation): Promise<{
+    result: string;
+    logs: string;
+  }> {
+    return this.call("chain.read_contract", operation);
   }
 }

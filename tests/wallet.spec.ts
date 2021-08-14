@@ -14,6 +14,7 @@ const publicKeyCompressed =
   "03B31BA07E957FDEF6B5CB14FACC9D94F6A144690EF91C137345121C9A0F387BB9";
 const address = "126LgExvJrLDQBsxA1Ddur2VjXJkyAbG91";
 const addressCompressed = "1M2UM4X78EKKLoNs3z24icqjPqAfbuhocA";
+const urlProvider = "http://45.56.104.152:8080";
 
 const contract = new Contract({
   id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
@@ -36,6 +37,10 @@ const contract = new Contract({
           },
         ],
       },
+    },
+    balance_of: {
+      id: 0x15619248,
+      args: { type: "string" },
     },
   },
 });
@@ -115,7 +120,7 @@ describe("Wallet and Contract", () => {
     const wallet = new Wallet({
       signer: new Signer(privateKeyHex),
       contract,
-      provider: new Provider("http://45.56.104.152:8080"),
+      provider: new Provider(urlProvider),
     });
 
     const operation = wallet.encodeOperation({
@@ -134,5 +139,24 @@ describe("Wallet and Contract", () => {
 
     wallet.signTransaction(tx);
     wallet.sendTransaction(tx);
+  });
+
+  it.only("should get the balance of an account", async () => {
+    const wallet = new Wallet({
+      contract,
+      provider: new Provider(urlProvider),
+    });
+
+    const operation = wallet.encodeOperation({
+      name: "balance_of",
+      args: "1Krs7v1rtpgRyfwEZncuKMQQnY5JhqXVSx",
+    });
+
+    const result = await wallet.readContract(operation);
+    expect(result).toStrictEqual(
+      expect.objectContaining({
+        result: expect.any(String) as string,
+      })
+    );
   });
 });

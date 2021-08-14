@@ -84,7 +84,16 @@ export class Wallet {
   }
 
   async sendTransaction(transaction: Transaction) {
-    return this.provider?.sendTransaction(transaction);
+    if (!this.provider) throw new Error("Provider is undefined");
+    return this.provider.sendTransaction(transaction);
+  }
+
+  async readContract(operation: EncodedOperation): Promise<{
+    result: string;
+    logs: string;
+  }> {
+    if (!this.provider) throw new Error("Provider is undefined");
+    return this.provider.readContract(operation);
   }
 }
 
