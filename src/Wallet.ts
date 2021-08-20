@@ -88,7 +88,7 @@ export class Wallet {
     return this.provider.sendTransaction(transaction);
   }
 
-  async readContract(operation: EncodedOperation): Promise<{
+  async readContract(operation: EncodedOperation["value"]): Promise<{
     result: string;
     logs: string;
   }> {

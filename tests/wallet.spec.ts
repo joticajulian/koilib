@@ -20,7 +20,7 @@ const contract = new Contract({
   id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
   entries: {
     transfer: {
-      id: 1,
+      id: 0x62efa292,
       args: {
         type: [
           {
@@ -82,7 +82,7 @@ describe("Wallet and Contract", () => {
       type: "koinos::protocol::call_contract_operation",
       value: {
         contract_id: contract.id,
-        entry_point: 1,
+        entry_point: 0x62efa292,
         args: expect.any(String) as string,
       },
     });
@@ -126,22 +126,23 @@ describe("Wallet and Contract", () => {
     const operation = wallet.encodeOperation({
       name: "transfer",
       args: {
-        from: "alice",
+        from: wallet.getAddress(),
         to: "bob",
         value: BigInt(1000),
       },
     });
 
     const tx = await wallet.newTransaction({
-      getNonce: false,
+      getNonce: true,
       operations: [operation],
     });
 
-    wallet.signTransaction(tx);
-    wallet.sendTransaction(tx);
+    await wallet.signTransaction(tx);
+    console.log(JSON.stringify(tx, null, 2));
+    await wallet.sendTransaction(tx);
   });
 
-  it.only("should get the balance of an account", async () => {
+  it("should get the balance of an account", async () => {
     const wallet = new Wallet({
       contract,
       provider: new Provider(urlProvider),
@@ -152,7 +153,7 @@ describe("Wallet and Contract", () => {
       args: "1Krs7v1rtpgRyfwEZncuKMQQnY5JhqXVSx",
     });
 
-    const result = await wallet.readContract(operation);
+    const result = await wallet.readContract(operation.value);
     expect(result).toStrictEqual(
       expect.objectContaining({
         result: expect.any(String) as string,
