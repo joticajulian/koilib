@@ -1,3 +1,5 @@
+/*! koilib - MIT License (c) Julian Gonzalez (joticajulian@gmail.com) */
+
 import * as utils from "./utils";
 import { Contract } from "./Contract";
 import { Multihash } from "./Multihash";

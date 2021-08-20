@@ -1,3 +1,5 @@
+/*! koilib - MIT License (c) Julian Gonzalez (joticajulian@gmail.com) */
+
 export * from "./Signer";
 export * from "./Contract";
 export * from "./VariableBlob";
