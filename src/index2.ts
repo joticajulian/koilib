@@ -3,7 +3,7 @@
 import * as utils from "./utils";
 import { Contract } from "./Contract";
 import { Multihash } from "./Multihash";
-import { serialize, deserialize } from "./serializer";
+import * as serializer from "./serializer";
 import { VariableBlob } from "./VariableBlob";
 import { Signer } from "./Signer";
 import { Provider } from "./Provider";
@@ -15,8 +15,7 @@ declare const window: any;
 window.utils = utils;
 window.Contract = Contract;
 window.Multihash = Multihash;
-window.serialize = serialize;
-window.deserialize = deserialize;
+window.serializer = serializer;
 window.Signer = Signer;
 window.VariableBlob = VariableBlob;
 window.Wallet = Wallet;
