@@ -1,115 +1,91 @@
-<!DOCTYPE html>
+<!doctype html>
 <html class="default no-js">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Abi | koilib</title>
-    <meta name="description" content="Documentation for koilib" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="../assets/css/main.css" />
-    <script async src="../assets/js/search.js" id="search-script"></script>
-  </head>
-  <body>
-    <header>
-      <div class="tsd-page-toolbar">
-        <div class="container">
-          <div class="table-wrap">
-            <div
-              class="table-cell"
-              id="tsd-search"
-              data-index="../assets/js/search.json"
-              data-base=".."
-            >
-              <div class="field">
-                <label
-                  for="tsd-search-field"
-                  class="tsd-widget search no-caption"
-                  >Search</label
-                >
-                <input id="tsd-search-field" type="text" />
-              </div>
-              <ul class="results">
-                <li class="state loading">Preparing search index...</li>
-                <li class="state failure">The search index is not available</li>
-              </ul>
-              <a href="../index.html" class="title">koilib</a>
-            </div>
-            <div class="table-cell" id="tsd-widgets">
-              <div id="tsd-filter">
-                <a
-                  href="#"
-                  class="tsd-widget options no-caption"
-                  data-toggle="options"
-                  >Options</a
-                >
-                <div class="tsd-filter-group">
-                  <div class="tsd-select" id="tsd-filter-visibility">
-                    <span class="tsd-select-label">All</span>
-                    <ul class="tsd-select-list">
-                      <li data-value="public">Public</li>
-                      <li data-value="protected">Public/Protected</li>
-                      <li data-value="private" class="selected">All</li>
-                    </ul>
-                  </div>
-                  <input type="checkbox" id="tsd-filter-inherited" checked />
-                  <label class="tsd-widget" for="tsd-filter-inherited"
-                    >Inherited</label
-                  >
-                  <input type="checkbox" id="tsd-filter-externals" checked />
-                  <label class="tsd-widget" for="tsd-filter-externals"
-                    >Externals</label
-                  >
-                </div>
-              </div>
-              <a href="#" class="tsd-widget menu no-caption" data-toggle="menu"
-                >Menu</a
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="tsd-page-title">
-        <div class="container">
-          <ul class="tsd-breadcrumb">
-            <li>
-              <a href="../modules.html">koilib</a>
-            </li>
-            <li>
-              <a href="Abi.html">Abi</a>
-            </li>
-          </ul>
-          <h1>Interface Abi</h1>
-        </div>
-      </div>
-    </header>
-    <div class="container container-main">
-      <div class="row">
-        <div class="col-8 col-content">
-          <section class="tsd-panel tsd-comment">
-            <div class="tsd-comment tsd-typography">
-              <div class="lead">
-                <p>Application Binary Interface (ABI)</p>
-              </div>
-              <p>
-                Set of definitions to tell to the library how to serialize and
-                deserialize data in Koinos.
-              </p>
-              <dl class="tsd-comment-tags">
-                <dt>example</dt>
-                <dd>
-                  <p>
-                    <strong>Example for Structs:</strong> Suppose that the
-                    contract has a struct in c++ for transfers defined as
-                  </p>
-                  <pre><code class="language-cpp"><span style="color: #0000FF">struct</span><span style="color: #000000"> </span><span style="color: #267F99">transfer_args</span>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Abi | koilib</title>
+	<meta name="description" content="Documentation for koilib">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="../assets/css/main.css">
+	<script async src="../assets/js/search.js" id="search-script"></script>
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="../assets/js/search.json" data-base="..">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="../index.html" class="title">koilib</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="../modules.html">koilib</a>
+				</li>
+				<li>
+					<a href="Abi.html">Abi</a>
+				</li>
+			</ul>
+			<h1>Interface Abi</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Application Binary Interface (ABI)</p>
+					</div>
+					<p>Set of definitions to tell to the library how to serialize
+					and deserialize data in Koinos.</p>
+					<dl class="tsd-comment-tags">
+						<dt>example</dt>
+						<dd><p><strong>Example for Structs:</strong>
+								Suppose that the contract has a struct in c++ for transfers
+							defined as</p>
+							<pre><code class="language-cpp"><span style="color: #0000FF">struct</span><span style="color: #000000"> </span><span style="color: #267F99">transfer_args</span>
 <span style="color: #000000">{</span>
 <span style="color: #000000">   </span><span style="color: #267F99">protocol</span><span style="color: #000000">::account_type from;</span>
 <span style="color: #000000">   </span><span style="color: #267F99">protocol</span><span style="color: #000000">::account_type to;</span>
 <span style="color: #000000">   </span><span style="color: #0000FF">uint64_t</span><span style="color: #000000">               value;</span>
 <span style="color: #000000">};</span>
 </code></pre>
-                  <p>Then, it&#39;s ABI can be defined as</p>
-                  <pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">abi</span><span style="color: #000000"> = [{</span>
+							<p>Then, it&#39;s ABI can be defined as</p>
+							<pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">abi</span><span style="color: #000000"> = [{</span>
 <span style="color: #000000">  </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;from&quot;</span><span style="color: #000000">,</span>
 <span style="color: #000000">  </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000">,</span>
 <span style="color: #000000">},{</span>
@@ -120,21 +96,15 @@
 <span style="color: #000000">  </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;uint64&quot;</span><span style="color: #000000">,</span>
 <span style="color: #000000">}]</span>
 </code></pre>
-                </dd>
-                <dt>example</dt>
-                <dd>
-                  <p>
-                    <strong
-                      >Example using the definition of active data:</strong
-                    >
-                    The ABI can be defined at a great level of detail. This
-                    example shows the ABI of the Active Data of a Transaction,
-                    which is a complex structure as it contains vectors,
-                    variants, nested structures, and opaque objects. See also
-                    <a href="../modules.html#abiActiveData">abiActiveData</a>
-                  </p>
-                  <p>The Active data is defined in c++ as:</p>
-                  <pre><code class="language-cpp"><span style="color: #0000FF">struct</span><span style="color: #000000"> </span><span style="color: #267F99">upload_contract_operation</span>
+						</dd>
+						<dt>example</dt>
+						<dd><p><strong>Example using the definition of active data:</strong>
+								The ABI can be defined at a great level of detail. This
+								example shows the ABI of the Active Data of a Transaction,
+								which is a complex structure as it contains vectors, variants,
+							nested structures, and opaque objects. See also <a href="../modules.html#abiActiveData">abiActiveData</a></p>
+							<p>The Active data is defined in c++ as:</p>
+							<pre><code class="language-cpp"><span style="color: #0000FF">struct</span><span style="color: #000000"> </span><span style="color: #267F99">upload_contract_operation</span>
 <span style="color: #000000">{</span>
 <span style="color: #000000">   contract_id_type               contract_id;</span>
 <span style="color: #000000">   variable_blob                  bytecode;</span>
@@ -171,8 +141,8 @@
 <span style="color: #000000">   </span><span style="color: #267F99">std</span><span style="color: #000000">::vector&lt; operation &gt; operations;</span>
 <span style="color: #000000">};</span>
 </code></pre>
-                  <p>It&#39;s ABI can be defined as</p>
-                  <pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">abiActiveData</span><span style="color: #000000">: </span><span style="color: #267F99">Abi</span><span style="color: #000000"> = {</span>
+							<p>It&#39;s ABI can be defined as</p>
+							<pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">abiActiveData</span><span style="color: #000000">: </span><span style="color: #267F99">Abi</span><span style="color: #000000"> = {</span>
 <span style="color: #000000">  </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;opaque_active_data&quot;</span><span style="color: #000000">,</span>
 <span style="color: #000000">  </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;opaque&quot;</span><span style="color: #000000">,</span>
 <span style="color: #000000">  </span><span style="color: #001080">subAbi:</span><span style="color: #000000"> {</span>
@@ -205,380 +175,222 @@
 <span style="color: #000000">  },</span>
 <span style="color: #000000">};</span>
 </code></pre>
-                </dd>
-              </dl>
-            </div>
-          </section>
-          <section class="tsd-panel tsd-hierarchy">
-            <h3>Hierarchy</h3>
-            <ul class="tsd-hierarchy">
-              <li>
-                <span class="target">Abi</span>
-              </li>
-            </ul>
-          </section>
-          <section class="tsd-panel-group tsd-index-group">
-            <h2>Index</h2>
-            <section class="tsd-panel tsd-index-panel">
-              <div class="tsd-index-content">
-                <section class="tsd-index-section">
-                  <h3>Properties</h3>
-                  <ul class="tsd-index-list">
-                    <li class="tsd-kind-property tsd-parent-kind-interface">
-                      <a href="Abi.html#name" class="tsd-kind-icon">name</a>
-                    </li>
-                    <li class="tsd-kind-property tsd-parent-kind-interface">
-                      <a href="Abi.html#size" class="tsd-kind-icon">size</a>
-                    </li>
-                    <li class="tsd-kind-property tsd-parent-kind-interface">
-                      <a href="Abi.html#subAbi" class="tsd-kind-icon"
-                        >sub<wbr />Abi</a
-                      >
-                    </li>
-                    <li class="tsd-kind-property tsd-parent-kind-interface">
-                      <a href="Abi.html#type" class="tsd-kind-icon">type</a>
-                    </li>
-                    <li class="tsd-kind-property tsd-parent-kind-interface">
-                      <a href="Abi.html#variants" class="tsd-kind-icon"
-                        >variants</a
-                      >
-                    </li>
-                  </ul>
-                </section>
-              </div>
-            </section>
-          </section>
-          <section class="tsd-panel-group tsd-member-group">
-            <h2>Properties</h2>
-            <section
-              class="
-                tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface
-              "
-            >
-              <a name="name" class="tsd-anchor"></a>
-              <h3>
-                <span class="tsd-flag ts-flagOptional">Optional</span> name
-              </h3>
-              <div class="tsd-signature tsd-kind-icon">
-                name<span class="tsd-signature-symbol">:</span>
-                <span class="tsd-signature-type">string</span>
-              </div>
-              <aside class="tsd-sources">
-                <ul>
-                  <li>
-                    Defined in
-                    <a
-                      href="https://github.com/joticajulian/koilib/blob/7d535ac/src/abi.ts#L132"
-                      >abi.ts:132</a
-                    >
-                  </li>
-                </ul>
-              </aside>
-              <div class="tsd-comment tsd-typography">
-                <div class="lead">
-                  <p>Name of the ABI</p>
-                </div>
-              </div>
-            </section>
-            <section
-              class="
-                tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface
-              "
-            >
-              <a name="size" class="tsd-anchor"></a>
-              <h3>
-                <span class="tsd-flag ts-flagOptional">Optional</span> size
-              </h3>
-              <div class="tsd-signature tsd-kind-icon">
-                size<span class="tsd-signature-symbol">:</span>
-                <span class="tsd-signature-type">number</span>
-              </div>
-              <aside class="tsd-sources">
-                <ul>
-                  <li>
-                    Defined in
-                    <a
-                      href="https://github.com/joticajulian/koilib/blob/7d535ac/src/abi.ts#L137"
-                      >abi.ts:137</a
-                    >
-                  </li>
-                </ul>
-              </aside>
-              <div class="tsd-comment tsd-typography">
-                <div class="lead">
-                  <p>
-                    Fixedblob size. Applicable only for type:
-                    &quot;fixedblob&quot;
-                  </p>
-                </div>
-              </div>
-            </section>
-            <section
-              class="
-                tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface
-              "
-            >
-              <a name="subAbi" class="tsd-anchor"></a>
-              <h3>
-                <span class="tsd-flag ts-flagOptional">Optional</span>
-                sub<wbr />Abi
-              </h3>
-              <div class="tsd-signature tsd-kind-icon">
-                sub<wbr />Abi<span class="tsd-signature-symbol">:</span>
-                <a
-                  href="Abi.html"
-                  class="tsd-signature-type"
-                  data-tsd-kind="Interface"
-                  >Abi</a
-                >
-              </div>
-              <aside class="tsd-sources">
-                <ul>
-                  <li>
-                    Defined in
-                    <a
-                      href="https://github.com/joticajulian/koilib/blob/7d535ac/src/abi.ts#L142"
-                      >abi.ts:142</a
-                    >
-                  </li>
-                </ul>
-              </aside>
-              <div class="tsd-comment tsd-typography">
-                <div class="lead">
-                  <p>
-                    Sub ABI. Applicable only for type &quot;opaque&quot; or
-                    &quot;vector&quot;
-                  </p>
-                </div>
-              </div>
-            </section>
-            <section
-              class="
-                tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface
-              "
-            >
-              <a name="type" class="tsd-anchor"></a>
-              <h3>type</h3>
-              <div class="tsd-signature tsd-kind-icon">
-                type<span class="tsd-signature-symbol">:</span>
-                <span class="tsd-signature-type">string</span
-                ><span class="tsd-signature-symbol"> | </span
-                ><a
-                  href="Abi.html"
-                  class="tsd-signature-type"
-                  data-tsd-kind="Interface"
-                  >Abi</a
-                ><span class="tsd-signature-symbol">[]</span>
-              </div>
-              <aside class="tsd-sources">
-                <ul>
-                  <li>
-                    Defined in
-                    <a
-                      href="https://github.com/joticajulian/koilib/blob/7d535ac/src/abi.ts#L127"
-                      >abi.ts:127</a
-                    >
-                  </li>
-                </ul>
-              </aside>
-              <div class="tsd-comment tsd-typography">
-                <div class="lead">
-                  <p>Type of the ABI</p>
-                </div>
-                <p>
-                  For structs it should be an array of Abis. Otherwise it should
-                  be one of the supported types: opaque, vector, variant,
-                  variableblob, fixedblob, string, varint, uint8, uint16,
-                  uint32, uint64, uint128, uint160, uint256, int8, int16, int32,
-                  int64, int128, int160, int256, unused_extension.
-                </p>
-              </div>
-            </section>
-            <section
-              class="
-                tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface
-              "
-            >
-              <a name="variants" class="tsd-anchor"></a>
-              <h3>
-                <span class="tsd-flag ts-flagOptional">Optional</span> variants
-              </h3>
-              <div class="tsd-signature tsd-kind-icon">
-                variants<span class="tsd-signature-symbol">:</span>
-                <a
-                  href="Abi.html"
-                  class="tsd-signature-type"
-                  data-tsd-kind="Interface"
-                  >Abi</a
-                ><span class="tsd-signature-symbol">[]</span>
-              </div>
-              <aside class="tsd-sources">
-                <ul>
-                  <li>
-                    Defined in
-                    <a
-                      href="https://github.com/joticajulian/koilib/blob/7d535ac/src/abi.ts#L147"
-                      >abi.ts:147</a
-                    >
-                  </li>
-                </ul>
-              </aside>
-              <div class="tsd-comment tsd-typography">
-                <div class="lead">
-                  <p>
-                    ABI variants. Applicable only for type &quot;variant&quot;
-                  </p>
-                </div>
-              </div>
-            </section>
-          </section>
-        </div>
-        <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
-          <nav class="tsd-navigation primary">
-            <ul>
-              <li class="">
-                <a href="../modules.html">Exports</a>
-              </li>
-            </ul>
-          </nav>
-          <nav class="tsd-navigation secondary menu-sticky">
-            <ul class="before-current">
-              <li class="tsd-kind-class">
-                <a href="../classes/Contract.html" class="tsd-kind-icon"
-                  >Contract</a
-                >
-              </li>
-              <li class="tsd-kind-class">
-                <a href="../classes/Multihash.html" class="tsd-kind-icon"
-                  >Multihash</a
-                >
-              </li>
-              <li class="tsd-kind-class">
-                <a href="../classes/Signer.html" class="tsd-kind-icon"
-                  >Signer</a
-                >
-              </li>
-              <li class="tsd-kind-class">
-                <a href="../classes/VariableBlob.html" class="tsd-kind-icon"
-                  >Variable<wbr />Blob</a
-                >
-              </li>
-              <li class="tsd-kind-class">
-                <a href="../classes/Wallet.html" class="tsd-kind-icon"
-                  >Wallet</a
-                >
-              </li>
-            </ul>
-            <ul class="current">
-              <li class="current tsd-kind-interface">
-                <a href="Abi.html" class="tsd-kind-icon">Abi</a>
-                <ul>
-                  <li class="tsd-kind-property tsd-parent-kind-interface">
-                    <a href="Abi.html#name" class="tsd-kind-icon">name</a>
-                  </li>
-                  <li class="tsd-kind-property tsd-parent-kind-interface">
-                    <a href="Abi.html#size" class="tsd-kind-icon">size</a>
-                  </li>
-                  <li class="tsd-kind-property tsd-parent-kind-interface">
-                    <a href="Abi.html#subAbi" class="tsd-kind-icon"
-                      >sub<wbr />Abi</a
-                    >
-                  </li>
-                  <li class="tsd-kind-property tsd-parent-kind-interface">
-                    <a href="Abi.html#type" class="tsd-kind-icon">type</a>
-                  </li>
-                  <li class="tsd-kind-property tsd-parent-kind-interface">
-                    <a href="Abi.html#variants" class="tsd-kind-icon"
-                      >variants</a
-                    >
-                  </li>
-                </ul>
-              </li>
-            </ul>
-            <ul class="after-current">
-              <li class="tsd-kind-interface">
-                <a href="DecodedOperation.html" class="tsd-kind-icon"
-                  >Decoded<wbr />Operation</a
-                >
-              </li>
-              <li class="tsd-kind-interface">
-                <a href="EncodedOperation.html" class="tsd-kind-icon"
-                  >Encoded<wbr />Operation</a
-                >
-              </li>
-              <li class="tsd-kind-interface">
-                <a href="Entries.html" class="tsd-kind-icon">Entries</a>
-              </li>
-              <li class="tsd-kind-interface">
-                <a href="Transaction.html" class="tsd-kind-icon">Transaction</a>
-              </li>
-              <li class="tsd-kind-variable">
-                <a href="../modules.html#abiActiveData" class="tsd-kind-icon"
-                  >abi<wbr />Active<wbr />Data</a
-                >
-              </li>
-              <li class="tsd-kind-variable">
-                <a
-                  href="../modules.html#abiCallContractOperation"
-                  class="tsd-kind-icon"
-                  >abi<wbr />Call<wbr />Contract<wbr />Operation</a
-                >
-              </li>
-              <li class="tsd-kind-function">
-                <a href="../modules.html#deserialize" class="tsd-kind-icon"
-                  >deserialize</a
-                >
-              </li>
-              <li class="tsd-kind-function">
-                <a href="../modules.html#serialize" class="tsd-kind-icon"
-                  >serialize</a
-                >
-              </li>
-            </ul>
-          </nav>
-        </div>
-      </div>
-    </div>
-    <footer class="with-border-bottom">
-      <div class="container">
-        <h2>Legend</h2>
-        <div class="tsd-legend-group">
-          <ul class="tsd-legend">
-            <li class="tsd-kind-constructor tsd-parent-kind-class">
-              <span class="tsd-kind-icon">Constructor</span>
-            </li>
-            <li class="tsd-kind-property tsd-parent-kind-class">
-              <span class="tsd-kind-icon">Property</span>
-            </li>
-            <li class="tsd-kind-method tsd-parent-kind-class">
-              <span class="tsd-kind-icon">Method</span>
-            </li>
-          </ul>
-          <ul class="tsd-legend">
-            <li class="tsd-kind-property tsd-parent-kind-interface">
-              <span class="tsd-kind-icon">Property</span>
-            </li>
-          </ul>
-          <ul class="tsd-legend">
-            <li class="tsd-kind-property tsd-parent-kind-class tsd-is-private">
-              <span class="tsd-kind-icon">Private property</span>
-            </li>
-          </ul>
-          <ul class="tsd-legend">
-            <li class="tsd-kind-method tsd-parent-kind-class tsd-is-static">
-              <span class="tsd-kind-icon">Static method</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </footer>
-    <div class="container tsd-generator">
-      <p>
-        Generated using
-        <a href="https://typedoc.org/" target="_blank">TypeDoc</a>
-      </p>
-    </div>
-    <div class="overlay"></div>
-    <script src="../assets/js/main.js"></script>
-  </body>
+						</dd>
+					</dl>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-hierarchy">
+				<h3>Hierarchy</h3>
+				<ul class="tsd-hierarchy">
+					<li>
+						<span class="target">Abi</span>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel-group tsd-index-group">
+				<h2>Index</h2>
+				<section class="tsd-panel tsd-index-panel">
+					<div class="tsd-index-content">
+						<section class="tsd-index-section ">
+							<h3>Properties</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="Abi.html#name" class="tsd-kind-icon">name</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="Abi.html#size" class="tsd-kind-icon">size</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="Abi.html#subAbi" class="tsd-kind-icon">sub<wbr>Abi</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="Abi.html#type" class="tsd-kind-icon">type</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="Abi.html#variants" class="tsd-kind-icon">variants</a></li>
+							</ul>
+						</section>
+					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="name" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> name</h3>
+					<div class="tsd-signature tsd-kind-icon">name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/4fb3699/src/abi.ts#L131">abi.ts:131</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Name of the ABI</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="size" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> size</h3>
+					<div class="tsd-signature tsd-kind-icon">size<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/4fb3699/src/abi.ts#L136">abi.ts:136</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Fixedblob size. Applicable only for type: &quot;fixedblob&quot;</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="subAbi" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> sub<wbr>Abi</h3>
+					<div class="tsd-signature tsd-kind-icon">sub<wbr>Abi<span class="tsd-signature-symbol">:</span> <a href="Abi.html" class="tsd-signature-type" data-tsd-kind="Interface">Abi</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/4fb3699/src/abi.ts#L141">abi.ts:141</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Sub ABI. Applicable only for type &quot;opaque&quot; or &quot;vector&quot;</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="type" class="tsd-anchor"></a>
+					<h3>type</h3>
+					<div class="tsd-signature tsd-kind-icon">type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="Abi.html" class="tsd-signature-type" data-tsd-kind="Interface">Abi</a><span class="tsd-signature-symbol">[]</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/4fb3699/src/abi.ts#L126">abi.ts:126</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Type of the ABI</p>
+						</div>
+						<p>For structs it should be an array of Abis. Otherwise it should
+							be one of the supported types: opaque, vector, variant, variableblob,
+							fixedblob, string, varint, uint8, uint16, uint32, uint64, uint128,
+							uint160, uint256, int8, int16, int32, int64, int128, int160, int256,
+						unused_extension.</p>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="variants" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> variants</h3>
+					<div class="tsd-signature tsd-kind-icon">variants<span class="tsd-signature-symbol">:</span> <a href="Abi.html" class="tsd-signature-type" data-tsd-kind="Interface">Abi</a><span class="tsd-signature-symbol">[]</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/4fb3699/src/abi.ts#L146">abi.ts:146</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>ABI variants. Applicable only for type &quot;variant&quot;</p>
+						</div>
+					</div>
+				</section>
+			</section>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class=" ">
+						<a href="../modules.html">Exports</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-class">
+						<a href="../classes/Contract.html" class="tsd-kind-icon">Contract</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="../classes/Multihash.html" class="tsd-kind-icon">Multihash</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="../classes/Signer.html" class="tsd-kind-icon">Signer</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="../classes/VariableBlob.html" class="tsd-kind-icon">Variable<wbr>Blob</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="../classes/Wallet.html" class="tsd-kind-icon">Wallet</a>
+					</li>
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-interface">
+						<a href="Abi.html" class="tsd-kind-icon">Abi</a>
+						<ul>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="Abi.html#name" class="tsd-kind-icon">name</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="Abi.html#size" class="tsd-kind-icon">size</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="Abi.html#subAbi" class="tsd-kind-icon">sub<wbr>Abi</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="Abi.html#type" class="tsd-kind-icon">type</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="Abi.html#variants" class="tsd-kind-icon">variants</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="after-current">
+					<li class=" tsd-kind-interface">
+						<a href="DecodedOperation.html" class="tsd-kind-icon">Decoded<wbr>Operation</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="EncodedOperation.html" class="tsd-kind-icon">Encoded<wbr>Operation</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="Entries.html" class="tsd-kind-icon">Entries</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="Transaction.html" class="tsd-kind-icon">Transaction</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="../modules.html#abiActiveData" class="tsd-kind-icon">abi<wbr>Active<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="../modules.html#abiCallContractOperation" class="tsd-kind-icon">abi<wbr>Call<wbr>Contract<wbr>Operation</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="../modules.html#deserialize" class="tsd-kind-icon">deserialize</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="../modules.html#serialize" class="tsd-kind-icon">serialize</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="../assets/js/main.js"></script>
+</body>
 </html>
