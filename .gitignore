@@ -1,4 +1,5 @@
 node_modules
+docs
 dist/*
 !dist/koinos.js
 !dist/koinos.min.js

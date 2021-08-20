@@ -4,6 +4,7 @@ export * from "./Signer";
 export * from "./Contract";
 export * from "./VariableBlob";
 export * from "./Multihash";
+export * from "./Wallet";
 export * from "./serializer";
 export * from "./abi";
 export * as utils from "./utils";
