@@ -1,10 +1,11 @@
 /*! koilib - MIT License (c) Julian Gonzalez (joticajulian@gmail.com) */
 
-export * from "./Signer";
-export * from "./Contract";
-export * from "./VariableBlob";
-export * from "./Multihash";
-export * from "./Wallet";
-export * from "./serializer";
 export * from "./abi";
+export * from "./Contract";
+export * from "./Multihash";
+export * from "./Provider";
+export * from "./serializer";
+export * from "./Signer";
+export * from "./VariableBlob";
+export * from "./Wallet";
 export * as utils from "./utils";

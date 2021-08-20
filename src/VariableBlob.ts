@@ -1,4 +1,4 @@
-import multibase from "multibase";
+import * as multibase from "multibase";
 
 export class VariableBlob {
   public buffer: Uint8Array;

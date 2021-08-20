@@ -1,21 +1,24 @@
 {
-  "extends": "@tsconfig/node12/tsconfig.json",
-  "compilerOptions": {
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "allowJs": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "declaration": true,
-    "sourceMap": true,
-    "incremental": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "lib": ["ES6", "DOM"]
-    //"module": "CommonJS",
-    //"moduleResolution": "node",
-    //"strict": false,
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
-}
+    "extends": "@tsconfig/node12/tsconfig.json",
+    "compilerOptions": {
+      "lib": ["ES2019", "DOM"],
+      "strict": true,
+      "allowSyntheticDefaultImports": true,
+      "forceConsistentCasingInFileNames": true,
+      "noUnusedLocals": true,
+      "noImplicitThis": true,    
+      "strictNullChecks": true,
+      "noUnusedParameters": true,
+      "sourceMap": true,
+      "moduleResolution": "node",
+      "declaration": true,
+      "skipLibCheck": true,
+      "target": "ES2019",
+      "module": "CommonJS",
+      "outDir": "lib"
+    },
+    "include": [
+      "src/**/*.ts"
+    ]
+  }
+  

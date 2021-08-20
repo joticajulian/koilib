@@ -1,4 +1,4 @@
-import multibase from "multibase";
+import * as multibase from "multibase";
 import { sha256 } from "js-sha256";
 import ripemd160 from "noble-ripemd160";
 

@@ -3991,11 +3991,67 @@ exports.Contract = void 0;
 const abi_1 = __webpack_require__(285);
 const serializer_1 = __webpack_require__(825);
 const VariableBlob_1 = __importDefault(__webpack_require__(737));
+/**
+ * Contract class
+ */
 class Contract {
+    /**
+     *
+     * @param c - Object with contract id and contract entries
+     *
+     * @example
+     * ```ts
+     * const contract = new Contract({
+     *   id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+     *   entries: {
+     *     transfer: {
+     *       id: 0x62efa292,
+     *       args: {
+     *         type: [
+     *           {
+     *             name: "from",
+     *             type: "string",
+     *           },
+     *           {
+     *             name: "to",
+     *             type: "string",
+     *           },
+     *           {
+     *             name: "value",
+     *             type: "uint64",
+     *           },
+     *         ],
+     *       },
+     *     },
+     *     balance_of: {
+     *       id: 0x15619248,
+     *       args: { type: "string" },
+     *     },
+     *   },
+     * });
+     * ```
+     */
     constructor(c) {
         this.id = c.id;
         this.entries = c.entries;
     }
+    /**
+     * Encondes a contract operation using Koinos serialization
+     * and taking the contract entries as reference to build it
+     * @param op Operation to encode
+     * @returns Operation encoded
+     * @example
+     * ```ts
+     * const opEncoded = contract.encodeOperation({
+     *   name: "transfer",
+     *   args: {
+     *     from: "alice",
+     *     to: "bob",
+     *     value: 1000,
+     *   }
+     * });
+     * ```
+     */
     encodeOperation(op) {
         if (!this.entries || !this.entries[op.name])
             throw new Error(`Operation ${op.name} unknown`);
@@ -4206,16 +4262,32 @@ exports.default = Signer;
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.VariableBlob = void 0;
-const multibase_1 = __importDefault(__webpack_require__(957));
+const multibase = __importStar(__webpack_require__(957));
 class VariableBlob {
     constructor(input) {
         if (typeof input === "string") {
-            this.buffer = multibase_1.default.decode(input);
+            this.buffer = multibase.decode(input);
         }
         else {
             this.buffer = input ? input : new Uint8Array();
@@ -4237,7 +4309,7 @@ class VariableBlob {
         }
     }
     write(data, length = 0) {
-        let bytes = typeof data === "string" ? multibase_1.default.decode(data) : data;
+        let bytes = typeof data === "string" ? multibase.decode(data) : data;
         if (length && bytes.length !== length)
             throw new Error(`Invalid length. Expected: ${length}. Received: ${bytes.length}`);
         this.checkRemaining(bytes.length, true);
@@ -4353,7 +4425,7 @@ class VariableBlob {
     }
     // Buffer
     serializeBuffer(data) {
-        let bytes = typeof data === "string" ? multibase_1.default.decode(data) : data;
+        let bytes = typeof data === "string" ? multibase.decode(data) : data;
         this.serializeVarint(bytes.length);
         this.write(bytes);
     }
@@ -4406,7 +4478,7 @@ class VariableBlob {
         return result.toString();
     }
     toString(nameOrCode = "M") {
-        return new TextDecoder().decode(multibase_1.default.encode(nameOrCode, this.buffer));
+        return new TextDecoder().decode(multibase.encode(nameOrCode, this.buffer));
     }
 }
 exports.VariableBlob = VariableBlob;
@@ -4505,6 +4577,10 @@ exports.default = Wallet;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.abiActiveData = exports.abiCallContractOperation = void 0;
+/**
+ * ABI of Call Contract Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
 exports.abiCallContractOperation = {
     name: "koinos::protocol::call_contract_operation",
     type: [
@@ -4527,6 +4603,10 @@ exports.abiCallContractOperation = {
         },
     ],
 };
+/**
+ * ABI of Active Data of a Transaction. This abi is used in the
+ * [[Signer]] class to sign transactions.
+ */
 exports.abiActiveData = {
     name: "opaque_active_data",
     type: "opaque",
@@ -4859,12 +4939,31 @@ exports.deserialize = deserialize;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.bitcoinAddress = exports.bitcoinDecode = exports.copyUint8Array = exports.bitcoinEncode = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
-const multibase_1 = __importDefault(__webpack_require__(957));
+const multibase = __importStar(__webpack_require__(957));
 const js_sha256_1 = __webpack_require__(23);
 const noble_ripemd160_1 = __importDefault(__webpack_require__(389));
 function toUint8Array(hex) {
@@ -4882,11 +4981,11 @@ function toHexString(buffer) {
 }
 exports.toHexString = toHexString;
 function encodeBase58(buffer) {
-    return new TextDecoder().decode(multibase_1.default.encode("z", buffer)).slice(1);
+    return new TextDecoder().decode(multibase.encode("z", buffer)).slice(1);
 }
 exports.encodeBase58 = encodeBase58;
 function decodeBase58(bs58) {
-    return multibase_1.default.decode(`z${bs58}`);
+    return multibase.decode(`z${bs58}`);
 }
 exports.decodeBase58 = decodeBase58;
 function bitcoinEncode(buffer, type, compressed = false) {
