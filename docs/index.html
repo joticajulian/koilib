@@ -68,6 +68,7 @@
 				<ol>
 					<li><a href="#install">Install</a></li>
 					<li><a href="#usage">Usage</a></li>
+					<li><a href="#documentation">Documentation</a></li>
 					<li><a href="#license">License</a></li>
 				</ol>
 				<a href="#install" id="install" style="color: inherit; text-decoration: none;">
@@ -77,44 +78,138 @@
 				<pre><code class="language-sh"><span style="color: #000000">npm install koilib</span>
 </code></pre>
 				<p>You can also load it directly to the browser by downloading the bunble file located at <code>dist/koinos.min.js</code>, or it&#39;s non-minified version <code>dist/koinos.js</code> (useful for debugging).</p>
+				<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
+					<h2>Usage</h2>
+				</a>
+				<a href="#browser" id="browser" style="color: inherit; text-decoration: none;">
+					<h3>Browser</h3>
+				</a>
 				<pre><code class="language-html"><span style="color: #800000">&lt;!DOCTYPE</span><span style="color: #000000"> </span><span style="color: #FF0000">html</span><span style="color: #800000">&gt;</span>
 <span style="color: #800000">&lt;html</span><span style="color: #000000"> </span><span style="color: #FF0000">lang</span><span style="color: #000000">=</span><span style="color: #0000FF">&quot;en&quot;</span><span style="color: #800000">&gt;</span>
 <span style="color: #000000">  </span><span style="color: #800000">&lt;head&gt;</span>
 <span style="color: #000000">    </span><span style="color: #800000">&lt;meta</span><span style="color: #000000"> </span><span style="color: #FF0000">charset</span><span style="color: #000000">=</span><span style="color: #0000FF">&quot;utf-8&quot;</span><span style="color: #000000"> </span><span style="color: #800000">/&gt;</span>
 <span style="color: #000000">    </span><span style="color: #800000">&lt;title&gt;</span><span style="color: #000000">My App</span><span style="color: #800000">&lt;/title&gt;</span>
 <span style="color: #000000">    </span><span style="color: #800000">&lt;script</span><span style="color: #000000FF"> </span><span style="color: #FF0000">src</span><span style="color: #000000FF">=</span><span style="color: #0000FF">&quot;koinos.min.js&quot;</span><span style="color: #800000">&gt;&lt;/script&gt;</span>
+<span style="color: #000000">    </span><span style="color: #800000">&lt;script&gt;</span>
+<span style="color: #000000FF">      (</span><span style="color: #0000FF">async</span><span style="color: #000000FF"> () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000FF"> {</span>
+<span style="color: #000000FF">        </span><span style="color: #0000FF">const</span><span style="color: #000000FF"> </span><span style="color: #0070C1">signer</span><span style="color: #000000FF"> </span><span style="color: #000000">=</span><span style="color: #000000FF"> </span><span style="color: #001080">Signer</span><span style="color: #000000FF">.</span><span style="color: #795E26">fromSeed</span><span style="color: #000000FF">(</span><span style="color: #A31515">&quot;my seed&quot;</span><span style="color: #000000FF">);</span>
+<span style="color: #000000FF">        </span><span style="color: #0000FF">const</span><span style="color: #000000FF"> </span><span style="color: #0070C1">provider</span><span style="color: #000000FF"> </span><span style="color: #000000">=</span><span style="color: #000000FF"> </span><span style="color: #0000FF">new</span><span style="color: #000000FF"> </span><span style="color: #795E26">Provider</span><span style="color: #000000FF">(</span><span style="color: #A31515">&quot;http://45.56.104.152:8080&quot;</span><span style="color: #000000FF">);</span>
+<span style="color: #000000FF">        </span><span style="color: #0000FF">const</span><span style="color: #000000FF"> </span><span style="color: #0070C1">contract</span><span style="color: #000000FF"> </span><span style="color: #000000">=</span><span style="color: #000000FF"> </span><span style="color: #0000FF">new</span><span style="color: #000000FF"> </span><span style="color: #795E26">Contract</span><span style="color: #000000FF">({</span>
+<span style="color: #000000FF">          </span><span style="color: #001080">id:</span><span style="color: #000000FF"> </span><span style="color: #A31515">&quot;Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=&quot;</span><span style="color: #000000FF">,</span>
+<span style="color: #000000FF">          </span><span style="color: #001080">entries:</span><span style="color: #000000FF"> {</span>
+<span style="color: #000000FF">            </span><span style="color: #001080">balance_of:</span><span style="color: #000000FF"> {</span>
+<span style="color: #000000FF">              </span><span style="color: #001080">id:</span><span style="color: #000000FF"> </span><span style="color: #098658">0x15619248</span><span style="color: #000000FF">,</span>
+<span style="color: #000000FF">              </span><span style="color: #001080">args:</span><span style="color: #000000FF"> { </span><span style="color: #001080">type:</span><span style="color: #000000FF"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000FF"> },</span>
+<span style="color: #000000FF">            },</span>
+<span style="color: #000000FF">          },</span>
+<span style="color: #000000FF">        });</span>
+<span style="color: #000000FF">        </span><span style="color: #0000FF">const</span><span style="color: #000000FF"> </span><span style="color: #0070C1">wallet</span><span style="color: #000000FF"> </span><span style="color: #000000">=</span><span style="color: #000000FF"> </span><span style="color: #0000FF">new</span><span style="color: #000000FF"> </span><span style="color: #795E26">Wallet</span><span style="color: #000000FF">({ </span><span style="color: #001080">signer</span><span style="color: #000000FF">, </span><span style="color: #001080">contract</span><span style="color: #000000FF">, </span><span style="color: #001080">provider</span><span style="color: #000000FF"> });</span>
+
+<span style="color: #000000FF">        </span><span style="color: #0000FF">const</span><span style="color: #000000FF"> </span><span style="color: #0070C1">operation</span><span style="color: #000000FF"> </span><span style="color: #000000">=</span><span style="color: #000000FF"> </span><span style="color: #001080">wallet</span><span style="color: #000000FF">.</span><span style="color: #795E26">encodeOperation</span><span style="color: #000000FF">({</span>
+<span style="color: #000000FF">          </span><span style="color: #001080">name:</span><span style="color: #000000FF"> </span><span style="color: #A31515">&quot;balance_of&quot;</span><span style="color: #000000FF">,</span>
+<span style="color: #000000FF">          </span><span style="color: #001080">args:</span><span style="color: #000000FF"> </span><span style="color: #001080">wallet</span><span style="color: #000000FF">.</span><span style="color: #795E26">getAddress</span><span style="color: #000000FF">(),</span>
+<span style="color: #000000FF">        });</span>
+<span style="color: #000000FF">        </span><span style="color: #0000FF">const</span><span style="color: #000000FF"> </span><span style="color: #0070C1">result</span><span style="color: #000000FF"> </span><span style="color: #000000">=</span><span style="color: #000000FF"> </span><span style="color: #AF00DB">await</span><span style="color: #000000FF"> </span><span style="color: #001080">wallet</span><span style="color: #000000FF">.</span><span style="color: #795E26">readContract</span><span style="color: #000000FF">(</span><span style="color: #001080">operation</span><span style="color: #000000FF">.</span><span style="color: #001080">value</span><span style="color: #000000FF">);</span>
+<span style="color: #000000FF">        </span><span style="color: #0000FF">const</span><span style="color: #000000FF"> </span><span style="color: #0070C1">balance</span><span style="color: #000000FF"> </span><span style="color: #000000">=</span><span style="color: #000000FF"> </span><span style="color: #001080">serializer</span>
+<span style="color: #000000FF">          .</span><span style="color: #795E26">deserialize</span><span style="color: #000000FF">(</span><span style="color: #001080">result</span><span style="color: #000000FF">.</span><span style="color: #001080">result</span><span style="color: #000000FF">, { </span><span style="color: #001080">type:</span><span style="color: #000000FF"> </span><span style="color: #A31515">&quot;uint64&quot;</span><span style="color: #000000FF"> })</span>
+<span style="color: #000000FF">          .</span><span style="color: #795E26">toString</span><span style="color: #000000FF">();</span>
+<span style="color: #000000FF">        </span><span style="color: #001080">console</span><span style="color: #000000FF">.</span><span style="color: #795E26">log</span><span style="color: #000000FF">(</span><span style="color: #267F99">Number</span><span style="color: #000000FF">(</span><span style="color: #001080">balance</span><span style="color: #000000FF">) </span><span style="color: #000000">/</span><span style="color: #000000FF"> </span><span style="color: #098658">1e8</span><span style="color: #000000FF">);</span>
+<span style="color: #000000FF">      })();</span>
+<span style="color: #000000FF">    </span><span style="color: #800000">&lt;/script&gt;</span>
 <span style="color: #000000">  </span><span style="color: #800000">&lt;/head&gt;</span>
 <span style="color: #000000">  </span><span style="color: #800000">&lt;body&gt;&lt;/body&gt;</span>
 <span style="color: #800000">&lt;/html&gt;</span>
 </code></pre>
-				<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
-					<h2>Usage</h2>
+				<a href="#node-js" id="node-js" style="color: inherit; text-decoration: none;">
+					<h3>Node JS</h3>
 				</a>
+				<p>With Typescript import the library</p>
 				<pre><code class="language-typescript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">Wallet</span><span style="color: #000000">, </span><span style="color: #001080">Signer</span><span style="color: #000000">, </span><span style="color: #001080">Contract</span><span style="color: #000000">, </span><span style="color: #001080">Provider</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;koilib&quot;</span><span style="color: #000000">;</span>
-
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">wallet</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Wallet</span><span style="color: #000000">({</span>
-<span style="color: #000000">  </span><span style="color: #001080">signer:</span><span style="color: #000000"> </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">(</span><span style="color: #001080">privateKeyHex</span><span style="color: #000000">),</span>
-<span style="color: #000000">  </span><span style="color: #001080">contract:</span><span style="color: #000000"> </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Contract</span><span style="color: #000000">(),</span>
-<span style="color: #000000">  </span><span style="color: #001080">provider:</span><span style="color: #000000"> </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Provider</span><span style="color: #000000">(</span><span style="color: #001080">urlProvider</span><span style="color: #000000">),</span>
-<span style="color: #000000">});</span>
-
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">operation</span><span style="color: #000000"> = </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">encodeOperation</span><span style="color: #000000">({</span>
-<span style="color: #000000">  </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;transfer&quot;</span><span style="color: #000000">,</span>
-<span style="color: #000000">  </span><span style="color: #001080">args:</span><span style="color: #000000"> {</span>
-<span style="color: #000000">    </span><span style="color: #001080">from:</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">getAddress</span><span style="color: #000000">(),</span>
-<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;bob&quot;</span><span style="color: #000000">,</span>
-<span style="color: #000000">    </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #267F99">BigInt</span><span style="color: #000000">(</span><span style="color: #098658">1000</span><span style="color: #000000">),</span>
-<span style="color: #000000">  },</span>
-<span style="color: #000000">});</span>
-
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">tx</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">newTransaction</span><span style="color: #000000">({</span>
-<span style="color: #000000">  </span><span style="color: #001080">getNonce:</span><span style="color: #000000"> </span><span style="color: #0000FF">true</span><span style="color: #000000">,</span>
-<span style="color: #000000">  </span><span style="color: #001080">operations:</span><span style="color: #000000"> [</span><span style="color: #001080">operation</span><span style="color: #000000">],</span>
-<span style="color: #000000">});</span>
-
-<span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">signTransaction</span><span style="color: #000000">(</span><span style="color: #001080">tx</span><span style="color: #000000">);</span>
-<span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">sendTransaction</span><span style="color: #000000">(</span><span style="color: #001080">tx</span><span style="color: #000000">);</span>
 </code></pre>
+				<p>With Javascript import the library with require</p>
+				<pre><code class="language-javascript"><span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">Wallet</span><span style="color: #000000">, </span><span style="color: #0070C1">Signer</span><span style="color: #000000">, </span><span style="color: #0070C1">Contract</span><span style="color: #000000">, </span><span style="color: #0070C1">Provider</span><span style="color: #000000"> } = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;koilib&quot;</span><span style="color: #000000">);</span>
+</code></pre>
+				<p>There are 4 principal classes:</p>
+				<ul>
+					<li><strong>Signer</strong>: Class containing the private key. It is used to sign.</li>
+					<li><strong>Provider</strong>: Class to connect with the RPC node.</li>
+					<li><strong>Contract</strong>: Class defining the contract to interact with.</li>
+					<li><strong>Wallet</strong>: Class that packages signer, provider, and contract classes.</li>
+				</ul>
+				<p>The following code shows how to create a wallet, sign a transaction, broadcast
+				a transaction, and read contracts.</p>
+				<pre><code class="language-typescript"><span style="color: #000000">(</span><span style="color: #0000FF">async</span><span style="color: #000000"> () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">  </span><span style="color: #008000">// define signer, provider, and contract</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">signer</span><span style="color: #000000"> = </span><span style="color: #001080">Signer</span><span style="color: #000000">.</span><span style="color: #795E26">fromSeed</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;my seed&quot;</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">provider</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Provider</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;http://45.56.104.152:8080&quot;</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">contract</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Contract</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">entries:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">transfer:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">0x62efa292</span><span style="color: #000000">,</span>
+<span style="color: #000000">        </span><span style="color: #001080">args:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">          </span><span style="color: #001080">type:</span><span style="color: #000000"> [</span>
+<span style="color: #000000">            {</span>
+<span style="color: #000000">              </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;from&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">              </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            },</span>
+<span style="color: #000000">            {</span>
+<span style="color: #000000">              </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;to&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">              </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            },</span>
+<span style="color: #000000">            {</span>
+<span style="color: #000000">              </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;value&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">              </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;uint64&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            },</span>
+<span style="color: #000000">          ],</span>
+<span style="color: #000000">        },</span>
+<span style="color: #000000">      },</span>
+<span style="color: #000000">      </span><span style="color: #001080">balance_of:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">0x15619248</span><span style="color: #000000">,</span>
+<span style="color: #000000">        </span><span style="color: #001080">args:</span><span style="color: #000000"> { </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000"> },</span>
+<span style="color: #000000">      },</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">  });</span>
+
+<span style="color: #000000">  </span><span style="color: #008000">// create a wallet with signer, provider and contract</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">wallet</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Wallet</span><span style="color: #000000">({ </span><span style="color: #001080">signer</span><span style="color: #000000">, </span><span style="color: #001080">provider</span><span style="color: #000000">, </span><span style="color: #001080">contract</span><span style="color: #000000"> });</span>
+
+<span style="color: #000000">  </span><span style="color: #008000">// encode a contract operation to make a transfer</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">opTransfer</span><span style="color: #000000"> = </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">encodeOperation</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;transfer&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">args:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">from:</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">getAddress</span><span style="color: #000000">(),</span>
+<span style="color: #000000">      </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;bob&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #267F99">BigInt</span><span style="color: #000000">(</span><span style="color: #098658">1000</span><span style="color: #000000">),</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">  });</span>
+
+<span style="color: #000000">  </span><span style="color: #008000">// create a transaction</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">tx</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">newTransaction</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #001080">getNonce:</span><span style="color: #000000"> </span><span style="color: #0000FF">true</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">operations:</span><span style="color: #000000"> [</span><span style="color: #001080">opTransfer</span><span style="color: #000000">],</span>
+<span style="color: #000000">  });</span>
+
+<span style="color: #000000">  </span><span style="color: #008000">// sign and send transaction</span>
+<span style="color: #000000">  </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">signTransaction</span><span style="color: #000000">(</span><span style="color: #001080">tx</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">sendTransaction</span><span style="color: #000000">(</span><span style="color: #001080">tx</span><span style="color: #000000">);</span>
+
+<span style="color: #000000">  </span><span style="color: #008000">// read the balance</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">opBalance</span><span style="color: #000000"> = </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">encodeOperation</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;balance_of&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">args:</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">getAddress</span><span style="color: #000000">(),</span>
+<span style="color: #000000">  });</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">result</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">readContract</span><span style="color: #000000">(</span><span style="color: #001080">opBalance</span><span style="color: #000000">.</span><span style="color: #001080">value</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">balance</span><span style="color: #000000"> = </span><span style="color: #001080">serializer</span>
+<span style="color: #000000">    .</span><span style="color: #795E26">deserialize</span><span style="color: #000000">(</span><span style="color: #001080">result</span><span style="color: #000000">.</span><span style="color: #001080">result</span><span style="color: #000000">, { </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;uint64&quot;</span><span style="color: #000000"> })</span>
+<span style="color: #000000">    .</span><span style="color: #795E26">toString</span><span style="color: #000000">();</span>
+<span style="color: #000000">  </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #267F99">Number</span><span style="color: #000000">(</span><span style="color: #001080">balance</span><span style="color: #000000">) / </span><span style="color: #098658">1e8</span><span style="color: #000000">);</span>
+<span style="color: #000000">})();</span>
+</code></pre>
+				<a href="#documentation" id="documentation" style="color: inherit; text-decoration: none;">
+					<h2>Documentation</h2>
+				</a>
+				<p>The complete documentation can be found at <a href="https://joticajulian.github.io/koilib/">https://joticajulian.github.io/koilib/</a></p>
 				<a href="#license" id="license" style="color: inherit; text-decoration: none;">
 					<h2>License</h2>
 				</a>
@@ -144,6 +239,12 @@
 						<a href="modules.html">Exports</a>
 					</li>
 					<li class=" tsd-kind-namespace">
+						<a href="modules/abi.html">abi</a>
+					</li>
+					<li class=" tsd-kind-namespace">
+						<a href="modules/serializer.html">serializer</a>
+					</li>
+					<li class=" tsd-kind-namespace">
 						<a href="modules/utils.html">utils</a>
 					</li>
 				</ul>
@@ -157,6 +258,9 @@
 						<a href="classes/Multihash.html" class="tsd-kind-icon">Multihash</a>
 					</li>
 					<li class=" tsd-kind-class">
+						<a href="classes/Provider.html" class="tsd-kind-icon">Provider</a>
+					</li>
+					<li class=" tsd-kind-class">
 						<a href="classes/Signer.html" class="tsd-kind-icon">Signer</a>
 					</li>
 					<li class=" tsd-kind-class">
@@ -164,9 +268,6 @@
 					</li>
 					<li class=" tsd-kind-class">
 						<a href="classes/Wallet.html" class="tsd-kind-icon">Wallet</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/Abi.html" class="tsd-kind-icon">Abi</a>
 					</li>
 					<li class=" tsd-kind-interface">
 						<a href="interfaces/DecodedOperation.html" class="tsd-kind-icon">Decoded<wbr>Operation</a>
@@ -179,18 +280,6 @@
 					</li>
 					<li class=" tsd-kind-interface">
 						<a href="interfaces/Transaction.html" class="tsd-kind-icon">Transaction</a>
-					</li>
-					<li class=" tsd-kind-variable">
-						<a href="modules.html#abiActiveData" class="tsd-kind-icon">abi<wbr>Active<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-variable">
-						<a href="modules.html#abiCallContractOperation" class="tsd-kind-icon">abi<wbr>Call<wbr>Contract<wbr>Operation</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="modules.html#deserialize" class="tsd-kind-icon">deserialize</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="modules.html#serialize" class="tsd-kind-icon">serialize</a>
 					</li>
 				</ul>
 			</nav>

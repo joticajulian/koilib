@@ -65,6 +65,13 @@
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Koinos Transaction</p>
+					</div>
+				</div>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
@@ -101,9 +108,14 @@
 					<div class="tsd-signature tsd-kind-icon">active_<wbr>data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>nonce<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol">; </span>operations<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">{ </span>type<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">; </span>resource_limit<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/4fb3699/src/Signer.ts#L16">Signer.ts:16</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L27">Signer.ts:27</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Consensus data</p>
+						</div>
+					</div>
 					<div class="tsd-type-declaration">
 						<h4>Type declaration</h4>
 						<ul class="tsd-parameters">
@@ -112,9 +124,19 @@
 							</li>
 							<li class="tsd-parameter">
 								<h5><span class="tsd-flag ts-flagOptional">Optional</span> nonce<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Account nonce</p>
+									</div>
+								</div>
 							</li>
 							<li class="tsd-parameter">
 								<h5><span class="tsd-flag ts-flagOptional">Optional</span> operations<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">{ </span>type<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Array of operations</p>
+									</div>
+								</div>
 							</li>
 							<li class="tsd-parameter">
 								<h5><span class="tsd-flag ts-flagOptional">Optional</span> resource_<wbr>limit<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span></h5>
@@ -128,9 +150,15 @@
 					<div class="tsd-signature tsd-kind-icon">id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/4fb3699/src/Signer.ts#L15">Signer.ts:15</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L22">Signer.ts:22</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Transaction ID. It must be the sha2-256 of the
+							serialized data of active data, and encoded in multi base58</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="passive_data" class="tsd-anchor"></a>
@@ -138,9 +166,14 @@
 					<div class="tsd-signature tsd-kind-icon">passive_<wbr>data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/4fb3699/src/Signer.ts#L25">Signer.ts:25</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L48">Signer.ts:48</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Non-consensus data</p>
+						</div>
+					</div>
 					<div class="tsd-type-declaration">
 						<h4>Type declaration</h4>
 						<ul class="tsd-parameters">
@@ -156,9 +189,14 @@
 					<div class="tsd-signature tsd-kind-icon">signature_<wbr>data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/4fb3699/src/Signer.ts#L28">Signer.ts:28</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L55">Signer.ts:55</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Signature in compact format enconded in multi base64</p>
+						</div>
+					</div>
 				</section>
 			</section>
 		</div>
@@ -179,6 +217,9 @@
 						<a href="../classes/Multihash.html" class="tsd-kind-icon">Multihash</a>
 					</li>
 					<li class=" tsd-kind-class">
+						<a href="../classes/Provider.html" class="tsd-kind-icon">Provider</a>
+					</li>
+					<li class=" tsd-kind-class">
 						<a href="../classes/Signer.html" class="tsd-kind-icon">Signer</a>
 					</li>
 					<li class=" tsd-kind-class">
@@ -186,9 +227,6 @@
 					</li>
 					<li class=" tsd-kind-class">
 						<a href="../classes/Wallet.html" class="tsd-kind-icon">Wallet</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="Abi.html" class="tsd-kind-icon">Abi</a>
 					</li>
 					<li class=" tsd-kind-interface">
 						<a href="DecodedOperation.html" class="tsd-kind-icon">Decoded<wbr>Operation</a>
@@ -220,18 +258,6 @@
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-variable">
-						<a href="../modules.html#abiActiveData" class="tsd-kind-icon">abi<wbr>Active<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-variable">
-						<a href="../modules.html#abiCallContractOperation" class="tsd-kind-icon">abi<wbr>Call<wbr>Contract<wbr>Operation</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="../modules.html#deserialize" class="tsd-kind-icon">deserialize</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="../modules.html#serialize" class="tsd-kind-icon">serialize</a>
-					</li>
 				</ul>
 			</nav>
 		</div>
