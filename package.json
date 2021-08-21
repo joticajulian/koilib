@@ -1,6 +1,6 @@
 {
   "name": "koilib",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "JS Koinos Library",
   "author": "Julian Gonzalez",
   "repository": {
@@ -11,18 +11,15 @@
     "url": "https://github.com/joticajulian/koilib/issues"
   },
   "files": [
+    "lib",
     "dist"
   ],
-  "main": "./dist/node/cjs/index.js",
-  "module": "./dist/node/esm/index.js",
-  "browser": "./dist/browser/index.js",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "browser": "./dist/koinos.min.js",
   "scripts": {
     "audit": "audit-ci",
-    "build": "tsc",
-    "build:node": "rimraf dist/node/cjs && tsc -p ./tsconfig/node-cjs.json",
-    "build:node-esm": "rimraf dist/node/esm && tsc -p ./tsconfig/node-esm.json",
-    "build:browser": "rimraf dist/browser && tsc -p ./tsconfig/browser.json",
-    "build-all": "rimraf dist && yarn build:node && yarn build:node-esm && yarn build:browser",
+    "build": "rimraf lib && tsc",
     "bundle": "yarn bundle:no-min && yarn bundle:min",
     "bundle:min": "webpack --mode=production --config webpack.prod.config.js",
     "bundle:no-min": "webpack --mode=production --config webpack.dev.config.js",
@@ -36,11 +33,7 @@
   },
   "exports": {
     "./package.json": "./package.json",
-    ".": {
-      "browser": "./dist/browser/wallet.js",
-      "import": "./dist/node/esm/wallet.js",
-      "require": "./dist/node/cjs/wallet.js"
-    }
+    ".": "./lib/index.js"
   },
   "dependencies": {
     "axios": "^0.21.1",

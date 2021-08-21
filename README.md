@@ -6,16 +6,22 @@ Koinos Library for Javascript and Typescript. It can be used in node and browser
 
 1. [Install](#install)
 2. [Usage](#usage)
-3. [License](#license)
+3. [Documentation](#documentation)
+4. [License](#license)
 
 ## Install
 
 Install the package from NPM
+
 ```sh
 npm install koilib
 ```
 
 You can also load it directly to the browser by downloading the bunble file located at `dist/koinos.min.js`, or it's non-minified version `dist/koinos.js` (useful for debugging).
+
+## Usage
+
+### Browser
 
 ```html
 <!DOCTYPE html>
@@ -24,39 +30,134 @@ You can also load it directly to the browser by downloading the bunble file loca
     <meta charset="utf-8" />
     <title>My App</title>
     <script src="koinos.min.js"></script>
+    <script>
+      (async () => {
+        const signer = Signer.fromSeed("my seed");
+        const provider = new Provider("http://45.56.104.152:8080");
+        const contract = new Contract({
+          id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+          entries: {
+            balance_of: {
+              id: 0x15619248,
+              args: { type: "string" },
+            },
+          },
+        });
+        const wallet = new Wallet({ signer, contract, provider });
+
+        const operation = wallet.encodeOperation({
+          name: "balance_of",
+          args: wallet.getAddress(),
+        });
+        const result = await wallet.readContract(operation.value);
+        const balance = serializer
+          .deserialize(result.result, { type: "uint64" })
+          .toString();
+        console.log(Number(balance) / 1e8);
+      })();
+    </script>
   </head>
   <body></body>
 </html>
 ```
 
-## Usage
+### Node JS
+
+With Typescript import the library
 
 ```typescript
 import { Wallet, Signer, Contract, Provider } from "koilib";
-
-const wallet = new Wallet({
-  signer: new Signer(privateKeyHex),
-  contract: new Contract(),
-  provider: new Provider(urlProvider),
-});
-
-const operation = wallet.encodeOperation({
-  name: "transfer",
-  args: {
-    from: wallet.getAddress(),
-    to: "bob",
-    value: BigInt(1000),
-  },
-});
-
-const tx = await wallet.newTransaction({
-  getNonce: true,
-  operations: [operation],
-});
-
-await wallet.signTransaction(tx);
-await wallet.sendTransaction(tx);
 ```
+
+With Javascript import the library with require
+
+```javascript
+const { Wallet, Signer, Contract, Provider } = require("koilib");
+```
+
+There are 4 principal classes:
+
+- **Signer**: Class containing the private key. It is used to sign.
+- **Provider**: Class to connect with the RPC node.
+- **Contract**: Class defining the contract to interact with.
+- **Wallet**: Class that packages signer, provider, and contract classes.
+
+The following code shows how to create a wallet, sign a transaction, broadcast
+a transaction, and read contracts.
+
+```typescript
+(async () => {
+  // define signer, provider, and contract
+  const signer = Signer.fromSeed("my seed");
+  const provider = new Provider("http://45.56.104.152:8080");
+  const contract = new Contract({
+    id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+    entries: {
+      transfer: {
+        id: 0x62efa292,
+        args: {
+          type: [
+            {
+              name: "from",
+              type: "string",
+            },
+            {
+              name: "to",
+              type: "string",
+            },
+            {
+              name: "value",
+              type: "uint64",
+            },
+          ],
+        },
+      },
+      balance_of: {
+        id: 0x15619248,
+        args: { type: "string" },
+      },
+    },
+  });
+
+  // create a wallet with signer, provider and contract
+  const wallet = new Wallet({ signer, provider, contract });
+
+  // encode a contract operation to make a transfer
+  const opTransfer = wallet.encodeOperation({
+    name: "transfer",
+    args: {
+      from: wallet.getAddress(),
+      to: "bob",
+      value: BigInt(1000),
+    },
+  });
+
+  // create a transaction
+  const tx = await wallet.newTransaction({
+    getNonce: true,
+    operations: [opTransfer],
+  });
+
+  // sign and send transaction
+  await wallet.signTransaction(tx);
+  await wallet.sendTransaction(tx);
+
+  // read the balance
+  const opBalance = wallet.encodeOperation({
+    name: "balance_of",
+    args: wallet.getAddress(),
+  });
+  const result = await wallet.readContract(opBalance.value);
+  const balance = serializer
+    .deserialize(result.result, { type: "uint64" })
+    .toString();
+  console.log(Number(balance) / 1e8);
+})();
+```
+
+## Documentation
+
+The complete documentation can be found at https://joticajulian.github.io/koilib/
 
 ## License
 

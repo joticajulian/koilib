@@ -1,6 +1,30 @@
 import { Abi } from "./abi";
 import { VariableBlob } from "./VariableBlob";
 
+/**
+ * Function to serialize data
+ *
+ * @example
+ * ```ts
+ * const abi = { type: "uint64" };
+ * const vblob = serialize(5869, abi);
+ * ```
+ *
+ * @example
+ * ```ts
+ * const abi = {
+ *   type: [
+ *     { name: "from",  type: "string" },
+ *     { name: "to",    type: "string" },
+ *     { name: "value", type: "uint64" },
+ *   ],
+ * };
+ * const vblob = serialize({
+ *   from: "alice",
+ *   to: "bob",
+ *   value: "123456",
+ * }, abi);
+ */
 export function serialize(data: unknown, abi: Abi) {
   const vb = new VariableBlob();
   // vb.dataBuffer = {};
@@ -160,6 +184,18 @@ export function serialize(data: unknown, abi: Abi) {
   return vb;
 }
 
+/**
+ * Function to deserialize data
+ *
+ * @example
+ * ```ts
+ * const vblob = new VariableBlob(
+ *   new Uint8Array([0, 0, 0, 0, 0, 0, 22, 237])
+ * );
+ * const abi = { type: "uint64" };
+ * const number = deserialize(vblob, abi);
+ * ```
+ */
 export function deserialize(buffer: VariableBlob | string, abi: Abi): unknown {
   const vb = typeof buffer === "string" ? new VariableBlob(buffer) : buffer;
 
