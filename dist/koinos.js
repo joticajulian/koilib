@@ -4100,11 +4100,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Multihash = void 0;
 const VariableBlob_1 = __importDefault(__webpack_require__(737));
+/**
+ * Multihash class
+ */
 class Multihash {
+    /**
+     *
+     * @param digest - digest
+     * @param id - hash id. By default it uses 0x12 which corresponds with sha2-256
+     *
+     * @example
+     * ```ts
+     * const buffer = new Uint8Array(32);
+     * const multihash = new Multihash(buffer);
+     * ```
+     */
     constructor(digest, id = 0x12) {
         this.id = id;
         this.digest = digest;
     }
+    /**
+     * @returns Encodes the multihash in base58
+     */
     toString() {
         const vb = new VariableBlob_1.default();
         vb.serializeVarint(this.id);
@@ -4130,10 +4147,27 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Provider = void 0;
 const multibase_1 = __importDefault(__webpack_require__(957));
 const axios_1 = __importDefault(__webpack_require__(669));
+/**
+ * Provider class
+ */
 class Provider {
+    /**
+     *
+     * @param url url of rpc node
+     * @example
+     * ```ts
+     * const provider = new Provider("http://45.56.104.152:8080");
+     * ```
+     */
     constructor(url) {
         this.url = url;
     }
+    /**
+     * Function to call the RPC node
+     * @param method - jsonrpc method
+     * @param params - jsonrpc params
+     * @returns Result of jsonrpc response
+     */
     async call(method, params) {
         const data = {
             id: Math.round(Math.random() * 1000),
@@ -4154,6 +4188,13 @@ class Provider {
             throw new Error(response.data.error.message);
         return response.data.result;
     }
+    /**
+     * Function to call "chain.get_account_nonce" to return the number of
+     * transactions for a particular account. This call is used
+     * when creating new transactions.
+     * @param address - account address
+     * @returns Nonce
+     */
     async getNonce(address) {
         const bufferAddress = new TextEncoder().encode(address);
         const encBase64 = new TextDecoder().decode(multibase_1.default.encode("M", bufferAddress));
@@ -4162,9 +4203,20 @@ class Provider {
         });
         return Number(result.nonce);
     }
+    /**
+     * Function to call "chain.submit_transaction" to send a signed
+     * transaction to the blockchain
+     * @param transaction Signed transaction
+     * @returns
+     */
     async sendTransaction(transaction) {
         return this.call("chain.submit_transaction", { transaction });
     }
+    /**
+     * Function to call "chain.read_contract" to read a contract
+     * @param operation Encoded operation
+     * @returns
+     */
     async readContract(operation) {
         return this.call("chain.read_contract", operation);
     }
@@ -4210,7 +4262,21 @@ const Multihash_1 = __importDefault(__webpack_require__(12));
 const serializer_1 = __webpack_require__(825);
 const utils_1 = __webpack_require__(593);
 const VariableBlob_1 = __webpack_require__(737);
+/**
+ * Signer class
+ */
 class Signer {
+    /**
+     *
+     * @param privateKey - Private key as hexstring, bigint or Uint8Array
+     * @param compressed
+     * @example
+     * ```ts
+     * cons signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
+     * console.log(signer.getAddress());
+     * // 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b
+     * ```
+     */
     constructor(privateKey, compressed = true) {
         this.compressed = compressed;
         this.privateKey = privateKey;
@@ -4223,17 +4289,49 @@ class Signer {
             this.address = utils_1.bitcoinAddress(this.publicKey, this.compressed);
         }
     }
+    /**
+     * Function to import a private key from the WIF
+     * @param wif Private key in WIF format
+     * @example
+     * ```ts
+     * const signer = Signer.fromWif("L59UtJcTdNBnrH2QSBA5beSUhRufRu3g6tScDTite6Msuj7U93tM")
+     * console.log(signer.getAddress());
+     * // 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b
+     * ```
+     * @returns Signer object
+     */
     static fromWif(wif) {
         const privateKey = utils_1.bitcoinDecode(wif);
         return new Signer(utils_1.toHexString(privateKey));
     }
+    /**
+     * Function to import a private key from the seed
+     * @param seed Seed words
+     * @example
+     * ```ts
+     * const signer = Signer.fromSeed("my seed");
+     * console.log(signer.getAddress());
+     * // 1BqtgWBcqm9cSZ97avLGZGJdgso7wx6pCA
+     * ```
+     * @returns Signer object
+     */
     static fromSeed(seed) {
         const privateKey = js_sha256_1.sha256(seed);
         return new Signer(privateKey);
     }
+    /**
+     *
+     * @returns Signer address
+     */
     getAddress() {
         return this.address;
     }
+    /**
+     * Function to sign a transaction. The transaction parameter is
+     * modified inside this function.
+     * @param tx Unsigned transaction
+     * @returns
+     */
     async signTransaction(tx) {
         const blobActiveData = serializer_1.serialize(tx.active_data, abi_1.abiActiveData);
         const hash = js_sha256_1.sha256(blobActiveData.buffer);
@@ -4672,7 +4770,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const utils = __importStar(__webpack_require__(593));
 const Contract_1 = __webpack_require__(822);
 const Multihash_1 = __webpack_require__(12);
-const serializer_1 = __webpack_require__(825);
+const serializer = __importStar(__webpack_require__(825));
 const VariableBlob_1 = __webpack_require__(737);
 const Signer_1 = __webpack_require__(991);
 const Provider_1 = __webpack_require__(635);
@@ -4681,8 +4779,7 @@ const abi = __importStar(__webpack_require__(285));
 window.utils = utils;
 window.Contract = Contract_1.Contract;
 window.Multihash = Multihash_1.Multihash;
-window.serialize = serializer_1.serialize;
-window.deserialize = serializer_1.deserialize;
+window.serializer = serializer;
 window.Signer = Signer_1.Signer;
 window.VariableBlob = VariableBlob_1.VariableBlob;
 window.Wallet = Wallet_1.Wallet;
@@ -4700,6 +4797,30 @@ window.abi = abi;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.deserialize = exports.serialize = void 0;
 const VariableBlob_1 = __webpack_require__(737);
+/**
+ * Function to serialize data
+ *
+ * @example
+ * ```ts
+ * const abi = { type: "uint64" };
+ * const vblob = serialize(5869, abi);
+ * ```
+ *
+ * @example
+ * ```ts
+ * const abi = {
+ *   type: [
+ *     { name: "from",  type: "string" },
+ *     { name: "to",    type: "string" },
+ *     { name: "value", type: "uint64" },
+ *   ],
+ * };
+ * const vblob = serialize({
+ *   from: "alice",
+ *   to: "bob",
+ *   value: "123456",
+ * }, abi);
+ */
 function serialize(data, abi) {
     const vb = new VariableBlob_1.VariableBlob();
     // vb.dataBuffer = {};
@@ -4855,6 +4976,18 @@ function serialize(data, abi) {
     return vb;
 }
 exports.serialize = serialize;
+/**
+ * Function to deserialize data
+ *
+ * @example
+ * ```ts
+ * const vblob = new VariableBlob(
+ *   new Uint8Array([0, 0, 0, 0, 0, 0, 22, 237])
+ * );
+ * const abi = { type: "uint64" };
+ * const number = deserialize(vblob, abi);
+ * ```
+ */
 function deserialize(buffer, abi) {
     const vb = typeof buffer === "string" ? new VariableBlob_1.VariableBlob(buffer) : buffer;
     if (Array.isArray(abi.type)) {

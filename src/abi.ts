@@ -5,7 +5,7 @@
  * and deserialize data in Koinos.
  *
  * @example **Example for Structs:**
- * Suppose that the contract has a struct in c++ for transfers
+ * Suppose that the c++ contract has a struct for transfers
  * defined as
  *
  * ```cpp

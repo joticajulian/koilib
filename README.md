@@ -6,7 +6,8 @@ Koinos Library for Javascript and Typescript. It can be used in node and browser
 
 1. [Install](#install)
 2. [Usage](#usage)
-3. [License](#license)
+3. [Documentation](#documentation)
+4. [License](#license)
 
 ## Install
 
@@ -153,6 +154,10 @@ a transaction, and read contracts.
   console.log(Number(balance) / 1e8);
 })();
 ```
+
+## Documentation
+
+The complete documentation can be found at https://joticajulian.github.io/koilib/
 
 ## License
 
