@@ -39,7 +39,8 @@ You can also load it directly to the browser by downloading the bunble file loca
           entries: {
             balance_of: {
               id: 0x15619248,
-              args: { type: "string" },
+              inputs: { type: "string" },
+              outputs: { type: "uint64" },
             },
           },
         });
@@ -95,7 +96,7 @@ a transaction, and read contracts.
     entries: {
       transfer: {
         id: 0x62efa292,
-        args: {
+        inputs: {
           type: [
             {
               name: "from",
@@ -114,7 +115,8 @@ a transaction, and read contracts.
       },
       balance_of: {
         id: 0x15619248,
-        args: { type: "string" },
+        inputs: { type: "string" },
+        outputs: { type: "uint64" },
       },
     },
   });

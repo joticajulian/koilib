@@ -71,6 +71,11 @@ export class Wallet {
     return this.contract.decodeOperation(op);
   }
 
+  decodeResult(result: string, opName: string): unknown {
+    if (!this.contract) throw new Error("Contract is undefined");
+    return this.contract.decodeResult(result, opName);
+  }
+
   // Provider
 
   async call(method: string, params: unknown) {
@@ -88,12 +93,21 @@ export class Wallet {
     return this.provider.sendTransaction(transaction);
   }
 
-  async readContract(operation: EncodedOperation["value"]): Promise<{
+  /* async readContract(operation: EncodedOperation["value"]): Promise<{
     result: string;
     logs: string;
   }> {
     if (!this.provider) throw new Error("Provider is undefined");
     return this.provider.readContract(operation);
+  } */
+
+  // Provider + Contract
+
+  async readContract(operation: DecodedOperation): Promise<unknown> {
+    if (!this.provider) throw new Error("Provider is undefined");
+    const op = this.encodeOperation(operation);
+    const { result } = await this.provider.readContract(op.value);
+    return this.decodeResult(result, operation.name);
   }
 }
 
