@@ -106,7 +106,7 @@ export class Wallet {
   async readContract(operation: DecodedOperation): Promise<unknown> {
     if (!this.provider) throw new Error("Provider is undefined");
     const op = this.encodeOperation(operation);
-    const { result } = await this.provider.readContract(op.value);
+    const { result } = await this.provider.readContract(op);
     return this.decodeResult(result, operation.name);
   }
 }

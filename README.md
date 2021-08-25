@@ -44,16 +44,12 @@ You can also load it directly to the browser by downloading the bunble file loca
             },
           },
         });
-        const wallet = new Wallet({ signer, contract, provider });
 
-        const operation = wallet.encodeOperation({
+        const wallet = new Wallet({ signer, contract, provider });
+        const balance = await wallet.readContract({
           name: "balance_of",
           args: wallet.getAddress(),
         });
-        const result = await wallet.readContract(operation.value);
-        const balance = serializer
-          .deserialize(result.result, { type: "uint64" })
-          .toString();
         console.log(Number(balance) / 1e8);
       })();
     </script>
@@ -145,14 +141,10 @@ a transaction, and read contracts.
   await wallet.sendTransaction(tx);
 
   // read the balance
-  const opBalance = wallet.encodeOperation({
+  const balance = await wallet.readContract({
     name: "balance_of",
     args: wallet.getAddress(),
   });
-  const result = await wallet.readContract(opBalance.value);
-  const balance = serializer
-    .deserialize(result.result, { type: "uint64" })
-    .toString();
   console.log(Number(balance) / 1e8);
 })();
 ```

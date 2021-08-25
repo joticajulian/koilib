@@ -3,13 +3,11 @@ import { deserialize, serialize } from "./serializer";
 import VariableBlob from "./VariableBlob";
 
 /**
- * Contract entries
- *
  * These entries definitions are used to serialize and deserialize
  * contract operations. Each entry contains a name (defined in the
  * key field), id (entry point id), inputs (abi describing the
  * serialization of the inputs), and outputs (abi describing the
- * serialization of the outputs)
+ * serialization of the outputs). See [[Abi]].
  *
  * @example
  * ```ts
@@ -56,8 +54,6 @@ export interface Entries {
 }
 
 /**
- * Operation encoded
- *
  * Operation using the format for the communication with the RPC node
  *
  * @example
@@ -90,10 +86,9 @@ export interface EncodedOperation {
 }
 
 /**
- * Operation decoded
- *
  * Human readable format operation
  *
+ * @example
  * ```ts
  * const opDecoded = {
  *   name: "transfer",
@@ -109,15 +104,13 @@ export interface DecodedOperation {
   /** Operation name */
   name: string;
 
-  /** Arguments decoded */
+  /** Arguments decoded. See [[Abi]]*/
   args: unknown;
 }
 
 /**
- * Contract class
- *
- * The contract class contains the contract ID and definition of
- * contract entries needed to encode/decode operations during the
+ * The contract class contains the contract ID and contrac entries
+ * definition needed to encode/decode operations during the
  * interaction with the user and the communication with the RPC node.
  *
  * Operations are encoded to communicate with the RPC node. However,
@@ -126,6 +119,8 @@ export interface DecodedOperation {
  * read by the user (see [[EncodedOperation]] and [[DecodedOperation]]).
  *
  * @example
+ *
+ * ```ts
  * const contract = new Contract({
  *   id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
  *   entries: {
@@ -198,12 +193,13 @@ export class Contract {
   id: string;
 
   /**
-   * Contract entries
+   * Contract entries. See [[Entries]]
    */
   entries: Entries;
 
   /**
-   *
+   * The constructor receives the contract ID and
+   * contract entries definition
    * @param c - Object with contract id and contract entries
    *
    * @example
@@ -330,9 +326,9 @@ export class Contract {
 
   /**
    * Decodes a result. This function is used in conjunction with
-   * readContract from [[Provider]] class to read a contract and
-   * decode the result. "outputs" field must be defined in the
-   * abi for the operation name.
+   * [[Provider.readContract | readContract of Provider class]] to read a
+   * contract and decode the result. "outputs" field must be defined in
+   * the abi for the operation name.
    * @param result Encoded result in base64
    * @param opName Operation name
    * @returns Decoded result

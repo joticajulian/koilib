@@ -17,6 +17,8 @@
  * };
  * ```
  *
+ * <br>
+ *
  * Then, it's ABI can be defined as
  * ```ts
  * const abi = [{
@@ -76,6 +78,8 @@
  *    std::vector< operation > operations;
  * };
  * ```
+ *
+ * <br>
  *
  * It's ABI can be defined as
  * ```ts
