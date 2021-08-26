@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Signer | koilib</title>
-	<meta name="description" content="Documentation for koilib">
+	<title>Signer | koilib - v1.3.0</title>
+	<meta name="description" content="Documentation for koilib - v1.3.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">koilib</a>
+					<a href="../index.html" class="title">koilib - v1.3.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">koilib</a>
+					<a href="../modules.html">koilib - v1.3.0</a>
 				</li>
 				<li>
 					<a href="Signer.html">Signer</a>
@@ -68,8 +68,38 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Signer class</p>
+						<p>The Signer Class contains the private key needed to sign transactions.
+						It can be created using the seed, wif, or private key</p>
 					</div>
+					<dl class="tsd-comment-tags">
+						<dt>example</dt>
+						<dd><p>using private key as hex string</p>
+							<pre><code class="language-ts"><span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c&quot;</span><span style="color: #000000">);</span>
+</code></pre>
+							<br>
+							<p>using private key as Uint8Array</p>
+							<pre><code class="language-ts"><span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">buffer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #267F99">Uint8Array</span><span style="color: #000000">([</span>
+<span style="color: #000000">  </span><span style="color: #098658">236</span><span style="color: #000000">, </span><span style="color: #098658">134</span><span style="color: #000000">,   </span><span style="color: #098658">1</span><span style="color: #000000">, </span><span style="color: #098658">162</span><span style="color: #000000">,  </span><span style="color: #098658">79</span><span style="color: #000000">, </span><span style="color: #098658">129</span><span style="color: #000000">, </span><span style="color: #098658">222</span><span style="color: #000000">, </span><span style="color: #098658">205</span><span style="color: #000000">,</span>
+<span style="color: #000000">   </span><span style="color: #098658">87</span><span style="color: #000000">, </span><span style="color: #098658">244</span><span style="color: #000000">, </span><span style="color: #098658">182</span><span style="color: #000000">,  </span><span style="color: #098658">17</span><span style="color: #000000">, </span><span style="color: #098658">181</span><span style="color: #000000">, </span><span style="color: #098658">172</span><span style="color: #000000">, </span><span style="color: #098658">110</span><span style="color: #000000">, </span><span style="color: #098658">184</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #098658">1</span><span style="color: #000000">, </span><span style="color: #098658">203</span><span style="color: #000000">,  </span><span style="color: #098658">55</span><span style="color: #000000">, </span><span style="color: #098658">128</span><span style="color: #000000">, </span><span style="color: #098658">187</span><span style="color: #000000">,   </span><span style="color: #098658">2</span><span style="color: #000000">, </span><span style="color: #098658">192</span><span style="color: #000000">, </span><span style="color: #098658">249</span><span style="color: #000000">,</span>
+<span style="color: #000000">  </span><span style="color: #098658">205</span><span style="color: #000000">, </span><span style="color: #098658">254</span><span style="color: #000000">, </span><span style="color: #098658">157</span><span style="color: #000000">,   </span><span style="color: #098658">9</span><span style="color: #000000">, </span><span style="color: #098658">218</span><span style="color: #000000">, </span><span style="color: #098658">173</span><span style="color: #000000">, </span><span style="color: #098658">223</span><span style="color: #000000">, </span><span style="color: #098658">156</span>
+<span style="color: #000000">]);</span>
+<span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">(</span><span style="color: #001080">buffer</span><span style="color: #000000">);</span>
+</code></pre>
+							<br>
+							<p>using private key as bigint</p>
+							<pre><code class="language-ts"><span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">(</span><span style="color: #098658">106982601049961974618234078204952280507266494766432547312316920283818886029212</span><span style="color: #0000FF">n</span><span style="color: #000000">);</span>
+</code></pre>
+							<br>
+							<p>using the seed</p>
+							<pre><code class="language-ts"><span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #001080">Signer</span><span style="color: #000000">.</span><span style="color: #795E26">fromSeed</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;my seed&quot;</span><span style="color: #000000">);</span>
+</code></pre>
+							<br>
+							<p>using private key in WIF format</p>
+							<pre><code class="language-ts"><span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #001080">Signer</span><span style="color: #000000">.</span><span style="color: #795E26">fromWif</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;L59UtJcTdNBnrH2QSBA5beSUhRufRu3g6tScDTite6Msuj7U93tM&quot;</span><span style="color: #000000">);</span>
+</code></pre>
+						</dd>
+					</dl>
 				</div>
 			</section>
 			<section class="tsd-panel tsd-hierarchy">
@@ -123,10 +153,15 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L94">Signer.ts:94</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Signer.ts#L132">Signer.ts:132</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>The constructor receives de private key as hexstring, bigint or Uint8Array.
+										See also the functions <a href="Signer.html#fromWif">Signer.fromWif</a> and <a href="Signer.html#fromSeed">Signer.fromSeed</a>
+									to create the signer from the WIF or Seed respectively.</p>
+								</div>
 								<dl class="tsd-comment-tags">
 									<dt>example</dt>
 									<dd><pre><code class="language-ts"><span style="color: #001080">cons</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c&quot;</span><span style="color: #000000">);</span>
@@ -163,7 +198,7 @@
 					<div class="tsd-signature tsd-kind-icon">address<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L81">Signer.ts:81</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Signer.ts#L116">Signer.ts:116</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -178,12 +213,13 @@
 					<div class="tsd-signature tsd-kind-icon">compressed<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L66">Signer.ts:66</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Signer.ts#L107">Signer.ts:107</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>public/private key compressed</p>
+							<p>Boolean determining if the public/private key
+							is using the compressed format</p>
 						</div>
 					</div>
 				</section>
@@ -193,14 +229,9 @@
 					<div class="tsd-signature tsd-kind-icon">private<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L71">Signer.ts:71</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Signer.ts#L109">Signer.ts:109</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Private key</p>
-						</div>
-					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="publicKey" class="tsd-anchor"></a>
@@ -208,14 +239,9 @@
 					<div class="tsd-signature tsd-kind-icon">public<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L76">Signer.ts:76</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Signer.ts#L111">Signer.ts:111</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Public key</p>
-						</div>
-					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
@@ -230,7 +256,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L148">Signer.ts:148</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Signer.ts#L186">Signer.ts:186</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
@@ -248,13 +274,13 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L158">Signer.ts:158</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Signer.ts#L196">Signer.ts:196</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Function to sign a transaction. The transaction parameter is
-									modified inside this function.</p>
+									<p>Function to sign a transaction. It&#39;s important to remark that
+									the transaction parameter is modified inside this function.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -280,7 +306,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L139">Signer.ts:139</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Signer.ts#L177">Signer.ts:177</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -320,7 +346,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Signer.ts#L123">Signer.ts:123</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Signer.ts#L161">Signer.ts:161</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">

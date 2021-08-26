@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Provider | koilib</title>
-	<meta name="description" content="Documentation for koilib">
+	<title>Provider | koilib - v1.3.0</title>
+	<meta name="description" content="Documentation for koilib - v1.3.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">koilib</a>
+					<a href="../index.html" class="title">koilib - v1.3.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">koilib</a>
+					<a href="../modules.html">koilib - v1.3.0</a>
 				</li>
 				<li>
 					<a href="Provider.html">Provider</a>
@@ -68,7 +68,7 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Provider class</p>
+						<p>Class to connect with the RPC node</p>
 					</div>
 				</div>
 			</section>
@@ -120,7 +120,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Provider.ts#L23">Provider.ts:23</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Provider.ts#L23">Provider.ts:23</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -155,7 +155,7 @@
 					<div class="tsd-signature tsd-kind-icon">url<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Provider.ts#L13">Provider.ts:13</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Provider.ts#L13">Provider.ts:13</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -177,12 +177,12 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Provider.ts#L33">Provider.ts:33</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Provider.ts#L33">Provider.ts:33</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Function to call the RPC node</p>
+									<p>Function to make jsonrpc requests to the RPC node</p>
 								</div>
 							</div>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -221,7 +221,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Provider.ts#L65">Provider.ts:65</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Provider.ts#L65">Provider.ts:65</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -249,56 +249,35 @@
 					<a name="readContract" class="tsd-anchor"></a>
 					<h3>read<wbr>Contract</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">read<wbr>Contract<span class="tsd-signature-symbol">(</span>operation<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>args<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>contract_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>entry_point<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>logs<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>result<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">read<wbr>Contract<span class="tsd-signature-symbol">(</span>operation<span class="tsd-signature-symbol">: </span><a href="../interfaces/EncodedOperation.html" class="tsd-signature-type" data-tsd-kind="Interface">EncodedOperation</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>logs<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>result<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Provider.ts#L94">Provider.ts:94</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Provider.ts#L98">Provider.ts:98</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Function to call &quot;chain.read_contract&quot; to read a contract</p>
+									<p>Function to call &quot;chain.read_contract&quot; to read a contract.
+										The operation must be encoded (see <a href="../interfaces/EncodedOperation.html">EncodedOperation</a>).
+										See also <a href="Wallet.html#readContract">Wallet.readContract</a> which, apart from the Provider,
+										uses the contract definition and it is prepared to receive
+									the operation decoded and return the result decoded as well.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>operation: <span class="tsd-signature-symbol">{ </span>args<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>contract_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>entry_point<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></h5>
+									<h5>operation: <a href="../interfaces/EncodedOperation.html" class="tsd-signature-type" data-tsd-kind="Interface">EncodedOperation</a></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>Encoded operation</p>
 									</div>
-									<ul class="tsd-parameters">
-										<li class="tsd-parameter">
-											<h5><span class="tsd-flag ts-flagOptional">Optional</span> args<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
-											<div class="tsd-comment tsd-typography">
-												<div class="lead">
-													<p>Arguments serialized and encoded in base64</p>
-												</div>
-											</div>
-										</li>
-										<li class="tsd-parameter">
-											<h5>contract_<wbr>id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
-											<div class="tsd-comment tsd-typography">
-												<div class="lead">
-													<p>Contract ID</p>
-												</div>
-											</div>
-										</li>
-										<li class="tsd-parameter">
-											<h5>entry_<wbr>point<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></h5>
-											<div class="tsd-comment tsd-typography">
-												<div class="lead">
-													<p>Entry point ID</p>
-												</div>
-											</div>
-										</li>
-									</ul>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>logs<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>result<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Encoded result</p>
 						</li>
 					</ul>
 				</section>
@@ -312,7 +291,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Provider.ts#L85">Provider.ts:85</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Provider.ts#L85">Provider.ts:85</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">

@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Multihash | koilib</title>
-	<meta name="description" content="Documentation for koilib">
+	<title>Multihash | koilib - v1.3.0</title>
+	<meta name="description" content="Documentation for koilib - v1.3.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">koilib</a>
+					<a href="../index.html" class="title">koilib - v1.3.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">koilib</a>
+					<a href="../modules.html">koilib - v1.3.0</a>
 				</li>
 				<li>
 					<a href="Multihash.html">Multihash</a>
@@ -68,7 +68,9 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Multihash class</p>
+						<p>Multihash is a protocol for differentiating outputs from various
+							well-established cryptographic hash functions, addressing size +
+						encoding considerations</p>
 					</div>
 				</div>
 			</section>
@@ -118,7 +120,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Multihash.ts#L31">Multihash.ts:31</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Multihash.ts#L39">Multihash.ts:39</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -162,7 +164,7 @@
 					<div class="tsd-signature tsd-kind-icon">digest<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Uint8Array</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Multihash.ts#L18">Multihash.ts:18</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Multihash.ts#L26">Multihash.ts:26</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -177,7 +179,7 @@
 					<div class="tsd-signature tsd-kind-icon">id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Multihash.ts#L13">Multihash.ts:13</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Multihash.ts#L21">Multihash.ts:21</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -186,6 +188,13 @@
 						</div>
 						<p>Identifier of the hash function. See the
 						complete <a href="https://github.com/multiformats/js-multihash/blob/master/src/constants.js">list of IDs in this link</a></p>
+						<p>Some relevants IDs are:</p>
+						<ul>
+							<li>0x12 (sha2-256)</li>
+							<li>0x16 (sha3-256)</li>
+							<li>0x1b (keccak-256)</li>
+							<li>0x1053 (ripemd-160)</li>
+						</ul>
 					</div>
 				</section>
 			</section>
@@ -201,7 +210,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Multihash.ts#L39">Multihash.ts:39</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Multihash.ts#L47">Multihash.ts:47</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>

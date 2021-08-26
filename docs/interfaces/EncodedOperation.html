@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>EncodedOperation | koilib</title>
-	<meta name="description" content="Documentation for koilib">
+	<title>EncodedOperation | koilib - v1.3.0</title>
+	<meta name="description" content="Documentation for koilib - v1.3.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">koilib</a>
+					<a href="../index.html" class="title">koilib - v1.3.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">koilib</a>
+					<a href="../modules.html">koilib - v1.3.0</a>
 				</li>
 				<li>
 					<a href="EncodedOperation.html">EncodedOperation</a>
@@ -68,8 +68,21 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Operation encoded</p>
+						<p>Operation using the format for the communication with the RPC node</p>
 					</div>
+					<dl class="tsd-comment-tags">
+						<dt>example</dt>
+						<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">opEncoded</span><span style="color: #000000"> = {</span>
+<span style="color: #000000">  </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;koinos::protocol::call_contract_operation&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">  </span><span style="color: #001080">value:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">    </span><span style="color: #001080">contract_id:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">entry_point:</span><span style="color: #000000"> </span><span style="color: #098658">0x62efa292</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">args:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;MBWFsaWNlA2JvYgAAAAAAAAPo&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">  }</span>
+<span style="color: #000000">}</span>
+</code></pre>
+						</dd>
+					</dl>
 				</div>
 			</section>
 			<section class="tsd-panel tsd-hierarchy">
@@ -102,7 +115,7 @@
 					<div class="tsd-signature tsd-kind-icon">type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Contract.ts#L58">Contract.ts:58</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Contract.ts#L73">Contract.ts:73</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -117,7 +130,7 @@
 					<div class="tsd-signature tsd-kind-icon">value<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>args<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>contract_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>entry_point<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Contract.ts#L61">Contract.ts:61</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Contract.ts#L76">Contract.ts:76</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">

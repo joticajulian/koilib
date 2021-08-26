@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Wallet | koilib</title>
-	<meta name="description" content="Documentation for koilib">
+	<title>Wallet | koilib - v1.3.0</title>
+	<meta name="description" content="Documentation for koilib - v1.3.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">koilib</a>
+					<a href="../index.html" class="title">koilib - v1.3.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">koilib</a>
+					<a href="../modules.html">koilib - v1.3.0</a>
 				</li>
 				<li>
 					<a href="Wallet.html">Wallet</a>
@@ -65,6 +65,125 @@
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>The Wallet Class combines all the features of <a href="Signer.html">Signer</a>,
+						<a href="Contract.html">Contract</a>, and <a href="Provider.html">Provider</a> classes.</p>
+					</div>
+					<dl class="tsd-comment-tags">
+						<dt>example</dt>
+						<dd><p><strong>How to send transactions</strong></p>
+							<pre><code class="language-ts"><span style="color: #000000">(</span><span style="color: #0000FF">async</span><span style="color: #000000"> () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">  </span><span style="color: #008000">// define signer, provider, and contract</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">signer</span><span style="color: #000000"> = </span><span style="color: #001080">Signer</span><span style="color: #000000">.</span><span style="color: #795E26">fromSeed</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;my seed&quot;</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">provider</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Provider</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;http://45.56.104.152:8080&quot;</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">contract</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Contract</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">entries:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">transfer:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">0x62efa292</span><span style="color: #000000">,</span>
+<span style="color: #000000">        </span><span style="color: #001080">inputs:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">          </span><span style="color: #001080">type:</span><span style="color: #000000"> [</span>
+<span style="color: #000000">            {</span>
+<span style="color: #000000">              </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;from&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">              </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            },</span>
+<span style="color: #000000">            {</span>
+<span style="color: #000000">              </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;to&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">              </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            },</span>
+<span style="color: #000000">            {</span>
+<span style="color: #000000">              </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;value&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">              </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;uint64&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            },</span>
+<span style="color: #000000">          ],</span>
+<span style="color: #000000">        },</span>
+<span style="color: #000000">      },</span>
+<span style="color: #000000">      </span><span style="color: #001080">balance_of:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">0x15619248</span><span style="color: #000000">,</span>
+<span style="color: #000000">        </span><span style="color: #001080">inputs:</span><span style="color: #000000"> { </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000"> },</span>
+<span style="color: #000000">        </span><span style="color: #001080">outputs:</span><span style="color: #000000"> { </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;uint64&quot;</span><span style="color: #000000"> },</span>
+<span style="color: #000000">      },</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">  });</span>
+
+<span style="color: #000000">  </span><span style="color: #008000">// create a wallet with signer, provider and contract</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">wallet</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Wallet</span><span style="color: #000000">({ </span><span style="color: #001080">signer</span><span style="color: #000000">, </span><span style="color: #001080">provider</span><span style="color: #000000">, </span><span style="color: #001080">contract</span><span style="color: #000000"> });</span>
+
+<span style="color: #000000">  </span><span style="color: #008000">// encode a contract operation to make a transfer</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">opTransfer</span><span style="color: #000000"> = </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">encodeOperation</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;transfer&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">args:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">from:</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">getAddress</span><span style="color: #000000">(),</span>
+<span style="color: #000000">      </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;bob&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #267F99">BigInt</span><span style="color: #000000">(</span><span style="color: #098658">1000</span><span style="color: #000000">),</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">  });</span>
+
+<span style="color: #000000">  </span><span style="color: #008000">// create a transaction</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">tx</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">newTransaction</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #001080">operations:</span><span style="color: #000000"> [</span><span style="color: #001080">opTransfer</span><span style="color: #000000">],</span>
+<span style="color: #000000">  });</span>
+
+<span style="color: #000000">  </span><span style="color: #008000">// sign and send transaction</span>
+<span style="color: #000000">  </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">signTransaction</span><span style="color: #000000">(</span><span style="color: #001080">tx</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">sendTransaction</span><span style="color: #000000">(</span><span style="color: #001080">tx</span><span style="color: #000000">);</span>
+<span style="color: #000000">})();</span>
+</code></pre>
+						</dd>
+						<dt>example</dt>
+						<dd><p><strong>How to read contracts</strong></p>
+							<pre><code class="language-ts"><span style="color: #000000">(</span><span style="color: #0000FF">async</span><span style="color: #000000"> () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">  </span><span style="color: #008000">// define provider and contract</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">provider</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Provider</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;http://45.56.104.152:8080&quot;</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">contract</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Contract</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">entries:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">transfer:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">0x62efa292</span><span style="color: #000000">,</span>
+<span style="color: #000000">        </span><span style="color: #001080">inputs:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">          </span><span style="color: #001080">type:</span><span style="color: #000000"> [</span>
+<span style="color: #000000">            {</span>
+<span style="color: #000000">              </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;from&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">              </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            },</span>
+<span style="color: #000000">            {</span>
+<span style="color: #000000">              </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;to&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">              </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            },</span>
+<span style="color: #000000">            {</span>
+<span style="color: #000000">              </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;value&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">              </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;uint64&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            },</span>
+<span style="color: #000000">          ],</span>
+<span style="color: #000000">        },</span>
+<span style="color: #000000">      },</span>
+<span style="color: #000000">      </span><span style="color: #001080">balance_of:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">0x15619248</span><span style="color: #000000">,</span>
+<span style="color: #000000">        </span><span style="color: #001080">inputs:</span><span style="color: #000000"> { </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000"> },</span>
+<span style="color: #000000">        </span><span style="color: #001080">outputs:</span><span style="color: #000000"> { </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;uint64&quot;</span><span style="color: #000000"> },</span>
+<span style="color: #000000">      },</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">  });</span>
+
+<span style="color: #000000">  </span><span style="color: #008000">// create a wallet with provider and contract (signer is optional)</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">wallet</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Wallet</span><span style="color: #000000">({ </span><span style="color: #001080">provider</span><span style="color: #000000">, </span><span style="color: #001080">contract</span><span style="color: #000000"> });</span>
+
+<span style="color: #000000">  </span><span style="color: #008000">// read the contract providing the name of the contract funtion</span>
+<span style="color: #000000">  </span><span style="color: #008000">// and its arguments</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">balance</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">readContract</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;balance_of&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">args:</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">getAddress</span><span style="color: #000000">(),</span>
+<span style="color: #000000">  });</span>
+
+<span style="color: #000000">  </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #267F99">Number</span><span style="color: #000000">(</span><span style="color: #001080">balance</span><span style="color: #000000">) / </span><span style="color: #098658">1e8</span><span style="color: #000000">);</span>
+<span style="color: #000000">})();</span>
+</code></pre>
+						</dd>
+					</dl>
+				</div>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
@@ -96,6 +215,7 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Wallet.html#call" class="tsd-kind-icon">call</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Wallet.html#decodeOperation" class="tsd-kind-icon">decode<wbr>Operation</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Wallet.html#decodeResult" class="tsd-kind-icon">decode<wbr>Result</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Wallet.html#encodeOperation" class="tsd-kind-icon">encode<wbr>Operation</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Wallet.html#getAddress" class="tsd-kind-icon">get<wbr>Address</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Wallet.html#getNonce" class="tsd-kind-icon">get<wbr>Nonce</a></li>
@@ -120,7 +240,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L10">Wallet.ts:10</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L135">Wallet.ts:135</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -153,9 +273,14 @@
 					<div class="tsd-signature tsd-kind-icon">contract<span class="tsd-signature-symbol">:</span> <a href="Contract.html" class="tsd-signature-type" data-tsd-kind="Class">Contract</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L7">Wallet.ts:7</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L128">Wallet.ts:128</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Class defining the contract to interact with</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="provider" class="tsd-anchor"></a>
@@ -163,9 +288,14 @@
 					<div class="tsd-signature tsd-kind-icon">provider<span class="tsd-signature-symbol">:</span> <a href="Provider.html" class="tsd-signature-type" data-tsd-kind="Class">Provider</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L8">Wallet.ts:8</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L133">Wallet.ts:133</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Class to connect with the RPC node</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="signer" class="tsd-anchor"></a>
@@ -173,9 +303,14 @@
 					<div class="tsd-signature tsd-kind-icon">signer<span class="tsd-signature-symbol">:</span> <a href="Signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L6">Wallet.ts:6</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L123">Wallet.ts:123</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Class containing the private key. It is used to sign</p>
+						</div>
+					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
@@ -190,9 +325,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L76">Wallet.ts:76</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L245">Wallet.ts:245</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>See <a href="Provider.html#call">Provider.call</a></p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -216,9 +356,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L69">Wallet.ts:69</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L227">Wallet.ts:227</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>See <a href="Contract.html#decodeOperation">Contract.decodeOperation</a></p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -226,6 +371,37 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/DecodedOperation.html" class="tsd-signature-type" data-tsd-kind="Interface">DecodedOperation</a></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="decodeResult" class="tsd-anchor"></a>
+					<h3>decode<wbr>Result</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">decode<wbr>Result<span class="tsd-signature-symbol">(</span>result<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, opName<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">unknown</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L235">Wallet.ts:235</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>See <a href="Contract.html#decodeResult">Contract.decodeResult</a></p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>result: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5>opName: <span class="tsd-signature-type">string</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">unknown</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -239,9 +415,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L64">Wallet.ts:64</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L219">Wallet.ts:219</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>See <a href="Contract.html#encodeOperation">Contract.encodeOperation</a></p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -262,9 +443,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L52">Wallet.ts:52</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L201">Wallet.ts:201</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>See <a href="Signer.html#getAddress">Signer.getAddress</a></p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
 						</li>
 					</ul>
@@ -279,9 +465,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L81">Wallet.ts:81</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L253">Wallet.ts:253</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>See <a href="Provider.html#getNonce">Provider.getNonce</a></p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -296,28 +487,52 @@
 					<a name="newTransaction" class="tsd-anchor"></a>
 					<h3>new<wbr>Transaction</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new<wbr>Transaction<span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">{ </span>getNonce<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span>operations<span class="tsd-signature-symbol">?: </span><a href="../interfaces/EncodedOperation.html" class="tsd-signature-type" data-tsd-kind="Interface">EncodedOperation</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">; </span>resource_limit<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/Transaction.html" class="tsd-signature-type" data-tsd-kind="Interface">Transaction</a><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">new<wbr>Transaction<span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>getNonce<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span>operations<span class="tsd-signature-symbol">?: </span><a href="../interfaces/EncodedOperation.html" class="tsd-signature-type" data-tsd-kind="Interface">EncodedOperation</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">; </span>resource_limit<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/Transaction.html" class="tsd-signature-type" data-tsd-kind="Interface">Transaction</a><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L26">Wallet.ts:26</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L154">Wallet.ts:154</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Creates an unsigned transaction</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>opts: <span class="tsd-signature-symbol">{ </span>getNonce<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span>operations<span class="tsd-signature-symbol">?: </span><a href="../interfaces/EncodedOperation.html" class="tsd-signature-type" data-tsd-kind="Interface">EncodedOperation</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">; </span>resource_limit<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> = ...</span></h5>
+									<h5>opts: <span class="tsd-signature-symbol">{ </span>getNonce<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span>operations<span class="tsd-signature-symbol">?: </span><a href="../interfaces/EncodedOperation.html" class="tsd-signature-type" data-tsd-kind="Interface">EncodedOperation</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">; </span>resource_limit<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> }</span></h5>
 									<ul class="tsd-parameters">
 										<li class="tsd-parameter">
 											<h5><span class="tsd-flag ts-flagOptional">Optional</span> get<wbr>Nonce<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span></h5>
+											<div class="tsd-comment tsd-typography">
+												<div class="lead">
+													<p>Boolean defining if the Provider should be used
+														to call the RPC node and get the nonce (see
+													<a href="Provider.html#getNonce">Provider.getNonce</a>)</p>
+												</div>
+											</div>
 										</li>
 										<li class="tsd-parameter">
 											<h5><span class="tsd-flag ts-flagOptional">Optional</span> operations<span class="tsd-signature-symbol">?: </span><a href="../interfaces/EncodedOperation.html" class="tsd-signature-type" data-tsd-kind="Interface">EncodedOperation</a><span class="tsd-signature-symbol">[]</span></h5>
+											<div class="tsd-comment tsd-typography">
+												<div class="lead">
+													<p>Array of operations. They must be already encoded
+													(see <a href="Wallet.html#encodeOperation">Wallet.encodeOperation</a>)</p>
+												</div>
+											</div>
 										</li>
 										<li class="tsd-parameter">
 											<h5><span class="tsd-flag ts-flagOptional">Optional</span> resource_<wbr>limit<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span></h5>
+											<div class="tsd-comment tsd-typography">
+												<div class="lead">
+													<p>Maximum resources to be used in the transaction.
+													By default it is 1000000</p>
+												</div>
+											</div>
 										</li>
 									</ul>
 								</li>
@@ -330,48 +545,39 @@
 					<a name="readContract" class="tsd-anchor"></a>
 					<h3>read<wbr>Contract</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">read<wbr>Contract<span class="tsd-signature-symbol">(</span>operation<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>args<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>contract_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>entry_point<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>logs<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>result<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">read<wbr>Contract<span class="tsd-signature-symbol">(</span>operation<span class="tsd-signature-symbol">: </span><a href="../interfaces/DecodedOperation.html" class="tsd-signature-type" data-tsd-kind="Interface">DecodedOperation</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L91">Wallet.ts:91</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L290">Wallet.ts:290</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Call the RPC node to read a contract. The operation to read
+										must be in the decoded format (see <a href="../interfaces/DecodedOperation.html">DecodedOperation</a>). This
+										function will encode the operation using the contract definition,
+									call the RPC node, and decode the result.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>example</dt>
+									<dd><pre><code><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">balance</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000">.</span><span style="color: #795E26">readContract</span><span style="color: #000000">({</span>
+<span style="color: #000000">  </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;balance_of&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">  </span><span style="color: #001080">args:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;126LgExvJrLDQBsxA1Ddur2VjXJkyAbG91&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">});</span>
+</code></pre>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>operation: <span class="tsd-signature-symbol">{ </span>args<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>contract_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>entry_point<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></h5>
-									<ul class="tsd-parameters">
-										<li class="tsd-parameter">
-											<h5><span class="tsd-flag ts-flagOptional">Optional</span> args<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
-											<div class="tsd-comment tsd-typography">
-												<div class="lead">
-													<p>Arguments serialized and encoded in base64</p>
-												</div>
-											</div>
-										</li>
-										<li class="tsd-parameter">
-											<h5>contract_<wbr>id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
-											<div class="tsd-comment tsd-typography">
-												<div class="lead">
-													<p>Contract ID</p>
-												</div>
-											</div>
-										</li>
-										<li class="tsd-parameter">
-											<h5>entry_<wbr>point<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></h5>
-											<div class="tsd-comment tsd-typography">
-												<div class="lead">
-													<p>Entry point ID</p>
-												</div>
-											</div>
-										</li>
-									</ul>
+									<h5>operation: <a href="../interfaces/DecodedOperation.html" class="tsd-signature-type" data-tsd-kind="Interface">DecodedOperation</a></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>logs<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>result<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -385,9 +591,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L86">Wallet.ts:86</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L261">Wallet.ts:261</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>See <a href="Provider.html#sendTransaction">Provider.sendTransaction</a></p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -408,9 +619,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Wallet.ts#L57">Wallet.ts:57</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Wallet.ts#L209">Wallet.ts:209</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>See <a href="Signer.html#signTransaction">Signer.signTransaction</a></p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -470,6 +686,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="Wallet.html#decodeOperation" class="tsd-kind-icon">decode<wbr>Operation</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="Wallet.html#decodeResult" class="tsd-kind-icon">decode<wbr>Result</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="Wallet.html#encodeOperation" class="tsd-kind-icon">encode<wbr>Operation</a>

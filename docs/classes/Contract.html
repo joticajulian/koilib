@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Contract | koilib</title>
-	<meta name="description" content="Documentation for koilib">
+	<title>Contract | koilib - v1.3.0</title>
+	<meta name="description" content="Documentation for koilib - v1.3.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">koilib</a>
+					<a href="../index.html" class="title">koilib - v1.3.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">koilib</a>
+					<a href="../modules.html">koilib - v1.3.0</a>
 				</li>
 				<li>
 					<a href="Contract.html">Contract</a>
@@ -68,8 +68,82 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Contract class</p>
+						<p>The contract class contains the contract ID and contrac entries
+							definition needed to encode/decode operations during the
+						interaction with the user and the communication with the RPC node.</p>
 					</div>
+					<p>Operations are encoded to communicate with the RPC node. However,
+						this format is not human readable as the data is serialized and
+						encoded in Base64 format. When decoding operations, they can be
+					read by the user (see <a href="../interfaces/EncodedOperation.html">EncodedOperation</a> and <a href="../interfaces/DecodedOperation.html">DecodedOperation</a>).</p>
+					<dl class="tsd-comment-tags">
+						<dt>example</dt>
+						<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">contract</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Contract</span><span style="color: #000000">({</span>
+<span style="color: #000000">  </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">  </span><span style="color: #001080">entries:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">    </span><span style="color: #001080">transfer:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">0x62efa292</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">inputs:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #001080">type:</span><span style="color: #000000"> [</span>
+<span style="color: #000000">          {</span>
+<span style="color: #000000">            </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;from&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">          },</span>
+<span style="color: #000000">          {</span>
+<span style="color: #000000">            </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;to&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">          },</span>
+<span style="color: #000000">          {</span>
+<span style="color: #000000">            </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;value&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">            </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;uint64&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">          },</span>
+<span style="color: #000000">        ],</span>
+<span style="color: #000000">      },</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">    </span><span style="color: #001080">balance_of:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">0x15619248</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">inputs:</span><span style="color: #000000"> { </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000"> },</span>
+<span style="color: #000000">      </span><span style="color: #001080">outputs:</span><span style="color: #000000"> { </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;uint64&quot;</span><span style="color: #000000"> },</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">});</span>
+
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">opEncoded</span><span style="color: #000000"> = </span><span style="color: #001080">contract</span><span style="color: #000000">.</span><span style="color: #795E26">encodeOperation</span><span style="color: #000000">({</span>
+<span style="color: #000000">  </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;transfer&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">  </span><span style="color: #001080">args:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">    </span><span style="color: #001080">from:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;alice&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;bob&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #267F99">BigInt</span><span style="color: #000000">(</span><span style="color: #098658">1000</span><span style="color: #000000">),</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">});</span>
+
+<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">opEncoded</span><span style="color: #000000">);</span>
+<span style="color: #008000">// {</span>
+<span style="color: #008000">//   type: &quot;koinos::protocol::call_contract_operation&quot;,</span>
+<span style="color: #008000">//   value: {</span>
+<span style="color: #008000">//     contract_id: &quot;Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=&quot;,</span>
+<span style="color: #008000">//     entry_point: 0x62efa292,</span>
+<span style="color: #008000">//     args: &quot;MBWFsaWNlA2JvYgAAAAAAAAPo&quot;,</span>
+<span style="color: #008000">//   }</span>
+<span style="color: #008000">// }</span>
+
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">opDecoded</span><span style="color: #000000"> = </span><span style="color: #001080">contract</span><span style="color: #000000">.</span><span style="color: #795E26">decodeOperation</span><span style="color: #000000">(</span><span style="color: #001080">opEncoded</span><span style="color: #000000">);</span>
+<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">opDecoded</span><span style="color: #000000">);</span>
+<span style="color: #008000">// {</span>
+<span style="color: #008000">//   name: &quot;transfer&quot;,</span>
+<span style="color: #008000">//   args: {</span>
+<span style="color: #008000">//     from: &quot;alice&quot;,</span>
+<span style="color: #008000">//     to: &quot;bob&quot;,</span>
+<span style="color: #008000">//     value: 1000n,</span>
+<span style="color: #008000">//   },</span>
+<span style="color: #008000">// }</span>
+
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">resultDecoded</span><span style="color: #000000"> = </span><span style="color: #001080">contract</span><span style="color: #000000">.</span><span style="color: #795E26">decodeResult</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;MAAsZnAzyD0E=&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;balance_of&quot;</span><span style="color: #000000">);</span>
+<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">resultDecoded</span><span style="color: #000000">)</span>
+<span style="color: #008000">// 3124382766600001n</span>
+</code></pre>
+						</dd>
+					</dl>
 				</div>
 			</section>
 			<section class="tsd-panel tsd-hierarchy">
@@ -101,6 +175,7 @@
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Contract.html#decodeOperation" class="tsd-kind-icon">decode<wbr>Operation</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Contract.html#decodeResult" class="tsd-kind-icon">decode<wbr>Result</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Contract.html#encodeOperation" class="tsd-kind-icon">encode<wbr>Operation</a></li>
 							</ul>
 						</section>
@@ -119,10 +194,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Contract.ts#L134">Contract.ts:134</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Contract.ts#L238">Contract.ts:238</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>The constructor receives the contract ID and
+									contract entries definition</p>
+								</div>
 								<dl class="tsd-comment-tags">
 									<dt>example</dt>
 									<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">contract</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Contract</span><span style="color: #000000">({</span>
@@ -130,7 +209,7 @@
 <span style="color: #000000">  </span><span style="color: #001080">entries:</span><span style="color: #000000"> {</span>
 <span style="color: #000000">    </span><span style="color: #001080">transfer:</span><span style="color: #000000"> {</span>
 <span style="color: #000000">      </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">0x62efa292</span><span style="color: #000000">,</span>
-<span style="color: #000000">      </span><span style="color: #001080">args:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">inputs:</span><span style="color: #000000"> {</span>
 <span style="color: #000000">        </span><span style="color: #001080">type:</span><span style="color: #000000"> [</span>
 <span style="color: #000000">          {</span>
 <span style="color: #000000">            </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;from&quot;</span><span style="color: #000000">,</span>
@@ -149,7 +228,8 @@
 <span style="color: #000000">    },</span>
 <span style="color: #000000">    </span><span style="color: #001080">balance_of:</span><span style="color: #000000"> {</span>
 <span style="color: #000000">      </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">0x15619248</span><span style="color: #000000">,</span>
-<span style="color: #000000">      </span><span style="color: #001080">args:</span><span style="color: #000000"> { </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000"> },</span>
+<span style="color: #000000">      </span><span style="color: #001080">inputs:</span><span style="color: #000000"> { </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;string&quot;</span><span style="color: #000000"> },</span>
+<span style="color: #000000">      </span><span style="color: #001080">outputs:</span><span style="color: #000000"> { </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;uint64&quot;</span><span style="color: #000000"> },</span>
 <span style="color: #000000">    },</span>
 <span style="color: #000000">  },</span>
 <span style="color: #000000">});</span>
@@ -189,12 +269,12 @@
 					<div class="tsd-signature tsd-kind-icon">entries<span class="tsd-signature-symbol">:</span> <a href="../interfaces/Entries.html" class="tsd-signature-type" data-tsd-kind="Interface">Entries</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Contract.ts#L96">Contract.ts:96</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Contract.ts#L198">Contract.ts:198</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Contract entries</p>
+							<p>Contract entries. See <a href="../interfaces/Entries.html">Entries</a></p>
 						</div>
 					</div>
 				</section>
@@ -204,7 +284,7 @@
 					<div class="tsd-signature tsd-kind-icon">id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Contract.ts#L91">Contract.ts:91</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Contract.ts#L193">Contract.ts:193</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -226,9 +306,36 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Contract.ts#L172">Contract.ts:172</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Contract.ts#L309">Contract.ts:309</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Decodes a contract operation to be human readable</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>example</dt>
+									<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">opDecoded</span><span style="color: #000000"> = </span><span style="color: #001080">contract</span><span style="color: #000000">.</span><span style="color: #795E26">decodeOperation</span><span style="color: #000000">({</span>
+<span style="color: #000000">  </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;koinos::protocol::call_contract_operation&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">  </span><span style="color: #001080">value:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">    </span><span style="color: #001080">contract_id:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">entry_point:</span><span style="color: #000000"> </span><span style="color: #098658">0x62efa292</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">args:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;MBWFsaWNlA2JvYgAAAAAAAAPo&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">  }</span>
+<span style="color: #000000">});</span>
+<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">opDecoded</span><span style="color: #000000">);</span>
+<span style="color: #008000">// {</span>
+<span style="color: #008000">//   name: &quot;transfer&quot;,</span>
+<span style="color: #008000">//   args: {</span>
+<span style="color: #008000">//     from: &quot;alice&quot;,</span>
+<span style="color: #008000">//     to: &quot;bob&quot;,</span>
+<span style="color: #008000">//     value: 1000n,</span>
+<span style="color: #008000">//   },</span>
+<span style="color: #008000">// }</span>
+</code></pre>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -236,6 +343,55 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/DecodedOperation.html" class="tsd-signature-type" data-tsd-kind="Interface">DecodedOperation</a></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="decodeResult" class="tsd-anchor"></a>
+					<h3>decode<wbr>Result</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">decode<wbr>Result<span class="tsd-signature-symbol">(</span>result<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, opName<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">unknown</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Contract.ts#L342">Contract.ts:342</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Decodes a result. This function is used in conjunction with
+										<a href="Provider.html#readContract">readContract of Provider class</a> to read a
+										contract and decode the result. &quot;outputs&quot; field must be defined in
+									the abi for the operation name.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>example</dt>
+									<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">resultDecoded</span><span style="color: #000000"> = </span><span style="color: #001080">contract</span><span style="color: #000000">.</span><span style="color: #795E26">decodeResult</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;MAAsZnAzyD0E=&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;balance_of&quot;</span><span style="color: #000000">);</span>
+<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">resultDecoded</span><span style="color: #000000">)</span>
+<span style="color: #008000">// 3124382766600001n</span>
+</code></pre>
+									</dd>
+								</dl>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>result: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Encoded result in base64</p>
+									</div>
+								</li>
+								<li>
+									<h5>opName: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Operation name</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">unknown</span></h4>
+							<p>Decoded result</p>
 						</li>
 					</ul>
 				</section>
@@ -249,7 +405,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/775a2a4/src/Contract.ts#L156">Contract.ts:156</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/607223d/src/Contract.ts#L270">Contract.ts:270</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -267,6 +423,16 @@
 <span style="color: #000000">    </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #098658">1000</span><span style="color: #000000">,</span>
 <span style="color: #000000">  }</span>
 <span style="color: #000000">});</span>
+
+<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">opEncoded</span><span style="color: #000000">);</span>
+<span style="color: #008000">// {</span>
+<span style="color: #008000">//   type: &quot;koinos::protocol::call_contract_operation&quot;,</span>
+<span style="color: #008000">//   value: {</span>
+<span style="color: #008000">//     contract_id: &quot;Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=&quot;,</span>
+<span style="color: #008000">//     entry_point: 0x62efa292,</span>
+<span style="color: #008000">//     args: &quot;MBWFsaWNlA2JvYgAAAAAAAAPo&quot;,</span>
+<span style="color: #008000">//   }</span>
+<span style="color: #008000">// }</span>
 </code></pre>
 									</dd>
 								</dl>
@@ -313,6 +479,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="Contract.html#decodeOperation" class="tsd-kind-icon">decode<wbr>Operation</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="Contract.html#decodeResult" class="tsd-kind-icon">decode<wbr>Result</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="Contract.html#encodeOperation" class="tsd-kind-icon">encode<wbr>Operation</a>
