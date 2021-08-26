@@ -3992,11 +3992,87 @@ const abi_1 = __webpack_require__(285);
 const serializer_1 = __webpack_require__(825);
 const VariableBlob_1 = __importDefault(__webpack_require__(737));
 /**
- * Contract class
+ * The contract class contains the contract ID and contrac entries
+ * definition needed to encode/decode operations during the
+ * interaction with the user and the communication with the RPC node.
+ *
+ * Operations are encoded to communicate with the RPC node. However,
+ * this format is not human readable as the data is serialized and
+ * encoded in Base64 format. When decoding operations, they can be
+ * read by the user (see [[EncodedOperation]] and [[DecodedOperation]]).
+ *
+ * @example
+ *
+ * ```ts
+ * const contract = new Contract({
+ *   id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+ *   entries: {
+ *     transfer: {
+ *       id: 0x62efa292,
+ *       inputs: {
+ *         type: [
+ *           {
+ *             name: "from",
+ *             type: "string",
+ *           },
+ *           {
+ *             name: "to",
+ *             type: "string",
+ *           },
+ *           {
+ *             name: "value",
+ *             type: "uint64",
+ *           },
+ *         ],
+ *       },
+ *     },
+ *     balance_of: {
+ *       id: 0x15619248,
+ *       inputs: { type: "string" },
+ *       outputs: { type: "uint64" },
+ *     },
+ *   },
+ * });
+ *
+ * const opEncoded = contract.encodeOperation({
+ *   name: "transfer",
+ *   args: {
+ *     from: "alice",
+ *     to: "bob",
+ *     value: BigInt(1000),
+ *   },
+ * });
+ *
+ * console.log(opEncoded);
+ * // {
+ * //   type: "koinos::protocol::call_contract_operation",
+ * //   value: {
+ * //     contract_id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+ * //     entry_point: 0x62efa292,
+ * //     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
+ * //   }
+ * // }
+ *
+ * const opDecoded = contract.decodeOperation(opEncoded);
+ * console.log(opDecoded);
+ * // {
+ * //   name: "transfer",
+ * //   args: {
+ * //     from: "alice",
+ * //     to: "bob",
+ * //     value: 1000n,
+ * //   },
+ * // }
+ *
+ * const resultDecoded = contract.decodeResult("MAAsZnAzyD0E=", "balance_of");
+ * console.log(resultDecoded)
+ * // 3124382766600001n
+ * ```
  */
 class Contract {
     /**
-     *
+     * The constructor receives the contract ID and
+     * contract entries definition
      * @param c - Object with contract id and contract entries
      *
      * @example
@@ -4006,7 +4082,7 @@ class Contract {
      *   entries: {
      *     transfer: {
      *       id: 0x62efa292,
-     *       args: {
+     *       inputs: {
      *         type: [
      *           {
      *             name: "from",
@@ -4025,7 +4101,8 @@ class Contract {
      *     },
      *     balance_of: {
      *       id: 0x15619248,
-     *       args: { type: "string" },
+     *       inputs: { type: "string" },
+     *       outputs: { type: "uint64" },
      *     },
      *   },
      * });
@@ -4050,6 +4127,16 @@ class Contract {
      *     value: 1000,
      *   }
      * });
+     *
+     * console.log(opEncoded);
+     * // {
+     * //   type: "koinos::protocol::call_contract_operation",
+     * //   value: {
+     * //     contract_id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+     * //     entry_point: 0x62efa292,
+     * //     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
+     * //   }
+     * // }
      * ```
      */
     encodeOperation(op) {
@@ -4061,12 +4148,35 @@ class Contract {
             value: {
                 contract_id: this.id,
                 entry_point: entry.id,
-                ...(entry.args && {
-                    args: serializer_1.serialize(op.args, entry.args).toString(),
+                ...(entry.inputs && {
+                    args: serializer_1.serialize(op.args, entry.inputs).toString(),
                 }),
             },
         };
     }
+    /**
+     * Decodes a contract operation to be human readable
+     * @example
+     * ```ts
+     * const opDecoded = contract.decodeOperation({
+     *   type: "koinos::protocol::call_contract_operation",
+     *   value: {
+     *     contract_id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+     *     entry_point: 0x62efa292,
+     *     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
+     *   }
+     * });
+     * console.log(opDecoded);
+     * // {
+     * //   name: "transfer",
+     * //   args: {
+     * //     from: "alice",
+     * //     to: "bob",
+     * //     value: 1000n,
+     * //   },
+     * // }
+     * ```
+     */
     decodeOperation(op) {
         if (op.value.contract_id !== this.id)
             throw new Error(`Invalid contract id. Expected: ${this.id}. Received: ${op.value.contract_id}`);
@@ -4076,11 +4186,32 @@ class Contract {
                 const vb = new VariableBlob_1.default(op.value.args);
                 return {
                     name: opName,
-                    args: serializer_1.deserialize(vb, entry.args),
+                    args: serializer_1.deserialize(vb, entry.inputs),
                 };
             }
         }
         throw new Error(`Unknown entry id ${op.value.entry_point}`);
+    }
+    /**
+     * Decodes a result. This function is used in conjunction with
+     * [[Provider.readContract | readContract of Provider class]] to read a
+     * contract and decode the result. "outputs" field must be defined in
+     * the abi for the operation name.
+     * @param result Encoded result in base64
+     * @param opName Operation name
+     * @returns Decoded result
+     * @example
+     * ```ts
+     * const resultDecoded = contract.decodeResult("MAAsZnAzyD0E=", "balance_of");
+     * console.log(resultDecoded)
+     * // 3124382766600001n
+     * ```
+     */
+    decodeResult(result, opName) {
+        const entry = this.entries[opName];
+        if (!entry.outputs)
+            throw new Error(`There are no outputs defined for ${opName}`);
+        return serializer_1.deserialize(result, entry.outputs);
     }
 }
 exports.Contract = Contract;
@@ -4101,7 +4232,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Multihash = void 0;
 const VariableBlob_1 = __importDefault(__webpack_require__(737));
 /**
- * Multihash class
+ * Multihash is a protocol for differentiating outputs from various
+ * well-established cryptographic hash functions, addressing size +
+ * encoding considerations
  */
 class Multihash {
     /**
@@ -4148,7 +4281,7 @@ exports.Provider = void 0;
 const multibase_1 = __importDefault(__webpack_require__(957));
 const axios_1 = __importDefault(__webpack_require__(669));
 /**
- * Provider class
+ * Class to connect with the RPC node
  */
 class Provider {
     /**
@@ -4163,7 +4296,7 @@ class Provider {
         this.url = url;
     }
     /**
-     * Function to call the RPC node
+     * Function to make jsonrpc requests to the RPC node
      * @param method - jsonrpc method
      * @param params - jsonrpc params
      * @returns Result of jsonrpc response
@@ -4213,12 +4346,16 @@ class Provider {
         return this.call("chain.submit_transaction", { transaction });
     }
     /**
-     * Function to call "chain.read_contract" to read a contract
+     * Function to call "chain.read_contract" to read a contract.
+     * The operation must be encoded (see [[EncodedOperation]]).
+     * See also [[Wallet.readContract]] which, apart from the Provider,
+     * uses the contract definition and it is prepared to receive
+     * the operation decoded and return the result decoded as well.
      * @param operation Encoded operation
-     * @returns
+     * @returns Encoded result
      */
     async readContract(operation) {
-        return this.call("chain.read_contract", operation);
+        return this.call("chain.read_contract", operation.value);
     }
 }
 exports.Provider = Provider;
@@ -4263,10 +4400,53 @@ const serializer_1 = __webpack_require__(825);
 const utils_1 = __webpack_require__(593);
 const VariableBlob_1 = __webpack_require__(737);
 /**
- * Signer class
+ * The Signer Class contains the private key needed to sign transactions.
+ * It can be created using the seed, wif, or private key
+ *
+ * @example
+ * using private key as hex string
+ * ```ts
+ * var signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
+ * ```
+ * <br>
+ *
+ * using private key as Uint8Array
+ * ```ts
+ * var buffer = new Uint8Array([
+ *   236, 134,   1, 162,  79, 129, 222, 205,
+ *    87, 244, 182,  17, 181, 172, 110, 184,
+ *     1, 203,  55, 128, 187,   2, 192, 249,
+ *   205, 254, 157,   9, 218, 173, 223, 156
+ * ]);
+ * var signer = new Signer(buffer);
+ * ```
+ *
+ * <br>
+ *
+ * using private key as bigint
+ * ```ts
+ * var signer = new Signer(106982601049961974618234078204952280507266494766432547312316920283818886029212n);
+ * ```
+ *
+ * <br>
+ *
+ * using the seed
+ * ```ts
+ * var signer = Signer.fromSeed("my seed");
+ * ```
+ *
+ * <br>
+ *
+ * using private key in WIF format
+ * ```ts
+ * var signer = Signer.fromWif("L59UtJcTdNBnrH2QSBA5beSUhRufRu3g6tScDTite6Msuj7U93tM");
+ * ```
  */
 class Signer {
     /**
+     * The constructor receives de private key as hexstring, bigint or Uint8Array.
+     * See also the functions [[Signer.fromWif]] and [[Signer.fromSeed]]
+     * to create the signer from the WIF or Seed respectively.
      *
      * @param privateKey - Private key as hexstring, bigint or Uint8Array
      * @param compressed
@@ -4327,8 +4507,8 @@ class Signer {
         return this.address;
     }
     /**
-     * Function to sign a transaction. The transaction parameter is
-     * modified inside this function.
+     * Function to sign a transaction. It's important to remark that
+     * the transaction parameter is modified inside this function.
      * @param tx Unsigned transaction
      * @returns
      */
@@ -4382,6 +4562,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.VariableBlob = void 0;
 const multibase = __importStar(__webpack_require__(957));
+/**
+ * Class to serialize and deserialize data in Koinos
+ */
 class VariableBlob {
     constructor(input) {
         if (typeof input === "string") {
@@ -4592,6 +4775,120 @@ exports.default = VariableBlob;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Wallet = void 0;
+/**
+ * The Wallet Class combines all the features of [[Signer]],
+ * [[Contract]], and [[Provider]] classes.
+ *
+ * @example **How to send transactions**
+ *
+ * ```ts
+ * (async () => {
+ *   // define signer, provider, and contract
+ *   const signer = Signer.fromSeed("my seed");
+ *   const provider = new Provider("http://45.56.104.152:8080");
+ *   const contract = new Contract({
+ *     id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+ *     entries: {
+ *       transfer: {
+ *         id: 0x62efa292,
+ *         inputs: {
+ *           type: [
+ *             {
+ *               name: "from",
+ *               type: "string",
+ *             },
+ *             {
+ *               name: "to",
+ *               type: "string",
+ *             },
+ *             {
+ *               name: "value",
+ *               type: "uint64",
+ *             },
+ *           ],
+ *         },
+ *       },
+ *       balance_of: {
+ *         id: 0x15619248,
+ *         inputs: { type: "string" },
+ *         outputs: { type: "uint64" },
+ *       },
+ *     },
+ *   });
+ *
+ *   // create a wallet with signer, provider and contract
+ *   const wallet = new Wallet({ signer, provider, contract });
+ *
+ *   // encode a contract operation to make a transfer
+ *   const opTransfer = wallet.encodeOperation({
+ *     name: "transfer",
+ *     args: {
+ *       from: wallet.getAddress(),
+ *       to: "bob",
+ *       value: BigInt(1000),
+ *     },
+ *   });
+ *
+ *   // create a transaction
+ *   const tx = await wallet.newTransaction({
+ *     operations: [opTransfer],
+ *   });
+ *
+ *   // sign and send transaction
+ *   await wallet.signTransaction(tx);
+ *   await wallet.sendTransaction(tx);
+ * })();
+ * ```
+ *
+ * @example **How to read contracts**
+ * ```ts
+ * (async () => {
+ *   // define provider and contract
+ *   const provider = new Provider("http://45.56.104.152:8080");
+ *   const contract = new Contract({
+ *     id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+ *     entries: {
+ *       transfer: {
+ *         id: 0x62efa292,
+ *         inputs: {
+ *           type: [
+ *             {
+ *               name: "from",
+ *               type: "string",
+ *             },
+ *             {
+ *               name: "to",
+ *               type: "string",
+ *             },
+ *             {
+ *               name: "value",
+ *               type: "uint64",
+ *             },
+ *           ],
+ *         },
+ *       },
+ *       balance_of: {
+ *         id: 0x15619248,
+ *         inputs: { type: "string" },
+ *         outputs: { type: "uint64" },
+ *       },
+ *     },
+ *   });
+ *
+ *   // create a wallet with provider and contract (signer is optional)
+ *   const wallet = new Wallet({ provider, contract });
+ *
+ *   // read the contract providing the name of the contract funtion
+ *   // and its arguments
+ *   const balance = await wallet.readContract({
+ *     name: "balance_of",
+ *     args: wallet.getAddress(),
+ *   });
+ *
+ *   console.log(Number(balance) / 1e8);
+ * })();
+ * ```
+ */
 class Wallet {
     constructor(opts = {
         signer: undefined,
@@ -4602,13 +4899,19 @@ class Wallet {
         this.contract = opts.contract;
         this.provider = opts.provider;
     }
-    async newTransaction(opts = {
-        resource_limit: 1000000,
-        operations: [],
-        getNonce: true,
-    }) {
-        const nonce = opts.getNonce ? await this.getNonce(this.getAddress()) : 0;
-        const resource_limit = opts.resource_limit ? opts.resource_limit : 1000000;
+    /**
+     * Creates an unsigned transaction
+     */
+    async newTransaction(opts) {
+        let nonce;
+        if (opts.getNonce === false)
+            nonce = 0;
+        else {
+            if (!this.provider)
+                throw new Error("Cannot get the nonce because provider is undefined. To ignore this call use getNonce:false in the parameters");
+            nonce = await this.getNonce(this.getAddress());
+        }
+        const resource_limit = opts.resource_limit === undefined ? 1000000 : opts.resource_limit;
         const operations = opts.operations ? opts.operations : [];
         return {
             active_data: {
@@ -4619,47 +4922,100 @@ class Wallet {
         };
     }
     // Signer
+    /**
+     * See [[Signer.getAddress]]
+     */
     getAddress() {
         if (!this.signer)
             throw new Error("Signer is undefined");
         return this.signer.getAddress();
     }
+    /**
+     * See [[Signer.signTransaction]]
+     */
     async signTransaction(tx) {
         if (!this.signer)
             throw new Error("Signer is undefined");
         return this.signer.signTransaction(tx);
     }
     // Contract
+    /**
+     * See [[Contract.encodeOperation]]
+     */
     encodeOperation(op) {
         if (!this.contract)
             throw new Error("Contract is undefined");
         return this.contract.encodeOperation(op);
     }
+    /**
+     * See [[Contract.decodeOperation]]
+     */
     decodeOperation(op) {
         if (!this.contract)
             throw new Error("Contract is undefined");
         return this.contract.decodeOperation(op);
     }
+    /**
+     * See [[Contract.decodeResult]]
+     */
+    decodeResult(result, opName) {
+        if (!this.contract)
+            throw new Error("Contract is undefined");
+        return this.contract.decodeResult(result, opName);
+    }
     // Provider
+    /**
+     * See [[Provider.call]]
+     */
     async call(method, params) {
         if (!this.provider)
             throw new Error("Provider is undefined");
         return this.provider.call(method, params);
     }
+    /**
+     * See [[Provider.getNonce]]
+     */
     async getNonce(address) {
         if (!this.provider)
             throw new Error("Provider is undefined");
         return this.provider.getNonce(address);
     }
+    /**
+     * See [[Provider.sendTransaction]]
+     */
     async sendTransaction(transaction) {
         if (!this.provider)
             throw new Error("Provider is undefined");
         return this.provider.sendTransaction(transaction);
     }
+    /* async readContract(operation: EncodedOperation["value"]): Promise<{
+      result: string;
+      logs: string;
+    }> {
+      if (!this.provider) throw new Error("Provider is undefined");
+      return this.provider.readContract(operation);
+    } */
+    // Provider + Contract
+    /**
+     * Call the RPC node to read a contract. The operation to read
+     * must be in the decoded format (see [[DecodedOperation]]). This
+     * function will encode the operation using the contract definition,
+     * call the RPC node, and decode the result.
+     *
+     * @example
+     * ```
+     * const balance = await wallet.readContract({
+     *   name: "balance_of",
+     *   args: "126LgExvJrLDQBsxA1Ddur2VjXJkyAbG91",
+     * });
+     * ```
+     */
     async readContract(operation) {
         if (!this.provider)
             throw new Error("Provider is undefined");
-        return this.provider.readContract(operation);
+        const op = this.encodeOperation(operation);
+        const { result } = await this.provider.readContract(op);
+        return this.decodeResult(result, operation.name);
     }
 }
 exports.Wallet = Wallet;
@@ -5099,6 +5455,9 @@ exports.bitcoinAddress = exports.bitcoinDecode = exports.copyUint8Array = export
 const multibase = __importStar(__webpack_require__(957));
 const js_sha256_1 = __webpack_require__(23);
 const noble_ripemd160_1 = __importDefault(__webpack_require__(389));
+/**
+ * Converts an hex string to Uint8Array
+ */
 function toUint8Array(hex) {
     const pairs = hex.match(/[\dA-F]{2}/gi);
     if (!pairs)
@@ -5107,20 +5466,37 @@ function toUint8Array(hex) {
     );
 }
 exports.toUint8Array = toUint8Array;
+/**
+ * Converts Uint8Array to hex string
+ */
 function toHexString(buffer) {
     return Array.from(buffer)
         .map((n) => `0${Number(n).toString(16)}`.slice(-2))
         .join("");
 }
 exports.toHexString = toHexString;
+/**
+ * Encodes an Uint8Array in base58
+ */
 function encodeBase58(buffer) {
     return new TextDecoder().decode(multibase.encode("z", buffer)).slice(1);
 }
 exports.encodeBase58 = encodeBase58;
+/**
+ * Decodes a buffer formatted in base58
+ */
 function decodeBase58(bs58) {
     return multibase.decode(`z${bs58}`);
 }
 exports.decodeBase58 = decodeBase58;
+/**
+ * Encodes a public or private key in base58 using
+ * the bitcoin format (see [Bitcoin Base58Check encoding](https://en.bitcoin.it/wiki/Base58Check_encoding)
+ * and [Bitcoin WIF](https://en.bitcoin.it/wiki/Wallet_import_format)).
+ *
+ * For private keys this encode is also known as
+ * wallet import format (WIF).
+ */
 function bitcoinEncode(buffer, type, compressed = false) {
     let bufferCheck;
     let prefixBuffer;
@@ -5164,6 +5540,14 @@ function copyUint8Array(source, target, targetStart, sourceStart, sourceEnd) {
     }
 }
 exports.copyUint8Array = copyUint8Array;
+/**
+ * Decodes a public or private key formatted in base58 using
+ * the bitcoin format (see [Bitcoin Base58Check encoding](https://en.bitcoin.it/wiki/Base58Check_encoding)
+ * and [Bitcoin WIF](https://en.bitcoin.it/wiki/Wallet_import_format)).
+ *
+ * For private keys this encode is also known as
+ * wallet import format (WIF).
+ */
 function bitcoinDecode(value) {
     const buffer = decodeBase58(value);
     const privateKey = new Uint8Array(32);
@@ -5181,6 +5565,11 @@ function bitcoinDecode(value) {
     return privateKey;
 }
 exports.bitcoinDecode = bitcoinDecode;
+/**
+ * Computes a bitcoin address, which is the format used in Koinos
+ *
+ * address = bitcoinEncode( ripemd160 ( sha256 ( publicKey ) ) )
+ */
 function bitcoinAddress(publicKey, compressed = false) {
     const hash = js_sha256_1.sha256(publicKey);
     const hash160 = noble_ripemd160_1.default(toUint8Array(hash));
