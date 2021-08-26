@@ -4,7 +4,7 @@ import { EncodedOperation } from "./Contract";
 import { Transaction } from "./Signer";
 
 /**
- * Provider class
+ * Class to connect with the RPC node
  */
 export class Provider {
   /**
@@ -25,7 +25,7 @@ export class Provider {
   }
 
   /**
-   * Function to call the RPC node
+   * Function to make jsonrpc requests to the RPC node
    * @param method - jsonrpc method
    * @param params - jsonrpc params
    * @returns Result of jsonrpc response
@@ -87,14 +87,18 @@ export class Provider {
   }
 
   /**
-   * Function to call "chain.read_contract" to read a contract
+   * Function to call "chain.read_contract" to read a contract.
+   * The operation must be encoded (see [[EncodedOperation]]).
+   * See also [[Wallet.readContract]] which, apart from the Provider,
+   * uses the contract definition and it is prepared to receive
+   * the operation decoded and return the result decoded as well.
    * @param operation Encoded operation
-   * @returns
+   * @returns Encoded result
    */
-  async readContract(operation: EncodedOperation["value"]): Promise<{
+  async readContract(operation: EncodedOperation): Promise<{
     result: string;
     logs: string;
   }> {
-    return this.call("chain.read_contract", operation);
+    return this.call("chain.read_contract", operation.value);
   }
 }

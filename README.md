@@ -39,20 +39,17 @@ You can also load it directly to the browser by downloading the bunble file loca
           entries: {
             balance_of: {
               id: 0x15619248,
-              args: { type: "string" },
+              inputs: { type: "string" },
+              outputs: { type: "uint64" },
             },
           },
         });
-        const wallet = new Wallet({ signer, contract, provider });
 
-        const operation = wallet.encodeOperation({
+        const wallet = new Wallet({ signer, contract, provider });
+        const balance = await wallet.readContract({
           name: "balance_of",
           args: wallet.getAddress(),
         });
-        const result = await wallet.readContract(operation.value);
-        const balance = serializer
-          .deserialize(result.result, { type: "uint64" })
-          .toString();
         console.log(Number(balance) / 1e8);
       })();
     </script>
@@ -95,7 +92,7 @@ a transaction, and read contracts.
     entries: {
       transfer: {
         id: 0x62efa292,
-        args: {
+        inputs: {
           type: [
             {
               name: "from",
@@ -114,7 +111,8 @@ a transaction, and read contracts.
       },
       balance_of: {
         id: 0x15619248,
-        args: { type: "string" },
+        inputs: { type: "string" },
+        outputs: { type: "uint64" },
       },
     },
   });
@@ -134,7 +132,6 @@ a transaction, and read contracts.
 
   // create a transaction
   const tx = await wallet.newTransaction({
-    getNonce: true,
     operations: [opTransfer],
   });
 
@@ -143,14 +140,10 @@ a transaction, and read contracts.
   await wallet.sendTransaction(tx);
 
   // read the balance
-  const opBalance = wallet.encodeOperation({
+  const balance = await wallet.readContract({
     name: "balance_of",
     args: wallet.getAddress(),
   });
-  const result = await wallet.readContract(opBalance.value);
-  const balance = serializer
-    .deserialize(result.result, { type: "uint64" })
-    .toString();
   console.log(Number(balance) / 1e8);
 })();
 ```

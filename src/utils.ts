@@ -2,6 +2,9 @@ import * as multibase from "multibase";
 import { sha256 } from "js-sha256";
 import ripemd160 from "noble-ripemd160";
 
+/**
+ * Converts an hex string to Uint8Array
+ */
 export function toUint8Array(hex: string) {
   const pairs = hex.match(/[\dA-F]{2}/gi);
   if (!pairs) throw new Error("Invalid hex");
@@ -10,23 +13,40 @@ export function toUint8Array(hex: string) {
   );
 }
 
+/**
+ * Converts Uint8Array to hex string
+ */
 export function toHexString(buffer: Uint8Array) {
   return Array.from(buffer)
     .map((n) => `0${Number(n).toString(16)}`.slice(-2))
     .join("");
 }
 
+/**
+ * Encodes an Uint8Array in base58
+ */
 export function encodeBase58(buffer: Uint8Array) {
   return new TextDecoder().decode(multibase.encode("z", buffer)).slice(1);
 }
 
+/**
+ * Decodes a buffer formatted in base58
+ */
 export function decodeBase58(bs58: string): Uint8Array {
   return multibase.decode(`z${bs58}`);
 }
 
+/**
+ * Encodes a public or private key in base58 using
+ * the bitcoin format (see [Bitcoin Base58Check encoding](https://en.bitcoin.it/wiki/Base58Check_encoding)
+ * and [Bitcoin WIF](https://en.bitcoin.it/wiki/Wallet_import_format)).
+ *
+ * For private keys this encode is also known as
+ * wallet import format (WIF).
+ */
 export function bitcoinEncode(
   buffer: Uint8Array,
-  type: string,
+  type: "public" | "private",
   compressed = false
 ) {
   let bufferCheck;
@@ -79,6 +99,14 @@ export function copyUint8Array(
   }
 }
 
+/**
+ * Decodes a public or private key formatted in base58 using
+ * the bitcoin format (see [Bitcoin Base58Check encoding](https://en.bitcoin.it/wiki/Base58Check_encoding)
+ * and [Bitcoin WIF](https://en.bitcoin.it/wiki/Wallet_import_format)).
+ *
+ * For private keys this encode is also known as
+ * wallet import format (WIF).
+ */
 export function bitcoinDecode(value: string) {
   const buffer = decodeBase58(value);
   const privateKey = new Uint8Array(32);
@@ -95,6 +123,11 @@ export function bitcoinDecode(value: string) {
   return privateKey;
 }
 
+/**
+ * Computes a bitcoin address, which is the format used in Koinos
+ *
+ * address = bitcoinEncode( ripemd160 ( sha256 ( publicKey ) ) )
+ */
 export function bitcoinAddress(publicKey: Uint8Array, compressed = false) {
   const hash = sha256(publicKey);
   const hash160 = ripemd160(toUint8Array(hash));

@@ -1,5 +1,8 @@
 import * as multibase from "multibase";
 
+/**
+ * Class to serialize and deserialize data in Koinos
+ */
 export class VariableBlob {
   public buffer: Uint8Array;
 

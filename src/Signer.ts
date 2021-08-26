@@ -57,22 +57,57 @@ export interface Transaction {
 }
 
 /**
- * Signer class
+ * The Signer Class contains the private key needed to sign transactions.
+ * It can be created using the seed, wif, or private key
+ *
+ * @example
+ * using private key as hex string
+ * ```ts
+ * var signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
+ * ```
+ * <br>
+ *
+ * using private key as Uint8Array
+ * ```ts
+ * var buffer = new Uint8Array([
+ *   236, 134,   1, 162,  79, 129, 222, 205,
+ *    87, 244, 182,  17, 181, 172, 110, 184,
+ *     1, 203,  55, 128, 187,   2, 192, 249,
+ *   205, 254, 157,   9, 218, 173, 223, 156
+ * ]);
+ * var signer = new Signer(buffer);
+ * ```
+ *
+ * <br>
+ *
+ * using private key as bigint
+ * ```ts
+ * var signer = new Signer(106982601049961974618234078204952280507266494766432547312316920283818886029212n);
+ * ```
+ *
+ * <br>
+ *
+ * using the seed
+ * ```ts
+ * var signer = Signer.fromSeed("my seed");
+ * ```
+ *
+ * <br>
+ *
+ * using private key in WIF format
+ * ```ts
+ * var signer = Signer.fromWif("L59UtJcTdNBnrH2QSBA5beSUhRufRu3g6tScDTite6Msuj7U93tM");
+ * ```
  */
 export class Signer {
   /**
-   * public/private key compressed
+   * Boolean determining if the public/private key
+   * is using the compressed format
    */
   compressed: boolean;
 
-  /**
-   * Private key
-   */
   private privateKey: string | number | bigint | Uint8Array;
 
-  /**
-   * Public key
-   */
   publicKey: string | Uint8Array;
 
   /**
@@ -81,6 +116,9 @@ export class Signer {
   address: string;
 
   /**
+   * The constructor receives de private key as hexstring, bigint or Uint8Array.
+   * See also the functions [[Signer.fromWif]] and [[Signer.fromSeed]]
+   * to create the signer from the WIF or Seed respectively.
    *
    * @param privateKey - Private key as hexstring, bigint or Uint8Array
    * @param compressed
@@ -150,8 +188,8 @@ export class Signer {
   }
 
   /**
-   * Function to sign a transaction. The transaction parameter is
-   * modified inside this function.
+   * Function to sign a transaction. It's important to remark that
+   * the transaction parameter is modified inside this function.
    * @param tx Unsigned transaction
    * @returns
    */

@@ -1,7 +1,9 @@
 import VariableBlob from "./VariableBlob";
 
 /**
- * Multihash class
+ * Multihash is a protocol for differentiating outputs from various
+ * well-established cryptographic hash functions, addressing size +
+ * encoding considerations
  */
 export class Multihash {
   /**
@@ -9,6 +11,12 @@ export class Multihash {
    *
    * Identifier of the hash function. See the
    * complete [list of IDs in this link](https://github.com/multiformats/js-multihash/blob/master/src/constants.js)
+   *
+   * Some relevants IDs are:
+   * - 0x12 (sha2-256)
+   * - 0x16 (sha3-256)
+   * - 0x1b (keccak-256)
+   * - 0x1053 (ripemd-160)
    */
   id: number;
 

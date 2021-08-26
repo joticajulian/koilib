@@ -1,4 +1,4 @@
-import { bitcoinEncode, bitcoinDecode, toHexString } from "../src/utils";
+import { /* bitcoinEncode, */ bitcoinDecode, toHexString } from "../src/utils";
 import { Transaction, Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
 import { Wallet } from "../src/Wallet";
@@ -8,10 +8,10 @@ const privateKeyHex =
   "3941804bde6bf02302f55fd21849ace5e84cb094af67a003c027de0280ee2e24";
 const wif = "5JFW75rMt2RETkykhCx4xoHuoy1orRGYjfxrfLdD76JmUBG8fB5";
 const wifCompressed = "Ky91TrQsADFxR77VrTk4VHKe6JEZo87d5LyYCDcpRtRRGmHjh7yo";
-const publicKey =
+/*const publicKey =
   "04B31BA07E957FDEF6B5CB14FACC9D94F6A144690EF91C137345121C9A0F387BB9695552AF579E0142BD177B579253F82BBD31B4034151706701BEADF954340BE5";
 const publicKeyCompressed =
-  "03B31BA07E957FDEF6B5CB14FACC9D94F6A144690EF91C137345121C9A0F387BB9";
+  "03B31BA07E957FDEF6B5CB14FACC9D94F6A144690EF91C137345121C9A0F387BB9"; */
 const address = "126LgExvJrLDQBsxA1Ddur2VjXJkyAbG91";
 const addressCompressed = "1M2UM4X78EKKLoNs3z24icqjPqAfbuhocA";
 const urlProvider = "http://45.56.104.152:8080";
@@ -21,7 +21,7 @@ const contract = new Contract({
   entries: {
     transfer: {
       id: 0x62efa292,
-      args: {
+      inputs: {
         type: [
           {
             name: "from",
@@ -40,7 +40,8 @@ const contract = new Contract({
     },
     balance_of: {
       id: 0x15619248,
-      args: { type: "string" },
+      inputs: { type: "string" },
+      outputs: { type: "uint64" },
     },
   },
 });
@@ -133,12 +134,10 @@ describe("Wallet and Contract", () => {
     });
 
     const tx = await wallet.newTransaction({
-      getNonce: true,
       operations: [operation],
     });
 
     await wallet.signTransaction(tx);
-    console.log(JSON.stringify(tx, null, 2));
     await wallet.sendTransaction(tx);
   });
 
@@ -148,16 +147,11 @@ describe("Wallet and Contract", () => {
       provider: new Provider(urlProvider),
     });
 
-    const operation = wallet.encodeOperation({
+    const result = await wallet.readContract({
       name: "balance_of",
       args: "1Krs7v1rtpgRyfwEZncuKMQQnY5JhqXVSx",
     });
 
-    const result = await wallet.readContract(operation.value);
-    expect(result).toStrictEqual(
-      expect.objectContaining({
-        result: expect.any(String) as string,
-      })
-    );
+    expect(result).toBeDefined();
   });
 });
