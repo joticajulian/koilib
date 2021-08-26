@@ -23,7 +23,7 @@
     "bundle": "yarn bundle:no-min && yarn bundle:min",
     "bundle:min": "webpack --mode=production --config webpack.prod.config.js",
     "bundle:no-min": "webpack --mode=production --config webpack.dev.config.js",
-    "docs": "typedoc src/index.ts",
+    "docs": "typedoc src/index.ts --includeVersion",
     "clean": "rimraf dist coverage",
     "lint": "yarn lint:prettier && yarn lint:eslint && yarn lint:tsc",
     "lint:prettier": "prettier . --check",

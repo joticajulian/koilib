@@ -132,7 +132,6 @@ a transaction, and read contracts.
 
   // create a transaction
   const tx = await wallet.newTransaction({
-    getNonce: true,
     operations: [opTransfer],
   });
 

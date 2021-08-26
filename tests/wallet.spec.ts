@@ -134,7 +134,6 @@ describe("Wallet and Contract", () => {
     });
 
     const tx = await wallet.newTransaction({
-      getNonce: true,
       operations: [operation],
     });
 
