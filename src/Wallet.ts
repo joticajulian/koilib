@@ -120,7 +120,7 @@ export class Wallet {
   /**
    * Class containing the private key. It is used to sign
    */
-  public signer?: Signer;
+  private signer?: Signer;
 
   /**
    * Class defining the contract to interact with

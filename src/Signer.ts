@@ -6,6 +6,7 @@ import { serialize } from "./serializer";
 import {
   bitcoinAddress,
   bitcoinDecode,
+  bitcoinEncode,
   toHexString,
   toUint8Array,
 } from "./utils";
@@ -121,7 +122,7 @@ export class Signer {
    * to create the signer from the WIF or Seed respectively.
    *
    * @param privateKey - Private key as hexstring, bigint or Uint8Array
-   * @param compressed
+   * @param compressed - compressed format is true by default
    * @example
    * ```ts
    * cons signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
@@ -159,13 +160,15 @@ export class Signer {
    * @returns Signer object
    */
   static fromWif(wif: string) {
+    const compressed = wif[0] !== "5";
     const privateKey = bitcoinDecode(wif);
-    return new Signer(toHexString(privateKey));
+    return new Signer(toHexString(privateKey), compressed);
   }
 
   /**
    * Function to import a private key from the seed
    * @param seed Seed words
+   * @param compressed
    * @example
    * ```ts
    * const signer = Signer.fromSeed("my seed");
@@ -174,9 +177,9 @@ export class Signer {
    * ```
    * @returns Signer object
    */
-  static fromSeed(seed: string) {
+  static fromSeed(seed: string, compressed?: boolean) {
     const privateKey = sha256(seed);
-    return new Signer(privateKey);
+    return new Signer(privateKey, compressed);
   }
 
   /**
@@ -185,6 +188,28 @@ export class Signer {
    */
   getAddress() {
     return this.address;
+  }
+
+  getPrivateKey(format: "wif" | "hex", compressed?: boolean) {
+    let stringPrivateKey: string;
+    if (this.privateKey instanceof Uint8Array) {
+      stringPrivateKey = toHexString(this.privateKey);
+    } else if (typeof this.privateKey === "string") {
+      stringPrivateKey = this.privateKey;
+    } else {
+      stringPrivateKey = BigInt(this.privateKey).toString(16).padStart(64, "0");
+    }
+
+    const comp = compressed === undefined ? this.compressed : compressed;
+    
+    switch(format) {
+      case "hex":
+        return stringPrivateKey;
+      case "wif":
+        return bitcoinEncode(toUint8Array(stringPrivateKey), "private", comp);
+      default:
+        throw new Error(`Invalid format ${format}`);
+    }
   }
 
   /**

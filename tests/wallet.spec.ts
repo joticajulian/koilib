@@ -5,15 +5,16 @@ import { Wallet } from "../src/Wallet";
 import { Provider } from "../src/Provider";
 
 const privateKeyHex =
-  "3941804bde6bf02302f55fd21849ace5e84cb094af67a003c027de0280ee2e24";
-const wif = "5JFW75rMt2RETkykhCx4xoHuoy1orRGYjfxrfLdD76JmUBG8fB5";
-const wifCompressed = "Ky91TrQsADFxR77VrTk4VHKe6JEZo87d5LyYCDcpRtRRGmHjh7yo";
+  "bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37";
+const seed = "one two three four five six";
+const wif = "5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd";
+const wifCompressed = "L3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL";
 /*const publicKey =
-  "04B31BA07E957FDEF6B5CB14FACC9D94F6A144690EF91C137345121C9A0F387BB9695552AF579E0142BD177B579253F82BBD31B4034151706701BEADF954340BE5";
+  "042921DD54FDD8FB5D2AB1A9928DB7E9E08B34F8711A3332E0F1B36E71076B9CF291E7C6DBCC8C0CF132DB40D32722301B5244B1274DC16A5A54C3220B7DEF3423";
 const publicKeyCompressed =
-  "03B31BA07E957FDEF6B5CB14FACC9D94F6A144690EF91C137345121C9A0F387BB9"; */
-const address = "126LgExvJrLDQBsxA1Ddur2VjXJkyAbG91";
-const addressCompressed = "1M2UM4X78EKKLoNs3z24icqjPqAfbuhocA";
+  "032921DD54FDD8FB5D2AB1A9928DB7E9E08B34F8711A3332E0F1B36E71076B9CF2"; */
+const address = "1AjfrkFYS28SgPWrvaUeY6pThbzF1fUrjQ";
+const addressCompressed = "1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs";
 const urlProvider = "http://45.56.104.152:8080";
 
 const contract = new Contract({
@@ -44,6 +45,41 @@ const contract = new Contract({
       outputs: { type: "uint64" },
     },
   },
+});
+
+describe("Signer", () => {
+  it.only("should get private key", () => {
+    expect.assertions(18);
+    const signer1 = Signer.fromWif(wif);
+    expect(signer1.getPrivateKey("wif")).toBe(wif);
+    expect(signer1.getPrivateKey("wif", true)).toBe(wifCompressed);
+    expect(signer1.getPrivateKey("hex")).toBe(privateKeyHex);
+
+    const signer2 = Signer.fromWif(wifCompressed);
+    expect(signer2.getPrivateKey("wif")).toBe(wifCompressed);
+    expect(signer2.getPrivateKey("wif", false)).toBe(wif);
+    expect(signer2.getPrivateKey("hex")).toBe(privateKeyHex);
+
+    const signer3 = new Signer(privateKeyHex);
+    expect(signer3.getPrivateKey("wif", false)).toBe(wif);
+    expect(signer3.getPrivateKey("wif")).toBe(wifCompressed);
+    expect(signer3.getPrivateKey("hex")).toBe(privateKeyHex);
+
+    const signer4 = new Signer(privateKeyHex, false);
+    expect(signer4.getPrivateKey("wif")).toBe(wif);
+    expect(signer4.getPrivateKey("wif", true)).toBe(wifCompressed);
+    expect(signer4.getPrivateKey("hex")).toBe(privateKeyHex);
+
+    const signer5 = Signer.fromSeed(seed);
+    expect(signer5.getPrivateKey("wif", false)).toBe(wif);
+    expect(signer5.getPrivateKey("wif")).toBe(wifCompressed);
+    expect(signer5.getPrivateKey("hex")).toBe(privateKeyHex);
+
+    const signer6 = Signer.fromSeed(seed, false);
+    expect(signer6.getPrivateKey("wif", true)).toBe(wifCompressed);
+    expect(signer6.getPrivateKey("wif")).toBe(wif);
+    expect(signer6.getPrivateKey("hex")).toBe(privateKeyHex);
+  });
 });
 
 describe("Wallet and Contract", () => {
