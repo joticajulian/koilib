@@ -4449,7 +4449,7 @@ class Signer {
      * to create the signer from the WIF or Seed respectively.
      *
      * @param privateKey - Private key as hexstring, bigint or Uint8Array
-     * @param compressed
+     * @param compressed - compressed format is true by default
      * @example
      * ```ts
      * cons signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
@@ -4481,12 +4481,14 @@ class Signer {
      * @returns Signer object
      */
     static fromWif(wif) {
+        const compressed = wif[0] !== "5";
         const privateKey = utils_1.bitcoinDecode(wif);
-        return new Signer(utils_1.toHexString(privateKey));
+        return new Signer(utils_1.toHexString(privateKey), compressed);
     }
     /**
      * Function to import a private key from the seed
      * @param seed Seed words
+     * @param compressed
      * @example
      * ```ts
      * const signer = Signer.fromSeed("my seed");
@@ -4495,9 +4497,9 @@ class Signer {
      * ```
      * @returns Signer object
      */
-    static fromSeed(seed) {
+    static fromSeed(seed, compressed) {
         const privateKey = js_sha256_1.sha256(seed);
-        return new Signer(privateKey);
+        return new Signer(privateKey, compressed);
     }
     /**
      *
@@ -4505,6 +4507,45 @@ class Signer {
      */
     getAddress() {
         return this.address;
+    }
+    /**
+     * Function to get the private key in hex format or wif format
+     * @param format The format must be "hex" (default) or "wif"
+     * @param compressed Optional arg when using WIF format. By default it
+     * uses the compressed value defined in the signer
+     * @example
+     * ```ts
+     * const signer = Signer.fromSeed("one two three four five six");
+     * console.log(signer.getPrivateKey());
+     * // bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37
+     *
+     * console.log(signer.getPrivateKey("wif"));
+     * // L3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL
+     *
+     * console.log(signer.getPrivateKey("wif", false));
+     * // 5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd
+     * ```
+     */
+    getPrivateKey(format = "hex", compressed) {
+        let stringPrivateKey;
+        if (this.privateKey instanceof Uint8Array) {
+            stringPrivateKey = utils_1.toHexString(this.privateKey);
+        }
+        else if (typeof this.privateKey === "string") {
+            stringPrivateKey = this.privateKey;
+        }
+        else {
+            stringPrivateKey = BigInt(this.privateKey).toString(16).padStart(64, "0");
+        }
+        const comp = compressed === undefined ? this.compressed : compressed;
+        switch (format) {
+            case "hex":
+                return stringPrivateKey;
+            case "wif":
+                return utils_1.bitcoinEncode(utils_1.toUint8Array(stringPrivateKey), "private", comp);
+            default:
+                throw new Error(`Invalid format ${format}`);
+        }
     }
     /**
      * Function to sign a transaction. It's important to remark that
@@ -5030,7 +5071,101 @@ exports.default = Wallet;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.abiActiveData = exports.abiCallContractOperation = void 0;
+exports.abiActiveData = exports.abiCallContractOperation = exports.abiSetSystemCallOperation = exports.abiUploadContractOperation = exports.abiNopOperation = exports.abiReservedOperation = void 0;
+/**
+ * ABI of Reserved Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+exports.abiReservedOperation = {
+    name: "koinos::protocol::reserved_operation",
+    type: [
+        {
+            name: "extensions",
+            type: "unused_extension",
+        },
+    ],
+};
+/**
+ * ABI of Nop Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+exports.abiNopOperation = {
+    name: "koinos::protocol::nop_operation",
+    type: [
+        {
+            name: "extensions",
+            type: "unused_extension",
+        },
+    ],
+};
+/**
+ * ABI of Upload Contract Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+exports.abiUploadContractOperation = {
+    name: "koinos::protocol::upload_contract_operation",
+    type: [
+        {
+            name: "contract_id",
+            type: "fixedblob",
+            size: 20,
+        },
+        {
+            name: "bytecode",
+            type: "variableblob",
+        },
+        {
+            name: "extensions",
+            type: "unused_extension",
+        },
+    ],
+};
+const abiSystemCallTargetReserved = {
+    type: [],
+};
+const abiThunkId = {
+    type: "uint32",
+};
+const abiContractCallBundle = {
+    type: [
+        {
+            name: "contract_id",
+            type: "fixedblob",
+            size: 20,
+        },
+        {
+            name: "entry_point",
+            type: "uint32",
+        },
+    ],
+};
+/**
+ * ABI of Set System Call Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+exports.abiSetSystemCallOperation = {
+    name: "koinos::protocol::set_system_call_operation",
+    type: [
+        {
+            name: "call_id",
+            type: "uint32",
+        },
+        {
+            // chain::sytem_call_target
+            name: "target",
+            type: "variant",
+            variants: [
+                abiSystemCallTargetReserved,
+                abiThunkId,
+                abiContractCallBundle,
+            ],
+        },
+        {
+            name: "extensions",
+            type: "unused_extension",
+        },
+    ],
+};
 /**
  * ABI of Call Contract Operation. This abi is used in the
  * definition of the Active Data ABI. See [[abiActiveData]]
@@ -5082,11 +5217,11 @@ exports.abiActiveData = {
                     name: "operation",
                     type: "variant",
                     variants: [
-                        { type: "not implemented" /* reserved operation */ },
-                        { type: "not implemented" /* nop operation */ },
-                        { type: "not implemented" /* upload contract operation */ },
+                        exports.abiReservedOperation,
+                        exports.abiNopOperation,
+                        exports.abiUploadContractOperation,
                         exports.abiCallContractOperation,
-                        { type: "not implemented" /* set system call operation*/ },
+                        exports.abiSetSystemCallOperation,
                     ],
                 },
             },

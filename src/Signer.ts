@@ -190,7 +190,25 @@ export class Signer {
     return this.address;
   }
 
-  getPrivateKey(format: "wif" | "hex", compressed?: boolean) {
+  /**
+   * Function to get the private key in hex format or wif format
+   * @param format The format must be "hex" (default) or "wif"
+   * @param compressed Optional arg when using WIF format. By default it
+   * uses the compressed value defined in the signer
+   * @example
+   * ```ts
+   * const signer = Signer.fromSeed("one two three four five six");
+   * console.log(signer.getPrivateKey());
+   * // bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37
+   *
+   * console.log(signer.getPrivateKey("wif"));
+   * // L3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL
+   *
+   * console.log(signer.getPrivateKey("wif", false));
+   * // 5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd
+   * ```
+   */
+  getPrivateKey(format: "wif" | "hex" = "hex", compressed?: boolean) {
     let stringPrivateKey: string;
     if (this.privateKey instanceof Uint8Array) {
       stringPrivateKey = toHexString(this.privateKey);
@@ -201,8 +219,8 @@ export class Signer {
     }
 
     const comp = compressed === undefined ? this.compressed : compressed;
-    
-    switch(format) {
+
+    switch (format) {
       case "hex":
         return stringPrivateKey;
       case "wif":

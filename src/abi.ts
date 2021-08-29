@@ -151,6 +151,107 @@ export interface Abi {
 }
 
 /**
+ * ABI of Reserved Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+export const abiReservedOperation: Abi = {
+  name: "koinos::protocol::reserved_operation",
+  type: [
+    {
+      name: "extensions",
+      type: "unused_extension",
+    },
+  ],
+};
+
+/**
+ * ABI of Nop Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+export const abiNopOperation: Abi = {
+  name: "koinos::protocol::nop_operation",
+  type: [
+    {
+      name: "extensions",
+      type: "unused_extension",
+    },
+  ],
+};
+
+/**
+ * ABI of Upload Contract Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+export const abiUploadContractOperation: Abi = {
+  name: "koinos::protocol::upload_contract_operation",
+  type: [
+    {
+      name: "contract_id",
+      type: "fixedblob",
+      size: 20,
+    },
+    {
+      name: "bytecode",
+      type: "variableblob",
+    },
+    {
+      name: "extensions",
+      type: "unused_extension",
+    },
+  ],
+};
+
+const abiSystemCallTargetReserved: Abi = {
+  type: [],
+};
+
+const abiThunkId: Abi = {
+  type: "uint32",
+};
+
+const abiContractCallBundle: Abi = {
+  type: [
+    {
+      name: "contract_id",
+      type: "fixedblob",
+      size: 20,
+    },
+    {
+      name: "entry_point",
+      type: "uint32",
+    },
+  ],
+};
+
+/**
+ * ABI of Set System Call Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+export const abiSetSystemCallOperation: Abi = {
+  name: "koinos::protocol::set_system_call_operation",
+  type: [
+    {
+      name: "call_id",
+      type: "uint32",
+    },
+    {
+      // chain::sytem_call_target
+      name: "target",
+      type: "variant",
+      variants: [
+        abiSystemCallTargetReserved,
+        abiThunkId,
+        abiContractCallBundle,
+      ],
+    },
+    {
+      name: "extensions",
+      type: "unused_extension",
+    },
+  ],
+};
+
+/**
  * ABI of Call Contract Operation. This abi is used in the
  * definition of the Active Data ABI. See [[abiActiveData]]
  */
@@ -202,11 +303,11 @@ export const abiActiveData: Abi = {
           name: "operation",
           type: "variant",
           variants: [
-            { type: "not implemented" /* reserved operation */ },
-            { type: "not implemented" /* nop operation */ },
-            { type: "not implemented" /* upload contract operation */ },
+            abiReservedOperation,
+            abiNopOperation,
+            abiUploadContractOperation,
             abiCallContractOperation,
-            { type: "not implemented" /* set system call operation*/ },
+            abiSetSystemCallOperation,
           ],
         },
       },
