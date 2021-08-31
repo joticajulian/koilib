@@ -1,21 +1,22 @@
 import { /* bitcoinEncode, */ bitcoinDecode, toHexString } from "../src/utils";
-import { Transaction, Signer } from "../src/Signer";
+import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
 import { Wallet } from "../src/Wallet";
 import { Provider } from "../src/Provider";
+import { Transaction } from "../src/interface";
 
 const privateKeyHex =
   "bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37";
 const seed = "one two three four five six";
 const wif = "5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd";
 const wifCompressed = "L3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL";
-/*const publicKey =
+/* const publicKey =
   "042921DD54FDD8FB5D2AB1A9928DB7E9E08B34F8711A3332E0F1B36E71076B9CF291E7C6DBCC8C0CF132DB40D32722301B5244B1274DC16A5A54C3220B7DEF3423";
 const publicKeyCompressed =
   "032921DD54FDD8FB5D2AB1A9928DB7E9E08B34F8711A3332E0F1B36E71076B9CF2"; */
 const address = "1AjfrkFYS28SgPWrvaUeY6pThbzF1fUrjQ";
 const addressCompressed = "1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs";
-const urlProvider = "http://45.56.104.152:8080";
+const rpcNodes = ["http://45.56.104.152:8080", "http://159.203.119.0:8080"];
 
 const contract = new Contract({
   id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
@@ -48,7 +49,7 @@ const contract = new Contract({
 });
 
 describe("Signer", () => {
-  it.only("should get private key", () => {
+  it("should get private key", () => {
     expect.assertions(18);
     const signer1 = Signer.fromWif(wif);
     expect(signer1.getPrivateKey("wif")).toBe(wif);
@@ -154,10 +155,11 @@ describe("Wallet and Contract", () => {
   });
 
   it("should create a wallet and sign a transaction", async () => {
+    expect.assertions(0);
     const wallet = new Wallet({
       signer: new Signer(privateKeyHex),
       contract,
-      provider: new Provider(urlProvider),
+      provider: new Provider(rpcNodes),
     });
 
     const operation = wallet.encodeOperation({
@@ -180,7 +182,7 @@ describe("Wallet and Contract", () => {
   it("should get the balance of an account", async () => {
     const wallet = new Wallet({
       contract,
-      provider: new Provider(urlProvider),
+      provider: new Provider(rpcNodes),
     });
 
     const result = await wallet.readContract({

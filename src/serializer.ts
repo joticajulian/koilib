@@ -24,16 +24,17 @@ import { VariableBlob } from "./VariableBlob";
  *   to: "bob",
  *   value: "123456",
  * }, abi);
+ * ```
  */
-export function serialize(data: unknown, abi: Abi) {
+export function serialize(data: unknown, abi: Abi): VariableBlob {
   const vb = new VariableBlob();
   // vb.dataBuffer = {};
   // const aux = new VariableBlob();
   if (Array.isArray(abi.type)) {
-    const _data = data as Record<string, unknown>;
+    const dataObj = data as Record<string, unknown>;
     abi.type.forEach((key: Abi) => {
-      const { buffer /*, dataBuffer */ } = serialize(
-        _data[key.name as string],
+      const { buffer /* , dataBuffer */ } = serialize(
+        dataObj[key.name as string],
         key
       );
       // vb.dataBuffer[key.name] = dataBuffer;
@@ -56,7 +57,9 @@ export function serialize(data: unknown, abi: Abi) {
       if (!abi.subAbi)
         throw new Error(`subAbi undefined in ${JSON.stringify(abi)}`);
       if (!Array.isArray(data))
-        throw new Error(`Invalid data, array expected. Received: ${data}`);
+        throw new Error(
+          `Invalid data, array expected. Received ${typeof data}`
+        );
       vb.serializeVarint(data.length);
       // aux.serializeVarint(data.length); vb.dataBuffer.size = aux.buffer.toString();
       // vb.dataBuffer.items = [];
@@ -70,17 +73,17 @@ export function serialize(data: unknown, abi: Abi) {
       break;
     }
     case "variant": {
-      const _data = data as { type: string; value: unknown };
+      const dataV = data as { type: string; value: unknown };
       if (!abi.variants) throw new Error("Abi variants are not defined");
-      const variantId = abi.variants.findIndex((v) => v.name === _data.type);
-      if (variantId < 0) throw new Error(`Variant ${_data.type} not found`);
+      const variantId = abi.variants.findIndex((v) => v.name === dataV.type);
+      if (variantId < 0) throw new Error(`Variant ${dataV.type} not found`);
       if (!abi.variants[variantId])
         throw new Error(
           `abi undefined in ${JSON.stringify(abi)} for id ${variantId}`
         );
       vb.serializeVarint(variantId);
       // aux.serializeVarint(variantId); vb.dataBuffer.variantId = aux.buffer.toString();
-      const variantSerialized = serialize(_data.value, abi.variants[variantId]);
+      const variantSerialized = serialize(dataV.value, abi.variants[variantId]);
       vb.write(variantSerialized.buffer);
       // vb.dataBuffer.variant = variantSerialized.dataBuffer;
       break;
@@ -221,6 +224,7 @@ export function deserialize(buffer: VariableBlob | string, abi: Abi): unknown {
         const item = deserialize(vb, abi.subAbi as Abi);
         data.push(item);
       }
+      return data;
     }
     case "variant": {
       const variantId = vb.deserializeVarint();

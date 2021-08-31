@@ -1,6 +1,7 @@
-import Contract, { DecodedOperation, EncodedOperation } from "./Contract";
+import { Contract, DecodedOperation, EncodedOperation } from "./Contract";
+import { Transaction } from "./interface";
 import { Provider } from "./Provider";
-import Signer, { Transaction } from "./Signer";
+import { Signer } from "./Signer";
 
 /**
  * The Wallet Class combines all the features of [[Signer]],
@@ -180,13 +181,13 @@ export class Wallet {
         );
       nonce = await this.getNonce(this.getAddress());
     }
-    const resource_limit =
+    const resourceLimit =
       opts.resource_limit === undefined ? 1000000 : opts.resource_limit;
     const operations = opts.operations ? opts.operations : [];
 
     return {
       active_data: {
-        resource_limit,
+        resource_limit: resourceLimit,
         nonce,
         operations,
       },
@@ -198,7 +199,7 @@ export class Wallet {
   /**
    * See [[Signer.getAddress]]
    */
-  getAddress() {
+  getAddress(): string {
     if (!this.signer) throw new Error("Signer is undefined");
     return this.signer.getAddress();
   }
@@ -206,7 +207,7 @@ export class Wallet {
   /**
    * See [[Signer.signTransaction]]
    */
-  async signTransaction(tx: Transaction) {
+  async signTransaction(tx: Transaction): Promise<Transaction> {
     if (!this.signer) throw new Error("Signer is undefined");
     return this.signer.signTransaction(tx);
   }
@@ -242,7 +243,7 @@ export class Wallet {
   /**
    * See [[Provider.call]]
    */
-  async call(method: string, params: unknown) {
+  async call(method: string, params: unknown): Promise<unknown> {
     if (!this.provider) throw new Error("Provider is undefined");
     return this.provider.call(method, params);
   }
@@ -250,7 +251,7 @@ export class Wallet {
   /**
    * See [[Provider.getNonce]]
    */
-  async getNonce(address: string) {
+  async getNonce(address: string): Promise<number> {
     if (!this.provider) throw new Error("Provider is undefined");
     return this.provider.getNonce(address);
   }
@@ -258,18 +259,10 @@ export class Wallet {
   /**
    * See [[Provider.sendTransaction]]
    */
-  async sendTransaction(transaction: Transaction) {
+  async sendTransaction(transaction: Transaction): Promise<unknown> {
     if (!this.provider) throw new Error("Provider is undefined");
     return this.provider.sendTransaction(transaction);
   }
-
-  /* async readContract(operation: EncodedOperation["value"]): Promise<{
-    result: string;
-    logs: string;
-  }> {
-    if (!this.provider) throw new Error("Provider is undefined");
-    return this.provider.readContract(operation);
-  } */
 
   // Provider + Contract
 

@@ -1,7 +1,10 @@
+/* eslint-disable no-param-reassign */
+
 import { sha256 } from "js-sha256";
 import * as secp from "noble-secp256k1";
 import { abiActiveData } from "./abi";
-import Multihash from "./Multihash";
+import { Transaction } from "./interface";
+import { Multihash } from "./Multihash";
 import { serialize } from "./serializer";
 import {
   bitcoinAddress,
@@ -11,51 +14,6 @@ import {
   toUint8Array,
 } from "./utils";
 import { VariableBlob } from "./VariableBlob";
-
-/**
- * Koinos Transaction
- */
-export interface Transaction {
-  /**
-   * Transaction ID. It must be the sha2-256 of the
-   * serialized data of active data, and encoded in multi base58
-   */
-  id?: string;
-
-  /**
-   * Consensus data
-   */
-  active_data?: {
-    resource_limit?: string | number | bigint;
-
-    /**
-     * Account nonce
-     */
-    nonce?: string | number | bigint;
-
-    /**
-     * Array of operations
-     */
-    operations?: {
-      type: string;
-      value: unknown;
-    }[];
-    [x: string]: unknown;
-  };
-
-  /**
-   * Non-consensus data
-   */
-  passive_data?: {
-    [x: string]: unknown;
-  };
-
-  /**
-   * Signature in compact format enconded in multi base64
-   */
-  signature_data?: string;
-  [x: string]: unknown;
-}
 
 /**
  * The Signer Class contains the private key needed to sign transactions.
@@ -150,7 +108,7 @@ export class Signer {
 
   /**
    * Function to import a private key from the WIF
-   * @param wif Private key in WIF format
+   * @param wif  - Private key in WIF format
    * @example
    * ```ts
    * const signer = Signer.fromWif("L59UtJcTdNBnrH2QSBA5beSUhRufRu3g6tScDTite6Msuj7U93tM")
@@ -159,7 +117,7 @@ export class Signer {
    * ```
    * @returns Signer object
    */
-  static fromWif(wif: string) {
+  static fromWif(wif: string): Signer {
     const compressed = wif[0] !== "5";
     const privateKey = bitcoinDecode(wif);
     return new Signer(toHexString(privateKey), compressed);
@@ -167,8 +125,8 @@ export class Signer {
 
   /**
    * Function to import a private key from the seed
-   * @param seed Seed words
-   * @param compressed
+   * @param seed - Seed words
+   * @param compressed -
    * @example
    * ```ts
    * const signer = Signer.fromSeed("my seed");
@@ -177,7 +135,7 @@ export class Signer {
    * ```
    * @returns Signer object
    */
-  static fromSeed(seed: string, compressed?: boolean) {
+  static fromSeed(seed: string, compressed?: boolean): Signer {
     const privateKey = sha256(seed);
     return new Signer(privateKey, compressed);
   }
@@ -186,14 +144,14 @@ export class Signer {
    *
    * @returns Signer address
    */
-  getAddress() {
+  getAddress(): string {
     return this.address;
   }
 
   /**
    * Function to get the private key in hex format or wif format
-   * @param format The format must be "hex" (default) or "wif"
-   * @param compressed Optional arg when using WIF format. By default it
+   * @param format - The format must be "hex" (default) or "wif"
+   * @param compressed - Optional arg when using WIF format. By default it
    * uses the compressed value defined in the signer
    * @example
    * ```ts
@@ -208,7 +166,7 @@ export class Signer {
    * // 5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd
    * ```
    */
-  getPrivateKey(format: "wif" | "hex" = "hex", compressed?: boolean) {
+  getPrivateKey(format: "wif" | "hex" = "hex", compressed?: boolean): string {
     let stringPrivateKey: string;
     if (this.privateKey instanceof Uint8Array) {
       stringPrivateKey = toHexString(this.privateKey);
@@ -226,6 +184,7 @@ export class Signer {
       case "wif":
         return bitcoinEncode(toUint8Array(stringPrivateKey), "private", comp);
       default:
+        /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
         throw new Error(`Invalid format ${format}`);
     }
   }
@@ -233,10 +192,10 @@ export class Signer {
   /**
    * Function to sign a transaction. It's important to remark that
    * the transaction parameter is modified inside this function.
-   * @param tx Unsigned transaction
+   * @param tx - Unsigned transaction
    * @returns
    */
-  async signTransaction(tx: Transaction) {
+  async signTransaction(tx: Transaction): Promise<Transaction> {
     const blobActiveData = serialize(tx.active_data, abiActiveData);
     const hash = sha256(blobActiveData.buffer);
     const [hex, recovery] = await secp.sign(hash, this.privateKey, {

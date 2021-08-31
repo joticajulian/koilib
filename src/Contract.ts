@@ -1,6 +1,6 @@
 import { Abi, abiCallContractOperation } from "./abi";
 import { deserialize, serialize } from "./serializer";
-import VariableBlob from "./VariableBlob";
+import { VariableBlob } from "./VariableBlob";
 
 /**
  * These entries definitions are used to serialize and deserialize
@@ -104,7 +104,7 @@ export interface DecodedOperation {
   /** Operation name */
   name: string;
 
-  /** Arguments decoded. See [[Abi]]*/
+  /** Arguments decoded. See [[Abi]] */
   args: unknown;
 }
 
@@ -243,7 +243,7 @@ export class Contract {
   /**
    * Encondes a contract operation using Koinos serialization
    * and taking the contract entries as reference to build it
-   * @param op Operation to encode
+   * @param op - Operation to encode
    * @returns Operation encoded
    * @example
    * ```ts
@@ -311,7 +311,8 @@ export class Contract {
       throw new Error(
         `Invalid contract id. Expected: ${this.id}. Received: ${op.value.contract_id}`
       );
-    for (let opName in this.entries) {
+    for (let i = 0; i < Object.keys(this.entries).length; i += 1) {
+      const opName = Object.keys(this.entries)[i];
       const entry = this.entries[opName];
       if (op.value.entry_point === entry.id) {
         const vb = new VariableBlob(op.value.args);
@@ -329,8 +330,8 @@ export class Contract {
    * [[Provider.readContract | readContract of Provider class]] to read a
    * contract and decode the result. "outputs" field must be defined in
    * the abi for the operation name.
-   * @param result Encoded result in base64
-   * @param opName Operation name
+   * @param result - Encoded result in base64
+   * @param opName - Operation name
    * @returns Decoded result
    * @example
    * ```ts

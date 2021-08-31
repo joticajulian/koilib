@@ -5,7 +5,7 @@ import ripemd160 from "noble-ripemd160";
 /**
  * Converts an hex string to Uint8Array
  */
-export function toUint8Array(hex: string) {
+export function toUint8Array(hex: string): Uint8Array {
   const pairs = hex.match(/[\dA-F]{2}/gi);
   if (!pairs) throw new Error("Invalid hex");
   return new Uint8Array(
@@ -16,7 +16,7 @@ export function toUint8Array(hex: string) {
 /**
  * Converts Uint8Array to hex string
  */
-export function toHexString(buffer: Uint8Array) {
+export function toHexString(buffer: Uint8Array): string {
   return Array.from(buffer)
     .map((n) => `0${Number(n).toString(16)}`.slice(-2))
     .join("");
@@ -25,7 +25,7 @@ export function toHexString(buffer: Uint8Array) {
 /**
  * Encodes an Uint8Array in base58
  */
-export function encodeBase58(buffer: Uint8Array) {
+export function encodeBase58(buffer: Uint8Array): string {
   return new TextDecoder().decode(multibase.encode("z", buffer)).slice(1);
 }
 
@@ -48,7 +48,7 @@ export function bitcoinEncode(
   buffer: Uint8Array,
   type: "public" | "private",
   compressed = false
-) {
+): string {
   let bufferCheck;
   let prefixBuffer;
   let offsetChecksum;
@@ -88,13 +88,14 @@ export function copyUint8Array(
   targetStart: number,
   sourceStart: number,
   sourceEnd: number
-) {
+): void {
   for (
     let cursorSource = sourceStart;
     cursorSource < sourceEnd;
     cursorSource += 1
   ) {
     const cursorTarget = targetStart + cursorSource - sourceStart;
+    /* eslint-disable-next-line no-param-reassign */
     target[cursorTarget] = source[cursorSource];
   }
 }
@@ -107,7 +108,7 @@ export function copyUint8Array(
  * For private keys this encode is also known as
  * wallet import format (WIF).
  */
-export function bitcoinDecode(value: string) {
+export function bitcoinDecode(value: string): Uint8Array {
   const buffer = decodeBase58(value);
   const privateKey = new Uint8Array(32);
   const checksum = new Uint8Array(4);
@@ -128,7 +129,10 @@ export function bitcoinDecode(value: string) {
  *
  * address = bitcoinEncode( ripemd160 ( sha256 ( publicKey ) ) )
  */
-export function bitcoinAddress(publicKey: Uint8Array, compressed = false) {
+export function bitcoinAddress(
+  publicKey: Uint8Array,
+  compressed = false
+): string {
   const hash = sha256(publicKey);
   const hash160 = ripemd160(toUint8Array(hash));
   return bitcoinEncode(hash160, "public", compressed);
