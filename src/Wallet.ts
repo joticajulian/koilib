@@ -1,7 +1,9 @@
+import { abiUploadContractOperation } from "./abi";
 import { Contract, DecodedOperation, EncodedOperation } from "./Contract";
 import { Transaction } from "./interface";
 import { Provider } from "./Provider";
 import { Signer } from "./Signer";
+import { VariableBlob } from "./VariableBlob";
 
 /**
  * The Wallet Class combines all the features of [[Signer]],
@@ -190,6 +192,37 @@ export class Wallet {
         resource_limit: resourceLimit,
         nonce,
         operations,
+      },
+    };
+  }
+
+  /**
+   * Function to encode an operation to upload or update a contract
+   * @param contractId - Contract ID in multibase64
+   * @param bytecode - bytecode in multibase64 or Uint8Array
+   */
+  static encodeUploadContractOperation(
+    contractId: string,
+    bytecode: string | Uint8Array
+  ): {
+    type: string;
+    value: {
+      contract_id: string;
+      bytecode: string;
+      extensions: unknown;
+    };
+  } {
+    const bytecodeBase64 =
+      typeof bytecode === "string"
+        ? bytecode
+        : new VariableBlob(bytecode).toString();
+
+    return {
+      type: abiUploadContractOperation.name as string,
+      value: {
+        contract_id: contractId,
+        bytecode: bytecodeBase64,
+        extensions: {},
       },
     };
   }
