@@ -1,4 +1,4 @@
-import VariableBlob from "./VariableBlob";
+import { VariableBlob } from "./VariableBlob";
 
 /**
  * Multihash is a protocol for differentiating outputs from various

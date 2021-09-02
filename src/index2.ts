@@ -10,7 +10,7 @@ import { Provider } from "./Provider";
 import { Wallet } from "./Wallet";
 import * as abi from "./abi";
 
-declare const window: any;
+declare const window: { [x: string]: unknown };
 
 window.utils = utils;
 window.Contract = Contract;

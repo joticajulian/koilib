@@ -1,3 +1,4 @@
+/* eslint-disable no-bitwise, prefer-template */
 import * as multibase from "multibase";
 
 /**
@@ -12,17 +13,17 @@ export class VariableBlob {
     if (typeof input === "string") {
       this.buffer = multibase.decode(input);
     } else {
-      this.buffer = input ? input : new Uint8Array();
+      this.buffer = input || new Uint8Array();
     }
     this.offset = 0;
   }
 
-  resetCursor() {
+  resetCursor(): VariableBlob {
     this.offset = 0;
     return this;
   }
 
-  checkRemaining(size: number, canResize = false) {
+  checkRemaining(size: number, canResize = false): void {
     if (this.offset + size > this.buffer.length) {
       if (!canResize) throw new Error("Unexpected EOF");
       const newSize = this.offset + size;
@@ -32,8 +33,8 @@ export class VariableBlob {
     }
   }
 
-  write(data: string | Uint8Array, length = 0) {
-    let bytes = typeof data === "string" ? multibase.decode(data) : data;
+  write(data: string | Uint8Array, length = 0): void {
+    const bytes = typeof data === "string" ? multibase.decode(data) : data;
     if (length && bytes.length !== length)
       throw new Error(
         `Invalid length. Expected: ${length}. Received: ${bytes.length}`
@@ -58,53 +59,53 @@ export class VariableBlob {
     return subBuffer;
   }
 
-  writeInt8(n: number) {
+  writeInt8(n: number): void {
     this.checkRemaining(1, true);
     new DataView(this.buffer.buffer).setInt8(this.offset, n);
     this.offset += 1;
   }
 
-  readInt8() {
+  readInt8(): number {
     this.checkRemaining(1);
     const n = new DataView(this.buffer.buffer).getInt8(this.offset);
     this.offset += 1;
     return n;
   }
 
-  writeInt16(n: number) {
+  writeInt16(n: number): void {
     this.checkRemaining(2, true);
     new DataView(this.buffer.buffer).setInt16(this.offset, n);
     this.offset += 2;
   }
 
-  readInt16() {
+  readInt16(): number {
     this.checkRemaining(2);
     const n = new DataView(this.buffer.buffer).getInt16(this.offset);
     this.offset += 2;
     return n;
   }
 
-  writeInt32(n: number) {
+  writeInt32(n: number): void {
     this.checkRemaining(4, true);
     new DataView(this.buffer.buffer).setInt32(this.offset, n);
     this.offset += 4;
   }
 
-  readInt32() {
+  readInt32(): number {
     this.checkRemaining(4);
     const n = new DataView(this.buffer.buffer).getInt32(this.offset);
     this.offset += 4;
     return n;
   }
 
-  writeUint8(n: number) {
+  writeUint8(n: number): void {
     this.checkRemaining(1, true);
     // new DataView(this.buffer.buffer).setUint8(this.offset, n);
     this.buffer[this.offset] = n;
     this.offset += 1;
   }
 
-  readUint8() {
+  readUint8(): number {
     this.checkRemaining(1);
     // const n = new DataView(this.buffer.buffer).getUint8(this.offset);
     const n = this.buffer[this.offset];
@@ -112,26 +113,26 @@ export class VariableBlob {
     return n;
   }
 
-  writeUint16(n: number) {
+  writeUint16(n: number): void {
     this.checkRemaining(2, true);
     new DataView(this.buffer.buffer).setUint16(this.offset, n);
     this.offset += 2;
   }
 
-  readUint16() {
+  readUint16(): number {
     this.checkRemaining(2);
     const n = new DataView(this.buffer.buffer).getUint16(this.offset);
     this.offset += 2;
     return n;
   }
 
-  writeUint32(n: number) {
+  writeUint32(n: number): void {
     this.checkRemaining(4, true);
     new DataView(this.buffer.buffer).setUint32(this.offset, n);
     this.offset += 4;
   }
 
-  readUint32() {
+  readUint32(): number {
     this.checkRemaining(4);
     const n = new DataView(this.buffer.buffer).getUint32(this.offset);
     this.offset += 4;
@@ -139,7 +140,7 @@ export class VariableBlob {
   }
 
   // Varint
-  serializeVarint(num: number) {
+  serializeVarint(num: number): void {
     if (num === 0) {
       this.writeUint8(0);
       return;
@@ -155,7 +156,7 @@ export class VariableBlob {
     }
   }
 
-  deserializeVarint() {
+  deserializeVarint(): number {
     let i = 0;
     let n = 0;
     let endVarInt = false;
@@ -170,8 +171,8 @@ export class VariableBlob {
   }
 
   // Buffer
-  serializeBuffer(data: string | Uint8Array) {
-    let bytes = typeof data === "string" ? multibase.decode(data) : data;
+  serializeBuffer(data: string | Uint8Array): void {
+    const bytes = typeof data === "string" ? multibase.decode(data) : data;
     this.serializeVarint(bytes.length);
     this.write(bytes);
   }
@@ -185,20 +186,20 @@ export class VariableBlob {
   }
 
   // String
-  serializeString(str: string) {
+  serializeString(str: string): void {
     const bytes = new TextEncoder().encode(str);
     this.serializeVarint(bytes.length);
     this.write(bytes);
   }
 
-  deserializeString() {
+  deserializeString(): string {
     const size = this.deserializeVarint();
     const buffer = this.read(size) as Uint8Array;
     return new TextDecoder().decode(buffer);
   }
 
   // Bigint
-  serializeBigint(num: string | number | bigint, bits: number) {
+  serializeBigint(num: string | number | bigint, bits: number): void {
     const bignum = BigInt(num);
     let numString;
     if (bignum >= BigInt(0)) {
@@ -213,7 +214,11 @@ export class VariableBlob {
     }
   }
 
-  deserializeBigint(bits: number, unsigned = true, outputBigint = true) {
+  deserializeBigint(
+    bits: number,
+    unsigned = true,
+    outputBigint = true
+  ): string | number | bigint {
     let numString = "0x";
     for (let i = 0; i < bits / 32; i += 1) {
       const uint32Str = this.readUint32().toString(16);

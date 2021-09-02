@@ -1,6 +1,9 @@
-import Contract, { DecodedOperation, EncodedOperation } from "./Contract";
+import { abiUploadContractOperation } from "./abi";
+import { Contract, DecodedOperation, EncodedOperation } from "./Contract";
+import { Transaction } from "./interface";
 import { Provider } from "./Provider";
-import Signer, { Transaction } from "./Signer";
+import { Signer } from "./Signer";
+import { VariableBlob } from "./VariableBlob";
 
 /**
  * The Wallet Class combines all the features of [[Signer]],
@@ -115,12 +118,36 @@ import Signer, { Transaction } from "./Signer";
  *   console.log(Number(balance) / 1e8);
  * })();
  * ```
+ *
+ * @example **How to upload contracts**
+ * ```ts
+ * (async () => {
+ *   // define signer, provider and wallet
+ *   const signer = Signer.fromSeed("my seed");
+ *   const provider = new Provider("http://45.56.104.152:8080");
+ *   const wallet = new Wallet({ signer, provider });
+ *
+ *   // encode operation to upload the contract
+ *   const contractId = "My+Contract+++++++++++++++++=";
+ *   const bytecode = new Uint8Array([...]);
+ *   const op = Wallet.encodeUploadContractOperation(contractId, bytecode);
+ *
+ *   // create a transaction
+ *   const tx = await wallet.newTransaction({
+ *     operations: [op],
+ *   });
+ *
+ *   // sign and send transaction
+ *   await wallet.signTransaction(tx);
+ *   await wallet.sendTransaction(tx);
+ * })();
+ * ```
  */
 export class Wallet {
   /**
    * Class containing the private key. It is used to sign
    */
-  public signer?: Signer;
+  private signer?: Signer;
 
   /**
    * Class defining the contract to interact with
@@ -159,10 +186,12 @@ export class Wallet {
     resource_limit?: number | bigint | string;
 
     /**
-     * Array of operations. They must be already encoded
-     * (see [[Wallet.encodeOperation]])
+     * Array of operations.
      */
-    operations?: EncodedOperation[];
+    operations?: {
+      type: string;
+      value: unknown;
+    }[];
 
     /**
      * Boolean defining if the Provider should be used
@@ -180,15 +209,47 @@ export class Wallet {
         );
       nonce = await this.getNonce(this.getAddress());
     }
-    const resource_limit =
+    const resourceLimit =
       opts.resource_limit === undefined ? 1000000 : opts.resource_limit;
     const operations = opts.operations ? opts.operations : [];
 
     return {
       active_data: {
-        resource_limit,
+        resource_limit: resourceLimit,
         nonce,
         operations,
+      },
+    };
+  }
+
+  /**
+   * Function to encode an operation to upload or update a contract
+   * @param contractId - Contract ID. It is a 20 bytes identifier encoded in
+   * multibase64.
+   * @param bytecode - bytecode in multibase64 or Uint8Array
+   */
+  static encodeUploadContractOperation(
+    contractId: string,
+    bytecode: string | Uint8Array
+  ): {
+    type: string;
+    value: {
+      contract_id: string;
+      bytecode: string;
+      extensions: unknown;
+    };
+  } {
+    const bytecodeBase64 =
+      typeof bytecode === "string"
+        ? bytecode
+        : new VariableBlob(bytecode).toString();
+
+    return {
+      type: abiUploadContractOperation.name as string,
+      value: {
+        contract_id: contractId,
+        bytecode: bytecodeBase64,
+        extensions: {},
       },
     };
   }
@@ -198,7 +259,7 @@ export class Wallet {
   /**
    * See [[Signer.getAddress]]
    */
-  getAddress() {
+  getAddress(): string {
     if (!this.signer) throw new Error("Signer is undefined");
     return this.signer.getAddress();
   }
@@ -206,7 +267,7 @@ export class Wallet {
   /**
    * See [[Signer.signTransaction]]
    */
-  async signTransaction(tx: Transaction) {
+  async signTransaction(tx: Transaction): Promise<Transaction> {
     if (!this.signer) throw new Error("Signer is undefined");
     return this.signer.signTransaction(tx);
   }
@@ -242,7 +303,7 @@ export class Wallet {
   /**
    * See [[Provider.call]]
    */
-  async call(method: string, params: unknown) {
+  async call(method: string, params: unknown): Promise<unknown> {
     if (!this.provider) throw new Error("Provider is undefined");
     return this.provider.call(method, params);
   }
@@ -250,7 +311,7 @@ export class Wallet {
   /**
    * See [[Provider.getNonce]]
    */
-  async getNonce(address: string) {
+  async getNonce(address: string): Promise<number> {
     if (!this.provider) throw new Error("Provider is undefined");
     return this.provider.getNonce(address);
   }
@@ -258,18 +319,10 @@ export class Wallet {
   /**
    * See [[Provider.sendTransaction]]
    */
-  async sendTransaction(transaction: Transaction) {
+  async sendTransaction(transaction: Transaction): Promise<unknown> {
     if (!this.provider) throw new Error("Provider is undefined");
     return this.provider.sendTransaction(transaction);
   }
-
-  /* async readContract(operation: EncodedOperation["value"]): Promise<{
-    result: string;
-    logs: string;
-  }> {
-    if (!this.provider) throw new Error("Provider is undefined");
-    return this.provider.readContract(operation);
-  } */
 
   // Provider + Contract
 

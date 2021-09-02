@@ -3979,18 +3979,15 @@ exports.utils = {
 /***/ }),
 
 /***/ 822:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Contract = void 0;
 const abi_1 = __webpack_require__(285);
 const serializer_1 = __webpack_require__(825);
-const VariableBlob_1 = __importDefault(__webpack_require__(737));
+const VariableBlob_1 = __webpack_require__(737);
 /**
  * The contract class contains the contract ID and contrac entries
  * definition needed to encode/decode operations during the
@@ -4115,7 +4112,7 @@ class Contract {
     /**
      * Encondes a contract operation using Koinos serialization
      * and taking the contract entries as reference to build it
-     * @param op Operation to encode
+     * @param op - Operation to encode
      * @returns Operation encoded
      * @example
      * ```ts
@@ -4180,10 +4177,11 @@ class Contract {
     decodeOperation(op) {
         if (op.value.contract_id !== this.id)
             throw new Error(`Invalid contract id. Expected: ${this.id}. Received: ${op.value.contract_id}`);
-        for (let opName in this.entries) {
+        for (let i = 0; i < Object.keys(this.entries).length; i += 1) {
+            const opName = Object.keys(this.entries)[i];
             const entry = this.entries[opName];
             if (op.value.entry_point === entry.id) {
-                const vb = new VariableBlob_1.default(op.value.args);
+                const vb = new VariableBlob_1.VariableBlob(op.value.args);
                 return {
                     name: opName,
                     args: serializer_1.deserialize(vb, entry.inputs),
@@ -4197,8 +4195,8 @@ class Contract {
      * [[Provider.readContract | readContract of Provider class]] to read a
      * contract and decode the result. "outputs" field must be defined in
      * the abi for the operation name.
-     * @param result Encoded result in base64
-     * @param opName Operation name
+     * @param result - Encoded result in base64
+     * @param opName - Operation name
      * @returns Decoded result
      * @example
      * ```ts
@@ -4221,16 +4219,13 @@ exports.default = Contract;
 /***/ }),
 
 /***/ 12:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Multihash = void 0;
-const VariableBlob_1 = __importDefault(__webpack_require__(737));
+const VariableBlob_1 = __webpack_require__(737);
 /**
  * Multihash is a protocol for differentiating outputs from various
  * well-established cryptographic hash functions, addressing size +
@@ -4256,7 +4251,7 @@ class Multihash {
      * @returns Encodes the multihash in base58
      */
     toString() {
-        const vb = new VariableBlob_1.default();
+        const vb = new VariableBlob_1.VariableBlob();
         vb.serializeVarint(this.id);
         vb.serializeBuffer(this.digest);
         return vb.toString("z");
@@ -4286,14 +4281,23 @@ const axios_1 = __importDefault(__webpack_require__(669));
 class Provider {
     /**
      *
-     * @param url url of rpc node
+     * @param rpcNodes - URL of the rpc node, or array of urls
+     * to switch between them when someone is down
      * @example
      * ```ts
-     * const provider = new Provider("http://45.56.104.152:8080");
+     * const provider = new Provider([
+     *   "http://45.56.104.152:8080",
+     *   "http://159.203.119.0:8080"
+     * ]);
      * ```
      */
-    constructor(url) {
-        this.url = url;
+    constructor(rpcNodes) {
+        if (Array.isArray(rpcNodes))
+            this.rpcNodes = rpcNodes;
+        else
+            this.rpcNodes = [rpcNodes];
+        this.currentNodeId = 0;
+        this.onError = () => false;
     }
     /**
      * Function to make jsonrpc requests to the RPC node
@@ -4302,21 +4306,44 @@ class Provider {
      * @returns Result of jsonrpc response
      */
     async call(method, params) {
-        const data = {
-            id: Math.round(Math.random() * 1000),
-            jsonrpc: "2.0",
-            method,
-            params,
+        let response = {
+            data: {},
+            status: 0,
+            statusText: "",
+            headers: {},
+            config: {},
         };
-        // TODO: search conditional to enable fetch for Browser
-        /* const response = await fetch(this.url, {
-          method: "POST",
-          body: JSON.stringify(data),
-        });
-        const json = await response.json();
-        if (json.error && json.error.message) throw new Error(json.error.message);
-        return json.result; */
-        const response = await axios_1.default.post(this.url, data, { validateStatus: () => true });
+        let success = false;
+        /* eslint-disable no-await-in-loop */
+        while (!success) {
+            try {
+                const data = {
+                    id: Math.round(Math.random() * 1000),
+                    jsonrpc: "2.0",
+                    method,
+                    params,
+                };
+                const url = this.rpcNodes[this.currentNodeId];
+                // TODO: search conditional to enable fetch for Browser
+                /* const response = await fetch(url, {
+                  method: "POST",
+                  body: JSON.stringify(data),
+                });
+                const json = await response.json();
+                if (json.error && json.error.message) throw new Error(json.error.message);
+                return json.result; */
+                response = await axios_1.default.post(url, data, { validateStatus: (s) => s < 400 });
+                success = true;
+            }
+            catch (e) {
+                const currentNode = this.rpcNodes[this.currentNodeId];
+                this.currentNodeId = (this.currentNodeId + 1) % this.rpcNodes.length;
+                const newNode = this.rpcNodes[this.currentNodeId];
+                const abort = this.onError(e, currentNode, newNode);
+                if (abort)
+                    throw e;
+            }
+        }
         if (response.data.error)
             throw new Error(response.data.error.message);
         return response.data.result;
@@ -4337,9 +4364,43 @@ class Provider {
         return Number(result.nonce);
     }
     /**
+     * Function to get info from the head block in the blockchain
+     */
+    async getHeadInfo() {
+        return this.call("chain.get_head_info", {});
+    }
+    /**
+     * Function to get consecutive blocks in descending order
+     * @param height - Starting block height
+     * @param numBlocks - Number of blocks to fetch
+     * @param idRef - Block ID reference to speed up searching blocks.
+     * This ID must be from a greater block height. By default it
+     * gets the ID from the block head.
+     */
+    async getBlocks(height, numBlocks = 1, idRef) {
+        let blockIdRef = idRef;
+        if (!blockIdRef) {
+            const head = await this.getHeadInfo();
+            blockIdRef = head.head_topology.id;
+        }
+        return (await this.call("block_store.get_blocks_by_height", {
+            head_block_id: blockIdRef,
+            ancestor_start_height: height,
+            num_blocks: numBlocks,
+            return_block: true,
+            return_receipt: false,
+        })).block_items;
+    }
+    /**
+     * Function to get a block by its height
+     */
+    async getBlock(height) {
+        return (await this.getBlocks(height, 1))[0];
+    }
+    /**
      * Function to call "chain.submit_transaction" to send a signed
      * transaction to the blockchain
-     * @param transaction Signed transaction
+     * @param transaction - Signed transaction
      * @returns
      */
     async sendTransaction(transaction) {
@@ -4351,7 +4412,7 @@ class Provider {
      * See also [[Wallet.readContract]] which, apart from the Provider,
      * uses the contract definition and it is prepared to receive
      * the operation decoded and return the result decoded as well.
-     * @param operation Encoded operation
+     * @param operation - Encoded operation
      * @returns Encoded result
      */
     async readContract(operation) {
@@ -4359,6 +4420,7 @@ class Provider {
     }
 }
 exports.Provider = Provider;
+exports.default = Provider;
 
 
 /***/ }),
@@ -4368,6 +4430,7 @@ exports.Provider = Provider;
 
 "use strict";
 
+/* eslint-disable no-param-reassign */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
@@ -4387,15 +4450,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Signer = void 0;
 const js_sha256_1 = __webpack_require__(23);
 const secp = __importStar(__webpack_require__(795));
 const abi_1 = __webpack_require__(285);
-const Multihash_1 = __importDefault(__webpack_require__(12));
+const Multihash_1 = __webpack_require__(12);
 const serializer_1 = __webpack_require__(825);
 const utils_1 = __webpack_require__(593);
 const VariableBlob_1 = __webpack_require__(737);
@@ -4449,7 +4509,7 @@ class Signer {
      * to create the signer from the WIF or Seed respectively.
      *
      * @param privateKey - Private key as hexstring, bigint or Uint8Array
-     * @param compressed
+     * @param compressed - compressed format is true by default
      * @example
      * ```ts
      * cons signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
@@ -4471,7 +4531,7 @@ class Signer {
     }
     /**
      * Function to import a private key from the WIF
-     * @param wif Private key in WIF format
+     * @param wif  - Private key in WIF format
      * @example
      * ```ts
      * const signer = Signer.fromWif("L59UtJcTdNBnrH2QSBA5beSUhRufRu3g6tScDTite6Msuj7U93tM")
@@ -4481,12 +4541,14 @@ class Signer {
      * @returns Signer object
      */
     static fromWif(wif) {
+        const compressed = wif[0] !== "5";
         const privateKey = utils_1.bitcoinDecode(wif);
-        return new Signer(utils_1.toHexString(privateKey));
+        return new Signer(utils_1.toHexString(privateKey), compressed);
     }
     /**
      * Function to import a private key from the seed
-     * @param seed Seed words
+     * @param seed - Seed words
+     * @param compressed -
      * @example
      * ```ts
      * const signer = Signer.fromSeed("my seed");
@@ -4495,9 +4557,9 @@ class Signer {
      * ```
      * @returns Signer object
      */
-    static fromSeed(seed) {
+    static fromSeed(seed, compressed) {
         const privateKey = js_sha256_1.sha256(seed);
-        return new Signer(privateKey);
+        return new Signer(privateKey, compressed);
     }
     /**
      *
@@ -4507,9 +4569,49 @@ class Signer {
         return this.address;
     }
     /**
+     * Function to get the private key in hex format or wif format
+     * @param format - The format must be "hex" (default) or "wif"
+     * @param compressed - Optional arg when using WIF format. By default it
+     * uses the compressed value defined in the signer
+     * @example
+     * ```ts
+     * const signer = Signer.fromSeed("one two three four five six");
+     * console.log(signer.getPrivateKey());
+     * // bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37
+     *
+     * console.log(signer.getPrivateKey("wif"));
+     * // L3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL
+     *
+     * console.log(signer.getPrivateKey("wif", false));
+     * // 5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd
+     * ```
+     */
+    getPrivateKey(format = "hex", compressed) {
+        let stringPrivateKey;
+        if (this.privateKey instanceof Uint8Array) {
+            stringPrivateKey = utils_1.toHexString(this.privateKey);
+        }
+        else if (typeof this.privateKey === "string") {
+            stringPrivateKey = this.privateKey;
+        }
+        else {
+            stringPrivateKey = BigInt(this.privateKey).toString(16).padStart(64, "0");
+        }
+        const comp = compressed === undefined ? this.compressed : compressed;
+        switch (format) {
+            case "hex":
+                return stringPrivateKey;
+            case "wif":
+                return utils_1.bitcoinEncode(utils_1.toUint8Array(stringPrivateKey), "private", comp);
+            default:
+                /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
+                throw new Error(`Invalid format ${format}`);
+        }
+    }
+    /**
      * Function to sign a transaction. It's important to remark that
      * the transaction parameter is modified inside this function.
-     * @param tx Unsigned transaction
+     * @param tx - Unsigned transaction
      * @returns
      */
     async signTransaction(tx) {
@@ -4525,7 +4627,7 @@ class Signer {
         const sHex = s.toString(16).padStart(64, "0");
         const recId = (recovery + 31).toString(16).padStart(2, "0");
         tx.signature_data = new VariableBlob_1.VariableBlob(utils_1.toUint8Array(recId + rHex + sHex)).toString();
-        tx.id = new Multihash_1.default(utils_1.toUint8Array(hash)).toString();
+        tx.id = new Multihash_1.Multihash(utils_1.toUint8Array(hash)).toString();
         return tx;
     }
 }
@@ -4561,6 +4663,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.VariableBlob = void 0;
+/* eslint-disable no-bitwise, prefer-template */
 const multibase = __importStar(__webpack_require__(957));
 /**
  * Class to serialize and deserialize data in Koinos
@@ -4571,7 +4674,7 @@ class VariableBlob {
             this.buffer = multibase.decode(input);
         }
         else {
-            this.buffer = input ? input : new Uint8Array();
+            this.buffer = input || new Uint8Array();
         }
         this.offset = 0;
     }
@@ -4590,7 +4693,7 @@ class VariableBlob {
         }
     }
     write(data, length = 0) {
-        let bytes = typeof data === "string" ? multibase.decode(data) : data;
+        const bytes = typeof data === "string" ? multibase.decode(data) : data;
         if (length && bytes.length !== length)
             throw new Error(`Invalid length. Expected: ${length}. Received: ${bytes.length}`);
         this.checkRemaining(bytes.length, true);
@@ -4706,7 +4809,7 @@ class VariableBlob {
     }
     // Buffer
     serializeBuffer(data) {
-        let bytes = typeof data === "string" ? multibase.decode(data) : data;
+        const bytes = typeof data === "string" ? multibase.decode(data) : data;
         this.serializeVarint(bytes.length);
         this.write(bytes);
     }
@@ -4769,12 +4872,14 @@ exports.default = VariableBlob;
 /***/ }),
 
 /***/ 696:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Wallet = void 0;
+const abi_1 = __webpack_require__(285);
+const VariableBlob_1 = __webpack_require__(737);
 /**
  * The Wallet Class combines all the features of [[Signer]],
  * [[Contract]], and [[Provider]] classes.
@@ -4888,6 +4993,30 @@ exports.Wallet = void 0;
  *   console.log(Number(balance) / 1e8);
  * })();
  * ```
+ *
+ * @example **How to upload contracts**
+ * ```ts
+ * (async () => {
+ *   // define signer, provider and wallet
+ *   const signer = Signer.fromSeed("my seed");
+ *   const provider = new Provider("http://45.56.104.152:8080");
+ *   const wallet = new Wallet({ signer, provider });
+ *
+ *   // encode operation to upload the contract
+ *   const contractId = "My+Contract+++++++++++++++++=";
+ *   const bytecode = new Uint8Array([...]);
+ *   const op = Wallet.encodeUploadContractOperation(contractId, bytecode);
+ *
+ *   // create a transaction
+ *   const tx = await wallet.newTransaction({
+ *     operations: [op],
+ *   });
+ *
+ *   // sign and send transaction
+ *   await wallet.signTransaction(tx);
+ *   await wallet.sendTransaction(tx);
+ * })();
+ * ```
  */
 class Wallet {
     constructor(opts = {
@@ -4911,13 +5040,32 @@ class Wallet {
                 throw new Error("Cannot get the nonce because provider is undefined. To ignore this call use getNonce:false in the parameters");
             nonce = await this.getNonce(this.getAddress());
         }
-        const resource_limit = opts.resource_limit === undefined ? 1000000 : opts.resource_limit;
+        const resourceLimit = opts.resource_limit === undefined ? 1000000 : opts.resource_limit;
         const operations = opts.operations ? opts.operations : [];
         return {
             active_data: {
-                resource_limit,
+                resource_limit: resourceLimit,
                 nonce,
                 operations,
+            },
+        };
+    }
+    /**
+     * Function to encode an operation to upload or update a contract
+     * @param contractId - Contract ID. It is a 20 bytes identifier encoded in
+     * multibase64.
+     * @param bytecode - bytecode in multibase64 or Uint8Array
+     */
+    static encodeUploadContractOperation(contractId, bytecode) {
+        const bytecodeBase64 = typeof bytecode === "string"
+            ? bytecode
+            : new VariableBlob_1.VariableBlob(bytecode).toString();
+        return {
+            type: abi_1.abiUploadContractOperation.name,
+            value: {
+                contract_id: contractId,
+                bytecode: bytecodeBase64,
+                extensions: {},
             },
         };
     }
@@ -4988,13 +5136,6 @@ class Wallet {
             throw new Error("Provider is undefined");
         return this.provider.sendTransaction(transaction);
     }
-    /* async readContract(operation: EncodedOperation["value"]): Promise<{
-      result: string;
-      logs: string;
-    }> {
-      if (!this.provider) throw new Error("Provider is undefined");
-      return this.provider.readContract(operation);
-    } */
     // Provider + Contract
     /**
      * Call the RPC node to read a contract. The operation to read
@@ -5030,7 +5171,101 @@ exports.default = Wallet;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.abiActiveData = exports.abiCallContractOperation = void 0;
+exports.abiActiveData = exports.abiCallContractOperation = exports.abiSetSystemCallOperation = exports.abiUploadContractOperation = exports.abiNopOperation = exports.abiReservedOperation = void 0;
+/**
+ * ABI of Reserved Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+exports.abiReservedOperation = {
+    name: "koinos::protocol::reserved_operation",
+    type: [
+        {
+            name: "extensions",
+            type: "unused_extension",
+        },
+    ],
+};
+/**
+ * ABI of Nop Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+exports.abiNopOperation = {
+    name: "koinos::protocol::nop_operation",
+    type: [
+        {
+            name: "extensions",
+            type: "unused_extension",
+        },
+    ],
+};
+/**
+ * ABI of Upload Contract Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+exports.abiUploadContractOperation = {
+    name: "koinos::protocol::upload_contract_operation",
+    type: [
+        {
+            name: "contract_id",
+            type: "fixedblob",
+            size: 20,
+        },
+        {
+            name: "bytecode",
+            type: "variableblob",
+        },
+        {
+            name: "extensions",
+            type: "unused_extension",
+        },
+    ],
+};
+const abiSystemCallTargetReserved = {
+    type: [],
+};
+const abiThunkId = {
+    type: "uint32",
+};
+const abiContractCallBundle = {
+    type: [
+        {
+            name: "contract_id",
+            type: "fixedblob",
+            size: 20,
+        },
+        {
+            name: "entry_point",
+            type: "uint32",
+        },
+    ],
+};
+/**
+ * ABI of Set System Call Operation. This abi is used in the
+ * definition of the Active Data ABI. See [[abiActiveData]]
+ */
+exports.abiSetSystemCallOperation = {
+    name: "koinos::protocol::set_system_call_operation",
+    type: [
+        {
+            name: "call_id",
+            type: "uint32",
+        },
+        {
+            // chain::sytem_call_target
+            name: "target",
+            type: "variant",
+            variants: [
+                abiSystemCallTargetReserved,
+                abiThunkId,
+                abiContractCallBundle,
+            ],
+        },
+        {
+            name: "extensions",
+            type: "unused_extension",
+        },
+    ],
+};
 /**
  * ABI of Call Contract Operation. This abi is used in the
  * definition of the Active Data ABI. See [[abiActiveData]]
@@ -5082,11 +5317,11 @@ exports.abiActiveData = {
                     name: "operation",
                     type: "variant",
                     variants: [
-                        { type: "not implemented" /* reserved operation */ },
-                        { type: "not implemented" /* nop operation */ },
-                        { type: "not implemented" /* upload contract operation */ },
+                        exports.abiReservedOperation,
+                        exports.abiNopOperation,
+                        exports.abiUploadContractOperation,
                         exports.abiCallContractOperation,
-                        { type: "not implemented" /* set system call operation*/ },
+                        exports.abiSetSystemCallOperation,
                     ],
                 },
             },
@@ -5176,15 +5411,16 @@ const VariableBlob_1 = __webpack_require__(737);
  *   to: "bob",
  *   value: "123456",
  * }, abi);
+ * ```
  */
 function serialize(data, abi) {
     const vb = new VariableBlob_1.VariableBlob();
     // vb.dataBuffer = {};
     // const aux = new VariableBlob();
     if (Array.isArray(abi.type)) {
-        const _data = data;
+        const dataObj = data;
         abi.type.forEach((key) => {
-            const { buffer /*, dataBuffer */ } = serialize(_data[key.name], key);
+            const { buffer /* , dataBuffer */ } = serialize(dataObj[key.name], key);
             // vb.dataBuffer[key.name] = dataBuffer;
             vb.write(buffer);
         });
@@ -5204,7 +5440,7 @@ function serialize(data, abi) {
             if (!abi.subAbi)
                 throw new Error(`subAbi undefined in ${JSON.stringify(abi)}`);
             if (!Array.isArray(data))
-                throw new Error(`Invalid data, array expected. Received: ${data}`);
+                throw new Error(`Invalid data, array expected. Received ${typeof data}`);
             vb.serializeVarint(data.length);
             // aux.serializeVarint(data.length); vb.dataBuffer.size = aux.buffer.toString();
             // vb.dataBuffer.items = [];
@@ -5218,17 +5454,17 @@ function serialize(data, abi) {
             break;
         }
         case "variant": {
-            const _data = data;
+            const dataV = data;
             if (!abi.variants)
                 throw new Error("Abi variants are not defined");
-            const variantId = abi.variants.findIndex((v) => v.name === _data.type);
+            const variantId = abi.variants.findIndex((v) => v.name === dataV.type);
             if (variantId < 0)
-                throw new Error(`Variant ${_data.type} not found`);
+                throw new Error(`Variant ${dataV.type} not found`);
             if (!abi.variants[variantId])
                 throw new Error(`abi undefined in ${JSON.stringify(abi)} for id ${variantId}`);
             vb.serializeVarint(variantId);
             // aux.serializeVarint(variantId); vb.dataBuffer.variantId = aux.buffer.toString();
-            const variantSerialized = serialize(_data.value, abi.variants[variantId]);
+            const variantSerialized = serialize(dataV.value, abi.variants[variantId]);
             vb.write(variantSerialized.buffer);
             // vb.dataBuffer.variant = variantSerialized.dataBuffer;
             break;
@@ -5368,6 +5604,7 @@ function deserialize(buffer, abi) {
                 const item = deserialize(vb, abi.subAbi);
                 data.push(item);
             }
+            return data;
         }
         case "variant": {
             const variantId = vb.deserializeVarint();
@@ -5536,6 +5773,7 @@ exports.bitcoinEncode = bitcoinEncode;
 function copyUint8Array(source, target, targetStart, sourceStart, sourceEnd) {
     for (let cursorSource = sourceStart; cursorSource < sourceEnd; cursorSource += 1) {
         const cursorTarget = targetStart + cursorSource - sourceStart;
+        /* eslint-disable-next-line no-param-reassign */
         target[cursorTarget] = source[cursorSource];
     }
 }
