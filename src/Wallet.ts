@@ -118,6 +118,30 @@ import { VariableBlob } from "./VariableBlob";
  *   console.log(Number(balance) / 1e8);
  * })();
  * ```
+ *
+ * @example **How to upload contracts**
+ * ```ts
+ * (async () => {
+ *   // define signer, provider and wallet
+ *   const signer = Signer.fromSeed("my seed");
+ *   const provider = new Provider("http://45.56.104.152:8080");
+ *   const wallet = new Wallet({ signer, provider });
+ *
+ *   // encode operation to upload the contract
+ *   const contractId = "My+Contract+++++++++++++++++=";
+ *   const bytecode = new Uint8Array([...]);
+ *   const op = Wallet.encodeUploadContractOperation(contractId, bytecode);
+ *
+ *   // create a transaction
+ *   const tx = await wallet.newTransaction({
+ *     operations: [op],
+ *   });
+ *
+ *   // sign and send transaction
+ *   await wallet.signTransaction(tx);
+ *   await wallet.sendTransaction(tx);
+ * })();
+ * ```
  */
 export class Wallet {
   /**
@@ -162,10 +186,12 @@ export class Wallet {
     resource_limit?: number | bigint | string;
 
     /**
-     * Array of operations. They must be already encoded
-     * (see [[Wallet.encodeOperation]])
+     * Array of operations.
      */
-    operations?: EncodedOperation[];
+    operations?: {
+      type: string;
+      value: unknown;
+    }[];
 
     /**
      * Boolean defining if the Provider should be used
@@ -198,7 +224,8 @@ export class Wallet {
 
   /**
    * Function to encode an operation to upload or update a contract
-   * @param contractId - Contract ID in multibase64
+   * @param contractId - Contract ID. It is a 20 bytes identifier encoded in
+   * multibase64.
    * @param bytecode - bytecode in multibase64 or Uint8Array
    */
   static encodeUploadContractOperation(

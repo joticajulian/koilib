@@ -1,9 +1,51 @@
+import axios, { AxiosResponse } from "axios";
+import crypto from "crypto";
 import { /* bitcoinEncode, */ bitcoinDecode, toHexString } from "../src/utils";
 import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
 import { Wallet } from "../src/Wallet";
 import { Provider } from "../src/Provider";
 import { Transaction } from "../src/interface";
+
+const mockAxiosGet = jest.spyOn(axios, "get");
+const mockAxiosPost = jest.spyOn(axios, "post");
+
+mockAxiosGet.mockImplementation(
+  async (): Promise<unknown> =>
+    Promise.reject(new Error("Forgot to implement mock for axios get?"))
+);
+
+mockAxiosPost.mockImplementation(
+  async (): Promise<unknown> =>
+    Promise.reject(new Error("Forgot to implement mock for axios get?"))
+);
+
+const axiosResponse = <T = unknown>(
+  result: T,
+  status = 200
+): Promise<
+  AxiosResponse<{
+    jsonrpc: string;
+    id: number | string;
+    result?: T;
+    error?: {
+      code: number;
+      messagge: string;
+    };
+  }>
+> => {
+  return Promise.resolve({
+    data: {
+      jsonrpc: "2.0",
+      id: 1,
+      result,
+    },
+    status,
+    statusText: "",
+    config: {},
+    headers: {},
+  });
+};
 
 const privateKeyHex =
   "bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37";
@@ -171,6 +213,8 @@ describe("Wallet and Contract", () => {
       },
     });
 
+    mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
+
     const tx = await wallet.newTransaction({
       operations: [operation],
     });
@@ -185,11 +229,63 @@ describe("Wallet and Contract", () => {
       provider: new Provider(rpcNodes),
     });
 
+    mockAxiosPost.mockImplementation(async () =>
+      axiosResponse({ result: "MAAAAAAECAwQ=" })
+    );
+
     const result = await wallet.readContract({
       name: "balance_of",
       args: "1Krs7v1rtpgRyfwEZncuKMQQnY5JhqXVSx",
     });
 
     expect(result).toBeDefined();
+  });
+
+  it("should change node", async () => {
+    expect.assertions(2);
+    const provider = new Provider([
+      "http://bad-server1",
+      "http://bad-server2",
+      "http://good-server",
+    ]);
+    let numErrors = 0;
+    provider.onError = () => {
+      numErrors += 1;
+      return false;
+    };
+
+    mockAxiosPost.mockImplementation(async (url) => {
+      if (!url.includes("good-server")) {
+        throw axiosResponse(undefined, 500);
+      }
+      return axiosResponse({ nonce: "0" });
+    });
+
+    const nonce = await provider.getNonce(address);
+
+    expect(numErrors).toBe(2);
+    expect(nonce).toBe(0);
+  });
+
+  it("should upload a contract", async () => {
+    expect.assertions(0);
+    const provider = new Provider("http://node");
+    const signer = Signer.fromSeed(seed);
+    const wallet = new Wallet({ provider, signer });
+    const contractId = `M${crypto.randomBytes(20).toString("base64")}`;
+    const bytecode = new Uint8Array(crypto.randomBytes(100));
+    const op = Wallet.encodeUploadContractOperation(contractId, bytecode);
+
+    mockAxiosPost.mockImplementation(async () => {
+      return axiosResponse({ nonce: "0" });
+    });
+
+    const tx = await wallet.newTransaction({
+      operations: [op],
+    });
+    // sign and send transaction
+    await wallet.signTransaction(tx);
+    await wallet.sendTransaction(tx);
+    console.log(JSON.stringify(tx, null, 2));
   });
 });
