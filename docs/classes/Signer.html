@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Signer | koilib - v1.3.1</title>
-	<meta name="description" content="Documentation for koilib - v1.3.1">
+	<title>Signer | koilib - v1.4.0</title>
+	<meta name="description" content="Documentation for koilib - v1.4.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">koilib - v1.3.1</a>
+					<a href="../index.html" class="title">koilib - v1.4.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">koilib - v1.3.1</a>
+					<a href="../modules.html">koilib - v1.4.0</a>
 				</li>
 				<li>
 					<a href="Signer.html">Signer</a>
@@ -133,6 +133,7 @@
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Signer.html#getAddress" class="tsd-kind-icon">get<wbr>Address</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Signer.html#getPrivateKey" class="tsd-kind-icon">get<wbr>Private<wbr>Key</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Signer.html#signTransaction" class="tsd-kind-icon">sign<wbr>Transaction</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="Signer.html#fromSeed" class="tsd-kind-icon">from<wbr>Seed</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="Signer.html#fromWif" class="tsd-kind-icon">from<wbr>Wif</a></li>
@@ -153,7 +154,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Signer.ts#L132">Signer.ts:132</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Signer.ts#L91">Signer.ts:91</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -183,6 +184,11 @@
 								</li>
 								<li>
 									<h5>compressed: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>compressed format is true by default</p>
+										</div>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="Signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a></h4>
@@ -198,7 +204,7 @@
 					<div class="tsd-signature tsd-kind-icon">address<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Signer.ts#L116">Signer.ts:116</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Signer.ts#L75">Signer.ts:75</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -213,7 +219,7 @@
 					<div class="tsd-signature tsd-kind-icon">compressed<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Signer.ts#L107">Signer.ts:107</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Signer.ts#L66">Signer.ts:66</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -229,7 +235,7 @@
 					<div class="tsd-signature tsd-kind-icon">private<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Signer.ts#L109">Signer.ts:109</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Signer.ts#L68">Signer.ts:68</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -239,7 +245,7 @@
 					<div class="tsd-signature tsd-kind-icon">public<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Signer.ts#L111">Signer.ts:111</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Signer.ts#L70">Signer.ts:70</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -256,11 +262,63 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Signer.ts#L186">Signer.ts:186</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Signer.ts#L147">Signer.ts:147</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
 							<p>Signer address</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="getPrivateKey" class="tsd-anchor"></a>
+					<h3>get<wbr>Private<wbr>Key</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Private<wbr>Key<span class="tsd-signature-symbol">(</span>format<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">&quot;wif&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;hex&quot;</span>, compressed<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Signer.ts#L169">Signer.ts:169</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Function to get the private key in hex format or wif format</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>example</dt>
+									<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">signer</span><span style="color: #000000"> = </span><span style="color: #001080">Signer</span><span style="color: #000000">.</span><span style="color: #795E26">fromSeed</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;one two three four five six&quot;</span><span style="color: #000000">);</span>
+<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">signer</span><span style="color: #000000">.</span><span style="color: #795E26">getPrivateKey</span><span style="color: #000000">());</span>
+<span style="color: #008000">// bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37</span>
+
+<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">signer</span><span style="color: #000000">.</span><span style="color: #795E26">getPrivateKey</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;wif&quot;</span><span style="color: #000000">));</span>
+<span style="color: #008000">// L3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL</span>
+
+<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">signer</span><span style="color: #000000">.</span><span style="color: #795E26">getPrivateKey</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;wif&quot;</span><span style="color: #000000">, </span><span style="color: #0000FF">false</span><span style="color: #000000">));</span>
+<span style="color: #008000">// 5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd</span>
+</code></pre>
+									</dd>
+								</dl>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>format: <span class="tsd-signature-type">&quot;wif&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;hex&quot;</span><span class="tsd-signature-symbol"> = &quot;hex&quot;</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The format must be &quot;hex&quot; (default) or &quot;wif&quot;</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> compressed: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Optional arg when using WIF format. By default it
+										uses the compressed value defined in the signer</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -274,7 +332,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Signer.ts#L196">Signer.ts:196</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Signer.ts#L198">Signer.ts:198</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -300,13 +358,13 @@
 					<a name="fromSeed" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> from<wbr>Seed</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">from<wbr>Seed<span class="tsd-signature-symbol">(</span>seed<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="Signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a></li>
+						<li class="tsd-signature tsd-kind-icon">from<wbr>Seed<span class="tsd-signature-symbol">(</span>seed<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, compressed<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="Signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Signer.ts#L177">Signer.ts:177</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Signer.ts#L138">Signer.ts:138</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -330,6 +388,12 @@
 										<p>Seed words</p>
 									</div>
 								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> compressed: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>-</p>
+									</div>
+								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="Signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a></h4>
 							<p>Signer object</p>
@@ -346,7 +410,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Signer.ts#L161">Signer.ts:161</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Signer.ts#L120">Signer.ts:120</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -421,6 +485,9 @@
 								<a href="Signer.html#getAddress" class="tsd-kind-icon">get<wbr>Address</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="Signer.html#getPrivateKey" class="tsd-kind-icon">get<wbr>Private<wbr>Key</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="Signer.html#signTransaction" class="tsd-kind-icon">sign<wbr>Transaction</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
@@ -440,6 +507,15 @@
 						<a href="Wallet.html" class="tsd-kind-icon">Wallet</a>
 					</li>
 					<li class=" tsd-kind-interface">
+						<a href="../interfaces/ActiveBlockData.html" class="tsd-kind-icon">Active<wbr>Block<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="../interfaces/Block.html" class="tsd-kind-icon">Block</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="../interfaces/BlockHeader.html" class="tsd-kind-icon">Block<wbr>Header</a>
+					</li>
+					<li class=" tsd-kind-interface">
 						<a href="../interfaces/DecodedOperation.html" class="tsd-kind-icon">Decoded<wbr>Operation</a>
 					</li>
 					<li class=" tsd-kind-interface">
@@ -449,7 +525,13 @@
 						<a href="../interfaces/Entries.html" class="tsd-kind-icon">Entries</a>
 					</li>
 					<li class=" tsd-kind-interface">
+						<a href="../interfaces/PassiveBlockData.html" class="tsd-kind-icon">Passive<wbr>Block<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
 						<a href="../interfaces/Transaction.html" class="tsd-kind-icon">Transaction</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="../modules.html#NumberLike" class="tsd-kind-icon">Number<wbr>Like</a>
 					</li>
 				</ul>
 			</nav>

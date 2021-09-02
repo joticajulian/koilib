@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Provider | koilib - v1.3.1</title>
-	<meta name="description" content="Documentation for koilib - v1.3.1">
+	<title>Provider | koilib - v1.4.0</title>
+	<meta name="description" content="Documentation for koilib - v1.4.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">koilib - v1.3.1</a>
+					<a href="../index.html" class="title">koilib - v1.4.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">koilib - v1.3.1</a>
+					<a href="../modules.html">koilib - v1.4.0</a>
 				</li>
 				<li>
 					<a href="Provider.html">Provider</a>
@@ -93,13 +93,18 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="Provider.html#url" class="tsd-kind-icon">url</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="Provider.html#currentNodeId" class="tsd-kind-icon">current<wbr>Node<wbr>Id</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="Provider.html#onError" class="tsd-kind-icon">on<wbr>Error</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="Provider.html#rpcNodes" class="tsd-kind-icon">rpc<wbr>Nodes</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter"><a href="Provider.html#call" class="tsd-kind-icon">call</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Provider.html#getBlock" class="tsd-kind-icon">get<wbr>Block</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Provider.html#getBlocks" class="tsd-kind-icon">get<wbr>Blocks</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Provider.html#getHeadInfo" class="tsd-kind-icon">get<wbr>Head<wbr>Info</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Provider.html#getNonce" class="tsd-kind-icon">get<wbr>Nonce</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Provider.html#readContract" class="tsd-kind-icon">read<wbr>Contract</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Provider.html#sendTransaction" class="tsd-kind-icon">send<wbr>Transaction</a></li>
@@ -114,19 +119,22 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Provider<span class="tsd-signature-symbol">(</span>url<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="Provider.html" class="tsd-signature-type" data-tsd-kind="Class">Provider</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Provider<span class="tsd-signature-symbol">(</span>rpcNodes<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="Provider.html" class="tsd-signature-type" data-tsd-kind="Class">Provider</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Provider.ts#L23">Provider.ts:23</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Provider.ts#L61">Provider.ts:61</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<dl class="tsd-comment-tags">
 									<dt>example</dt>
-									<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">provider</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Provider</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;http://45.56.104.152:8080&quot;</span><span style="color: #000000">);</span>
+									<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">provider</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Provider</span><span style="color: #000000">([</span>
+<span style="color: #000000">  </span><span style="color: #A31515">&quot;http://45.56.104.152:8080&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">  </span><span style="color: #A31515">&quot;http://159.203.119.0:8080&quot;</span>
+<span style="color: #000000">]);</span>
 </code></pre>
 									</dd>
 								</dl>
@@ -134,10 +142,11 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>url: <span class="tsd-signature-type">string</span></h5>
+									<h5>rpcNodes: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<div class="lead">
-											<p>url of rpc node</p>
+											<p>URL of the rpc node, or array of urls
+											to switch between them when someone is down</p>
 										</div>
 									</div>
 								</li>
@@ -150,17 +159,113 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="url" class="tsd-anchor"></a>
-					<h3>url</h3>
-					<div class="tsd-signature tsd-kind-icon">url<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="currentNodeId" class="tsd-anchor"></a>
+					<h3>current<wbr>Node<wbr>Id</h3>
+					<div class="tsd-signature tsd-kind-icon">current<wbr>Node<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Provider.ts#L13">Provider.ts:13</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Provider.ts#L47">Provider.ts:47</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>URL of the RPC node</p>
+							<p>Index of current node in rpcNodes</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="onError" class="tsd-anchor"></a>
+					<h3>on<wbr>Error</h3>
+					<div class="tsd-signature tsd-kind-icon">on<wbr>Error<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span>, currentNode<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, newNode<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Provider.ts#L34">Provider.ts:34</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Function triggered when a node is down. Returns a
+							boolean determining if the call should be aborted.</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>example</dt>
+							<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">provider</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Provider</span><span style="color: #000000">([</span>
+<span style="color: #000000">  </span><span style="color: #A31515">&quot;http://45.56.104.152:8080&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">  </span><span style="color: #A31515">&quot;http://159.203.119.0:8080&quot;</span>
+<span style="color: #000000">]);</span>
+
+<span style="color: #001080">provider</span><span style="color: #000000">.</span><span style="color: #795E26">onError</span><span style="color: #000000"> = (</span><span style="color: #001080">error</span><span style="color: #000000">, </span><span style="color: #001080">node</span><span style="color: #000000">, </span><span style="color: #001080">newNode</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">  </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #A31515">`Error from node </span><span style="color: #0000FF">${</span><span style="color: #001080">node</span><span style="color: #0000FF">}</span><span style="color: #A31515">: </span><span style="color: #0000FF">${</span><span style="color: #001080">error</span><span style="color: #000000FF">.</span><span style="color: #001080">message</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #A31515">`changing node to </span><span style="color: #0000FF">${</span><span style="color: #001080">newNode</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">abort</span><span style="color: #000000"> = </span><span style="color: #0000FF">false</span><span style="color: #000000">;</span>
+<span style="color: #000000">  </span><span style="color: #AF00DB">return</span><span style="color: #000000"> </span><span style="color: #001080">abort</span><span style="color: #000000">;</span>
+<span style="color: #000000">}</span>
+</code></pre>
+							</dd>
+						</dl>
+					</div>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-signature">
+								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-class">
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span>, currentNode<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, newNode<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+								</ul>
+								<ul class="tsd-descriptions">
+									<li class="tsd-description">
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>Function triggered when a node is down. Returns a
+												boolean determining if the call should be aborted.</p>
+											</div>
+											<dl class="tsd-comment-tags">
+												<dt>example</dt>
+												<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">provider</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Provider</span><span style="color: #000000">([</span>
+<span style="color: #000000">  </span><span style="color: #A31515">&quot;http://45.56.104.152:8080&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">  </span><span style="color: #A31515">&quot;http://159.203.119.0:8080&quot;</span>
+<span style="color: #000000">]);</span>
+
+<span style="color: #001080">provider</span><span style="color: #000000">.</span><span style="color: #795E26">onError</span><span style="color: #000000"> = (</span><span style="color: #001080">error</span><span style="color: #000000">, </span><span style="color: #001080">node</span><span style="color: #000000">, </span><span style="color: #001080">newNode</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">  </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #A31515">`Error from node </span><span style="color: #0000FF">${</span><span style="color: #001080">node</span><span style="color: #0000FF">}</span><span style="color: #A31515">: </span><span style="color: #0000FF">${</span><span style="color: #001080">error</span><span style="color: #000000FF">.</span><span style="color: #001080">message</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #A31515">`changing node to </span><span style="color: #0000FF">${</span><span style="color: #001080">newNode</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">abort</span><span style="color: #000000"> = </span><span style="color: #0000FF">false</span><span style="color: #000000">;</span>
+<span style="color: #000000">  </span><span style="color: #AF00DB">return</span><span style="color: #000000"> </span><span style="color: #001080">abort</span><span style="color: #000000">;</span>
+<span style="color: #000000">}</span>
+</code></pre>
+												</dd>
+											</dl>
+										</div>
+										<h4 class="tsd-parameters-title">Parameters</h4>
+										<ul class="tsd-parameters">
+											<li>
+												<h5>error: <span class="tsd-signature-type">Error</span></h5>
+											</li>
+											<li>
+												<h5>currentNode: <span class="tsd-signature-type">string</span></h5>
+											</li>
+											<li>
+												<h5>newNode: <span class="tsd-signature-type">string</span></h5>
+											</li>
+										</ul>
+										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="rpcNodes" class="tsd-anchor"></a>
+					<h3>rpc<wbr>Nodes</h3>
+					<div class="tsd-signature tsd-kind-icon">rpc<wbr>Nodes<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Provider.ts#L13">Provider.ts:13</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Array of URLs of RPC nodes</p>
 						</div>
 					</div>
 				</section>
@@ -177,7 +282,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Provider.ts#L33">Provider.ts:33</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Provider.ts#L74">Provider.ts:74</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -212,6 +317,101 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="getBlock" class="tsd-anchor"></a>
+					<h3>get<wbr>Block</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Block<span class="tsd-signature-symbol">(</span>height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>block<span class="tsd-signature-symbol">: </span><a href="../interfaces/Block.html" class="tsd-signature-type" data-tsd-kind="Interface">Block</a><span class="tsd-signature-symbol">; </span>block_height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>block_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>block_receipt<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{}</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Provider.ts#L219">Provider.ts:219</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Function to get a block by its height</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>height: <span class="tsd-signature-type">number</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>block<span class="tsd-signature-symbol">: </span><a href="../interfaces/Block.html" class="tsd-signature-type" data-tsd-kind="Interface">Block</a><span class="tsd-signature-symbol">; </span>block_height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>block_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>block_receipt<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{}</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="getBlocks" class="tsd-anchor"></a>
+					<h3>get<wbr>Blocks</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Blocks<span class="tsd-signature-symbol">(</span>height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, numBlocks<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, idRef<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>block<span class="tsd-signature-symbol">: </span><a href="../interfaces/Block.html" class="tsd-signature-type" data-tsd-kind="Interface">Block</a><span class="tsd-signature-symbol">; </span>block_height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>block_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>block_receipt<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{}</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Provider.ts#L177">Provider.ts:177</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Function to get consecutive blocks in descending order</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>height: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Starting block height</p>
+									</div>
+								</li>
+								<li>
+									<h5>numBlocks: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 1</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Number of blocks to fetch</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> idRef: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Block ID reference to speed up searching blocks.
+											This ID must be from a greater block height. By default it
+										gets the ID from the block head.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>block<span class="tsd-signature-symbol">: </span><a href="../interfaces/Block.html" class="tsd-signature-type" data-tsd-kind="Interface">Block</a><span class="tsd-signature-symbol">; </span>block_height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>block_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>block_receipt<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{}</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="getHeadInfo" class="tsd-anchor"></a>
+					<h3>get<wbr>Head<wbr>Info</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Head<wbr>Info<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>head_topology<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>previous<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">; </span>last_irreversible_height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Provider.ts#L151">Provider.ts:151</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Function to get info from the head block in the blockchain</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>head_topology<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>previous<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">; </span>last_irreversible_height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="getNonce" class="tsd-anchor"></a>
 					<h3>get<wbr>Nonce</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -221,7 +421,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Provider.ts#L65">Provider.ts:65</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Provider.ts#L134">Provider.ts:134</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -255,7 +455,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Provider.ts#L98">Provider.ts:98</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Provider.ts#L249">Provider.ts:249</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -291,7 +491,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/e3ea552/src/Provider.ts#L85">Provider.ts:85</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Provider.ts#L236">Provider.ts:236</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -340,10 +540,25 @@
 								<a href="Provider.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="Provider.html#url" class="tsd-kind-icon">url</a>
+								<a href="Provider.html#currentNodeId" class="tsd-kind-icon">current<wbr>Node<wbr>Id</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="Provider.html#onError" class="tsd-kind-icon">on<wbr>Error</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="Provider.html#rpcNodes" class="tsd-kind-icon">rpc<wbr>Nodes</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
 								<a href="Provider.html#call" class="tsd-kind-icon">call</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="Provider.html#getBlock" class="tsd-kind-icon">get<wbr>Block</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="Provider.html#getBlocks" class="tsd-kind-icon">get<wbr>Blocks</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="Provider.html#getHeadInfo" class="tsd-kind-icon">get<wbr>Head<wbr>Info</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="Provider.html#getNonce" class="tsd-kind-icon">get<wbr>Nonce</a>
@@ -368,6 +583,15 @@
 						<a href="Wallet.html" class="tsd-kind-icon">Wallet</a>
 					</li>
 					<li class=" tsd-kind-interface">
+						<a href="../interfaces/ActiveBlockData.html" class="tsd-kind-icon">Active<wbr>Block<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="../interfaces/Block.html" class="tsd-kind-icon">Block</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="../interfaces/BlockHeader.html" class="tsd-kind-icon">Block<wbr>Header</a>
+					</li>
+					<li class=" tsd-kind-interface">
 						<a href="../interfaces/DecodedOperation.html" class="tsd-kind-icon">Decoded<wbr>Operation</a>
 					</li>
 					<li class=" tsd-kind-interface">
@@ -377,7 +601,13 @@
 						<a href="../interfaces/Entries.html" class="tsd-kind-icon">Entries</a>
 					</li>
 					<li class=" tsd-kind-interface">
+						<a href="../interfaces/PassiveBlockData.html" class="tsd-kind-icon">Passive<wbr>Block<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
 						<a href="../interfaces/Transaction.html" class="tsd-kind-icon">Transaction</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="../modules.html#NumberLike" class="tsd-kind-icon">Number<wbr>Like</a>
 					</li>
 				</ul>
 			</nav>

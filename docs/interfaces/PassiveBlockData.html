@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>DecodedOperation | koilib - v1.4.0</title>
+	<title>PassiveBlockData | koilib - v1.4.0</title>
 	<meta name="description" content="Documentation for koilib - v1.4.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -55,90 +55,27 @@
 					<a href="../modules.html">koilib - v1.4.0</a>
 				</li>
 				<li>
-					<a href="DecodedOperation.html">DecodedOperation</a>
+					<a href="PassiveBlockData.html">PassiveBlockData</a>
 				</li>
 			</ul>
-			<h1>Interface DecodedOperation</h1>
+			<h1>Interface PassiveBlockData</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
-			<section class="tsd-panel tsd-comment">
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>Human readable format operation</p>
-					</div>
-					<dl class="tsd-comment-tags">
-						<dt>example</dt>
-						<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">opDecoded</span><span style="color: #000000"> = {</span>
-<span style="color: #000000">  </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;transfer&quot;</span><span style="color: #000000">,</span>
-<span style="color: #000000">  </span><span style="color: #001080">args:</span><span style="color: #000000"> {</span>
-<span style="color: #000000">    </span><span style="color: #001080">from:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;1Krs7v1rtpgRyfwEZncuKMQQnY5JhqXVSx&quot;</span><span style="color: #000000">,</span>
-<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;1BqtgWBcqm9cSZ97avLGZGJdgso7wx6pCA&quot;</span><span style="color: #000000">,</span>
-<span style="color: #000000">    </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #098658">1000</span><span style="color: #000000">,</span>
-<span style="color: #000000">  },</span>
-<span style="color: #000000">};</span>
-</code></pre>
-						</dd>
-					</dl>
-				</div>
-			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">DecodedOperation</span>
+						<span class="target">PassiveBlockData</span>
 					</li>
 				</ul>
 			</section>
-			<section class="tsd-panel-group tsd-index-group">
-				<h2>Index</h2>
-				<section class="tsd-panel tsd-index-panel">
-					<div class="tsd-index-content">
-						<section class="tsd-index-section ">
-							<h3>Properties</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="DecodedOperation.html#args" class="tsd-kind-icon">args</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="DecodedOperation.html#name" class="tsd-kind-icon">name</a></li>
-							</ul>
-						</section>
-					</div>
-				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="args" class="tsd-anchor"></a>
-					<h3>args</h3>
-					<div class="tsd-signature tsd-kind-icon">args<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">unknown</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Contract.ts#L108">Contract.ts:108</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Arguments decoded. See <a href="abi.Abi.html">Abi</a></p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="name" class="tsd-anchor"></a>
-					<h3>name</h3>
-					<div class="tsd-signature tsd-kind-icon">name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/d65a3ab/src/Contract.ts#L105">Contract.ts:105</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Operation name</p>
-						</div>
-					</div>
-				</section>
+			<section class="tsd-panel tsd-kind-interface">
+				<h3 class="tsd-before-signature">Indexable</h3>
+				<div class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">[</span>x: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type">unknown</span></div>
 			</section>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -178,30 +115,22 @@
 					<li class=" tsd-kind-interface">
 						<a href="BlockHeader.html" class="tsd-kind-icon">Block<wbr>Header</a>
 					</li>
-				</ul>
-				<ul class="current">
-					<li class="current tsd-kind-interface">
+					<li class=" tsd-kind-interface">
 						<a href="DecodedOperation.html" class="tsd-kind-icon">Decoded<wbr>Operation</a>
-						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="DecodedOperation.html#args" class="tsd-kind-icon">args</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="DecodedOperation.html#name" class="tsd-kind-icon">name</a>
-							</li>
-						</ul>
 					</li>
-				</ul>
-				<ul class="after-current">
 					<li class=" tsd-kind-interface">
 						<a href="EncodedOperation.html" class="tsd-kind-icon">Encoded<wbr>Operation</a>
 					</li>
 					<li class=" tsd-kind-interface">
 						<a href="Entries.html" class="tsd-kind-icon">Entries</a>
 					</li>
-					<li class=" tsd-kind-interface">
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-interface">
 						<a href="PassiveBlockData.html" class="tsd-kind-icon">Passive<wbr>Block<wbr>Data</a>
 					</li>
+				</ul>
+				<ul class="after-current">
 					<li class=" tsd-kind-interface">
 						<a href="Transaction.html" class="tsd-kind-icon">Transaction</a>
 					</li>
