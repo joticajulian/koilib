@@ -256,6 +256,7 @@ describe("Wallet and Contract", () => {
 
     mockAxiosPost.mockImplementation(async (url) => {
       if (!url.includes("good-server")) {
+        // eslint-disable-next-line @typescript-eslint/no-throw-literal
         throw axiosResponse(undefined, 500);
       }
       return axiosResponse({ nonce: "0" });
@@ -286,6 +287,5 @@ describe("Wallet and Contract", () => {
     // sign and send transaction
     await wallet.signTransaction(tx);
     await wallet.sendTransaction(tx);
-    console.log(JSON.stringify(tx, null, 2));
   });
 });

@@ -8,6 +8,7 @@ export * from "./VariableBlob";
 export * from "./Signer";
 export * from "./Provider";
 export * from "./Wallet";
+export * from "./interface";
 
 /**
  * This namespace contains relevant ABIs and the definition of the
