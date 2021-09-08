@@ -1,7 +1,9 @@
+import ripemd160 from "noble-ripemd160";
 import { abiUploadContractOperation } from "./abi";
 import { Contract, DecodedOperation, EncodedOperation } from "./Contract";
 import { Transaction } from "./interface";
 import { Provider } from "./Provider";
+import { serialize } from "./serializer";
 import { Signer } from "./Signer";
 import { VariableBlob } from "./VariableBlob";
 
@@ -224,14 +226,9 @@ export class Wallet {
 
   /**
    * Function to encode an operation to upload or update a contract
-   * @param contractId - Contract ID. It is a 20 bytes identifier encoded in
-   * multibase64.
    * @param bytecode - bytecode in multibase64 or Uint8Array
    */
-  static encodeUploadContractOperation(
-    contractId: string,
-    bytecode: string | Uint8Array
-  ): {
+  encodeUploadContractOperation(bytecode: string | Uint8Array): {
     type: string;
     value: {
       contract_id: string;
@@ -239,6 +236,11 @@ export class Wallet {
       extensions: unknown;
     };
   } {
+    const signerHash = ripemd160(
+      serialize(this.getAddress(true), { type: "string" }).buffer
+    );
+    const contractId = new VariableBlob(signerHash).toString();
+
     const bytecodeBase64 =
       typeof bytecode === "string"
         ? bytecode
@@ -259,9 +261,9 @@ export class Wallet {
   /**
    * See [[Signer.getAddress]]
    */
-  getAddress(): string {
+  getAddress(compressed?: boolean): string {
     if (!this.signer) throw new Error("Signer is undefined");
-    return this.signer.getAddress();
+    return this.signer.getAddress(compressed);
   }
 
   /**

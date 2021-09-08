@@ -141,11 +141,16 @@ export class Signer {
   }
 
   /**
-   *
+   * @param compressed - determines if the address should be
+   * derived from the compressed public key (default) or the public key
    * @returns Signer address
    */
-  getAddress(): string {
-    return this.address;
+  getAddress(compressed = true): string {
+    const bufferPublicKey =
+      typeof this.publicKey === "string"
+        ? toUint8Array(this.publicKey)
+        : this.publicKey;
+    return bitcoinAddress(bufferPublicKey, compressed);
   }
 
   /**
