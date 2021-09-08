@@ -96,13 +96,10 @@ export class Signer {
     this.privateKey = privateKey;
     if (typeof privateKey === "string") {
       this.publicKey = secp.getPublicKey(privateKey, this.compressed);
-      this.address = bitcoinAddress(
-        toUint8Array(this.publicKey),
-        this.compressed
-      );
+      this.address = bitcoinAddress(toUint8Array(this.publicKey));
     } else {
       this.publicKey = secp.getPublicKey(privateKey, this.compressed);
-      this.address = bitcoinAddress(this.publicKey, this.compressed);
+      this.address = bitcoinAddress(this.publicKey);
     }
   }
 
@@ -219,6 +216,30 @@ export class Signer {
     ).toString();
     tx.id = new Multihash(toUint8Array(hash)).toString();
     return tx;
+  }
+
+  static recoverPublicKey(tx: Transaction, compressed = true): string {
+    if (!tx.active_data) throw new Error("active_data is not defined");
+    if (!tx.signature_data) throw new Error("signature_data is not defined");
+    const blobActiveData = serialize(tx.active_data, abiActiveData);
+    const hash = sha256(blobActiveData.buffer);
+    const bufferCompactSignature = new VariableBlob(tx.signature_data).buffer;
+    const compactSignatureHex = toHexString(bufferCompactSignature);
+    const recovery = Number("0x" + compactSignatureHex.slice(0, 2)) - 31;
+    const rHex = compactSignatureHex.slice(2, 66);
+    const sHex = compactSignatureHex.slice(66);
+    const r = BigInt("0x" + rHex);
+    const s = BigInt("0x" + sHex);
+    const sig = new secp.Signature(r, s);
+    const publicKey = secp.recoverPublicKey(hash, sig.toHex(), recovery);
+    if (!publicKey) throw new Error("Public key cannot be recovered");
+    if (!compressed) return publicKey;
+    return secp.Point.fromHex(publicKey).toHex(true);
+  }
+
+  static recoverAddress(tx: Transaction, compressed = true): string {
+    const publicKey = Signer.recoverPublicKey(tx, compressed);
+    return bitcoinAddress(toUint8Array(publicKey));
   }
 }
 

@@ -129,11 +129,8 @@ export function bitcoinDecode(value: string): Uint8Array {
  *
  * address = bitcoinEncode( ripemd160 ( sha256 ( publicKey ) ) )
  */
-export function bitcoinAddress(
-  publicKey: Uint8Array,
-  compressed = false
-): string {
+export function bitcoinAddress(publicKey: Uint8Array): string {
   const hash = sha256(publicKey);
   const hash160 = ripemd160(toUint8Array(hash));
-  return bitcoinEncode(hash160, "public", compressed);
+  return bitcoinEncode(hash160, "public");
 }

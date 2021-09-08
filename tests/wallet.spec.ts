@@ -52,10 +52,10 @@ const privateKeyHex =
 const seed = "one two three four five six";
 const wif = "5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd";
 const wifCompressed = "L3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL";
-/* const publicKey =
-  "042921DD54FDD8FB5D2AB1A9928DB7E9E08B34F8711A3332E0F1B36E71076B9CF291E7C6DBCC8C0CF132DB40D32722301B5244B1274DC16A5A54C3220B7DEF3423";
+const publicKey =
+  "042921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf291e7c6dbcc8c0cf132db40d32722301b5244b1274dc16a5a54c3220b7def3423";
 const publicKeyCompressed =
-  "032921DD54FDD8FB5D2AB1A9928DB7E9E08B34F8711A3332E0F1B36E71076B9CF2"; */
+  "032921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf2";
 const address = "1AjfrkFYS28SgPWrvaUeY6pThbzF1fUrjQ";
 const addressCompressed = "1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs";
 const rpcNodes = ["http://45.56.104.152:8080", "http://159.203.119.0:8080"];
@@ -170,8 +170,8 @@ describe("Wallet and Contract", () => {
     expect(opDecoded).toStrictEqual(opTransfer);
   });
 
-  it("should sign a transaction", async () => {
-    expect.assertions(1);
+  it("should sign a transaction and recover the public key and address", async () => {
+    expect.assertions(7);
     const signer = new Signer(privateKeyHex);
     const operation = contract.encodeOperation({
       name: "transfer",
@@ -194,6 +194,23 @@ describe("Wallet and Contract", () => {
       active_data: expect.objectContaining({}) as unknown,
       signature_data: expect.any(String) as string,
     } as Transaction);
+
+    // recover public key and address
+
+    const recoveredPublicKey = Signer.recoverPublicKey(transaction, false);
+    expect(recoveredPublicKey).toBe(publicKey);
+
+    const recoveredPublicKeyComp = Signer.recoverPublicKey(transaction, true);
+    expect(recoveredPublicKeyComp).toBe(publicKeyCompressed);
+
+    const recoveredAddress = Signer.recoverAddress(transaction, false);
+    expect(recoveredAddress).toBe(address);
+
+    const recoveredAddressComp = Signer.recoverAddress(transaction, true);
+    expect(recoveredAddressComp).toBe(addressCompressed);
+
+    expect(Signer.recoverPublicKey(transaction)).toBe(publicKeyCompressed);
+    expect(Signer.recoverAddress(transaction)).toBe(addressCompressed);
   });
 
   it("should create a wallet and sign a transaction", async () => {
@@ -273,9 +290,8 @@ describe("Wallet and Contract", () => {
     const provider = new Provider("http://node");
     const signer = Signer.fromSeed(seed);
     const wallet = new Wallet({ provider, signer });
-    const contractId = `M${crypto.randomBytes(20).toString("base64")}`;
     const bytecode = new Uint8Array(crypto.randomBytes(100));
-    const op = Wallet.encodeUploadContractOperation(contractId, bytecode);
+    const op = wallet.encodeUploadContractOperation(bytecode);
 
     mockAxiosPost.mockImplementation(async () => {
       return axiosResponse({ nonce: "0" });
