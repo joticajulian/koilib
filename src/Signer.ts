@@ -146,11 +146,12 @@ export class Signer {
    * @returns Signer address
    */
   getAddress(compressed = true): string {
-    const bufferPublicKey =
-      typeof this.publicKey === "string"
-        ? toUint8Array(this.publicKey)
-        : this.publicKey;
-    return bitcoinAddress(bufferPublicKey, compressed);
+    if (typeof this.privateKey === "string") {
+      const publicKey = secp.getPublicKey(this.privateKey, compressed);
+      return bitcoinAddress(toUint8Array(publicKey));
+    }
+    const publicKey = secp.getPublicKey(this.privateKey, compressed);
+    return bitcoinAddress(publicKey);
   }
 
   /**
