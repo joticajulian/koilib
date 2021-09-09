@@ -4522,11 +4522,11 @@ class Signer {
         this.privateKey = privateKey;
         if (typeof privateKey === "string") {
             this.publicKey = secp.getPublicKey(privateKey, this.compressed);
-            this.address = utils_1.bitcoinAddress(utils_1.toUint8Array(this.publicKey), this.compressed);
+            this.address = utils_1.bitcoinAddress(utils_1.toUint8Array(this.publicKey));
         }
         else {
             this.publicKey = secp.getPublicKey(privateKey, this.compressed);
-            this.address = utils_1.bitcoinAddress(this.publicKey, this.compressed);
+            this.address = utils_1.bitcoinAddress(this.publicKey);
         }
     }
     /**
@@ -4562,11 +4562,17 @@ class Signer {
         return new Signer(privateKey, compressed);
     }
     /**
-     *
+     * @param compressed - determines if the address should be
+     * derived from the compressed public key (default) or the public key
      * @returns Signer address
      */
-    getAddress() {
-        return this.address;
+    getAddress(compressed = true) {
+        if (typeof this.privateKey === "string") {
+            const publicKey = secp.getPublicKey(this.privateKey, compressed);
+            return utils_1.bitcoinAddress(utils_1.toUint8Array(publicKey));
+        }
+        const publicKey = secp.getPublicKey(this.privateKey, compressed);
+        return utils_1.bitcoinAddress(publicKey);
     }
     /**
      * Function to get the private key in hex format or wif format
@@ -4629,6 +4635,44 @@ class Signer {
         tx.signature_data = new VariableBlob_1.VariableBlob(utils_1.toUint8Array(recId + rHex + sHex)).toString();
         tx.id = new Multihash_1.Multihash(utils_1.toUint8Array(hash)).toString();
         return tx;
+    }
+    /**
+     * Function to recover the public key from a signed transaction.
+     * The output format can be compressed or uncompressed.
+     * @param tx - signed transaction
+     * @param compressed - output format (compressed by default)
+     */
+    static recoverPublicKey(tx, compressed = true) {
+        if (!tx.active_data)
+            throw new Error("active_data is not defined");
+        if (!tx.signature_data)
+            throw new Error("signature_data is not defined");
+        const blobActiveData = serializer_1.serialize(tx.active_data, abi_1.abiActiveData);
+        const hash = js_sha256_1.sha256(blobActiveData.buffer);
+        const bufferCompactSignature = new VariableBlob_1.VariableBlob(tx.signature_data).buffer;
+        const compactSignatureHex = utils_1.toHexString(bufferCompactSignature);
+        const recovery = Number("0x" + compactSignatureHex.slice(0, 2)) - 31;
+        const rHex = compactSignatureHex.slice(2, 66);
+        const sHex = compactSignatureHex.slice(66);
+        const r = BigInt("0x" + rHex);
+        const s = BigInt("0x" + sHex);
+        const sig = new secp.Signature(r, s);
+        const publicKey = secp.recoverPublicKey(hash, sig.toHex(), recovery);
+        if (!publicKey)
+            throw new Error("Public key cannot be recovered");
+        if (!compressed)
+            return publicKey;
+        return secp.Point.fromHex(publicKey).toHex(true);
+    }
+    /**
+     * Function to recover the signer address from a signed transaction.
+     * The output format can be compressed or uncompressed.
+     * @param tx - signed transaction
+     * @param compressed - output format (compressed by default)
+     */
+    static recoverAddress(tx, compressed = true) {
+        const publicKey = Signer.recoverPublicKey(tx, compressed);
+        return utils_1.bitcoinAddress(utils_1.toUint8Array(publicKey));
     }
 }
 exports.Signer = Signer;
@@ -4872,13 +4916,18 @@ exports.default = VariableBlob;
 /***/ }),
 
 /***/ 696:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Wallet = void 0;
+const noble_ripemd160_1 = __importDefault(__webpack_require__(389));
 const abi_1 = __webpack_require__(285);
+const serializer_1 = __webpack_require__(825);
 const VariableBlob_1 = __webpack_require__(737);
 /**
  * The Wallet Class combines all the features of [[Signer]],
@@ -5003,9 +5052,8 @@ const VariableBlob_1 = __webpack_require__(737);
  *   const wallet = new Wallet({ signer, provider });
  *
  *   // encode operation to upload the contract
- *   const contractId = "My+Contract+++++++++++++++++=";
- *   const bytecode = new Uint8Array([...]);
- *   const op = Wallet.encodeUploadContractOperation(contractId, bytecode);
+ *   const bytecode = new Uint8Array([1, 2, 3, 4]);
+ *   const op = wallet.encodeUploadContractOperation(bytecode);
  *
  *   // create a transaction
  *   const tx = await wallet.newTransaction({
@@ -5051,19 +5099,29 @@ class Wallet {
         };
     }
     /**
+     * The current implementation of Koinos expects a contract Id
+     * derived from the account deploying the contract:
+     * contractId = ripemd160(address serialized)
+     * @returns contract id derived from address
+     */
+    static computeContractId(address) {
+        const signerHash = noble_ripemd160_1.default(serializer_1.serialize(address, { type: "string" }).buffer);
+        return new VariableBlob_1.VariableBlob(signerHash).toString();
+    }
+    /**
      * Function to encode an operation to upload or update a contract
-     * @param contractId - Contract ID. It is a 20 bytes identifier encoded in
-     * multibase64.
      * @param bytecode - bytecode in multibase64 or Uint8Array
      */
-    static encodeUploadContractOperation(contractId, bytecode) {
+    encodeUploadContractOperation(bytecode) {
+        if (!this.signer)
+            throw new Error("Signer is undefined");
         const bytecodeBase64 = typeof bytecode === "string"
             ? bytecode
             : new VariableBlob_1.VariableBlob(bytecode).toString();
         return {
             type: abi_1.abiUploadContractOperation.name,
             value: {
-                contract_id: contractId,
+                contract_id: Wallet.computeContractId(this.getAddress()),
                 bytecode: bytecodeBase64,
                 extensions: {},
             },
@@ -5073,10 +5131,10 @@ class Wallet {
     /**
      * See [[Signer.getAddress]]
      */
-    getAddress() {
+    getAddress(compressed) {
         if (!this.signer)
             throw new Error("Signer is undefined");
-        return this.signer.getAddress();
+        return this.signer.getAddress(compressed);
     }
     /**
      * See [[Signer.signTransaction]]
@@ -5808,10 +5866,10 @@ exports.bitcoinDecode = bitcoinDecode;
  *
  * address = bitcoinEncode( ripemd160 ( sha256 ( publicKey ) ) )
  */
-function bitcoinAddress(publicKey, compressed = false) {
+function bitcoinAddress(publicKey) {
     const hash = js_sha256_1.sha256(publicKey);
     const hash160 = noble_ripemd160_1.default(toUint8Array(hash));
-    return bitcoinEncode(hash160, "public", compressed);
+    return bitcoinEncode(hash160, "public");
 }
 exports.bitcoinAddress = bitcoinAddress;
 
