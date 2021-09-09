@@ -1,4 +1,4 @@
-export type NumberLike = number | bigint | string;
+type NumberLike = number | bigint | string;
 
 /**
  * Koinos Transaction

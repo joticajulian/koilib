@@ -131,7 +131,7 @@ import { VariableBlob } from "./VariableBlob";
  *
  *   // encode operation to upload the contract
  *   const bytecode = new Uint8Array([1, 2, 3, 4]);
- *   const op = Wallet.encodeUploadContractOperation(bytecode);
+ *   const op = wallet.encodeUploadContractOperation(bytecode);
  *
  *   // create a transaction
  *   const tx = await wallet.newTransaction({

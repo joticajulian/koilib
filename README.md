@@ -158,7 +158,7 @@ It's also possible to upload contracts. First, follow the instructions in [koino
   const wallet = new Wallet({ signer, provider });
   // encode operation to upload the contract
   const bytecode = fs.readFileSync("my_contract.wasm");
-  const op = Wallet.encodeUploadContractOperation(bytecode);
+  const op = wallet.encodeUploadContractOperation(bytecode);
   // create a transaction
   const tx = await wallet.newTransaction({
     operations: [op],
