@@ -29,6 +29,7 @@
     "lint:prettier": "prettier . --check",
     "lint:eslint": "eslint . --ext .js,.ts",
     "lint:tsc": "tsc --noEmit --incremental false",
+    "prerelease": "yarn build && yarn bundle && yarn docs",
     "test": "jest",
     "test:unit": "jest wallet.spec.ts",
     "test:e2e": "jest wallet.e2e-spec.ts"

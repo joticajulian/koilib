@@ -130,9 +130,8 @@ import { VariableBlob } from "./VariableBlob";
  *   const wallet = new Wallet({ signer, provider });
  *
  *   // encode operation to upload the contract
- *   const contractId = "My+Contract+++++++++++++++++=";
- *   const bytecode = new Uint8Array([...]);
- *   const op = Wallet.encodeUploadContractOperation(contractId, bytecode);
+ *   const bytecode = new Uint8Array([1, 2, 3, 4]);
+ *   const op = Wallet.encodeUploadContractOperation(bytecode);
  *
  *   // create a transaction
  *   const tx = await wallet.newTransaction({
@@ -225,6 +224,17 @@ export class Wallet {
   }
 
   /**
+   * The current implementation of Koinos expects a contract Id
+   * derived from the account deploying the contract:
+   * contractId = ripemd160(address serialized)
+   * @returns contract id derived from address
+   */
+  static computeContractId(address: string) {
+    const signerHash = ripemd160(serialize(address, { type: "string" }).buffer);
+    return new VariableBlob(signerHash).toString();
+  }
+
+  /**
    * Function to encode an operation to upload or update a contract
    * @param bytecode - bytecode in multibase64 or Uint8Array
    */
@@ -236,10 +246,7 @@ export class Wallet {
       extensions: unknown;
     };
   } {
-    const signerHash = ripemd160(
-      serialize(this.getAddress(true), { type: "string" }).buffer
-    );
-    const contractId = new VariableBlob(signerHash).toString();
+    if (!this.signer) throw new Error("Signer is undefined");
 
     const bytecodeBase64 =
       typeof bytecode === "string"
@@ -249,7 +256,7 @@ export class Wallet {
     return {
       type: abiUploadContractOperation.name as string,
       value: {
-        contract_id: contractId,
+        contract_id: Wallet.computeContractId(this.getAddress()),
         bytecode: bytecodeBase64,
         extensions: {},
       },

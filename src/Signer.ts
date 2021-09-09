@@ -218,6 +218,12 @@ export class Signer {
     return tx;
   }
 
+  /**
+   * Function to recover the public key from a signed transaction.
+   * The output format can be compressed or uncompressed.
+   * @param tx - signed transaction
+   * @param compressed - output format (compressed by default)
+   */
   static recoverPublicKey(tx: Transaction, compressed = true): string {
     if (!tx.active_data) throw new Error("active_data is not defined");
     if (!tx.signature_data) throw new Error("signature_data is not defined");
@@ -237,6 +243,12 @@ export class Signer {
     return secp.Point.fromHex(publicKey).toHex(true);
   }
 
+  /**
+   * Function to recover the signer address from a signed transaction.
+   * The output format can be compressed or uncompressed.
+   * @param tx - signed transaction
+   * @param compressed - output format (compressed by default)
+   */
   static recoverAddress(tx: Transaction, compressed = true): string {
     const publicKey = Signer.recoverPublicKey(tx, compressed);
     return bitcoinAddress(toUint8Array(publicKey));
