@@ -1,6 +1,6 @@
 {
   "name": "koilib",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "JS Koinos Library",
   "author": "Julian Gonzalez",
   "repository": {
@@ -29,7 +29,10 @@
     "lint:prettier": "prettier . --check",
     "lint:eslint": "eslint . --ext .js,.ts",
     "lint:tsc": "tsc --noEmit --incremental false",
-    "test": "jest"
+    "prerelease": "yarn build && yarn bundle && yarn docs",
+    "test": "jest",
+    "test:unit": "jest wallet.spec.ts",
+    "test:e2e": "jest wallet.e2e-spec.ts"
   },
   "exports": {
     "./package.json": "./package.json",

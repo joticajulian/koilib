@@ -148,6 +148,30 @@ a transaction, and read contracts.
 })();
 ```
 
+It's also possible to upload contracts. First, follow the instructions in [koinos-cdt](https://github.com/koinos/koinos-cdt) to compile the contracts as wasm files. Then you can use koilib to deploy them.
+
+```typescript
+(async () => {
+  // define signer, provider and wallet
+  const signer = Signer.fromSeed("my seed");
+  const provider = new Provider("http://45.56.104.152:8080");
+  const wallet = new Wallet({ signer, provider });
+  // encode operation to upload the contract
+  const bytecode = fs.readFileSync("my_contract.wasm");
+  const op = wallet.encodeUploadContractOperation(bytecode);
+  // create a transaction
+  const tx = await wallet.newTransaction({
+    operations: [op],
+  });
+  // sign and send transaction
+  await wallet.signTransaction(tx);
+  await wallet.sendTransaction(tx);
+
+  const contractId = Wallet.computeContractId(wallet.getAddress());
+  console.log(`Deployed. contract id: ${contractId}`);
+})();
+```
+
 ## Documentation
 
 The complete documentation can be found at https://joticajulian.github.io/koilib/

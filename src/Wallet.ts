@@ -1,7 +1,9 @@
+import ripemd160 from "noble-ripemd160";
 import { abiUploadContractOperation } from "./abi";
 import { Contract, DecodedOperation, EncodedOperation } from "./Contract";
 import { Transaction } from "./interface";
 import { Provider } from "./Provider";
+import { serialize } from "./serializer";
 import { Signer } from "./Signer";
 import { VariableBlob } from "./VariableBlob";
 
@@ -128,9 +130,8 @@ import { VariableBlob } from "./VariableBlob";
  *   const wallet = new Wallet({ signer, provider });
  *
  *   // encode operation to upload the contract
- *   const contractId = "My+Contract+++++++++++++++++=";
- *   const bytecode = new Uint8Array([...]);
- *   const op = Wallet.encodeUploadContractOperation(contractId, bytecode);
+ *   const bytecode = new Uint8Array([1, 2, 3, 4]);
+ *   const op = wallet.encodeUploadContractOperation(bytecode);
  *
  *   // create a transaction
  *   const tx = await wallet.newTransaction({
@@ -223,15 +224,21 @@ export class Wallet {
   }
 
   /**
+   * The current implementation of Koinos expects a contract Id
+   * derived from the account deploying the contract:
+   * contractId = ripemd160(address serialized)
+   * @returns contract id derived from address
+   */
+  static computeContractId(address: string) {
+    const signerHash = ripemd160(serialize(address, { type: "string" }).buffer);
+    return new VariableBlob(signerHash).toString();
+  }
+
+  /**
    * Function to encode an operation to upload or update a contract
-   * @param contractId - Contract ID. It is a 20 bytes identifier encoded in
-   * multibase64.
    * @param bytecode - bytecode in multibase64 or Uint8Array
    */
-  static encodeUploadContractOperation(
-    contractId: string,
-    bytecode: string | Uint8Array
-  ): {
+  encodeUploadContractOperation(bytecode: string | Uint8Array): {
     type: string;
     value: {
       contract_id: string;
@@ -239,6 +246,8 @@ export class Wallet {
       extensions: unknown;
     };
   } {
+    if (!this.signer) throw new Error("Signer is undefined");
+
     const bytecodeBase64 =
       typeof bytecode === "string"
         ? bytecode
@@ -247,7 +256,7 @@ export class Wallet {
     return {
       type: abiUploadContractOperation.name as string,
       value: {
-        contract_id: contractId,
+        contract_id: Wallet.computeContractId(this.getAddress()),
         bytecode: bytecodeBase64,
         extensions: {},
       },
@@ -259,9 +268,9 @@ export class Wallet {
   /**
    * See [[Signer.getAddress]]
    */
-  getAddress(): string {
+  getAddress(compressed?: boolean): string {
     if (!this.signer) throw new Error("Signer is undefined");
-    return this.signer.getAddress();
+    return this.signer.getAddress(compressed);
   }
 
   /**
