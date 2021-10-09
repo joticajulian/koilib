@@ -1,5 +1,54 @@
 type NumberLike = number | bigint | string;
 
+export interface UploadContractOperation {
+  contract_id?: Uint8Array | Buffer;
+
+  bytecode?: Uint8Array | Buffer;
+}
+
+export interface CallContractOperation {
+  contract_id?: Uint8Array | Buffer;
+
+  entry_point: number;
+
+  args: Uint8Array | Buffer;
+}
+
+export interface ContractCallBundle {
+  contract_id: Uint8Array | Buffer;
+  entry_point: number;
+}
+
+export interface SetSystemCallOperation {
+  call_id: number;
+
+  target: number | ContractCallBundle;
+}
+
+export type Operation =
+  | UploadContractOperation
+  | CallContractOperation
+  | SetSystemCallOperation;
+
+export interface ActiveTransactionData {
+  /**
+   * Resource credits limit
+   */
+  rc_limit?: string | number | bigint;
+
+  /**
+   * Account nonce
+   */
+  nonce?: string | number | bigint;
+
+  /**
+   * Array of operations
+   */
+  operations?: Operation[];
+
+  [x: string]: unknown;
+}
+
 /**
  * Koinos Transaction
  */
@@ -8,41 +57,22 @@ export interface Transaction {
    * Transaction ID. It must be the sha2-256 of the
    * serialized data of active data, and encoded in multi base58
    */
-  id?: string;
+  id?: Uint8Array | Buffer;
 
   /**
    * Consensus data
    */
-  active_data?: {
-    resource_limit?: string | number | bigint;
-
-    /**
-     * Account nonce
-     */
-    nonce?: string | number | bigint;
-
-    /**
-     * Array of operations
-     */
-    operations?: {
-      type: string;
-      value: unknown;
-    }[];
-    [x: string]: unknown;
-  };
+  active?: Uint8Array | Buffer;
 
   /**
    * Non-consensus data
    */
-  passive_data?: {
-    [x: string]: unknown;
-  };
+  passive?: Uint8Array | Buffer;
 
   /**
    * Signature in compact format enconded in multi base64
    */
-  signature_data?: string;
-  [x: string]: unknown;
+  signature_data?: Uint8Array | Buffer;
 }
 
 export interface BlockHeader {

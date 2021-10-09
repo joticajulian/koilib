@@ -2,10 +2,7 @@
 
 import { sha256 } from "js-sha256";
 import * as secp from "noble-secp256k1";
-import { abiActiveData } from "./abi";
 import { Transaction } from "./interface";
-import { Multihash } from "./Multihash";
-import { serialize } from "./serializer";
 import {
   bitcoinAddress,
   bitcoinDecode,
@@ -13,7 +10,6 @@ import {
   toHexString,
   toUint8Array,
 } from "./utils";
-import { VariableBlob } from "./VariableBlob";
 
 /**
  * The Signer Class contains the private key needed to sign transactions.
@@ -199,8 +195,8 @@ export class Signer {
    * @returns
    */
   async signTransaction(tx: Transaction): Promise<Transaction> {
-    const blobActiveData = serialize(tx.active_data, abiActiveData);
-    const hash = sha256(blobActiveData.buffer);
+    if (!tx.active) throw new Error("Active data is not defined");
+    const hash = sha256(tx.active);
     const [hex, recovery] = await secp.sign(hash, this.privateKey, {
       recovered: true,
       canonical: true,
@@ -211,10 +207,8 @@ export class Signer {
     const rHex = r.toString(16).padStart(64, "0");
     const sHex = s.toString(16).padStart(64, "0");
     const recId = (recovery + 31).toString(16).padStart(2, "0");
-    tx.signature_data = new VariableBlob(
-      toUint8Array(recId + rHex + sHex)
-    ).toString();
-    tx.id = new Multihash(toUint8Array(hash)).toString();
+    tx.signature_data = toUint8Array(recId + rHex + sHex);
+    tx.id = toUint8Array(hash);
     return tx;
   }
 
@@ -225,12 +219,10 @@ export class Signer {
    * @param compressed - output format (compressed by default)
    */
   static recoverPublicKey(tx: Transaction, compressed = true): string {
-    if (!tx.active_data) throw new Error("active_data is not defined");
+    if (!tx.active) throw new Error("active_data is not defined");
     if (!tx.signature_data) throw new Error("signature_data is not defined");
-    const blobActiveData = serialize(tx.active_data, abiActiveData);
-    const hash = sha256(blobActiveData.buffer);
-    const bufferCompactSignature = new VariableBlob(tx.signature_data).buffer;
-    const compactSignatureHex = toHexString(bufferCompactSignature);
+    const hash = sha256(tx.active);
+    const compactSignatureHex = toHexString(tx.signature_data);
     const recovery = Number("0x" + compactSignatureHex.slice(0, 2)) - 31;
     const rHex = compactSignatureHex.slice(2, 66);
     const sHex = compactSignatureHex.slice(66);

@@ -1,7 +1,7 @@
 import multibase from "multibase";
 import axios, { AxiosResponse } from "axios";
-import { EncodedOperation } from "./Contract";
 import { Block, Transaction } from "./interface";
+import { CallContractOperation } from ".";
 
 /**
  * Class to connect with the RPC node
@@ -115,7 +115,7 @@ export class Provider {
         const currentNode = this.rpcNodes[this.currentNodeId];
         this.currentNodeId = (this.currentNodeId + 1) % this.rpcNodes.length;
         const newNode = this.rpcNodes[this.currentNodeId];
-        const abort = this.onError(e, currentNode, newNode);
+        const abort = this.onError(e as Error, currentNode, newNode);
         if (abort) throw e;
       }
     }
@@ -246,11 +246,11 @@ export class Provider {
    * @param operation - Encoded operation
    * @returns Encoded result
    */
-  async readContract(operation: EncodedOperation): Promise<{
-    result: string;
+  async readContract(operation: CallContractOperation): Promise<{
+    result: Uint8Array;
     logs: string;
   }> {
-    return this.call("chain.read_contract", operation.value);
+    return this.call("chain.read_contract", operation);
   }
 }
 

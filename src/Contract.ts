@@ -1,87 +1,15 @@
-import { Abi, abiCallContractOperation } from "./abi";
-import { deserialize, serialize } from "./serializer";
-import { VariableBlob } from "./VariableBlob";
+import { Root, INamespace, IConversionOptions } from "protobufjs/light";
+import { CallContractOperation } from "./interface";
 
-/**
- * These entries definitions are used to serialize and deserialize
- * contract operations. Each entry contains a name (defined in the
- * key field), id (entry point id), inputs (abi describing the
- * serialization of the inputs), and outputs (abi describing the
- * serialization of the outputs). See [[Abi]].
- *
- * @example
- * ```ts
- * const entries = {
- *   transfer: {
- *     id: 0x62efa292,
- *     inputs: {
- *       type: [
- *         {
- *           name: "from",
- *           type: "string",
- *         },
- *         {
- *           name: "to",
- *           type: "string",
- *         },
- *         {
- *           name: "value",
- *           type: "uint64",
- *         },
- *       ],
- *     },
- *   },
- *   balance_of: {
- *     id: 0x15619248,
- *     inputs: { type: "string" },
- *     outputs: { type: "uint64" },
- *   },
- * };
- * ```
- */
 export interface Entries {
   /** Name of the entry */
   [x: string]: {
     /** Entry point ID */
     id: number;
-
-    /** ABI definition for input serialization */
-    inputs: Abi;
-
-    /** ABI definition for output serialization */
-    outputs?: Abi;
-  };
-}
-
-/**
- * Operation using the format for the communication with the RPC node
- *
- * @example
- * ```ts
- * const opEncoded = {
- *   type: "koinos::protocol::call_contract_operation",
- *   value: {
- *     contract_id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
- *     entry_point: 0x62efa292,
- *     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
- *   }
- * }
- * ```
- */
-export interface EncodedOperation {
-  /** It should be "koinos::protocol::call_contract_operation" */
-  type: string;
-
-  /** Value of call contract operation */
-  value: {
-    /** Contract ID */
-    contract_id: string;
-
-    /** Entry point ID */
-    entry_point: number;
-
-    /** Arguments serialized and encoded in base64 */
-    args?: string;
+    /** Protobuffer type for input */
+    inputs?: string;
+    /** Protobuffer type for output */
+    outputs?: string;
   };
 }
 
@@ -105,7 +33,7 @@ export interface DecodedOperation {
   name: string;
 
   /** Arguments decoded. See [[Abi]] */
-  args: unknown;
+  args?: Record<string, unknown>;
 }
 
 /**
@@ -190,12 +118,17 @@ export class Contract {
   /**
    * Contract ID
    */
-  id: string;
+  id: Uint8Array;
 
   /**
    * Contract entries. See [[Entries]]
    */
   entries: Entries;
+
+  /**
+   * Protobuffer definitions
+   */
+  proto: Root;
 
   /**
    * The constructor receives the contract ID and
@@ -209,35 +142,23 @@ export class Contract {
    *   entries: {
    *     transfer: {
    *       id: 0x62efa292,
-   *       inputs: {
-   *         type: [
-   *           {
-   *             name: "from",
-   *             type: "string",
-   *           },
-   *           {
-   *             name: "to",
-   *             type: "string",
-   *           },
-   *           {
-   *             name: "value",
-   *             type: "uint64",
-   *           },
-   *         ],
-   *       },
+   *       inputs: "transfer_arguments",
+   *       outputs: "transfer_result",
    *     },
    *     balance_of: {
-   *       id: 0x15619248,
-   *       inputs: { type: "string" },
-   *       outputs: { type: "uint64" },
+   *       id: 0x62efa292,
+   *       inputs: "balance_of_arguments",
+   *       outputs: "balance_of_result",
    *     },
    *   },
+   *   protoDef: { ... }, // protobuffer definitions in json
    * });
    * ```
    */
-  constructor(c: { id: string; entries: Entries }) {
+  constructor(c: { id: Uint8Array; entries: Entries; protoDef: INamespace }) {
     this.id = c.id;
     this.entries = c.entries;
+    this.proto = Root.fromJSON(c.protoDef);
   }
 
   /**
@@ -267,19 +188,24 @@ export class Contract {
    * // }
    * ```
    */
-  encodeOperation(op: DecodedOperation): EncodedOperation {
+  encodeOperation(op: DecodedOperation): CallContractOperation {
     if (!this.entries || !this.entries[op.name])
       throw new Error(`Operation ${op.name} unknown`);
     const entry = this.entries[op.name];
+
+    let bufferInputs = new Uint8Array(0);
+    if (entry.inputs) {
+      if (!op.args)
+        throw new Error(`No arguments defined for type '${entry.inputs}'`);
+      const type = this.proto.lookupType(entry.inputs);
+      const message = type.create(op.args);
+      bufferInputs = type.encode(message).finish();
+    }
+
     return {
-      type: abiCallContractOperation.name as string,
-      value: {
-        contract_id: this.id,
-        entry_point: entry.id,
-        ...(entry.inputs && {
-          args: serialize(op.args, entry.inputs).toString(),
-        }),
-      },
+      contract_id: this.id,
+      entry_point: entry.id,
+      args: bufferInputs,
     };
   }
 
@@ -306,23 +232,29 @@ export class Contract {
    * // }
    * ```
    */
-  decodeOperation(op: EncodedOperation): DecodedOperation {
-    if (op.value.contract_id !== this.id)
+  decodeOperation(
+    op: CallContractOperation,
+    opts: IConversionOptions = { longs: String }
+  ): DecodedOperation {
+    if (op.contract_id !== this.id)
       throw new Error(
-        `Invalid contract id. Expected: ${this.id}. Received: ${op.value.contract_id}`
+        `Invalid contract id. Expected: ${this.id}. Received: ${op.contract_id}`
       );
     for (let i = 0; i < Object.keys(this.entries).length; i += 1) {
       const opName = Object.keys(this.entries)[i];
       const entry = this.entries[opName];
-      if (op.value.entry_point === entry.id) {
-        const vb = new VariableBlob(op.value.args);
+      if (op.entry_point === entry.id) {
+        if (!entry.inputs) return { name: opName };
+        const type = this.proto.lookupType(entry.inputs);
+        const message = type.decode(op.args);
+        const obj = type.toObject(message, opts);
         return {
           name: opName,
-          args: deserialize(vb, entry.inputs),
+          args: obj,
         };
       }
     }
-    throw new Error(`Unknown entry id ${op.value.entry_point}`);
+    throw new Error(`Unknown entry id ${op.entry_point}`);
   }
 
   /**
@@ -340,11 +272,17 @@ export class Contract {
    * // 3124382766600001n
    * ```
    */
-  decodeResult(result: string, opName: string): unknown {
+  decodeResult(
+    result: Uint8Array,
+    opName: string,
+    opts: IConversionOptions = { longs: String }
+  ): unknown {
     const entry = this.entries[opName];
     if (!entry.outputs)
       throw new Error(`There are no outputs defined for ${opName}`);
-    return deserialize(result, entry.outputs);
+    const type = this.proto.lookupType(entry.outputs);
+    const message = type.decode(result);
+    return type.toObject(message, opts);
   }
 }
 

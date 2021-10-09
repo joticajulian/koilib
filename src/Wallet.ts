@@ -1,11 +1,15 @@
+import { Root } from "protobufjs/light";
 import ripemd160 from "noble-ripemd160";
-import { abiUploadContractOperation } from "./abi";
-import { Contract, DecodedOperation, EncodedOperation } from "./Contract";
-import { Transaction } from "./interface";
+import protocolJson from "./protocol-proto.json";
+import { ActiveTransactionData, Operation, Transaction } from "./interface";
+import { Contract, DecodedOperation } from "./Contract";
 import { Provider } from "./Provider";
-import { serialize } from "./serializer";
 import { Signer } from "./Signer";
-import { VariableBlob } from "./VariableBlob";
+import { toUint8Array } from "./utils";
+import { CallContractOperation, UploadContractOperation } from ".";
+
+const root = Root.fromJSON(protocolJson);
+const ActiveTxDataMsg = root.lookupType("active_transaction_data");
 
 /**
  * The Wallet Class combines all the features of [[Signer]],
@@ -189,10 +193,7 @@ export class Wallet {
     /**
      * Array of operations.
      */
-    operations?: {
-      type: string;
-      value: unknown;
-    }[];
+    operations?: Operation[];
 
     /**
      * Boolean defining if the Provider should be used
@@ -214,13 +215,16 @@ export class Wallet {
       opts.resource_limit === undefined ? 1000000 : opts.resource_limit;
     const operations = opts.operations ? opts.operations : [];
 
-    return {
-      active_data: {
-        resource_limit: resourceLimit,
-        nonce,
-        operations,
-      },
+    const activeData: ActiveTransactionData = {
+      rc_limit: resourceLimit,
+      nonce,
+      operations,
     };
+    const message = ActiveTxDataMsg.create(activeData);
+
+    return {
+      active: ActiveTxDataMsg.encode(message).finish(),
+    } as Transaction;
   }
 
   /**
@@ -230,36 +234,20 @@ export class Wallet {
    * @returns contract id derived from address
    */
   static computeContractId(address: string) {
-    const signerHash = ripemd160(serialize(address, { type: "string" }).buffer);
-    return new VariableBlob(signerHash).toString();
+    const signerHash = ripemd160(address);
+    return toUint8Array(signerHash);
   }
 
   /**
    * Function to encode an operation to upload or update a contract
    * @param bytecode - bytecode in multibase64 or Uint8Array
    */
-  encodeUploadContractOperation(bytecode: string | Uint8Array): {
-    type: string;
-    value: {
-      contract_id: string;
-      bytecode: string;
-      extensions: unknown;
-    };
-  } {
+  encodeUploadContractOperation(bytecode: Uint8Array): UploadContractOperation {
     if (!this.signer) throw new Error("Signer is undefined");
 
-    const bytecodeBase64 =
-      typeof bytecode === "string"
-        ? bytecode
-        : new VariableBlob(bytecode).toString();
-
     return {
-      type: abiUploadContractOperation.name as string,
-      value: {
-        contract_id: Wallet.computeContractId(this.getAddress()),
-        bytecode: bytecodeBase64,
-        extensions: {},
-      },
+      contract_id: Wallet.computeContractId(this.getAddress()),
+      bytecode,
     };
   }
 
@@ -286,7 +274,7 @@ export class Wallet {
   /**
    * See [[Contract.encodeOperation]]
    */
-  encodeOperation(op: DecodedOperation): EncodedOperation {
+  encodeOperation(op: DecodedOperation): CallContractOperation {
     if (!this.contract) throw new Error("Contract is undefined");
     return this.contract.encodeOperation(op);
   }
@@ -294,7 +282,7 @@ export class Wallet {
   /**
    * See [[Contract.decodeOperation]]
    */
-  decodeOperation(op: EncodedOperation): DecodedOperation {
+  decodeOperation(op: CallContractOperation): DecodedOperation {
     if (!this.contract) throw new Error("Contract is undefined");
     return this.contract.decodeOperation(op);
   }
@@ -302,7 +290,7 @@ export class Wallet {
   /**
    * See [[Contract.decodeResult]]
    */
-  decodeResult(result: string, opName: string): unknown {
+  decodeResult(result: Uint8Array, opName: string): unknown {
     if (!this.contract) throw new Error("Contract is undefined");
     return this.contract.decodeResult(result, opName);
   }
