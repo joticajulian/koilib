@@ -247,7 +247,7 @@ export class Provider {
    * @returns Encoded result
    */
   async readContract(operation: CallContractOperation): Promise<{
-    result: Uint8Array;
+    result: string;
     logs: string;
   }> {
     return this.call("chain.read_contract", operation);

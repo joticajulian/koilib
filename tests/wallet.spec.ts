@@ -1,11 +1,13 @@
-import axios, { AxiosResponse } from "axios";
-import crypto from "crypto";
+import axios /*, { AxiosResponse }*/ from "axios";
+// import crypto from "crypto";
+import pbjs from "protobufjs/cli/pbjs";
 import { /* bitcoinEncode, */ bitcoinDecode, toHexString } from "../src/utils";
 import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
-import { Wallet } from "../src/Wallet";
-import { Provider } from "../src/Provider";
-import { Transaction } from "../src/interface";
+// import { Wallet } from "../src/Wallet";
+// import { Provider } from "../src/Provider";
+// import { Transaction } from "../src/interface";
+import { INamespace } from "protobufjs";
 
 const mockAxiosGet = jest.spyOn(axios, "get");
 const mockAxiosPost = jest.spyOn(axios, "post");
@@ -19,7 +21,7 @@ mockAxiosPost.mockImplementation(
   async (): Promise<unknown> =>
     Promise.reject(new Error("Forgot to implement mock for axios get?"))
 );
-
+/*
 const axiosResponse = <T = unknown>(
   result: T,
   status = 200
@@ -45,50 +47,22 @@ const axiosResponse = <T = unknown>(
     config: {},
     headers: {},
   });
-};
+};*/
 
 const privateKeyHex =
   "bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37";
 const seed = "one two three four five six";
 const wif = "5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd";
 const wifCompressed = "L3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL";
-const publicKey =
-  "042921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf291e7c6dbcc8c0cf132db40d32722301b5244b1274dc16a5a54c3220b7def3423";
-const publicKeyCompressed =
-  "032921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf2";
+//const publicKey =
+//  "042921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf291e7c6dbcc8c0cf132db40d32722301b5244b1274dc16a5a54c3220b7def3423";
+//const publicKeyCompressed =
+//  "032921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf2";
 const address = "1AjfrkFYS28SgPWrvaUeY6pThbzF1fUrjQ";
 const addressCompressed = "1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs";
-const rpcNodes = ["http://45.56.104.152:8080", "http://159.203.119.0:8080"];
+//const rpcNodes = ["http://45.56.104.152:8080", "http://159.203.119.0:8080"];
 
-const contract = new Contract({
-  id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
-  entries: {
-    transfer: {
-      id: 0x62efa292,
-      inputs: {
-        type: [
-          {
-            name: "from",
-            type: "string",
-          },
-          {
-            name: "to",
-            type: "string",
-          },
-          {
-            name: "value",
-            type: "uint64",
-          },
-        ],
-      },
-    },
-    balance_of: {
-      id: 0x15619248,
-      inputs: { type: "string" },
-      outputs: { type: "uint64" },
-    },
-  },
-});
+let contract: Contract;
 
 describe("Signer", () => {
   it("should get private key", () => {
@@ -125,7 +99,40 @@ describe("Signer", () => {
   });
 });
 
-describe("Wallet and Contract", () => {
+describe.only("Wallet and Contract", () => {
+  beforeAll(async () => {
+    const protoTokenJson = await new Promise((resolve) => {
+      pbjs.main(
+        [
+          "--target",
+          "json",
+          "./koinos-proto/koinos/contracts/token/token.proto",
+        ],
+        function (err, output) {
+          if (err) throw err;
+          if (!output) throw new Error("token.proto could not been generated");
+          resolve(JSON.parse(output));
+        }
+      );
+    });
+    console.log(protoTokenJson);
+    contract = new Contract({
+      id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+      entries: {
+        transfer: {
+          id: 0x62efa292,
+          inputs: "transfer_arguments",
+        },
+        balance_of: {
+          id: 0x15619248,
+          inputs: "balance_of_arguments",
+          outputs: "balance_of_result",
+        },
+      },
+      protoDef: protoTokenJson as INamespace,
+    });
+  });
+
   it("should encode and decode bitcoin format", () => {
     expect.assertions(2);
     const decodedPrivateKey = toHexString(bitcoinDecode(wif)).toLowerCase();
@@ -159,17 +166,14 @@ describe("Wallet and Contract", () => {
     const opDecoded = contract.decodeOperation(opEncoded);
 
     expect(opEncoded).toStrictEqual({
-      type: "koinos::protocol::call_contract_operation",
-      value: {
-        contract_id: contract.id,
-        entry_point: 0x62efa292,
-        args: expect.any(String) as string,
-      },
+      contract_id: contract.id,
+      entry_point: 0x62efa292,
+      args: expect.any(String) as string,
     });
 
     expect(opDecoded).toStrictEqual(opTransfer);
   });
-
+  /*
   it("should sign a transaction and recover the public key and address", async () => {
     expect.assertions(7);
     const signer = new Signer(privateKeyHex);
@@ -182,7 +186,7 @@ describe("Wallet and Contract", () => {
       },
     });
     const transaction: Transaction = {
-      active_data: {
+      active: {
         resource_limit: 1000000,
         nonce: 0,
         operations: [operation],
@@ -303,5 +307,5 @@ describe("Wallet and Contract", () => {
     // sign and send transaction
     await wallet.signTransaction(tx);
     await wallet.sendTransaction(tx);
-  });
+  });*/
 });

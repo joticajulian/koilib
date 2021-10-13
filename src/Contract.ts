@@ -1,5 +1,6 @@
 import { Root, INamespace, IConversionOptions } from "protobufjs/light";
 import { CallContractOperation } from "./interface";
+import { decodeBase64, encodeBase64 } from "./utils";
 
 export interface Entries {
   /** Name of the entry */
@@ -118,7 +119,7 @@ export class Contract {
   /**
    * Contract ID
    */
-  id: Uint8Array;
+  id: string;
 
   /**
    * Contract entries. See [[Entries]]
@@ -155,7 +156,7 @@ export class Contract {
    * });
    * ```
    */
-  constructor(c: { id: Uint8Array; entries: Entries; protoDef: INamespace }) {
+  constructor(c: { id: string; entries: Entries; protoDef: INamespace }) {
     this.id = c.id;
     this.entries = c.entries;
     this.proto = Root.fromJSON(c.protoDef);
@@ -205,7 +206,7 @@ export class Contract {
     return {
       contract_id: this.id,
       entry_point: entry.id,
-      args: bufferInputs,
+      args: encodeBase64(bufferInputs),
     };
   }
 
@@ -246,7 +247,7 @@ export class Contract {
       if (op.entry_point === entry.id) {
         if (!entry.inputs) return { name: opName };
         const type = this.proto.lookupType(entry.inputs);
-        const message = type.decode(op.args);
+        const message = type.decode(decodeBase64(op.args));
         const obj = type.toObject(message, opts);
         return {
           name: opName,
@@ -273,7 +274,7 @@ export class Contract {
    * ```
    */
   decodeResult(
-    result: Uint8Array,
+    result: string,
     opName: string,
     opts: IConversionOptions = { longs: String }
   ): unknown {
@@ -281,7 +282,7 @@ export class Contract {
     if (!entry.outputs)
       throw new Error(`There are no outputs defined for ${opName}`);
     const type = this.proto.lookupType(entry.outputs);
-    const message = type.decode(result);
+    const message = type.decode(decodeBase64(result)); // todo: from base64 to uint8array
     return type.toObject(message, opts);
   }
 }

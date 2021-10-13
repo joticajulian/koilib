@@ -37,6 +37,20 @@ export function decodeBase58(bs58: string): Uint8Array {
 }
 
 /**
+ * Encodes an Uint8Array in base64
+ */
+export function encodeBase64(buffer: Uint8Array): string {
+  return new TextDecoder().decode(multibase.encode("M", buffer)).slice(1);
+}
+
+/**
+ * Decodes a buffer formatted in base64
+ */
+export function decodeBase64(bs64: string): Uint8Array {
+  return multibase.decode(`M${bs64}`);
+}
+
+/**
  * Encodes a public or private key in base58 using
  * the bitcoin format (see [Bitcoin Base58Check encoding](https://en.bitcoin.it/wiki/Base58Check_encoding)
  * and [Bitcoin WIF](https://en.bitcoin.it/wiki/Wallet_import_format)).
@@ -79,7 +93,7 @@ export function bitcoinEncode(
   const checksum = toUint8Array(doubleHash.substring(0, 8));
   bufferCheck.set(buffer, 1);
   bufferCheck.set(checksum, offsetChecksum);
-  return encodeBase58(bufferCheck);
+  return toHexString(bufferCheck);
 }
 
 export function copyUint8Array(
@@ -109,7 +123,7 @@ export function copyUint8Array(
  * wallet import format (WIF).
  */
 export function bitcoinDecode(value: string): Uint8Array {
-  const buffer = decodeBase58(value);
+  const buffer = toUint8Array(value);
   const privateKey = new Uint8Array(32);
   const checksum = new Uint8Array(4);
   // const prefix = buffer[0];

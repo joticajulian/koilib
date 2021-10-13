@@ -1,21 +1,21 @@
 type NumberLike = number | bigint | string;
 
 export interface UploadContractOperation {
-  contract_id?: Uint8Array | Buffer;
+  contract_id?: string;
 
-  bytecode?: Uint8Array | Buffer;
+  bytecode?: string;
 }
 
 export interface CallContractOperation {
-  contract_id?: Uint8Array | Buffer;
+  contract_id?: string;
 
   entry_point: number;
 
-  args: Uint8Array | Buffer;
+  args: string;
 }
 
 export interface ContractCallBundle {
-  contract_id: Uint8Array | Buffer;
+  contract_id: string;
   entry_point: number;
 }
 
@@ -57,22 +57,22 @@ export interface Transaction {
    * Transaction ID. It must be the sha2-256 of the
    * serialized data of active data, and encoded in multi base58
    */
-  id?: Uint8Array | Buffer;
+  id?: string;
 
   /**
    * Consensus data
    */
-  active?: Uint8Array | Buffer;
+  active?: string;
 
   /**
    * Non-consensus data
    */
-  passive?: Uint8Array | Buffer;
+  passive?: string;
 
   /**
    * Signature in compact format enconded in multi base64
    */
-  signature_data?: Uint8Array | Buffer;
+  signature_data?: string;
 }
 
 export interface BlockHeader {

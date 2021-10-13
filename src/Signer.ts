@@ -7,6 +7,8 @@ import {
   bitcoinAddress,
   bitcoinDecode,
   bitcoinEncode,
+  decodeBase64,
+  encodeBase64,
   toHexString,
   toUint8Array,
 } from "./utils";
@@ -207,8 +209,9 @@ export class Signer {
     const rHex = r.toString(16).padStart(64, "0");
     const sHex = s.toString(16).padStart(64, "0");
     const recId = (recovery + 31).toString(16).padStart(2, "0");
-    tx.signature_data = toUint8Array(recId + rHex + sHex);
-    tx.id = toUint8Array(hash);
+    tx.signature_data = encodeBase64(toUint8Array(recId + rHex + sHex));
+    const multihash = `1220${hash}`; // 12: code sha256. 20: length (32 bytes)
+    tx.id = encodeBase64(toUint8Array(multihash));
     return tx;
   }
 
@@ -222,7 +225,7 @@ export class Signer {
     if (!tx.active) throw new Error("active_data is not defined");
     if (!tx.signature_data) throw new Error("signature_data is not defined");
     const hash = sha256(tx.active);
-    const compactSignatureHex = toHexString(tx.signature_data);
+    const compactSignatureHex = toHexString(decodeBase64(tx.signature_data));
     const recovery = Number("0x" + compactSignatureHex.slice(0, 2)) - 31;
     const rHex = compactSignatureHex.slice(2, 66);
     const sHex = compactSignatureHex.slice(66);

@@ -5,7 +5,7 @@ import { ActiveTransactionData, Operation, Transaction } from "./interface";
 import { Contract, DecodedOperation } from "./Contract";
 import { Provider } from "./Provider";
 import { Signer } from "./Signer";
-import { toUint8Array } from "./utils";
+import { encodeBase64, toUint8Array } from "./utils";
 import { CallContractOperation, UploadContractOperation } from ".";
 
 const root = Root.fromJSON(protocolJson);
@@ -221,9 +221,10 @@ export class Wallet {
       operations,
     };
     const message = ActiveTxDataMsg.create(activeData);
+    const buffer = ActiveTxDataMsg.encode(message).finish();
 
     return {
-      active: ActiveTxDataMsg.encode(message).finish(),
+      active: encodeBase64(buffer),
     } as Transaction;
   }
 
@@ -235,7 +236,7 @@ export class Wallet {
    */
   static computeContractId(address: string) {
     const signerHash = ripemd160(address);
-    return toUint8Array(signerHash);
+    return encodeBase64(toUint8Array(signerHash));
   }
 
   /**
@@ -247,7 +248,7 @@ export class Wallet {
 
     return {
       contract_id: Wallet.computeContractId(this.getAddress()),
-      bytecode,
+      bytecode: encodeBase64(bytecode),
     };
   }
 
@@ -290,7 +291,7 @@ export class Wallet {
   /**
    * See [[Contract.decodeResult]]
    */
-  decodeResult(result: Uint8Array, opName: string): unknown {
+  decodeResult(result: string, opName: string): unknown {
     if (!this.contract) throw new Error("Contract is undefined");
     return this.contract.decodeResult(result, opName);
   }
