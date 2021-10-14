@@ -1,12 +1,17 @@
 import { Root } from "protobufjs/light";
 import ripemd160 from "noble-ripemd160";
 import protocolJson from "./protocol-proto.json";
-import { ActiveTransactionData, Operation, Transaction } from "./interface";
+import {
+  ActiveTransactionData,
+  Operation,
+  Transaction,
+  CallContractOperation,
+  UploadContractOperation,
+} from "./interface";
 import { Contract, DecodedOperation } from "./Contract";
 import { Provider } from "./Provider";
 import { Signer } from "./Signer";
 import { encodeBase64, toUint8Array } from "./utils";
-import { CallContractOperation, UploadContractOperation } from ".";
 
 const root = Root.fromJSON(protocolJson);
 const ActiveTxDataMsg = root.lookupType("active_transaction_data");
@@ -234,7 +239,7 @@ export class Wallet {
    * contractId = ripemd160(address serialized)
    * @returns contract id derived from address
    */
-  static computeContractId(address: string) {
+  static computeContractId(address: string): string {
     const signerHash = ripemd160(address);
     return encodeBase64(toUint8Array(signerHash));
   }

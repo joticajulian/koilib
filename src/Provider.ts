@@ -1,7 +1,6 @@
 import multibase from "multibase";
 import axios, { AxiosResponse } from "axios";
-import { Block, Transaction } from "./interface";
-import { CallContractOperation } from ".";
+import { Block, Transaction, CallContractOperation } from "./interface";
 
 /**
  * Class to connect with the RPC node

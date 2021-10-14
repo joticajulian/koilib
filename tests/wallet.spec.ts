@@ -1,14 +1,13 @@
-import axios /*, { AxiosResponse }*/ from "axios";
-// import crypto from "crypto";
+import axios, { AxiosResponse } from "axios";
+import crypto from "crypto";
 import pbjs from "protobufjs/cli/pbjs";
+import { INamespace } from "protobufjs";
 import { decode } from "multibase";
 import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
 import { Wallet } from "../src/Wallet";
-// import { Provider } from "../src/Provider";
-// import { Transaction } from "../src/interface";
-import { INamespace } from "protobufjs";
-import { bitcoinDecode, toHexString } from "../src/utils";
+import { Provider } from "../src/Provider";
+import { bitcoinDecode, encodeBase64, toHexString } from "../src/utils";
 import { Transaction } from "../src";
 
 const mockAxiosGet = jest.spyOn(axios, "get");
@@ -23,7 +22,7 @@ mockAxiosPost.mockImplementation(
   async (): Promise<unknown> =>
     Promise.reject(new Error("Forgot to implement mock for axios get?"))
 );
-/*
+
 const axiosResponse = <T = unknown>(
   result: T,
   status = 200
@@ -49,7 +48,7 @@ const axiosResponse = <T = unknown>(
     config: {},
     headers: {},
   });
-};*/
+};
 
 const privateKeyHex =
   "bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37";
@@ -69,10 +68,14 @@ const address = toHexString(decode("z1AjfrkFYS28SgPWrvaUeY6pThbzF1fUrjQ"));
 const addressCompressed = toHexString(
   decode("z1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs")
 );
-//const rpcNodes = ["http://45.56.104.152:8080", "http://159.203.119.0:8080"];
+const rpcNodes = [
+  "http://example.koinos.io:8080",
+  "http://example2.koinos.io:8080",
+];
 
 let contract: Contract;
 let signer: Signer;
+let provider: Provider;
 let wallet: Wallet;
 
 describe("Signer", () => {
@@ -110,7 +113,7 @@ describe("Signer", () => {
   });
 });
 
-describe.only("Wallet and Contract", () => {
+describe("Wallet and Contract", () => {
   beforeAll(async () => {
     const protoTokenJson = await new Promise((resolve) => {
       pbjs.main(
@@ -119,7 +122,7 @@ describe.only("Wallet and Contract", () => {
           "json",
           "./koinos-proto/koinos/contracts/token/token.proto",
         ],
-        function (err, output) {
+        (err, output) => {
           if (err) throw err;
           if (!output) throw new Error("token.proto could not be generated");
           resolve(JSON.parse(output));
@@ -143,7 +146,8 @@ describe.only("Wallet and Contract", () => {
       protoDef: protoTokenJson as INamespace,
     });
     signer = new Signer(privateKeyHex);
-    wallet = new Wallet({ signer, contract });
+    provider = new Provider(rpcNodes);
+    wallet = new Wallet({ signer, contract, provider });
   });
 
   it("should encode and decode bitcoin format", () => {
@@ -198,9 +202,9 @@ describe.only("Wallet and Contract", () => {
         value: "1000",
       },
     });
+    mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
     const transaction = await wallet.newTransaction({
       resource_limit: 1000000,
-      getNonce: false,
       operations: [operation],
     });
     await signer.signTransaction(transaction);
@@ -228,54 +232,25 @@ describe.only("Wallet and Contract", () => {
     expect(Signer.recoverAddress(transaction)).toBe(addressCompressed);
   });
 
-  /*it("should create a wallet and sign a transaction", async () => {
-    expect.assertions(0);
-    const wallet = new Wallet({
-      signer: new Signer(privateKeyHex),
-      contract,
-      provider: new Provider(rpcNodes),
-    });
+  it("should get the balance of an account", async () => {
+    const type = contract.proto.lookupType("balance_of_result");
+    const message = type.create({ value: "123456" });
+    const result = encodeBase64(type.encode(message).finish());
+    mockAxiosPost.mockImplementation(async () => axiosResponse({ result }));
 
-    const operation = wallet.encodeOperation({
-      name: "transfer",
+    const resultContract = await wallet.readContract({
+      name: "balance_of",
       args: {
-        from: wallet.getAddress(),
-        to: "bob",
-        value: BigInt(1000),
+        owner: address,
       },
     });
 
-    mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
-
-    const tx = await wallet.newTransaction({
-      operations: [operation],
-    });
-
-    await wallet.signTransaction(tx);
-    await wallet.sendTransaction(tx);
-  });
-
-  it("should get the balance of an account", async () => {
-    const wallet = new Wallet({
-      contract,
-      provider: new Provider(rpcNodes),
-    });
-
-    mockAxiosPost.mockImplementation(async () =>
-      axiosResponse({ result: "MAAAAAAECAwQ=" })
-    );
-
-    const result = await wallet.readContract({
-      name: "balance_of",
-      args: "1Krs7v1rtpgRyfwEZncuKMQQnY5JhqXVSx",
-    });
-
-    expect(result).toBeDefined();
+    expect(resultContract).toStrictEqual({ value: "123456" });
   });
 
   it("should change node", async () => {
     expect.assertions(2);
-    const provider = new Provider([
+    provider = new Provider([
       "http://bad-server1",
       "http://bad-server2",
       "http://good-server",
@@ -302,21 +277,18 @@ describe.only("Wallet and Contract", () => {
 
   it("should upload a contract", async () => {
     expect.assertions(0);
-    const provider = new Provider("http://node");
-    const signer = Signer.fromSeed(seed);
-    const wallet = new Wallet({ provider, signer });
     const bytecode = new Uint8Array(crypto.randomBytes(100));
-    const op = wallet.encodeUploadContractOperation(bytecode);
+    const operation = wallet.encodeUploadContractOperation(bytecode);
 
     mockAxiosPost.mockImplementation(async () => {
       return axiosResponse({ nonce: "0" });
     });
 
     const tx = await wallet.newTransaction({
-      operations: [op],
+      operations: [operation],
     });
     // sign and send transaction
     await wallet.signTransaction(tx);
     await wallet.sendTransaction(tx);
-  });*/
+  });
 });

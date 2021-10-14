@@ -7,6 +7,7 @@ const rpcNodes = ["http://45.56.104.152:8080", "http://159.203.119.0:8080"];
 
 describe("Contract", () => {
   it("upload a contract", async () => {
+    expect.assertions(0);
     const signer = Signer.fromSeed(crypto.randomBytes(12).toString("hex"));
     const provider = new Provider(rpcNodes);
     const wallet = new Wallet({ signer, provider });

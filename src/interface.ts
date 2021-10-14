@@ -7,7 +7,7 @@ export interface UploadContractOperation {
 }
 
 export interface CallContractOperation {
-  contract_id?: string;
+  contract_id: string;
 
   entry_point: number;
 

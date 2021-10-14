@@ -113,7 +113,7 @@ export class Signer {
    * @returns Signer object
    */
   static fromWif(wif: string): Signer {
-    const compressed = wif[0] !== "5";
+    const compressed = wif.length === 76;
     const privateKey = bitcoinDecode(wif);
     return new Signer(toHexString(privateKey), compressed);
   }
@@ -210,7 +210,7 @@ export class Signer {
     const sHex = s.toString(16).padStart(64, "0");
     const recId = (recovery + 31).toString(16).padStart(2, "0");
     tx.signature_data = encodeBase64(toUint8Array(recId + rHex + sHex));
-    const multihash = `1220${hash}`; // 12: code sha256. 20: length (32 bytes)
+    const multihash = `1220${hash}`; // 12: code sha2-256. 20: length (32 bytes)
     tx.id = encodeBase64(toUint8Array(multihash));
     return tx;
   }
@@ -226,11 +226,11 @@ export class Signer {
     if (!tx.signature_data) throw new Error("signature_data is not defined");
     const hash = sha256(tx.active);
     const compactSignatureHex = toHexString(decodeBase64(tx.signature_data));
-    const recovery = Number("0x" + compactSignatureHex.slice(0, 2)) - 31;
+    const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
     const rHex = compactSignatureHex.slice(2, 66);
     const sHex = compactSignatureHex.slice(66);
-    const r = BigInt("0x" + rHex);
-    const s = BigInt("0x" + sHex);
+    const r = BigInt(`0x${rHex}`);
+    const s = BigInt(`0x${sHex}`);
     const sig = new secp.Signature(r, s);
     const publicKey = secp.recoverPublicKey(hash, sig.toHex(), recovery);
     if (!publicKey) throw new Error("Public key cannot be recovered");
