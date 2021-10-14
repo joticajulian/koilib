@@ -1,13 +1,15 @@
 import axios /*, { AxiosResponse }*/ from "axios";
 // import crypto from "crypto";
 import pbjs from "protobufjs/cli/pbjs";
-import { /* bitcoinEncode, */ bitcoinDecode, toHexString } from "../src/utils";
+import { decode } from "multibase";
 import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
-// import { Wallet } from "../src/Wallet";
+import { Wallet } from "../src/Wallet";
 // import { Provider } from "../src/Provider";
 // import { Transaction } from "../src/interface";
 import { INamespace } from "protobufjs";
+import { bitcoinDecode, toHexString } from "../src/utils";
+import { Transaction } from "../src";
 
 const mockAxiosGet = jest.spyOn(axios, "get");
 const mockAxiosPost = jest.spyOn(axios, "post");
@@ -52,17 +54,26 @@ const axiosResponse = <T = unknown>(
 const privateKeyHex =
   "bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37";
 const seed = "one two three four five six";
-const wif = "5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd";
-const wifCompressed = "L3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL";
-//const publicKey =
-//  "042921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf291e7c6dbcc8c0cf132db40d32722301b5244b1274dc16a5a54c3220b7def3423";
-//const publicKeyCompressed =
-//  "032921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf2";
-const address = "1AjfrkFYS28SgPWrvaUeY6pThbzF1fUrjQ";
-const addressCompressed = "1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs";
+const wif = toHexString(
+  decode("z5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd")
+);
+const wifCompressed = toHexString(
+  decode("zL3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL")
+);
+const publicKey =
+  "042921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf291e7c6dbcc8c0cf132db40d32722301b5244b1274dc16a5a54c3220b7def3423";
+const publicKeyCompressed =
+  "032921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf2";
+
+const address = toHexString(decode("z1AjfrkFYS28SgPWrvaUeY6pThbzF1fUrjQ"));
+const addressCompressed = toHexString(
+  decode("z1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs")
+);
 //const rpcNodes = ["http://45.56.104.152:8080", "http://159.203.119.0:8080"];
 
 let contract: Contract;
+let signer: Signer;
+let wallet: Wallet;
 
 describe("Signer", () => {
   it("should get private key", () => {
@@ -110,14 +121,14 @@ describe.only("Wallet and Contract", () => {
         ],
         function (err, output) {
           if (err) throw err;
-          if (!output) throw new Error("token.proto could not been generated");
+          if (!output) throw new Error("token.proto could not be generated");
           resolve(JSON.parse(output));
         }
       );
     });
-    console.log(protoTokenJson);
+
     contract = new Contract({
-      id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+      id: "kw96mR+Hh71IWwJoT/2lJXBDl5Q=",
       entries: {
         transfer: {
           id: 0x62efa292,
@@ -131,6 +142,8 @@ describe.only("Wallet and Contract", () => {
       },
       protoDef: protoTokenJson as INamespace,
     });
+    signer = new Signer(privateKeyHex);
+    wallet = new Wallet({ signer, contract });
   });
 
   it("should encode and decode bitcoin format", () => {
@@ -156,9 +169,9 @@ describe.only("Wallet and Contract", () => {
     const opTransfer = {
       name: "transfer",
       args: {
-        from: "alice",
-        to: "bob",
-        value: BigInt(1000),
+        from: new Uint8Array([1, 2, 3, 4]),
+        to: new Uint8Array([5, 6, 7, 8]),
+        value: "1000",
       },
     };
 
@@ -173,29 +186,27 @@ describe.only("Wallet and Contract", () => {
 
     expect(opDecoded).toStrictEqual(opTransfer);
   });
-  /*
+
   it("should sign a transaction and recover the public key and address", async () => {
     expect.assertions(7);
-    const signer = new Signer(privateKeyHex);
+
     const operation = contract.encodeOperation({
       name: "transfer",
       args: {
-        from: "alice",
-        to: "bob",
-        value: BigInt(1000),
+        from: new Uint8Array([1, 2, 3, 4]),
+        to: new Uint8Array([5, 6, 7, 8]),
+        value: "1000",
       },
     });
-    const transaction: Transaction = {
-      active: {
-        resource_limit: 1000000,
-        nonce: 0,
-        operations: [operation],
-      },
-    };
+    const transaction = await wallet.newTransaction({
+      resource_limit: 1000000,
+      getNonce: false,
+      operations: [operation],
+    });
     await signer.signTransaction(transaction);
     expect(transaction).toStrictEqual({
       id: expect.any(String) as string,
-      active_data: expect.objectContaining({}) as unknown,
+      active: expect.any(String) as string,
       signature_data: expect.any(String) as string,
     } as Transaction);
 
@@ -217,7 +228,7 @@ describe.only("Wallet and Contract", () => {
     expect(Signer.recoverAddress(transaction)).toBe(addressCompressed);
   });
 
-  it("should create a wallet and sign a transaction", async () => {
+  /*it("should create a wallet and sign a transaction", async () => {
     expect.assertions(0);
     const wallet = new Wallet({
       signer: new Signer(privateKeyHex),
