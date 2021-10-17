@@ -2,7 +2,10 @@
 
 import { sha256 } from "js-sha256";
 import * as secp from "noble-secp256k1";
-import { Transaction } from "./interface";
+import { Root } from "protobufjs/light";
+import { Provider } from "./Provider";
+import { Transaction, ActiveTransactionData, Operation } from "./interface";
+import protocolJson from "./protocol-proto.json";
 import {
   bitcoinAddress,
   bitcoinDecode,
@@ -12,6 +15,9 @@ import {
   toHexString,
   toUint8Array,
 } from "./utils";
+
+const root = Root.fromJSON(protocolJson);
+const ActiveTxDataMsg = root.lookupType("active_transaction_data");
 
 /**
  * The Signer Class contains the private key needed to sign transactions.
@@ -71,6 +77,8 @@ export class Signer {
    * Account address
    */
   address: string;
+
+  provider: Provider | undefined;
 
   /**
    * The constructor receives de private key as hexstring, bigint or Uint8Array.
@@ -215,6 +223,12 @@ export class Signer {
     return tx;
   }
 
+  async sendTransaction(tx: Transaction): Promise<unknown> {
+    if (!tx.signature_data || !tx.id) await this.signTransaction(tx);
+    if (!this.provider) throw new Error("provider is undefined");
+    return this.provider.sendTransaction(tx);
+  }
+
   /**
    * Function to recover the public key from a signed transaction.
    * The output format can be compressed or uncompressed.
@@ -247,6 +261,56 @@ export class Signer {
   static recoverAddress(tx: Transaction, compressed = true): string {
     const publicKey = Signer.recoverPublicKey(tx, compressed);
     return bitcoinAddress(toUint8Array(publicKey));
+  }
+
+  /**
+   * Creates an unsigned transaction
+   */
+  async populateTransaction(opts: {
+    /**
+     * Maximum resources to be used in the transaction.
+     * By default it is 1000000
+     */
+    resource_limit?: number | bigint | string;
+
+    /**
+     * Array of operations.
+     */
+    operations?: Operation[];
+
+    /**
+     * Boolean defining if the Provider should be used
+     * to call the RPC node and get the nonce (see
+     * [[Provider.getNonce]])
+     */
+    nonce?: number;
+  }): Promise<Transaction> {
+    let nonce;
+    if (opts.nonce === undefined) nonce = 0;
+    else {
+      if (!this.provider)
+        throw new Error(
+          "Cannot get the nonce because provider is undefined. To skip this call set a nonce in the parameters"
+        );
+      // TODO: Option to resolve names
+      // this depends on the final architecture for names on Koinos
+      nonce = await this.provider.getNonce(this.getAddress());
+    }
+    const resourceLimit =
+      opts.resource_limit === undefined ? 1000000 : opts.resource_limit;
+    const operations = opts.operations ? opts.operations : [];
+
+    const activeData: ActiveTransactionData = {
+      rc_limit: resourceLimit,
+      nonce,
+      operations,
+    };
+    const message = ActiveTxDataMsg.create(activeData);
+    const buffer = ActiveTxDataMsg.encode(message).finish();
+
+    return {
+      active: encodeBase64(buffer),
+    } as Transaction;
   }
 }
 
