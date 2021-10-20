@@ -1,6 +1,6 @@
 import multibase from "multibase";
 import axios, { AxiosResponse } from "axios";
-import { Block, Transaction, CallContractOperation } from "./interface";
+import { BlockJson, TransactionJson, CallContractOperation } from "./interface";
 
 /**
  * Class to connect with the RPC node
@@ -181,7 +181,7 @@ export class Provider {
     {
       block_id: string;
       block_height: number;
-      block: Block;
+      block: BlockJson;
       block_receipt: {
         [x: string]: unknown;
       };
@@ -197,7 +197,7 @@ export class Provider {
         block_items: {
           block_id: string;
           block_height: number;
-          block: Block;
+          block: BlockJson;
           block_receipt: {
             [x: string]: unknown;
           };
@@ -218,7 +218,7 @@ export class Provider {
   async getBlock(height: number): Promise<{
     block_id: string;
     block_height: number;
-    block: Block;
+    block: BlockJson;
     block_receipt: {
       [x: string]: unknown;
     };
@@ -232,7 +232,7 @@ export class Provider {
    * @param transaction - Signed transaction
    * @returns
    */
-  async sendTransaction(transaction: Transaction): Promise<unknown> {
+  async sendTransaction(transaction: TransactionJson): Promise<unknown> {
     return this.call("chain.submit_transaction", { transaction });
   }
 

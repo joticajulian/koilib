@@ -1,15 +1,19 @@
 import axios, { AxiosResponse } from "axios";
 import crypto from "crypto";
 import pbjs from "protobufjs/cli/pbjs";
-import { INamespace } from "protobufjs";
-import { decode } from "multibase";
+import { INamespace, Type } from "protobufjs";
 import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
 import { Provider } from "../src/Provider";
-import { bitcoinDecode, encodeBase64, toHexString } from "../src/utils";
+import {
+  bitcoinDecode,
+  decodeBase58,
+  encodeBase64,
+  toHexString,
+} from "../src/utils";
 import {
   CallContractOperation,
-  Transaction,
+  TransactionJson,
   UploadContractOperation,
 } from "../src";
 
@@ -56,21 +60,15 @@ const axiosResponse = <T = unknown>(
 const privateKeyHex =
   "bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37";
 const seed = "one two three four five six";
-const wif = toHexString(
-  decode("z5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd")
-);
-const wifCompressed = toHexString(
-  decode("zL3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL")
-);
+const wif = "5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd";
+const wifCompressed = "L3UfgFJWmbVziGB1uZBjkG1UjKkF7hhpXWY7mbTUdmycmvXCVtiL";
 const publicKey =
   "042921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf291e7c6dbcc8c0cf132db40d32722301b5244b1274dc16a5a54c3220b7def3423";
 const publicKeyCompressed =
   "032921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf2";
 
-const address = toHexString(decode("z1AjfrkFYS28SgPWrvaUeY6pThbzF1fUrjQ"));
-const addressCompressed = toHexString(
-  decode("z1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs")
-);
+const address = "1AjfrkFYS28SgPWrvaUeY6pThbzF1fUrjQ";
+const addressCompressed = "1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs";
 const rpcNodes = [
   "http://example.koinos.io:8080",
   "http://example2.koinos.io:8080",
@@ -138,7 +136,7 @@ describe("Wallet and Contract", () => {
     signer.provider = provider;
 
     koinContract = new Contract({
-      id: "kw96mR+Hh71IWwJoT/2lJXBDl5Q=",
+      id: "1GGBJWw5q1vUc5MiXpzL6VvQvdkhK8AiiN",
       entries: {
         transfer: {
           id: 0x62efa292,
@@ -191,9 +189,9 @@ describe("Wallet and Contract", () => {
     const opDecoded = koinContract.decodeOperation(opEncoded);
 
     expect(opEncoded).toStrictEqual({
-      contract_id: koinContract.id,
-      entry_point: koinContract.entries.transfer.id,
-      args: expect.any(String) as string,
+      contract_id: decodeBase58(koinContract.id as string),
+      entry_point: koinContract.entries?.transfer?.id,
+      args: expect.any(Uint8Array) as Uint8Array,
     });
 
     expect(opDecoded).toStrictEqual(opTransfer);
@@ -217,16 +215,16 @@ describe("Wallet and Contract", () => {
     );
 
     expect(operation).toStrictEqual({
-      contract_id: koinContract.id,
-      entry_point: koinContract.entries.transfer.id,
-      args: expect.any(String) as string,
+      contract_id: decodeBase58(koinContract.id as string),
+      entry_point: koinContract.entries?.transfer?.id,
+      args: expect.any(Uint8Array) as Uint8Array,
     } as CallContractOperation);
 
     expect(transaction).toStrictEqual({
       id: expect.any(String) as string,
       active: expect.any(String) as string,
       signature_data: expect.any(String) as string,
-    } as Transaction);
+    } as TransactionJson);
 
     expect(result).toBeDefined();
 
@@ -250,7 +248,9 @@ describe("Wallet and Contract", () => {
   });
 
   it("should get the balance of an account", async () => {
-    const type = koinContract.protobuffers.lookupType("balance_of_result");
+    const type = koinContract.protobuffers?.lookupType(
+      "balance_of_result"
+    ) as Type;
     const message = type.create({ value: "123456" });
     const resultEncoded = encodeBase64(type.encode(message).finish());
     mockAxiosPost.mockImplementation(async () =>
@@ -304,15 +304,15 @@ describe("Wallet and Contract", () => {
     });
 
     expect(operation).toStrictEqual({
-      contract_id: expect.any(String) as string,
-      bytecode: expect.any(String) as string,
+      contract_id: expect.any(Uint8Array) as Uint8Array,
+      bytecode: expect.any(Uint8Array) as Uint8Array,
     } as UploadContractOperation);
 
     expect(transaction).toStrictEqual({
       id: expect.any(String) as string,
       active: expect.any(String) as string,
       signature_data: expect.any(String) as string,
-    } as Transaction);
+    } as TransactionJson);
 
     expect(result).toBeDefined();
   });

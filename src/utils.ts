@@ -93,7 +93,7 @@ export function bitcoinEncode(
   const checksum = toUint8Array(doubleHash.substring(0, 8));
   bufferCheck.set(buffer, 1);
   bufferCheck.set(checksum, offsetChecksum);
-  return toHexString(bufferCheck);
+  return encodeBase58(bufferCheck);
 }
 
 export function copyUint8Array(
@@ -123,7 +123,7 @@ export function copyUint8Array(
  * wallet import format (WIF).
  */
 export function bitcoinDecode(value: string): Uint8Array {
-  const buffer = toUint8Array(value);
+  const buffer = decodeBase58(value);
   const privateKey = new Uint8Array(32);
   const checksum = new Uint8Array(4);
   // const prefix = buffer[0];

@@ -1,13 +1,18 @@
-import { Root, INamespace, IConversionOptions } from "protobufjs/light";
+import { Root, INamespace } from "protobufjs/light";
 import ripemd160 from "noble-ripemd160";
 import { Signer } from "./Signer";
 import { Provider } from "./Provider";
 import {
   CallContractOperation,
-  Transaction,
   UploadContractOperation,
+  TransactionJson,
 } from "./interface";
-import { decodeBase64, encodeBase64, toUint8Array } from "./utils";
+import {
+  decodeBase58,
+  decodeBase64,
+  encodeBase58,
+  toUint8Array,
+} from "./utils";
 
 export interface Entries {
   /** Name of the entry */
@@ -155,7 +160,7 @@ export class Contract {
       opts?: TransactionOptions
     ) => Promise<{
       operation: CallContractOperation;
-      transaction?: Transaction;
+      transaction?: TransactionJson;
       result?: unknown;
     }>;
   };
@@ -221,7 +226,7 @@ export class Contract {
           opts?: TransactionOptions
         ): Promise<{
           operation: CallContractOperation;
-          transaction?: Transaction;
+          transaction?: TransactionJson;
           result?: unknown;
         }> => {
           if (!this.provider) throw new Error("provider not found");
@@ -230,11 +235,16 @@ export class Contract {
           const operation = this.encodeOperation({ name, args });
 
           if (this.entries[name].readOnly) {
+            if (!this.entries[name].outputs)
+              throw new Error(`No outputs defined for ${name}`);
             // read contract
             const { result: resultEncoded } = await this.provider.readContract(
               operation
             );
-            const result = this.decodeResult(resultEncoded, name);
+            const result = this.decodeType(
+              resultEncoded,
+              this.entries[name].outputs as string
+            );
             return { operation, result };
           }
 
@@ -255,21 +265,21 @@ export class Contract {
     }
   }
 
-  static computeContractId(address: string): string {
+  static computeContractId(address: string): Uint8Array {
     const signerHash = ripemd160(address);
-    return encodeBase64(toUint8Array(signerHash));
+    return toUint8Array(signerHash);
   }
 
   async deploy(opts?: TransactionOptions): Promise<{
     operation: UploadContractOperation;
-    transaction?: Transaction;
+    transaction?: TransactionJson;
     result?: unknown;
   }> {
     if (!this.signer) throw new Error("signer not found");
     if (!this.bytecode) throw new Error("bytecode not found");
     const operation: UploadContractOperation = {
       contract_id: Contract.computeContractId(this.signer.getAddress()),
-      bytecode: encodeBase64(this.bytecode),
+      bytecode: this.bytecode,
     };
 
     // return operation if send is false
@@ -337,9 +347,9 @@ export class Contract {
     }
 
     return {
-      contract_id: this.id,
+      contract_id: decodeBase58(this.id),
       entry_point: entry.id,
-      args: encodeBase64(bufferInputs),
+      args: bufferInputs,
     };
   }
 
@@ -366,62 +376,42 @@ export class Contract {
    * // }
    * ```
    */
-  decodeOperation(
-    op: CallContractOperation,
-    opts: IConversionOptions = { longs: String }
-  ): DecodedOperation {
+  decodeOperation(op: CallContractOperation): DecodedOperation {
     if (!this.id) throw new Error("Contract id is not defined");
     if (!this.entries) throw new Error("Entries are not defined");
-    if (!this.protobuffers) throw new Error("Protobuffers are not defined");
-    if (op.contract_id !== this.id)
+    const contractId = encodeBase58(op.contract_id);
+    if (contractId !== this.id)
       throw new Error(
-        `Invalid contract id. Expected: ${this.id}. Received: ${op.contract_id}`
+        `Invalid contract id. Expected: ${this.id}. Received: ${contractId}`
       );
     for (let i = 0; i < Object.keys(this.entries).length; i += 1) {
       const opName = Object.keys(this.entries)[i];
       const entry = this.entries[opName];
       if (op.entry_point === entry.id) {
         if (!entry.inputs) return { name: opName };
-        const type = this.protobuffers.lookupType(entry.inputs);
-        const message = type.decode(decodeBase64(op.args));
-        const obj = type.toObject(message, opts);
         return {
           name: opName,
-          args: obj,
+          args: this.decodeType(op.args, entry.inputs),
         };
       }
     }
     throw new Error(`Unknown entry id ${op.entry_point}`);
   }
 
-  /**
-   * Decodes a result. This function is used in conjunction with
-   * [[Provider.readContract | readContract of Provider class]] to read a
-   * contract and decode the result. "outputs" field must be defined in
-   * the abi for the operation name.
-   * @param result - Encoded result in base64
-   * @param opName - Operation name
-   * @returns Decoded result
-   * @example
-   * ```ts
-   * const resultDecoded = contract.decodeResult("MAAsZnAzyD0E=", "balance_of");
-   * console.log(resultDecoded)
-   * // 3124382766600001n
-   * ```
-   */
-  decodeResult(
-    result: string,
-    opName: string,
-    opts: IConversionOptions = { longs: String }
-  ): unknown {
-    if (!this.entries) throw new Error("Protobuffers are not defined");
+  decodeType(
+    valueEncoded: string | Uint8Array,
+    typeName: string
+  ): Record<string, unknown> {
     if (!this.protobuffers) throw new Error("Protobuffers are not defined");
-    const entry = this.entries[opName];
-    if (!entry.outputs)
-      throw new Error(`There are no outputs defined for ${opName}`);
-    const type = this.protobuffers.lookupType(entry.outputs);
-    const message = type.decode(decodeBase64(result)); // todo: from base64 to uint8array
-    return type.toObject(message, opts);
+    const valueBuffer =
+      typeof valueEncoded === "string"
+        ? decodeBase64(valueEncoded)
+        : valueEncoded;
+    const type = this.protobuffers.lookupType(typeName);
+    const message = type.decode(valueBuffer);
+    const object = type.toObject(message, { longs: String });
+    // TODO: format from Buffer to base58/base64
+    return object;
   }
 }
 

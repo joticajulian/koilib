@@ -1,21 +1,41 @@
 type NumberLike = number | bigint | string;
 
 export interface UploadContractOperation {
-  contract_id?: string;
+  contract_id?: Uint8Array;
 
-  bytecode?: string;
+  bytecode?: Uint8Array;
+}
+
+export interface UploadContractOperationJson {
+  contract_id?: string; // base58
+
+  bytecode?: string; // base64
 }
 
 export interface CallContractOperation {
-  contract_id: string;
+  contract_id: Uint8Array;
 
   entry_point: number;
 
-  args: string;
+  args: Uint8Array;
+}
+
+export interface CallContractOperationJson {
+  contract_id: string; // base58
+
+  entry_point: number;
+
+  args: string; // base64
 }
 
 export interface ContractCallBundle {
-  contract_id: string;
+  contract_id: Uint8Array;
+  entry_point: number;
+}
+
+export interface ContractCallBundleJson {
+  contract_id: string; // base58
+
   entry_point: number;
 }
 
@@ -25,10 +45,21 @@ export interface SetSystemCallOperation {
   target: number | ContractCallBundle;
 }
 
+export interface SetSystemCallOperationJson {
+  call_id: number;
+
+  target: number | ContractCallBundleJson;
+}
+
 export type Operation =
   | UploadContractOperation
   | CallContractOperation
   | SetSystemCallOperation;
+
+export type OperationJson =
+  | UploadContractOperationJson
+  | CallContractOperationJson
+  | SetSystemCallOperationJson;
 
 export interface ActiveTransactionData {
   /**
@@ -49,10 +80,29 @@ export interface ActiveTransactionData {
   [x: string]: unknown;
 }
 
+export interface ActiveTransactionDataJson {
+  /**
+   * Resource credits limit
+   */
+  rc_limit?: string | number | bigint;
+
+  /**
+   * Account nonce
+   */
+  nonce?: string | number | bigint;
+
+  /**
+   * Array of operations
+   */
+  operations?: OperationJson[];
+
+  [x: string]: unknown;
+}
+
 /**
  * Koinos Transaction
  */
-export interface Transaction {
+export interface TransactionJson {
   /**
    * Transaction ID. It must be the sha2-256 of the
    * serialized data of active data, and encoded in multi base58
@@ -75,30 +125,19 @@ export interface Transaction {
   signature_data?: string;
 }
 
-export interface BlockHeader {
+export interface BlockHeaderJson {
   previous?: string;
   height?: NumberLike;
   timestamp?: NumberLike;
   [x: string]: unknown;
 }
 
-export interface ActiveBlockData {
-  transaction_merkle_root?: string;
-  passive_data_merkle_root?: string;
-  signer?: string;
-  [x: string]: unknown;
-}
-
-export interface PassiveBlockData {
-  [x: string]: unknown;
-}
-
-export interface Block {
+export interface BlockJson {
   id?: string;
-  header?: BlockHeader;
-  active_data?: ActiveBlockData;
-  passive_data?: PassiveBlockData;
+  header?: BlockHeaderJson;
+  active?: string;
+  passive?: string;
   signature_data?: string;
-  transactions?: Transaction[];
+  transactions?: TransactionJson[];
   [x: string]: unknown;
 }
