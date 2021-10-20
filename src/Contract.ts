@@ -172,7 +172,7 @@ export class Contract {
 
   bytecode?: Uint8Array;
 
-  defaultOptions: TransactionOptions;
+  options: TransactionOptions;
 
   /**
    * The constructor receives the contract ID and
@@ -207,6 +207,7 @@ export class Contract {
     signer?: Signer;
     provider?: Provider;
     bytecode?: Uint8Array;
+    options?: TransactionOptions;
   }) {
     this.id = c.id;
     this.entries = c.entries;
@@ -214,9 +215,10 @@ export class Contract {
     this.provider = c.provider;
     this.bytecode = c.bytecode;
     if (c.protoDef) this.protobuffers = Root.fromJSON(c.protoDef);
-    this.defaultOptions = {
+    this.options = {
       resource_limit: 1e8,
       send: true,
+      ...c.options,
     };
     this.functions = {};
 
@@ -224,7 +226,7 @@ export class Contract {
       Object.keys(this.entries).forEach((name) => {
         this.functions[name] = async (
           args?: Record<string, unknown>,
-          opts?: TransactionOptions
+          options?: TransactionOptions
         ): Promise<{
           operation: CallContractOperation;
           transaction?: TransactionJson;
@@ -232,6 +234,10 @@ export class Contract {
         }> => {
           if (!this.provider) throw new Error("provider not found");
           if (!this.entries) throw new Error("Entries are not defined");
+          const opts = {
+            ...this.options,
+            ...options,
+          };
 
           const operation = this.encodeOperation({ name, args });
 
@@ -255,7 +261,7 @@ export class Contract {
           // write contract (sign and send)
           if (!this.signer) throw new Error("signer not found");
           const transaction = await this.signer.populateTransaction({
-            ...opts, // TODO: mix with defaultOptions
+            ...opts,
             operations: [operation],
           });
 
@@ -271,13 +277,17 @@ export class Contract {
     return toUint8Array(signerHash);
   }
 
-  async deploy(opts?: TransactionOptions): Promise<{
+  async deploy(options?: TransactionOptions): Promise<{
     operation: UploadContractOperation;
     transaction?: TransactionJson;
     result?: unknown;
   }> {
     if (!this.signer) throw new Error("signer not found");
     if (!this.bytecode) throw new Error("bytecode not found");
+    const opts = {
+      ...this.options,
+      ...options,
+    };
     const operation: UploadContractOperation = {
       contract_id: Contract.computeContractId(this.signer.getAddress()),
       bytecode: this.bytecode,

@@ -199,20 +199,13 @@ describe("Wallet and Contract", () => {
 
   it("should sign a transaction and recover the public key and address", async () => {
     expect.assertions(9);
-
     mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
-    const { transaction, operation, result } = await koin.transfer(
-      {
-        from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
-        to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
-        value: "1000",
-      },
-      {
-        send: true,
-        resource_limit: 1e8,
-        nonce: 0,
-      }
-    );
+
+    const { transaction, operation, result } = await koin.transfer({
+      from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+      to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+      value: "1000",
+    });
 
     expect(operation).toStrictEqual({
       contract_id: decodeBase58(koinContract.id as string),
@@ -245,6 +238,25 @@ describe("Wallet and Contract", () => {
 
     expect(Signer.recoverPublicKey(transaction)).toBe(publicKeyCompressed);
     expect(Signer.recoverAddress(transaction)).toBe(addressCompressed);
+  });
+
+  it("should rewrite the default options when creating transactions", async () => {
+    expect.assertions(3);
+    mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
+
+    const { transaction, operation, result } = await koin.transfer(
+      {
+        from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+        to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+        value: "1000",
+      },
+      { send: false }
+    );
+
+    // As send is false only operation is defined
+    expect(operation).toBeDefined();
+    expect(transaction).not.toBeDefined();
+    expect(result).not.toBeDefined();
   });
 
   it("should get the balance of an account", async () => {
@@ -297,11 +309,7 @@ describe("Wallet and Contract", () => {
       return axiosResponse({ nonce: "0" });
     });
 
-    const { operation, transaction, result } = await koinContract.deploy({
-      send: true,
-      resource_limit: 1e8,
-      nonce: 0,
-    });
+    const { operation, transaction, result } = await koinContract.deploy();
 
     expect(operation).toStrictEqual({
       contract_id: expect.any(Uint8Array) as Uint8Array,
