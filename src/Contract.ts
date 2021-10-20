@@ -11,6 +11,7 @@ import {
   decodeBase58,
   decodeBase64,
   encodeBase58,
+  encodeBase64,
   toUint8Array,
 } from "./utils";
 
@@ -43,7 +44,7 @@ export interface Entries {
  * };
  * ```
  */
-export interface DecodedOperation {
+export interface DecodedOperationJson {
   /** Operation name */
   name: string;
 
@@ -330,7 +331,7 @@ export class Contract {
    * // }
    * ```
    */
-  encodeOperation(op: DecodedOperation): CallContractOperation {
+  encodeOperation(op: DecodedOperationJson): CallContractOperation {
     if (!this.entries || !this.entries[op.name])
       throw new Error(`Operation ${op.name} unknown`);
     if (!this.protobuffers) throw new Error("Protobuffers are not defined");
@@ -341,9 +342,7 @@ export class Contract {
     if (entry.inputs) {
       if (!op.args)
         throw new Error(`No arguments defined for type '${entry.inputs}'`);
-      const type = this.protobuffers.lookupType(entry.inputs);
-      const message = type.create(op.args);
-      bufferInputs = type.encode(message).finish();
+      bufferInputs = this.encodeType(op.args, entry.inputs);
     }
 
     return {
@@ -376,7 +375,7 @@ export class Contract {
    * // }
    * ```
    */
-  decodeOperation(op: CallContractOperation): DecodedOperation {
+  decodeOperation(op: CallContractOperation): DecodedOperationJson {
     if (!this.id) throw new Error("Contract id is not defined");
     if (!this.entries) throw new Error("Entries are not defined");
     const contractId = encodeBase58(op.contract_id);
@@ -398,6 +397,44 @@ export class Contract {
     throw new Error(`Unknown entry id ${op.entry_point}`);
   }
 
+  encodeType(
+    valueDecoded: Record<string, unknown>,
+    typeName: string
+  ): Uint8Array {
+    if (!this.protobuffers) throw new Error("Protobuffers are not defined");
+    const protobufType = this.protobuffers.lookupType(typeName);
+    const object: Record<string, unknown> = {};
+    Object.keys(protobufType.fields).forEach((fieldName) => {
+      const { options, name, type } = protobufType.fields[fieldName];
+      if (type !== "bytes") {
+        if (["string", "number"].includes(typeof valueDecoded[name])) {
+          object[name] = valueDecoded[name];
+        } else {
+          object[name] = JSON.parse(JSON.stringify(valueDecoded[name]));
+        }
+        return;
+      }
+      if (options && options["(koinos_bytes_type)"]) {
+        switch (options["(koinos_bytes_type)"]) {
+          case "BASE58":
+            object[name] = decodeBase58(valueDecoded[name] as string);
+            break;
+          default:
+            throw new Error(
+              `unknown koinos_byte_type ${
+                options["(koinos_bytes_type)"] as string
+              }`
+            );
+        }
+      } else {
+        object[name] = decodeBase64(valueDecoded[name] as string);
+      }
+    });
+    const message = protobufType.create(object);
+    const buffer = protobufType.encode(message).finish();
+    return buffer;
+  }
+
   decodeType(
     valueEncoded: string | Uint8Array,
     typeName: string
@@ -407,10 +444,29 @@ export class Contract {
       typeof valueEncoded === "string"
         ? decodeBase64(valueEncoded)
         : valueEncoded;
-    const type = this.protobuffers.lookupType(typeName);
-    const message = type.decode(valueBuffer);
-    const object = type.toObject(message, { longs: String });
-    // TODO: format from Buffer to base58/base64
+    const protobufType = this.protobuffers.lookupType(typeName);
+    const message = protobufType.decode(valueBuffer);
+    const object = protobufType.toObject(message, { longs: String });
+    // TODO: format from Buffer to base58/base64 for nested fields
+    Object.keys(protobufType.fields).forEach((fieldName) => {
+      const { options, name, type } = protobufType.fields[fieldName];
+      if (type !== "bytes") return;
+      if (options && options["(koinos_bytes_type)"]) {
+        switch (options["(koinos_bytes_type)"]) {
+          case "BASE58":
+            object[name] = encodeBase58(object[name]);
+            break;
+          default:
+            throw new Error(
+              `unknown koinos_byte_type ${
+                options["(koinos_bytes_type)"] as string
+              }`
+            );
+        }
+      } else {
+        object[name] = encodeBase64(object[name]);
+      }
+    });
     return object;
   }
 }

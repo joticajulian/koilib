@@ -11,7 +11,10 @@
               "fields": {
                 "contractId": {
                   "type": "bytes",
-                  "id": 1
+                  "id": 1,
+                  "options": {
+                    "(koinos_bytes_type)": "BASE58"
+                  }
                 },
                 "entryPoint": {
                   "type": "uint32",
@@ -40,7 +43,10 @@
               "fields": {
                 "contractId": {
                   "type": "bytes",
-                  "id": 1
+                  "id": 1,
+                  "options": {
+                    "(koinos_bytes_type)": "BASE58"
+                  }
                 },
                 "bytecode": {
                   "type": "bytes",
@@ -52,7 +58,10 @@
               "fields": {
                 "contractId": {
                   "type": "bytes",
-                  "id": 1
+                  "id": 1,
+                  "options": {
+                    "(koinos_bytes_type)": "BASE58"
+                  }
                 },
                 "entryPoint": {
                   "type": "uint32",

@@ -179,8 +179,8 @@ describe("Wallet and Contract", () => {
     const opTransfer = {
       name: "transfer",
       args: {
-        from: new Uint8Array([1, 2, 3, 4]),
-        to: new Uint8Array([5, 6, 7, 8]),
+        from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+        to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
         value: "1000",
       },
     };
@@ -203,8 +203,8 @@ describe("Wallet and Contract", () => {
     mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
     const { transaction, operation, result } = await koin.transfer(
       {
-        from: new Uint8Array([1, 2, 3, 4]),
-        to: new Uint8Array([5, 6, 7, 8]),
+        from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+        to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
         value: "1000",
       },
       {
