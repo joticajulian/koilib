@@ -137,19 +137,21 @@ describe("Wallet and Contract", () => {
 
     koinContract = new Contract({
       id: "1GGBJWw5q1vUc5MiXpzL6VvQvdkhK8AiiN",
-      entries: {
-        transfer: {
-          id: 0x62efa292,
-          inputs: "transfer_arguments",
+      abi: {
+        entries: {
+          transfer: {
+            id: 0x62efa292,
+            inputs: "transfer_arguments",
+          },
+          balanceOf: {
+            id: 0x15619248,
+            inputs: "balance_of_arguments",
+            outputs: "balance_of_result",
+            readOnly: true,
+          },
         },
-        balanceOf: {
-          id: 0x15619248,
-          inputs: "balance_of_arguments",
-          outputs: "balance_of_result",
-          readOnly: true,
-        },
+        types: protoTokenJson as INamespace,
       },
-      protoDef: protoTokenJson as INamespace,
       provider,
       signer,
     });
@@ -190,7 +192,7 @@ describe("Wallet and Contract", () => {
 
     expect(opEncoded).toStrictEqual({
       contract_id: decodeBase58(koinContract.id as string),
-      entry_point: koinContract.entries?.transfer?.id,
+      entry_point: koinContract.abi?.entries?.transfer?.id,
       args: expect.any(Uint8Array) as Uint8Array,
     });
 
@@ -209,7 +211,7 @@ describe("Wallet and Contract", () => {
 
     expect(operation).toStrictEqual({
       contract_id: decodeBase58(koinContract.id as string),
-      entry_point: koinContract.entries?.transfer?.id,
+      entry_point: koinContract.abi?.entries?.transfer?.id,
       args: expect.any(Uint8Array) as Uint8Array,
     } as CallContractOperation);
 

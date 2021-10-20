@@ -15,18 +15,21 @@ import {
   toUint8Array,
 } from "./utils";
 
-export interface Entries {
-  /** Name of the entry */
-  [x: string]: {
-    /** Entry point ID */
-    id: number;
-    /** Protobuffer type for input */
-    inputs?: string;
-    /** Protobuffer type for output */
-    outputs?: string;
+export interface Abi {
+  entries: {
+    /** Name of the entry */
+    [x: string]: {
+      /** Entry point ID */
+      id: number;
+      /** Protobuffer type for input */
+      inputs?: string;
+      /** Protobuffer type for output */
+      outputs?: string;
 
-    readOnly?: boolean;
+      readOnly?: boolean;
+    };
   };
+  types: INamespace;
 }
 
 /**
@@ -143,11 +146,6 @@ export class Contract {
   id?: string;
 
   /**
-   * Contract entries. See [[Entries]]
-   */
-  entries?: Entries;
-
-  /**
    * Protobuffer definitions
    */
   protobuffers?: Root;
@@ -165,6 +163,8 @@ export class Contract {
       result?: unknown;
     }>;
   };
+
+  abi?: Abi;
 
   signer?: Signer;
 
@@ -202,19 +202,18 @@ export class Contract {
    */
   constructor(c: {
     id?: string;
-    entries?: Entries;
-    protoDef?: INamespace;
-    signer?: Signer;
-    provider?: Provider;
+    abi?: Abi;
     bytecode?: Uint8Array;
     options?: TransactionOptions;
+    signer?: Signer;
+    provider?: Provider;
   }) {
     this.id = c.id;
-    this.entries = c.entries;
     this.signer = c.signer;
     this.provider = c.provider;
+    this.abi = c.abi;
     this.bytecode = c.bytecode;
-    if (c.protoDef) this.protobuffers = Root.fromJSON(c.protoDef);
+    if (c.abi?.types) this.protobuffers = Root.fromJSON(c.abi.types);
     this.options = {
       resource_limit: 1e8,
       send: true,
@@ -222,8 +221,8 @@ export class Contract {
     };
     this.functions = {};
 
-    if (this.signer && this.provider && this.entries) {
-      Object.keys(this.entries).forEach((name) => {
+    if (this.signer && this.provider && this.abi && this.abi.entries) {
+      Object.keys(this.abi.entries).forEach((name) => {
         this.functions[name] = async (
           args?: Record<string, unknown>,
           options?: TransactionOptions
@@ -233,7 +232,8 @@ export class Contract {
           result?: unknown;
         }> => {
           if (!this.provider) throw new Error("provider not found");
-          if (!this.entries) throw new Error("Entries are not defined");
+          if (!this.abi || !this.abi.entries)
+            throw new Error("Entries are not defined");
           const opts = {
             ...this.options,
             ...options,
@@ -241,8 +241,8 @@ export class Contract {
 
           const operation = this.encodeOperation({ name, args });
 
-          if (this.entries[name].readOnly) {
-            if (!this.entries[name].outputs)
+          if (this.abi.entries[name].readOnly) {
+            if (!this.abi.entries[name].outputs)
               throw new Error(`No outputs defined for ${name}`);
             // read contract
             const { result: resultEncoded } = await this.provider.readContract(
@@ -250,7 +250,7 @@ export class Contract {
             );
             const result = this.decodeType(
               resultEncoded,
-              this.entries[name].outputs as string
+              this.abi.entries[name].outputs as string
             );
             return { operation, result };
           }
@@ -342,11 +342,11 @@ export class Contract {
    * ```
    */
   encodeOperation(op: DecodedOperationJson): CallContractOperation {
-    if (!this.entries || !this.entries[op.name])
+    if (!this.abi || !this.abi.entries || !this.abi.entries[op.name])
       throw new Error(`Operation ${op.name} unknown`);
     if (!this.protobuffers) throw new Error("Protobuffers are not defined");
     if (!this.id) throw new Error("Contract id is not defined");
-    const entry = this.entries[op.name];
+    const entry = this.abi.entries[op.name];
 
     let bufferInputs = new Uint8Array(0);
     if (entry.inputs) {
@@ -387,15 +387,16 @@ export class Contract {
    */
   decodeOperation(op: CallContractOperation): DecodedOperationJson {
     if (!this.id) throw new Error("Contract id is not defined");
-    if (!this.entries) throw new Error("Entries are not defined");
+    if (!this.abi || !this.abi.entries)
+      throw new Error("Entries are not defined");
     const contractId = encodeBase58(op.contract_id);
     if (contractId !== this.id)
       throw new Error(
         `Invalid contract id. Expected: ${this.id}. Received: ${contractId}`
       );
-    for (let i = 0; i < Object.keys(this.entries).length; i += 1) {
-      const opName = Object.keys(this.entries)[i];
-      const entry = this.entries[opName];
+    for (let i = 0; i < Object.keys(this.abi.entries).length; i += 1) {
+      const opName = Object.keys(this.abi.entries)[i];
+      const entry = this.abi.entries[opName];
       if (op.entry_point === entry.id) {
         if (!entry.inputs) return { name: opName };
         return {
