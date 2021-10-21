@@ -1,9 +1,8 @@
 import axios, { AxiosResponse } from "axios";
 import crypto from "crypto";
-import pbjs from "protobufjs/cli/pbjs";
-import { INamespace, Type } from "protobufjs";
+import { Type } from "protobufjs";
 import { Signer } from "../src/Signer";
-import { Contract } from "../src/Contract";
+import { Contract, Krc20Abi } from "../src/Contract";
 import { Provider } from "../src/Provider";
 import {
   bitcoinDecode,
@@ -74,10 +73,16 @@ const rpcNodes = [
   "http://example2.koinos.io:8080",
 ];
 
-let koinContract: Contract;
-let koin: Contract["functions"];
-let signer: Signer;
-let provider: Provider;
+const provider = new Provider(rpcNodes);
+const signer = new Signer(privateKeyHex);
+signer.provider = provider;
+const koinContract = new Contract({
+  id: "1GGBJWw5q1vUc5MiXpzL6VvQvdkhK8AiiN",
+  abi: Krc20Abi,
+  provider,
+  signer,
+});
+const koin = koinContract.functions;
 
 describe("Signer", () => {
   it("should get private key", () => {
@@ -115,49 +120,6 @@ describe("Signer", () => {
 });
 
 describe("Wallet and Contract", () => {
-  beforeAll(async () => {
-    const protoTokenJson = await new Promise((resolve) => {
-      pbjs.main(
-        [
-          "--target",
-          "json",
-          "./koinos-proto/koinos/contracts/token/token.proto",
-        ],
-        (err, output) => {
-          if (err) throw err;
-          if (!output) throw new Error("token.proto could not be generated");
-          resolve(JSON.parse(output));
-        }
-      );
-    });
-
-    provider = new Provider(rpcNodes);
-    signer = new Signer(privateKeyHex);
-    signer.provider = provider;
-
-    koinContract = new Contract({
-      id: "1GGBJWw5q1vUc5MiXpzL6VvQvdkhK8AiiN",
-      abi: {
-        entries: {
-          transfer: {
-            id: 0x62efa292,
-            inputs: "transfer_arguments",
-          },
-          balanceOf: {
-            id: 0x15619248,
-            inputs: "balance_of_arguments",
-            outputs: "balance_of_result",
-            readOnly: true,
-          },
-        },
-        types: protoTokenJson as INamespace,
-      },
-      provider,
-      signer,
-    });
-    koin = koinContract.functions;
-  });
-
   it("should encode and decode bitcoin format", () => {
     expect.assertions(2);
     const decodedPrivateKey = toHexString(bitcoinDecode(wif)).toLowerCase();
@@ -192,7 +154,7 @@ describe("Wallet and Contract", () => {
 
     expect(opEncoded).toStrictEqual({
       contract_id: decodeBase58(koinContract.id as string),
-      entry_point: koinContract.abi?.entries?.transfer?.id,
+      entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
       args: expect.any(Uint8Array) as Uint8Array,
     });
 
@@ -211,7 +173,7 @@ describe("Wallet and Contract", () => {
 
     expect(operation).toStrictEqual({
       contract_id: decodeBase58(koinContract.id as string),
-      entry_point: koinContract.abi?.entries?.transfer?.id,
+      entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
       args: expect.any(Uint8Array) as Uint8Array,
     } as CallContractOperation);
 
@@ -277,13 +239,13 @@ describe("Wallet and Contract", () => {
 
   it("should change node", async () => {
     expect.assertions(2);
-    provider = new Provider([
+    const myProvider = new Provider([
       "http://bad-server1",
       "http://bad-server2",
       "http://good-server",
     ]);
     let numErrors = 0;
-    provider.onError = () => {
+    myProvider.onError = () => {
       numErrors += 1;
       return false;
     };
@@ -296,7 +258,7 @@ describe("Wallet and Contract", () => {
       return axiosResponse({ nonce: "123" });
     });
 
-    const nonce = await provider.getNonce(address);
+    const nonce = await myProvider.getNonce(address);
 
     expect(numErrors).toBe(2);
     expect(nonce).toBe(123);

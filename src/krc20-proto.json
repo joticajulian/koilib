@@ -1,0 +1,177 @@
+{
+  "nested": {
+    "koinos": {
+      "nested": {
+        "contracts": {
+          "nested": {
+            "token": {
+              "options": {
+                "go_package": "github.com/koinos/koinos-proto-golang/koinos/contracts/token"
+              },
+              "nested": {
+                "name_arguments": {
+                  "fields": {}
+                },
+                "name_result": {
+                  "fields": {
+                    "value": {
+                      "type": "string",
+                      "id": 1
+                    }
+                  }
+                },
+                "symbol_arguments": {
+                  "fields": {}
+                },
+                "symbol_result": {
+                  "fields": {
+                    "value": {
+                      "type": "string",
+                      "id": 1
+                    }
+                  }
+                },
+                "decimals_arguments": {
+                  "fields": {}
+                },
+                "decimals_result": {
+                  "fields": {
+                    "value": {
+                      "type": "uint32",
+                      "id": 1
+                    }
+                  }
+                },
+                "total_supply_arguments": {
+                  "fields": {}
+                },
+                "total_supply_result": {
+                  "fields": {
+                    "value": {
+                      "type": "uint64",
+                      "id": 1,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
+                    }
+                  }
+                },
+                "balance_of_arguments": {
+                  "fields": {
+                    "owner": {
+                      "type": "bytes",
+                      "id": 1
+                    }
+                  }
+                },
+                "balance_of_result": {
+                  "fields": {
+                    "value": {
+                      "type": "uint64",
+                      "id": 1,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
+                    }
+                  }
+                },
+                "transfer_arguments": {
+                  "fields": {
+                    "from": {
+                      "type": "bytes",
+                      "id": 1,
+                      "options": {
+                        "(koinos_bytes_type)": "BASE58"
+                      }
+                    },
+                    "to": {
+                      "type": "bytes",
+                      "id": 2,
+                      "options": {
+                        "(koinos_bytes_type)": "BASE58"
+                      }
+                    },
+                    "value": {
+                      "type": "uint64",
+                      "id": 3,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
+                    }
+                  }
+                },
+                "transfer_result": {
+                  "fields": {
+                    "value": {
+                      "type": "bool",
+                      "id": 1
+                    }
+                  }
+                },
+                "mint_arguments": {
+                  "fields": {
+                    "to": {
+                      "type": "bytes",
+                      "id": 1
+                    },
+                    "value": {
+                      "type": "uint64",
+                      "id": 2,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
+                    }
+                  }
+                },
+                "mint_result": {
+                  "fields": {
+                    "value": {
+                      "type": "bool",
+                      "id": 1
+                    }
+                  }
+                },
+                "balance_object": {
+                  "fields": {
+                    "value": {
+                      "type": "uint64",
+                      "id": 1,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
+                    }
+                  }
+                },
+                "mana_balance_object": {
+                  "fields": {
+                    "balance": {
+                      "type": "uint64",
+                      "id": 1,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
+                    },
+                    "mana": {
+                      "type": "uint64",
+                      "id": 2,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
+                    },
+                    "lastManaUpdate": {
+                      "type": "uint64",
+                      "id": 3,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

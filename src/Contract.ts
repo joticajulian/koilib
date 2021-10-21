@@ -15,25 +15,77 @@ import {
   toHexString,
   toUint8Array,
 } from "./utils";
+import krc20Json from "./krc20-proto.json";
 
 const OP_BYTES = "(koinos_bytes_type)";
 
 export interface Abi {
-  entries: {
-    /** Name of the entry */
+  methods: {
+    /** Name of the method */
     [x: string]: {
       /** Entry point ID */
-      id: number;
+      entryPoint: number;
       /** Protobuffer type for input */
       inputs?: string;
       /** Protobuffer type for output */
       outputs?: string;
-
+      /** Boolean to differentiate write methods
+       * (using transactions) from read methods
+       * (query the contract)
+       */
       readOnly?: boolean;
+      /** Description of the method */
+      description?: string;
     };
   };
   types: INamespace;
 }
+
+export const Krc20Abi: Abi = {
+  methods: {
+    name: {
+      entryPoint: 0x76ea4297,
+      inputs: "name_arguments",
+      outputs: "name_result",
+      readOnly: true,
+    },
+    symbol: {
+      entryPoint: 0x7e794b24,
+      inputs: "symbol_arguments",
+      outputs: "symbol_result",
+      readOnly: true,
+    },
+    decimals: {
+      entryPoint: 0x59dc15ce,
+      inputs: "decimals_arguments",
+      outputs: "decimals_result",
+      readOnly: true,
+    },
+    totalSupply: {
+      entryPoint: 0xcf2e8212,
+      inputs: "total_supply_arguments",
+      outputs: "total_supply_result",
+      readOnly: true,
+    },
+    balanceOf: {
+      entryPoint: 0x15619248,
+      inputs: "balance_of_arguments",
+      outputs: "balance_of_result",
+      readOnly: true,
+    },
+    transfer: {
+      entryPoint: 0x62efa292,
+      inputs: "transfer_arguments",
+      outputs: "transfer_result",
+    },
+    mint: {
+      entryPoint: 0xc2f82bdc,
+      inputs: "mint_argumnets",
+      outputs: "mint_result",
+    },
+  },
+  types: krc20Json,
+};
 
 /**
  * Human readable format operation
@@ -240,8 +292,8 @@ export class Contract {
     };
     this.functions = {};
 
-    if (this.signer && this.provider && this.abi && this.abi.entries) {
-      Object.keys(this.abi.entries).forEach((name) => {
+    if (this.signer && this.provider && this.abi && this.abi.methods) {
+      Object.keys(this.abi.methods).forEach((name) => {
         this.functions[name] = async <T = Record<string, unknown>>(
           args?: Record<string, unknown>,
           options?: TransactionOptions
@@ -251,8 +303,8 @@ export class Contract {
           result?: T | unknown;
         }> => {
           if (!this.provider) throw new Error("provider not found");
-          if (!this.abi || !this.abi.entries)
-            throw new Error("Entries are not defined");
+          if (!this.abi || !this.abi.methods)
+            throw new Error("Methods are not defined");
           const opts = {
             ...this.options,
             ...options,
@@ -260,8 +312,8 @@ export class Contract {
 
           const operation = this.encodeOperation({ name, args });
 
-          if (this.abi.entries[name].readOnly) {
-            if (!this.abi.entries[name].outputs)
+          if (this.abi.methods[name].readOnly) {
+            if (!this.abi.methods[name].outputs)
               throw new Error(`No outputs defined for ${name}`);
             // read contract
             const { result: resultEncoded } = await this.provider.readContract(
@@ -269,7 +321,7 @@ export class Contract {
             );
             const result = this.decodeType<T>(
               resultEncoded,
-              this.abi.entries[name].outputs as string
+              this.abi.methods[name].outputs as string
             );
             return { operation, result };
           }
@@ -361,22 +413,22 @@ export class Contract {
    * ```
    */
   encodeOperation(op: DecodedOperationJson): CallContractOperation {
-    if (!this.abi || !this.abi.entries || !this.abi.entries[op.name])
+    if (!this.abi || !this.abi.methods || !this.abi.methods[op.name])
       throw new Error(`Operation ${op.name} unknown`);
     if (!this.protobuffers) throw new Error("Protobuffers are not defined");
     if (!this.id) throw new Error("Contract id is not defined");
-    const entry = this.abi.entries[op.name];
+    const method = this.abi.methods[op.name];
 
     let bufferInputs = new Uint8Array(0);
-    if (entry.inputs) {
+    if (method.inputs) {
       if (!op.args)
-        throw new Error(`No arguments defined for type '${entry.inputs}'`);
-      bufferInputs = this.encodeType(op.args, entry.inputs);
+        throw new Error(`No arguments defined for type '${method.inputs}'`);
+      bufferInputs = this.encodeType(op.args, method.inputs);
     }
 
     return {
       contract_id: decodeBase58(this.id),
-      entry_point: entry.id,
+      entry_point: method.entryPoint,
       args: bufferInputs,
     };
   }
@@ -406,25 +458,25 @@ export class Contract {
    */
   decodeOperation(op: CallContractOperation): DecodedOperationJson {
     if (!this.id) throw new Error("Contract id is not defined");
-    if (!this.abi || !this.abi.entries)
-      throw new Error("Entries are not defined");
+    if (!this.abi || !this.abi.methods)
+      throw new Error("Methods are not defined");
     const contractId = encodeBase58(op.contract_id);
     if (contractId !== this.id)
       throw new Error(
         `Invalid contract id. Expected: ${this.id}. Received: ${contractId}`
       );
-    for (let i = 0; i < Object.keys(this.abi.entries).length; i += 1) {
-      const opName = Object.keys(this.abi.entries)[i];
-      const entry = this.abi.entries[opName];
-      if (op.entry_point === entry.id) {
-        if (!entry.inputs) return { name: opName };
+    for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
+      const opName = Object.keys(this.abi.methods)[i];
+      const method = this.abi.methods[opName];
+      if (op.entry_point === method.entryPoint) {
+        if (!method.inputs) return { name: opName };
         return {
           name: opName,
-          args: this.decodeType(op.args, entry.inputs),
+          args: this.decodeType(op.args, method.inputs),
         };
       }
     }
-    throw new Error(`Unknown entry id ${op.entry_point}`);
+    throw new Error(`Unknown method id ${op.entry_point}`);
   }
 
   encodeType(
