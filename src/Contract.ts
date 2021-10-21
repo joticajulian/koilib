@@ -12,8 +12,11 @@ import {
   decodeBase64,
   encodeBase58,
   encodeBase64,
+  toHexString,
   toUint8Array,
 } from "./utils";
+
+const OP_BYTES = "(koinos_bytes_type)";
 
 export interface Abi {
   entries: {
@@ -59,6 +62,22 @@ export interface TransactionOptions {
   resource_limit?: number | bigint | string;
   nonce?: number;
   send?: boolean;
+}
+
+/**
+ * Makes a copy of a value. The returned value can be modified
+ * without altering the original one. Although this is not needed
+ * for strings or numbers and only needed for objects and arrays,
+ * all these options are covered in a single function
+ *
+ * It is assumed that the argument is number, string, or contructions
+ * of these types inside objects or arrays.
+ */
+function copyValue(value: unknown): unknown {
+  if (typeof value === "string" || typeof value === "number") {
+    return value;
+  }
+  return JSON.parse(JSON.stringify(value)) as unknown;
 }
 
 /**
@@ -223,13 +242,13 @@ export class Contract {
 
     if (this.signer && this.provider && this.abi && this.abi.entries) {
       Object.keys(this.abi.entries).forEach((name) => {
-        this.functions[name] = async (
+        this.functions[name] = async <T = Record<string, unknown>>(
           args?: Record<string, unknown>,
           options?: TransactionOptions
         ): Promise<{
           operation: CallContractOperation;
           transaction?: TransactionJson;
-          result?: unknown;
+          result?: T | unknown;
         }> => {
           if (!this.provider) throw new Error("provider not found");
           if (!this.abi || !this.abi.entries)
@@ -248,7 +267,7 @@ export class Contract {
             const { result: resultEncoded } = await this.provider.readContract(
               operation
             );
-            const result = this.decodeType(
+            const result = this.decodeType<T>(
               resultEncoded,
               this.abi.entries[name].outputs as string
             );
@@ -415,30 +434,43 @@ export class Contract {
     if (!this.protobuffers) throw new Error("Protobuffers are not defined");
     const protobufType = this.protobuffers.lookupType(typeName);
     const object: Record<string, unknown> = {};
+    // TODO: format from Buffer to base58/base64 for nested fields
     Object.keys(protobufType.fields).forEach((fieldName) => {
       const { options, name, type } = protobufType.fields[fieldName];
+
+      // No byte conversion
       if (type !== "bytes") {
-        if (["string", "number"].includes(typeof valueDecoded[name])) {
-          object[name] = valueDecoded[name];
-        } else {
-          object[name] = JSON.parse(JSON.stringify(valueDecoded[name]));
-        }
+        object[name] = copyValue(valueDecoded[name]);
         return;
       }
-      if (options && options["(koinos_bytes_type)"]) {
-        switch (options["(koinos_bytes_type)"]) {
-          case "BASE58":
-            object[name] = decodeBase58(valueDecoded[name] as string);
-            break;
-          default:
-            throw new Error(
-              `unknown koinos_byte_type ${
-                options["(koinos_bytes_type)"] as string
-              }`
-            );
-        }
-      } else {
+
+      // Default byte conversion
+      if (!options || !options[OP_BYTES]) {
         object[name] = decodeBase64(valueDecoded[name] as string);
+        return;
+      }
+
+      // Specific byte conversion
+      switch (options[OP_BYTES]) {
+        case "BASE58":
+        case "CONTRACT_ID":
+        case "ADDRESS":
+          object[name] = decodeBase58(valueDecoded[name] as string);
+          break;
+        case "BASE64":
+          object[name] = decodeBase64(valueDecoded[name] as string);
+          break;
+        case "HEX":
+        case "BLOCK_ID":
+        case "TRANSACTION_ID":
+          object[name] = toUint8Array(
+            (valueDecoded[name] as string).replace("0x", "")
+          );
+          break;
+        default:
+          throw new Error(
+            `unknown koinos_byte_type ${options[OP_BYTES] as string}`
+          );
       }
     });
     const message = protobufType.create(object);
@@ -446,10 +478,10 @@ export class Contract {
     return buffer;
   }
 
-  decodeType(
+  decodeType<T = Record<string, unknown>>(
     valueEncoded: string | Uint8Array,
     typeName: string
-  ): Record<string, unknown> {
+  ): T {
     if (!this.protobuffers) throw new Error("Protobuffers are not defined");
     const valueBuffer =
       typeof valueEncoded === "string"
@@ -461,24 +493,38 @@ export class Contract {
     // TODO: format from Buffer to base58/base64 for nested fields
     Object.keys(protobufType.fields).forEach((fieldName) => {
       const { options, name, type } = protobufType.fields[fieldName];
+
+      // No byte conversion
       if (type !== "bytes") return;
-      if (options && options["(koinos_bytes_type)"]) {
-        switch (options["(koinos_bytes_type)"]) {
-          case "BASE58":
-            object[name] = encodeBase58(object[name]);
-            break;
-          default:
-            throw new Error(
-              `unknown koinos_byte_type ${
-                options["(koinos_bytes_type)"] as string
-              }`
-            );
-        }
-      } else {
+
+      // Default byte conversion
+      if (!options || !options[OP_BYTES]) {
         object[name] = encodeBase64(object[name]);
+        return;
+      }
+
+      // Specific byte conversion
+      switch (options[OP_BYTES]) {
+        case "BASE58":
+        case "CONTRACT_ID":
+        case "ADDRESS":
+          object[name] = encodeBase58(object[name]);
+          break;
+        case "BASE64":
+          object[name] = encodeBase64(object[name]);
+          break;
+        case "HEX":
+        case "BLOCK_ID":
+        case "TRANSACTION_ID":
+          object[name] = `0x${toHexString(object[name])}`;
+          break;
+        default:
+          throw new Error(
+            `unknown koinos_byte_type ${options[OP_BYTES] as string}`
+          );
       }
     });
-    return object;
+    return object as T;
   }
 }
 
