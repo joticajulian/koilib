@@ -1,6 +1,8 @@
 import * as multibase from "multibase";
 import { sha256 } from "js-sha256";
 import ripemd160 from "noble-ripemd160";
+import krc20ProtoJson from "./krc20-proto.json";
+import { Abi } from "./Contract";
 
 /**
  * Converts an hex string to Uint8Array
@@ -148,3 +150,49 @@ export function bitcoinAddress(publicKey: Uint8Array): string {
   const hash160 = ripemd160(toUint8Array(hash));
   return bitcoinEncode(hash160, "public");
 }
+
+export const Krc20Abi: Abi = {
+  methods: {
+    name: {
+      entryPoint: 0x76ea4297,
+      inputs: "name_arguments",
+      outputs: "name_result",
+      readOnly: true,
+    },
+    symbol: {
+      entryPoint: 0x7e794b24,
+      inputs: "symbol_arguments",
+      outputs: "symbol_result",
+      readOnly: true,
+    },
+    decimals: {
+      entryPoint: 0x59dc15ce,
+      inputs: "decimals_arguments",
+      outputs: "decimals_result",
+      readOnly: true,
+    },
+    totalSupply: {
+      entryPoint: 0xcf2e8212,
+      inputs: "total_supply_arguments",
+      outputs: "total_supply_result",
+      readOnly: true,
+    },
+    balanceOf: {
+      entryPoint: 0x15619248,
+      inputs: "balance_of_arguments",
+      outputs: "balance_of_result",
+      readOnly: true,
+    },
+    transfer: {
+      entryPoint: 0x62efa292,
+      inputs: "transfer_arguments",
+      outputs: "transfer_result",
+    },
+    mint: {
+      entryPoint: 0xc2f82bdc,
+      inputs: "mint_argumnets",
+      outputs: "mint_result",
+    },
+  },
+  types: krc20ProtoJson,
+};

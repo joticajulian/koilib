@@ -2,13 +2,14 @@ import axios, { AxiosResponse } from "axios";
 import crypto from "crypto";
 import { Type } from "protobufjs";
 import { Signer } from "../src/Signer";
-import { Contract, Krc20Abi } from "../src/Contract";
+import { Contract } from "../src/Contract";
 import { Provider } from "../src/Provider";
 import {
   bitcoinDecode,
   decodeBase58,
   encodeBase64,
   toHexString,
+  Krc20Abi,
 } from "../src/utils";
 import {
   CallContractOperation,
