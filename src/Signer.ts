@@ -1,10 +1,16 @@
 /* eslint-disable no-param-reassign */
-
 import { sha256 } from "js-sha256";
 import * as secp from "noble-secp256k1";
 import { Root } from "protobufjs/light";
 import { Provider } from "./Provider";
-import { TransactionJson, ActiveTransactionData } from "./interface";
+import {
+  TransactionJson,
+  ActiveTransactionData,
+  Operation,
+  CallContractOperation,
+  UploadContractOperation,
+  SetSystemCallOperation,
+} from "./interface";
 import protocolJson from "./protocol-proto.json";
 import {
   bitcoinAddress,
@@ -15,10 +21,24 @@ import {
   toHexString,
   toUint8Array,
 } from "./utils";
-import { Operation } from ".";
+import { Abi } from "./Contract";
 
 const root = Root.fromJSON(protocolJson);
 const ActiveTxDataMsg = root.lookupType("active_transaction_data");
+
+export interface SignerInterface {
+  getAddress(compressed: boolean): string;
+  getPrivateKey(format: "wif" | "hex", compressed?: boolean): string;
+  signTransaction(tx: TransactionJson): Promise<TransactionJson>;
+  sendTransaction(
+    tx: TransactionJson,
+    abis?: Record<string, Abi>
+  ): Promise<unknown>;
+  encodeTransaction(
+    activeData: ActiveTransactionData
+  ): Promise<TransactionJson>;
+  // decodeTransaction(tx: TransactionJson): ActiveTransactionData;
+}
 
 /**
  * The Signer Class contains the private key needed to sign transactions.
@@ -63,7 +83,7 @@ const ActiveTxDataMsg = root.lookupType("active_transaction_data");
  * var signer = Signer.fromWif("L59UtJcTdNBnrH2QSBA5beSUhRufRu3g6tScDTite6Msuj7U93tM");
  * ```
  */
-export class Signer {
+export class Signer implements SignerInterface {
   /**
    * Boolean determining if the public/private key
    * is using the compressed format
@@ -97,10 +117,12 @@ export class Signer {
    */
   constructor(
     privateKey: string | number | bigint | Uint8Array,
-    compressed = true
+    compressed = true,
+    provider?: Provider
   ) {
     this.compressed = compressed;
     this.privateKey = privateKey;
+    this.provider = provider;
     if (typeof privateKey === "string") {
       this.publicKey = secp.getPublicKey(privateKey, this.compressed);
       this.address = bitcoinAddress(toUint8Array(this.publicKey));
@@ -224,7 +246,10 @@ export class Signer {
     return tx;
   }
 
-  async sendTransaction(tx: TransactionJson): Promise<unknown> {
+  async sendTransaction(
+    tx: TransactionJson,
+    _abis?: Record<string, Abi>
+  ): Promise<unknown> {
     if (!tx.signature_data || !tx.id) await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
     return this.provider.sendTransaction(tx);
@@ -267,27 +292,11 @@ export class Signer {
   /**
    * Creates an unsigned transaction
    */
-  async populateTransaction(opts: {
-    /**
-     * Maximum resources to be used in the transaction.
-     * By default it is 1000000
-     */
-    resource_limit?: number | bigint | string;
-
-    /**
-     * Array of operations.
-     */
-    operations?: Operation[];
-
-    /**
-     * Boolean defining if the Provider should be used
-     * to call the RPC node and get the nonce (see
-     * [[Provider.getNonce]])
-     */
-    nonce?: number;
-  }): Promise<TransactionJson> {
+  async encodeTransaction(
+    activeData: ActiveTransactionData
+  ): Promise<TransactionJson> {
     let nonce;
-    if (opts.nonce === undefined) nonce = 0;
+    if (activeData.nonce === undefined) nonce = 0;
     else {
       if (!this.provider)
         throw new Error(
@@ -298,21 +307,58 @@ export class Signer {
       nonce = await this.provider.getNonce(this.getAddress());
     }
     const resourceLimit =
-      opts.resource_limit === undefined ? 1000000 : opts.resource_limit;
-    const operations = opts.operations ? opts.operations : [];
+      activeData.rc_limit === undefined ? 1000000 : activeData.rc_limit;
+    const operations = activeData.operations ? activeData.operations : [];
 
-    const activeData: ActiveTransactionData = {
+    const activeData2: ActiveTransactionData = {
       rc_limit: resourceLimit,
       nonce,
       operations,
     };
 
-    const message = ActiveTxDataMsg.create(activeData);
+    const message = ActiveTxDataMsg.create(activeData2);
     const buffer = ActiveTxDataMsg.encode(message).finish();
 
     return {
       active: encodeBase64(buffer),
     } as TransactionJson;
+  }
+
+  static decodeTransaction(tx: TransactionJson): ActiveTransactionData {
+    if (!tx.active) throw new Error("Active data is not defined");
+    const buffer = decodeBase64(tx.active);
+    const message = ActiveTxDataMsg.decode(buffer);
+    return ActiveTxDataMsg.toObject(message, { longs: String });
+  }
+
+  static isCallContractOperation(
+    operation: Operation
+  ): operation is CallContractOperation {
+    const op = operation as CallContractOperation;
+    return (
+      typeof op.contract_id !== "undefined" &&
+      typeof op.entry_point !== "undefined" &&
+      typeof op.args !== "undefined"
+    );
+  }
+
+  static isUploadContractOperation(
+    operation: Operation
+  ): operation is UploadContractOperation {
+    const op = operation as UploadContractOperation;
+    return (
+      typeof op.contract_id !== "undefined" &&
+      typeof op.bytecode !== "undefined"
+    );
+  }
+
+  static isSetSystemCallOperation(
+    operation: Operation
+  ): operation is SetSystemCallOperation {
+    const op = operation as SetSystemCallOperation;
+    return (
+      typeof op.call_id !== "undefined" && typeof op.target !== "undefined"
+    );
   }
 }
 

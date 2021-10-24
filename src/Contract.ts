@@ -64,9 +64,10 @@ export interface DecodedOperationJson {
 }
 
 export interface TransactionOptions {
-  resource_limit?: number | bigint | string;
+  rc_limit?: number | bigint | string;
   nonce?: number;
-  send?: boolean;
+  sendTransaction?: boolean;
+  sendAbis?: boolean;
 }
 
 /**
@@ -167,7 +168,7 @@ export class Contract {
   /**
    * Contract ID
    */
-  id?: string;
+  id?: Uint8Array;
 
   /**
    * Protobuffer definitions
@@ -232,15 +233,16 @@ export class Contract {
     signer?: Signer;
     provider?: Provider;
   }) {
-    this.id = c.id;
+    if (c.id) this.id = decodeBase58(c.id);
     this.signer = c.signer;
     this.provider = c.provider;
     this.abi = c.abi;
     this.bytecode = c.bytecode;
     if (c.abi?.types) this.protobuffers = Root.fromJSON(c.abi.types);
     this.options = {
-      resource_limit: 1e8,
-      send: true,
+      rc_limit: 1e8,
+      sendTransaction: true,
+      sendAbis: true,
       ...c.options,
     };
     this.functions = {};
@@ -248,7 +250,7 @@ export class Contract {
     if (this.signer && this.provider && this.abi && this.abi.methods) {
       Object.keys(this.abi.methods).forEach((name) => {
         this.functions[name] = async <T = Record<string, unknown>>(
-          args?: Record<string, unknown>,
+          args: Record<string, unknown> = {},
           options?: TransactionOptions
         ): Promise<{
           operation: CallContractOperation;
@@ -280,16 +282,21 @@ export class Contract {
           }
 
           // return operation if send is false
-          if (!opts?.send) return { operation };
+          if (!opts?.sendTransaction) return { operation };
 
           // write contract (sign and send)
           if (!this.signer) throw new Error("signer not found");
-          const transaction = await this.signer.populateTransaction({
+          const transaction = await this.signer.encodeTransaction({
             ...opts,
             operations: [operation],
           });
 
-          const result = await this.signer.sendTransaction(transaction);
+          const abis: Record<string, Abi> = {};
+          if (opts?.sendAbis) {
+            const contractId = encodeBase58(this.id as Uint8Array);
+            abis[contractId] = this.abi;
+          }
+          const result = await this.signer.sendTransaction(transaction, abis);
           return { operation, transaction, result };
         };
       });
@@ -299,6 +306,11 @@ export class Contract {
   static computeContractId(address: string): Uint8Array {
     const signerHash = ripemd160(address);
     return toUint8Array(signerHash);
+  }
+
+  getId(): string {
+    if (!this.id) throw new Error("id is not defined");
+    return encodeBase58(this.id);
   }
 
   async deploy(options?: TransactionOptions): Promise<{
@@ -318,9 +330,9 @@ export class Contract {
     };
 
     // return operation if send is false
-    if (!opts?.send) return { operation };
+    if (!opts?.sendTransaction) return { operation };
 
-    const transaction = await this.signer.populateTransaction({
+    const transaction = await this.signer.encodeTransaction({
       ...opts,
       operations: [operation],
     });
@@ -380,7 +392,7 @@ export class Contract {
     }
 
     return {
-      contract_id: decodeBase58(this.id),
+      contract_id: this.id,
       entry_point: method.entryPoint,
       args: bufferInputs,
     };
@@ -413,10 +425,11 @@ export class Contract {
     if (!this.id) throw new Error("Contract id is not defined");
     if (!this.abi || !this.abi.methods)
       throw new Error("Methods are not defined");
-    const contractId = encodeBase58(op.contract_id);
-    if (contractId !== this.id)
+    if (op.contract_id !== this.id)
       throw new Error(
-        `Invalid contract id. Expected: ${this.id}. Received: ${contractId}`
+        `Invalid contract id. Expected: ${encodeBase58(
+          this.id
+        )}. Received: ${encodeBase58(op.contract_id)}`
       );
     for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
       const opName = Object.keys(this.abi.methods)[i];
