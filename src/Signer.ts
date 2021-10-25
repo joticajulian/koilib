@@ -3,14 +3,7 @@ import { sha256 } from "js-sha256";
 import * as secp from "noble-secp256k1";
 import { Root } from "protobufjs/light";
 import { Provider } from "./Provider";
-import {
-  TransactionJson,
-  ActiveTransactionData,
-  Operation,
-  CallContractOperation,
-  UploadContractOperation,
-  SetSystemCallOperation,
-} from "./interface";
+import { TransactionJson, ActiveTransactionData } from "./interface";
 import protocolJson from "./protocol-proto.json";
 import {
   bitcoinAddress,
@@ -27,7 +20,8 @@ const root = Root.fromJSON(protocolJson);
 const ActiveTxDataMsg = root.lookupType("active_transaction_data");
 
 export interface SignerInterface {
-  getAddress(compressed: boolean): string;
+  provider?: Provider;
+  getAddress(compressed?: boolean): string;
   getPrivateKey(format: "wif" | "hex", compressed?: boolean): string;
   signTransaction(tx: TransactionJson): Promise<TransactionJson>;
   sendTransaction(
@@ -240,7 +234,7 @@ export class Signer implements SignerInterface {
     const rHex = r.toString(16).padStart(64, "0");
     const sHex = s.toString(16).padStart(64, "0");
     const recId = (recovery + 31).toString(16).padStart(2, "0");
-    tx.signature_data = encodeBase64(toUint8Array(recId + rHex + sHex));
+    tx.signatureData = encodeBase64(toUint8Array(recId + rHex + sHex));
     const multihash = `0x1220${hash}`; // 12: code sha2-256. 20: length (32 bytes)
     tx.id = multihash;
     return tx;
@@ -250,7 +244,7 @@ export class Signer implements SignerInterface {
     tx: TransactionJson,
     _abis?: Record<string, Abi>
   ): Promise<unknown> {
-    if (!tx.signature_data || !tx.id) await this.signTransaction(tx);
+    if (!tx.signatureData || !tx.id) await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
     return this.provider.sendTransaction(tx);
   }
@@ -262,10 +256,10 @@ export class Signer implements SignerInterface {
    * @param compressed - output format (compressed by default)
    */
   static recoverPublicKey(tx: TransactionJson, compressed = true): string {
-    if (!tx.active) throw new Error("active_data is not defined");
-    if (!tx.signature_data) throw new Error("signature_data is not defined");
+    if (!tx.active) throw new Error("activeData is not defined");
+    if (!tx.signatureData) throw new Error("signatureData is not defined");
     const hash = sha256(decodeBase64(tx.active));
-    const compactSignatureHex = toHexString(decodeBase64(tx.signature_data));
+    const compactSignatureHex = toHexString(decodeBase64(tx.signatureData));
     const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
     const rHex = compactSignatureHex.slice(2, 66);
     const sHex = compactSignatureHex.slice(66);
@@ -295,9 +289,8 @@ export class Signer implements SignerInterface {
   async encodeTransaction(
     activeData: ActiveTransactionData
   ): Promise<TransactionJson> {
-    let nonce;
-    if (activeData.nonce === undefined) nonce = 0;
-    else {
+    let { nonce } = activeData;
+    if (activeData.nonce === undefined) {
       if (!this.provider)
         throw new Error(
           "Cannot get the nonce because provider is undefined. To skip this call set a nonce in the parameters"
@@ -306,12 +299,12 @@ export class Signer implements SignerInterface {
       // this depends on the final architecture for names on Koinos
       nonce = await this.provider.getNonce(this.getAddress());
     }
-    const resourceLimit =
-      activeData.rc_limit === undefined ? 1000000 : activeData.rc_limit;
+    const rcLimit =
+      activeData.rcLimit === undefined ? 1000000 : activeData.rcLimit;
     const operations = activeData.operations ? activeData.operations : [];
 
     const activeData2: ActiveTransactionData = {
-      rc_limit: resourceLimit,
+      rcLimit,
       nonce,
       operations,
     };
@@ -329,36 +322,6 @@ export class Signer implements SignerInterface {
     const buffer = decodeBase64(tx.active);
     const message = ActiveTxDataMsg.decode(buffer);
     return ActiveTxDataMsg.toObject(message, { longs: String });
-  }
-
-  static isCallContractOperation(
-    operation: Operation
-  ): operation is CallContractOperation {
-    const op = operation as CallContractOperation;
-    return (
-      typeof op.contract_id !== "undefined" &&
-      typeof op.entry_point !== "undefined" &&
-      typeof op.args !== "undefined"
-    );
-  }
-
-  static isUploadContractOperation(
-    operation: Operation
-  ): operation is UploadContractOperation {
-    const op = operation as UploadContractOperation;
-    return (
-      typeof op.contract_id !== "undefined" &&
-      typeof op.bytecode !== "undefined"
-    );
-  }
-
-  static isSetSystemCallOperation(
-    operation: Operation
-  ): operation is SetSystemCallOperation {
-    const op = operation as SetSystemCallOperation;
-    return (
-      typeof op.call_id !== "undefined" && typeof op.target !== "undefined"
-    );
   }
 }
 

@@ -6,15 +6,15 @@ import { Contract } from "../src/Contract";
 import { Provider } from "../src/Provider";
 import {
   bitcoinDecode,
-  decodeBase58,
   encodeBase64,
   toHexString,
   Krc20Abi,
 } from "../src/utils";
 import {
-  CallContractOperation,
+  CallContractOperationNested,
+  SetSystemCallOperationNested,
+  UploadContractOperationNested,
   TransactionJson,
-  UploadContractOperation,
 } from "../src";
 
 const mockAxiosGet = jest.spyOn(axios, "get");
@@ -154,12 +154,53 @@ describe("Wallet and Contract", () => {
     const opDecoded = koinContract.decodeOperation(opEncoded);
 
     expect(opEncoded).toStrictEqual({
-      contract_id: decodeBase58(koinContract.id as string),
-      entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
-      args: expect.any(Uint8Array) as Uint8Array,
-    });
+      callContract: {
+        contractId: koinContract.id,
+        entryPoint: koinContract.abi?.methods?.transfer?.entryPoint,
+        args: expect.any(Uint8Array) as Uint8Array,
+      },
+    } as CallContractOperationNested);
 
     expect(opDecoded).toStrictEqual(opTransfer);
+  });
+
+  it("should encode and decode a transaction", async () => {
+    expect.assertions(2);
+
+    const activeData = {
+      nonce: "8",
+      rcLimit: "10",
+      operations: [
+        {
+          callContract: {
+            contractId: new Uint8Array(crypto.randomBytes(20)),
+            entryPoint: 12,
+            args: new Uint8Array(crypto.randomBytes(12)),
+          },
+        } as CallContractOperationNested,
+        {
+          setSystemCall: {
+            callId: 23,
+            target: {
+              thunkId: 234,
+            },
+          },
+        } as SetSystemCallOperationNested,
+        {
+          uploadContract: {
+            contractId: new Uint8Array(crypto.randomBytes(20)),
+            bytecode: new Uint8Array(crypto.randomBytes(23)),
+          },
+        } as UploadContractOperationNested,
+      ],
+    };
+
+    const tx = await signer.encodeTransaction(activeData);
+    const activeData2 = Signer.decodeTransaction(tx);
+    expect(tx).toStrictEqual({
+      active: expect.any(String) as string,
+    } as TransactionJson);
+    expect(activeData2).toStrictEqual(activeData);
   });
 
   it("should sign a transaction and recover the public key and address", async () => {
@@ -173,15 +214,17 @@ describe("Wallet and Contract", () => {
     });
 
     expect(operation).toStrictEqual({
-      contract_id: decodeBase58(koinContract.id as string),
-      entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
-      args: expect.any(Uint8Array) as Uint8Array,
-    } as CallContractOperation);
+      callContract: {
+        contractId: koinContract.id,
+        entryPoint: koinContract.abi?.methods?.transfer?.entryPoint,
+        args: expect.any(Uint8Array) as Uint8Array,
+      },
+    } as CallContractOperationNested);
 
     expect(transaction).toStrictEqual({
       id: expect.any(String) as string,
       active: expect.any(String) as string,
-      signature_data: expect.any(String) as string,
+      signatureData: expect.any(String) as string,
     } as TransactionJson);
 
     expect(result).toBeDefined();
@@ -215,7 +258,7 @@ describe("Wallet and Contract", () => {
         to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
         value: "1000",
       },
-      { send: false }
+      { sendTransaction: false }
     );
 
     // As send is false only operation is defined
@@ -277,14 +320,16 @@ describe("Wallet and Contract", () => {
     const { operation, transaction, result } = await koinContract.deploy();
 
     expect(operation).toStrictEqual({
-      contract_id: expect.any(Uint8Array) as Uint8Array,
-      bytecode: expect.any(Uint8Array) as Uint8Array,
-    } as UploadContractOperation);
+      uploadContract: {
+        contractId: expect.any(Uint8Array) as Uint8Array,
+        bytecode: expect.any(Uint8Array) as Uint8Array,
+      },
+    } as UploadContractOperationNested);
 
     expect(transaction).toStrictEqual({
       id: expect.any(String) as string,
       active: expect.any(String) as string,
-      signature_data: expect.any(String) as string,
+      signatureData: expect.any(String) as string,
     } as TransactionJson);
 
     expect(result).toBeDefined();

@@ -1,10 +1,10 @@
 import { Root, INamespace } from "protobufjs/light";
 import ripemd160 from "noble-ripemd160";
-import { Signer } from "./Signer";
+import { Signer, SignerInterface } from "./Signer";
 import { Provider } from "./Provider";
 import {
-  CallContractOperation,
-  UploadContractOperation,
+  CallContractOperationNested,
+  UploadContractOperationNested,
   TransactionJson,
 } from "./interface";
 import {
@@ -64,7 +64,7 @@ export interface DecodedOperationJson {
 }
 
 export interface TransactionOptions {
-  rc_limit?: number | bigint | string;
+  rcLimit?: number | bigint | string;
   nonce?: number;
   sendTransaction?: boolean;
   sendAbis?: boolean;
@@ -183,7 +183,7 @@ export class Contract {
       args?: Record<string, unknown>,
       opts?: TransactionOptions
     ) => Promise<{
-      operation: CallContractOperation;
+      operation: CallContractOperationNested;
       transaction?: TransactionJson;
       result?: unknown;
     }>;
@@ -191,7 +191,7 @@ export class Contract {
 
   abi?: Abi;
 
-  signer?: Signer;
+  signer?: SignerInterface;
 
   provider?: Provider;
 
@@ -235,12 +235,12 @@ export class Contract {
   }) {
     if (c.id) this.id = decodeBase58(c.id);
     this.signer = c.signer;
-    this.provider = c.provider;
+    this.provider = c.provider || c.signer?.provider;
     this.abi = c.abi;
     this.bytecode = c.bytecode;
     if (c.abi?.types) this.protobuffers = Root.fromJSON(c.abi.types);
     this.options = {
-      rc_limit: 1e8,
+      rcLimit: 1e8,
       sendTransaction: true,
       sendAbis: true,
       ...c.options,
@@ -253,7 +253,7 @@ export class Contract {
           args: Record<string, unknown> = {},
           options?: TransactionOptions
         ): Promise<{
-          operation: CallContractOperation;
+          operation: CallContractOperationNested;
           transaction?: TransactionJson;
           result?: T | unknown;
         }> => {
@@ -272,7 +272,7 @@ export class Contract {
               throw new Error(`No outputs defined for ${name}`);
             // read contract
             const { result: resultEncoded } = await this.provider.readContract(
-              operation
+              operation.callContract
             );
             const result = this.decodeType<T>(
               resultEncoded,
@@ -314,7 +314,7 @@ export class Contract {
   }
 
   async deploy(options?: TransactionOptions): Promise<{
-    operation: UploadContractOperation;
+    operation: UploadContractOperationNested;
     transaction?: TransactionJson;
     result?: unknown;
   }> {
@@ -324,9 +324,11 @@ export class Contract {
       ...this.options,
       ...options,
     };
-    const operation: UploadContractOperation = {
-      contract_id: Contract.computeContractId(this.signer.getAddress()),
-      bytecode: this.bytecode,
+    const operation: UploadContractOperationNested = {
+      uploadContract: {
+        contractId: Contract.computeContractId(this.signer.getAddress()),
+        bytecode: this.bytecode,
+      },
     };
 
     // return operation if send is false
@@ -377,7 +379,7 @@ export class Contract {
    * // }
    * ```
    */
-  encodeOperation(op: DecodedOperationJson): CallContractOperation {
+  encodeOperation(op: DecodedOperationJson): CallContractOperationNested {
     if (!this.abi || !this.abi.methods || !this.abi.methods[op.name])
       throw new Error(`Operation ${op.name} unknown`);
     if (!this.protobuffers) throw new Error("Protobuffers are not defined");
@@ -392,9 +394,11 @@ export class Contract {
     }
 
     return {
-      contract_id: this.id,
-      entry_point: method.entryPoint,
-      args: bufferInputs,
+      callContract: {
+        contractId: this.id,
+        entryPoint: method.entryPoint,
+        args: bufferInputs,
+      },
     };
   }
 
@@ -421,28 +425,30 @@ export class Contract {
    * // }
    * ```
    */
-  decodeOperation(op: CallContractOperation): DecodedOperationJson {
+  decodeOperation(op: CallContractOperationNested): DecodedOperationJson {
     if (!this.id) throw new Error("Contract id is not defined");
     if (!this.abi || !this.abi.methods)
       throw new Error("Methods are not defined");
-    if (op.contract_id !== this.id)
+    if (!op.callContract)
+      throw new Error("Operation is not CallContractOperation");
+    if (op.callContract.contractId !== this.id)
       throw new Error(
         `Invalid contract id. Expected: ${encodeBase58(
           this.id
-        )}. Received: ${encodeBase58(op.contract_id)}`
+        )}. Received: ${encodeBase58(op.callContract.contractId)}`
       );
     for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
       const opName = Object.keys(this.abi.methods)[i];
       const method = this.abi.methods[opName];
-      if (op.entry_point === method.entryPoint) {
+      if (op.callContract.entryPoint === method.entryPoint) {
         if (!method.inputs) return { name: opName };
         return {
           name: opName,
-          args: this.decodeType(op.args, method.inputs),
+          args: this.decodeType(op.callContract.args, method.inputs),
         };
       }
     }
-    throw new Error(`Unknown method id ${op.entry_point}`);
+    throw new Error(`Unknown method id ${op.callContract.entryPoint}`);
   }
 
   encodeType(
