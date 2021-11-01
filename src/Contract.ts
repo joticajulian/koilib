@@ -18,6 +18,12 @@ import {
 
 const OP_BYTES = "(koinos_bytes_type)";
 
+/**
+ * Application Binary Interface (ABI)
+ *
+ * Set of definitions to tell to the library how to serialize
+ * and deserialize data in Koinos.
+ */
 export interface Abi {
   methods: {
     /** Name of the method */
@@ -37,6 +43,10 @@ export interface Abi {
       description?: string;
     };
   };
+  /**
+   * Protobuffers descriptor in JSON format.
+   * See https://www.npmjs.com/package/protobufjs#using-json-descriptors
+   */
   types: INamespace;
 }
 
@@ -87,82 +97,45 @@ function copyValue(value: unknown): unknown {
 }
 
 /**
- * The contract class contains the contract ID and contrac entries
+ * The contract class contains the contract ID and contract entries
  * definition needed to encode/decode operations during the
  * interaction with the user and the communication with the RPC node.
- *
- * Operations are encoded to communicate with the RPC node. However,
- * this format is not human readable as the data is serialized and
- * encoded in Base64 format. When decoding operations, they can be
- * read by the user (see [[EncodedOperation]] and [[DecodedOperation]]).
  *
  * @example
  *
  * ```ts
- * const contract = new Contract({
- *   id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
- *   entries: {
- *     transfer: {
- *       id: 0x62efa292,
- *       inputs: {
- *         type: [
- *           {
- *             name: "from",
- *             type: "string",
- *           },
- *           {
- *             name: "to",
- *             type: "string",
- *           },
- *           {
- *             name: "value",
- *             type: "uint64",
- *           },
- *         ],
- *       },
- *     },
- *     balance_of: {
- *       id: 0x15619248,
- *       inputs: { type: "string" },
- *       outputs: { type: "uint64" },
- *     },
- *   },
+ * const { Contract, Provider, Signer, utils } = require("koilib");
+ * const rpcNodes = [
+ *   "http://example.koinos.io:8080",
+ *   "http://example2.koinos.io:8080",
+ * ];
+ * const privateKeyHex = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
+ * const provider = new Provider(rpcNodes);
+ * const signer = new Signer(privateKeyHex, true, provider);
+ * const koinContract = new Contract({
+ *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+ *   abi: utils.Krc20Abi,
+ *   provider,
+ *   signer,
  * });
+ * const koin = koinContract.functions;
  *
- * const opEncoded = contract.encodeOperation({
- *   name: "transfer",
- *   args: {
- *     from: "alice",
- *     to: "bob",
- *     value: BigInt(1000),
- *   },
- * });
+ * async funtion main() {
+ *   // Transfer
+ *   const { transaction, operation, result } = await koin.transfer({
+ *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+ *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+ *     value: "1000",
+ *   });
  *
- * console.log(opEncoded);
- * // {
- * //   type: "koinos::protocol::call_contract_operation",
- * //   value: {
- * //     contract_id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
- * //     entry_point: 0x62efa292,
- * //     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
- * //   }
- * // }
+ *   // Get balance
+ *   const balance = await koin.balanceOf({
+ *     owner: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD"
+ *   });
+ *   console.log(balance.result)
+ * }
  *
- * const opDecoded = contract.decodeOperation(opEncoded);
- * console.log(opDecoded);
- * // {
- * //   name: "transfer",
- * //   args: {
- * //     from: "alice",
- * //     to: "bob",
- * //     value: 1000n,
- * //   },
- * // }
- *
- * const resultDecoded = contract.decodeResult("MAAsZnAzyD0E=", "balance_of");
- * console.log(resultDecoded)
- * // 3124382766600001n
- * ```
+ * main();
  */
 export class Contract {
   /**
@@ -176,7 +149,9 @@ export class Contract {
   protobuffers?: Root;
 
   /**
-   *
+   * Set of functions to interact with the smart
+   * contract. These functions are generated in
+   * the constructor of the class
    */
   functions: {
     [x: string]: (
@@ -189,42 +164,31 @@ export class Contract {
     }>;
   };
 
+  /**
+   * Application Binary Interface
+   */
   abi?: Abi;
 
+  /**
+   * Signer interacting with the smart contract
+   */
   signer?: SignerInterface;
 
+  /**
+   * Provider
+   */
   provider?: Provider;
 
+  /**
+   * Bytecode. Needed to deploy the smart contract.
+   */
   bytecode?: Uint8Array;
 
+  /**
+   * Options to apply when creating transactions
+   */
   options: TransactionOptions;
 
-  /**
-   * The constructor receives the contract ID and
-   * contract entries definition
-   * @param c - Object with contract id and contract entries
-   *
-   * @example
-   * ```ts
-   * const contract = new Contract({
-   *   id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
-   *   entries: {
-   *     transfer: {
-   *       id: 0x62efa292,
-   *       inputs: "transfer_arguments",
-   *       outputs: "transfer_result",
-   *     },
-   *     balance_of: {
-   *       id: 0x62efa292,
-   *       inputs: "balance_of_arguments",
-   *       outputs: "balance_of_result",
-   *       readOnly: true,
-   *     },
-   *   },
-   *   protoDef: { ... }, // protobuffer definitions in json
-   * });
-   * ```
-   */
   constructor(c: {
     id?: string;
     abi?: Abi;
@@ -313,6 +277,10 @@ export class Contract {
     return encodeBase58(this.id);
   }
 
+  /**
+   * Function to deploy a new smart contract.
+   * The Bytecode must be defined in the constructor of the class
+   */
   async deploy(options?: TransactionOptions): Promise<{
     operation: UploadContractOperationNested;
     transaction?: TransactionJson;
@@ -342,16 +310,6 @@ export class Contract {
     return { operation, transaction, result };
   }
 
-  // TODO: buildEstimate - function to estimate consumption of resources
-
-  // the contract uses
-  //   readonly signer: Signer;
-  //   readonly provider: Provider;
-  //   constructor(contractId or name, interface, signerOrProvider)
-  //     uses defineReadOnly(this, "signer", signerOrProvider) to set this readOnly var for first time
-
-  // connect() to set a different signer or provider
-
   /**
    * Encondes a contract operation using Koinos serialization
    * and taking the contract entries as reference to build it
@@ -362,18 +320,17 @@ export class Contract {
    * const opEncoded = contract.encodeOperation({
    *   name: "transfer",
    *   args: {
-   *     from: "alice",
-   *     to: "bob",
-   *     value: 1000,
+   *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+   *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+   *     value: "1000",
    *   }
    * });
    *
    * console.log(opEncoded);
    * // {
-   * //   type: "koinos::protocol::call_contract_operation",
-   * //   value: {
-   * //     contract_id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
-   * //     entry_point: 0x62efa292,
+   * //   callContract: {
+   * //     contractId: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   * //     entryPoint: 0x62efa292,
    * //     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
    * //   }
    * // }
@@ -407,10 +364,9 @@ export class Contract {
    * @example
    * ```ts
    * const opDecoded = contract.decodeOperation({
-   *   type: "koinos::protocol::call_contract_operation",
-   *   value: {
-   *     contract_id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
-   *     entry_point: 0x62efa292,
+   *   callContract: {
+   *     contractId: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *     entryPoint: 0x62efa292,
    *     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
    *   }
    * });
@@ -418,9 +374,9 @@ export class Contract {
    * // {
    * //   name: "transfer",
    * //   args: {
-   * //     from: "alice",
-   * //     to: "bob",
-   * //     value: 1000n,
+   * //     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+   * //     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+   * //     value: "1000",
    * //   },
    * // }
    * ```
@@ -451,6 +407,10 @@ export class Contract {
     throw new Error(`Unknown method id ${op.callContract.entryPoint}`);
   }
 
+  /**
+   * Function to encode a type using the protobuffer definitions
+   * It also prepares the bytes for special cases (base58, hex string)
+   */
   encodeType(
     valueDecoded: Record<string, unknown>,
     typeName: string
@@ -502,6 +462,10 @@ export class Contract {
     return buffer;
   }
 
+  /**
+   * Function to decode bytes using the protobuffer definitions
+   * It also encodes the bytes for special cases (base58, hex string)
+   */
   decodeType<T = Record<string, unknown>>(
     valueEncoded: string | Uint8Array,
     typeName: string

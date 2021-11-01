@@ -75,10 +75,9 @@ const rpcNodes = [
 ];
 
 const provider = new Provider(rpcNodes);
-const signer = new Signer(privateKeyHex);
-signer.provider = provider;
+const signer = new Signer(privateKeyHex, true, provider);
 const koinContract = new Contract({
-  id: "1GGBJWw5q1vUc5MiXpzL6VvQvdkhK8AiiN",
+  id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
   abi: Krc20Abi,
   provider,
   signer,

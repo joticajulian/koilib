@@ -76,6 +76,14 @@ export interface SignerInterface {
  * ```ts
  * var signer = Signer.fromWif("L59UtJcTdNBnrH2QSBA5beSUhRufRu3g6tScDTite6Msuj7U93tM");
  * ```
+ *
+ * <br>
+ *
+ * defining a provider
+ * ```ts
+ * var provider = new Provider(["https://example.com/jsonrpc"]);
+ * var signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c", true, provider);
+ * ```
  */
 export class Signer implements SignerInterface {
   /**
@@ -93,6 +101,9 @@ export class Signer implements SignerInterface {
    */
   address: string;
 
+  /**
+   * Provider used to connect with the blockchain
+   */
   provider: Provider | undefined;
 
   /**
@@ -102,6 +113,7 @@ export class Signer implements SignerInterface {
    *
    * @param privateKey - Private key as hexstring, bigint or Uint8Array
    * @param compressed - compressed format is true by default
+   * @param provider - provider to connect with the blockchain
    * @example
    * ```ts
    * cons signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
@@ -240,6 +252,14 @@ export class Signer implements SignerInterface {
     return tx;
   }
 
+  /**
+   * Function to sign and send a transaction
+   * @param tx Transaction to send. It will be signed inside this function
+   * if it is not signed yet
+   * @param _abis Collection of Abis to parse the operations in the
+   * transaction. This parameter is optional.
+   * @returns
+   */
   async sendTransaction(
     tx: TransactionJson,
     _abis?: Record<string, Abi>
@@ -284,7 +304,12 @@ export class Signer implements SignerInterface {
   }
 
   /**
-   * Creates an unsigned transaction
+   * Function to encode a transaction
+   * @param activeData Active data consists of nonce, rcLimit, and
+   * operations. Do not set the nonce to get it from the blockchain
+   * using the provider. The rcLimit is 1000000 by default.
+   * @returns A transaction encoded. The active field is encoded in
+   * base64url
    */
   async encodeTransaction(
     activeData: ActiveTransactionData
@@ -317,6 +342,9 @@ export class Signer implements SignerInterface {
     } as TransactionJson;
   }
 
+  /**
+   * Function to decode a transaction
+   */
   static decodeTransaction(tx: TransactionJson): ActiveTransactionData {
     if (!tx.active) throw new Error("Active data is not defined");
     const buffer = decodeBase64(tx.active);
