@@ -1,10 +1,28 @@
+/* eslint-disable no-console */
 import crypto from "crypto";
+import * as dotenv from "dotenv";
 import { Signer, Provider, Contract, utils } from "../src";
 
-const privateKeyHex = crypto.randomBytes(32).toString("hex");
-const rpcNodes = ["http://api.koinos.io:8080"];
+dotenv.config();
+
+if (!process.env.RPC_NODES)
+  throw new Error("env variable RPC_NODES not defined");
+if (!process.env.PRIVATE_KEY_WIF)
+  throw new Error("env variable PRIVATE_KEY not defined");
+
+const privateKeyHex = process.env.PRIVATE_KEY_WIF;
+const rpcNodes = process.env.RPC_NODES.split(",");
 const provider = new Provider(rpcNodes);
-const signer = new Signer(privateKeyHex, true, provider);
+// signer with history and balance
+const signer = Signer.fromWif(privateKeyHex);
+signer.compressed = true;
+signer.provider = provider;
+// random signer. No balance or history
+const signer2 = new Signer(
+  crypto.randomBytes(32).toString("hex"),
+  true,
+  provider
+);
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
   abi: utils.Krc20Abi,
@@ -14,10 +32,17 @@ const koinContract = new Contract({
 const koin = koinContract.functions;
 
 describe("Provider", () => {
+  it("should get nonce of random address", async () => {
+    expect.assertions(1);
+    const nonce = await provider.getNonce(signer2.getAddress());
+    expect(nonce).toBe(0);
+  });
+
   it("should get nonce", async () => {
     expect.assertions(1);
     const nonce = await provider.getNonce(signer.getAddress());
-    expect(nonce).toBe(0);
+    console.log(`Nonce of ${signer.getAddress()} is ${nonce}`);
+    expect(nonce).toBeDefined();
   });
 
   it("should get head info", async () => {
@@ -43,14 +68,26 @@ describe("Contract", () => {
   });
 
   it("connect with koin smart contract", async () => {
-    expect.assertions(2);
+    expect.assertions(3);
 
     const { result: resultName } = await koin.name();
     expect(resultName).toStrictEqual({ value: "Test Koinos" });
 
-    const { result: resultBalance } = await koin.balanceOf({
+    const { result: resultBalance } = await koin.balanceOf<{ value: string }>({
       owner: signer.getAddress(),
     });
-    expect(resultBalance).toBeUndefined();
+    expect(resultBalance).toStrictEqual({
+      value: expect.any(String) as string,
+    });
+    console.log(
+      `Balance of ${signer.getAddress()} is ${
+        resultBalance ? resultBalance.value : "undefined"
+      }`
+    );
+
+    const { result: resultBalance2 } = await koin.balanceOf({
+      owner: signer2.getAddress(),
+    });
+    expect(resultBalance2).toBeUndefined();
   });
 });

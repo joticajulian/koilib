@@ -6,3 +6,4 @@ dist/*
 !dist/koinos.min.js
 !dist/koinos.min.js.LICENSE.txt
 koinos-proto
+.env

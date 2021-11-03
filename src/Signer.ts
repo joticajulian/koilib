@@ -24,10 +24,10 @@ export interface SignerInterface {
   getAddress(compressed?: boolean): string;
   getPrivateKey(format: "wif" | "hex", compressed?: boolean): string;
   signTransaction(tx: TransactionJson): Promise<TransactionJson>;
-  sendTransaction(
+  sendTransaction<T = unknown>(
     tx: TransactionJson,
     abis?: Record<string, Abi>
-  ): Promise<unknown>;
+  ): Promise<T>;
   encodeTransaction(
     activeData: ActiveTransactionData
   ): Promise<TransactionJson>;
@@ -260,13 +260,13 @@ export class Signer implements SignerInterface {
    * transaction. This parameter is optional.
    * @returns
    */
-  async sendTransaction(
+  async sendTransaction<T = unknown>(
     tx: TransactionJson,
     _abis?: Record<string, Abi>
-  ): Promise<unknown> {
+  ): Promise<T> {
     if (!tx.signatureData || !tx.id) await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
-    return this.provider.sendTransaction(tx);
+    return this.provider.sendTransaction<T>(tx);
   }
 
   /**

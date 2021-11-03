@@ -229,7 +229,7 @@ export class Provider {
    * @param transaction - Signed transaction
    * @returns
    */
-  async sendTransaction(transaction: TransactionJson): Promise<unknown> {
+  async sendTransaction<T = unknown>(transaction: TransactionJson): Promise<T> {
     return this.call("chain.submit_transaction", { transaction });
   }
 

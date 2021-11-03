@@ -152,13 +152,13 @@ export class Contract {
    * the constructor of the class
    */
   functions: {
-    [x: string]: (
+    [x: string]: <T = Record<string, unknown> | unknown>(
       args?: Record<string, unknown>,
       opts?: TransactionOptions
     ) => Promise<{
       operation: CallContractOperationNested;
       transaction?: TransactionJson;
-      result?: unknown;
+      result?: T;
     }>;
   };
 
@@ -211,13 +211,13 @@ export class Contract {
 
     if (this.signer && this.provider && this.abi && this.abi.methods) {
       Object.keys(this.abi.methods).forEach((name) => {
-        this.functions[name] = async <T = Record<string, unknown>>(
+        this.functions[name] = async <T = Record<string, unknown> | unknown>(
           args: Record<string, unknown> = {},
           options?: TransactionOptions
         ): Promise<{
           operation: CallContractOperationNested;
           transaction?: TransactionJson;
-          result?: T | unknown;
+          result?: T;
         }> => {
           if (!this.provider) throw new Error("provider not found");
           if (!this.abi || !this.abi.methods)
@@ -263,7 +263,10 @@ export class Contract {
             const contractId = encodeBase58(this.id as Uint8Array);
             abis[contractId] = this.abi;
           }
-          const result = await this.signer.sendTransaction(transaction, abis);
+          const result = await this.signer.sendTransaction<T>(
+            transaction,
+            abis
+          );
           return { operation, transaction, result };
         };
       });
