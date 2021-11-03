@@ -13,6 +13,27 @@ const koinContract = new Contract({
 });
 const koin = koinContract.functions;
 
+describe("Provider", () => {
+  it("should get nonce", async () => {
+    expect.assertions(1);
+    const nonce = await provider.getNonce(signer.getAddress());
+    expect(nonce).toBe(0);
+  });
+
+  it("should get head info", async () => {
+    expect.assertions(1);
+    const headInfo = await provider.getHeadInfo();
+    expect(headInfo).toStrictEqual({
+      head_topology: {
+        id: expect.stringContaining("0x1220") as string,
+        height: expect.any(String) as string,
+        previous: expect.stringContaining("0x1220") as string,
+      },
+      last_irreversible_block: expect.any(String) as string,
+    });
+  });
+});
+
 describe("Contract", () => {
   it.skip("upload a contract", async () => {
     expect.assertions(0);

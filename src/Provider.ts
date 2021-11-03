@@ -1,4 +1,3 @@
-import multibase from "multibase";
 import axios, { AxiosResponse } from "axios";
 import {
   BlockJson,
@@ -130,21 +129,16 @@ export class Provider {
    * Function to call "chain.get_account_nonce" to return the number of
    * transactions for a particular account. This call is used
    * when creating new transactions.
-   * @param address - account address
+   * @param account - account address
    * @returns Nonce
    */
-  async getNonce(address: string): Promise<number> {
-    const bufferAddress = new TextEncoder().encode(address);
-    const encBase64 = new TextDecoder().decode(
-      multibase.encode("M", bufferAddress)
-    );
-    const result = await this.call<{ nonce: string }>(
+  async getNonce(account: string): Promise<number> {
+    const { nonce } = await this.call<{ nonce: string }>(
       "chain.get_account_nonce",
-      {
-        account: encBase64,
-      }
+      { account }
     );
-    return Number(result.nonce);
+    if (!nonce) return 0;
+    return Number(nonce);
   }
 
   /**
@@ -153,18 +147,18 @@ export class Provider {
   async getHeadInfo(): Promise<{
     head_topology: {
       id: string;
-      height: number;
+      height: string;
       previous: string;
     };
-    last_irreversible_height: number;
+    last_irreversible_height: string;
   }> {
     return this.call<{
       head_topology: {
         id: string;
-        height: number;
+        height: string;
         previous: string;
       };
-      last_irreversible_height: number;
+      last_irreversible_height: string;
     }>("chain.get_head_info", {});
   }
 
