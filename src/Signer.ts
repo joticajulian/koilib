@@ -254,9 +254,9 @@ export class Signer implements SignerInterface {
 
   /**
    * Function to sign and send a transaction
-   * @param tx Transaction to send. It will be signed inside this function
+   * @param tx - Transaction to send. It will be signed inside this function
    * if it is not signed yet
-   * @param _abis Collection of Abis to parse the operations in the
+   * @param _abis - Collection of Abis to parse the operations in the
    * transaction. This parameter is optional.
    * @returns
    */
@@ -305,7 +305,7 @@ export class Signer implements SignerInterface {
 
   /**
    * Function to encode a transaction
-   * @param activeData Active data consists of nonce, rcLimit, and
+   * @param activeData - Active data consists of nonce, rcLimit, and
    * operations. Do not set the nonce to get it from the blockchain
    * using the provider. The rcLimit is 1000000 by default.
    * @returns A transaction encoded. The active field is encoded in

@@ -16,8 +16,6 @@ const koin = koinContract.functions;
 describe("Contract", () => {
   it.skip("upload a contract", async () => {
     expect.assertions(0);
-    const signer = Signer.fromSeed(crypto.randomBytes(12).toString("hex"));
-    const provider = new Provider(rpcNodes);
     const bytecode = new Uint8Array(crypto.randomBytes(6));
     const contract = new Contract({ signer, provider, bytecode });
     await contract.deploy();
@@ -32,6 +30,6 @@ describe("Contract", () => {
     const { result: resultBalance } = await koin.balanceOf({
       owner: signer.getAddress(),
     });
-    expect(resultBalance).toBe(undefined);
+    expect(resultBalance).toBeUndefined();
   });
 });

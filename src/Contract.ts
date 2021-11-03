@@ -133,6 +133,7 @@ function copyValue(value: unknown): unknown {
  * }
  *
  * main();
+ * ```
  */
 export class Contract {
   /**
@@ -237,7 +238,7 @@ export class Contract {
               entryPoint: operation.callContract.entryPoint,
               args: encodeBase64(operation.callContract.args),
             });
-            let result: T | undefined = undefined;
+            let result: T | undefined;
             if (resultEncoded) {
               result = this.decodeType<T>(
                 resultEncoded,
