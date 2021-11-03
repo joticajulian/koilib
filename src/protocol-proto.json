@@ -13,7 +13,7 @@
                   "type": "bytes",
                   "id": 1,
                   "options": {
-                    "(koinos_bytes_type)": "BASE58"
+                    "(koinos_bytes_type)": "CONTRACT_ID"
                   }
                 },
                 "entryPoint": {
@@ -45,7 +45,7 @@
                   "type": "bytes",
                   "id": 1,
                   "options": {
-                    "(koinos_bytes_type)": "BASE58"
+                    "(koinos_bytes_type)": "CONTRACT_ID"
                   }
                 },
                 "bytecode": {
@@ -60,7 +60,7 @@
                   "type": "bytes",
                   "id": 1,
                   "options": {
-                    "(koinos_bytes_type)": "BASE58"
+                    "(koinos_bytes_type)": "CONTRACT_ID"
                   }
                 },
                 "entryPoint": {
@@ -136,7 +136,10 @@
               "fields": {
                 "id": {
                   "type": "bytes",
-                  "id": 1
+                  "id": 1,
+                  "options": {
+                    "(koinos_bytes_type)": "TRANSACTION_ID"
+                  }
                 },
                 "active": {
                   "type": "bytes",
@@ -175,7 +178,10 @@
               "fields": {
                 "previous": {
                   "type": "bytes",
-                  "id": 1
+                  "id": 1,
+                  "options": {
+                    "(koinos_bytes_type)": "BLOCK_ID"
+                  }
                 },
                 "height": {
                   "type": "uint64",
@@ -197,7 +203,10 @@
               "fields": {
                 "id": {
                   "type": "bytes",
-                  "id": 1
+                  "id": 1,
+                  "options": {
+                    "(koinos_bytes_type)": "BLOCK_ID"
+                  }
                 },
                 "header": {
                   "type": "block_header",

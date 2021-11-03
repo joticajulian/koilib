@@ -60,7 +60,10 @@
                   "fields": {
                     "owner": {
                       "type": "bytes",
-                      "id": 1
+                      "id": 1,
+                      "options": {
+                        "(koinos_bytes_type)": "ADDRESS"
+                      }
                     }
                   }
                 },
@@ -81,14 +84,14 @@
                       "type": "bytes",
                       "id": 1,
                       "options": {
-                        "(koinos_bytes_type)": "BASE58"
+                        "(koinos_bytes_type)": "ADDRESS"
                       }
                     },
                     "to": {
                       "type": "bytes",
                       "id": 2,
                       "options": {
-                        "(koinos_bytes_type)": "BASE58"
+                        "(koinos_bytes_type)": "ADDRESS"
                       }
                     },
                     "value": {
@@ -112,7 +115,10 @@
                   "fields": {
                     "to": {
                       "type": "bytes",
-                      "id": 1
+                      "id": 1,
+                      "options": {
+                        "(koinos_bytes_type)": "ADDRESS"
+                      }
                     },
                     "value": {
                       "type": "uint64",

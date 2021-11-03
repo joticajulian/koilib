@@ -1,17 +1,37 @@
 import crypto from "crypto";
-import { Signer } from "../src/Signer";
-import { Provider } from "../src/Provider";
-import { Contract } from "../src";
+import { Signer, Provider, Contract, utils } from "../src";
 
-const rpcNodes = ["http://45.56.104.152:8080", "http://159.203.119.0:8080"];
+const privateKeyHex = crypto.randomBytes(32).toString("hex");
+const rpcNodes = ["http://api.koinos.io:8080"];
+const provider = new Provider(rpcNodes);
+const signer = new Signer(privateKeyHex, true, provider);
+const koinContract = new Contract({
+  id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+  abi: utils.Krc20Abi,
+  provider,
+  signer,
+});
+const koin = koinContract.functions;
 
 describe("Contract", () => {
-  it("upload a contract", async () => {
+  it.skip("upload a contract", async () => {
     expect.assertions(0);
     const signer = Signer.fromSeed(crypto.randomBytes(12).toString("hex"));
     const provider = new Provider(rpcNodes);
     const bytecode = new Uint8Array(crypto.randomBytes(6));
     const contract = new Contract({ signer, provider, bytecode });
     await contract.deploy();
+  });
+
+  it("connect with koin smart contract", async () => {
+    expect.assertions(2);
+
+    const { result: resultName } = await koin.name();
+    expect(resultName).toStrictEqual({ value: "Test Koinos" });
+
+    const { result: resultBalance } = await koin.balanceOf({
+      owner: signer.getAddress(),
+    });
+    expect(resultBalance).toBe(undefined);
   });
 });

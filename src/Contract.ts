@@ -105,10 +105,7 @@ function copyValue(value: unknown): unknown {
  *
  * ```ts
  * const { Contract, Provider, Signer, utils } = require("koilib");
- * const rpcNodes = [
- *   "http://example.koinos.io:8080",
- *   "http://example2.koinos.io:8080",
- * ];
+ * const rpcNodes = ["http://api.koinos.io:8080"];
  * const privateKeyHex = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
  * const provider = new Provider(rpcNodes);
  * const signer = new Signer(privateKeyHex, true, provider);
@@ -235,13 +232,18 @@ export class Contract {
             if (!this.abi.methods[name].outputs)
               throw new Error(`No outputs defined for ${name}`);
             // read contract
-            const { result: resultEncoded } = await this.provider.readContract(
-              operation.callContract
-            );
-            const result = this.decodeType<T>(
-              resultEncoded,
-              this.abi.methods[name].outputs as string
-            );
+            const { result: resultEncoded } = await this.provider.readContract({
+              contractId: encodeBase58(operation.callContract.contractId),
+              entryPoint: operation.callContract.entryPoint,
+              args: encodeBase64(operation.callContract.args),
+            });
+            let result: T | undefined = undefined;
+            if (resultEncoded) {
+              result = this.decodeType<T>(
+                resultEncoded,
+                this.abi.methods[name].outputs as string
+              );
+            }
             return { operation, result };
           }
 

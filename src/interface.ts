@@ -15,7 +15,7 @@ export interface UploadContractOperationJson {
 export interface CallContractOperation {
   contractId: Uint8Array;
 
-  entryPoint: number | string;
+  entryPoint: number;
 
   args: Uint8Array;
 }

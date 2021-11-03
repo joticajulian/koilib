@@ -1,6 +1,10 @@
 import multibase from "multibase";
 import axios, { AxiosResponse } from "axios";
-import { BlockJson, TransactionJson, CallContractOperation } from "./interface";
+import {
+  BlockJson,
+  TransactionJson,
+  CallContractOperationJson,
+} from "./interface";
 
 /**
  * Class to connect with the RPC node
@@ -118,7 +122,6 @@ export class Provider {
         if (abort) throw e;
       }
     }
-
     if (response.data.error) throw new Error(response.data.error.message);
     return response.data.result as T;
   }
@@ -245,7 +248,7 @@ export class Provider {
    * @param operation - Encoded operation
    * @returns Encoded result
    */
-  async readContract(operation: CallContractOperation): Promise<{
+  async readContract(operation: CallContractOperationJson): Promise<{
     result: string;
     logs: string;
   }> {

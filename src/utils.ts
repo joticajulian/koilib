@@ -42,14 +42,14 @@ export function decodeBase58(bs58: string): Uint8Array {
  * Encodes an Uint8Array in base64
  */
 export function encodeBase64(buffer: Uint8Array): string {
-  return new TextDecoder().decode(multibase.encode("M", buffer)).slice(1);
+  return new TextDecoder().decode(multibase.encode("U", buffer)).slice(1);
 }
 
 /**
  * Decodes a buffer formatted in base64
  */
 export function decodeBase64(bs64: string): Uint8Array {
-  return multibase.decode(`M${bs64}`);
+  return multibase.decode(`U${bs64}`);
 }
 
 /**
