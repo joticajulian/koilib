@@ -206,7 +206,7 @@ describe("Wallet and Contract", () => {
     expect.assertions(9);
     mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
 
-    const { transaction, operation, result } = await koin.transfer({
+    const { transaction, operation, transactionResponse } = await koin.transfer({
       from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
       to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
       value: "1000",
@@ -226,7 +226,7 @@ describe("Wallet and Contract", () => {
       signatureData: expect.any(String) as string,
     } as TransactionJson);
 
-    expect(result).toBeDefined();
+    expect(transactionResponse).toBeDefined();
 
     // recover public key and address
     if (!transaction) throw new Error("transaction is not defined");
@@ -316,7 +316,7 @@ describe("Wallet and Contract", () => {
       return axiosResponse({ nonce: "0" });
     });
 
-    const { operation, transaction, result } = await koinContract.deploy();
+    const { operation, transaction, transactionResponse } = await koinContract.deploy();
 
     expect(operation).toStrictEqual({
       uploadContract: {
@@ -331,6 +331,6 @@ describe("Wallet and Contract", () => {
       signatureData: expect.any(String) as string,
     } as TransactionJson);
 
-    expect(result).toBeDefined();
+    expect(transactionResponse).toBeDefined();
   });
 });
