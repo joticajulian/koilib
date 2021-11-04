@@ -1,7 +1,6 @@
 import { Root, INamespace } from "protobufjs/light";
-import ripemd160 from "noble-ripemd160";
 import { Signer, SignerInterface } from "./Signer";
-import { Provider } from "./Provider";
+import { Provider, SendTransactionResponse } from "./Provider";
 import {
   CallContractOperationNested,
   UploadContractOperationNested,
@@ -152,12 +151,13 @@ export class Contract {
    * the constructor of the class
    */
   functions: {
-    [x: string]: <T = Record<string, unknown> | unknown>(
+    [x: string]: <T = Record<string, unknown>>(
       args?: Record<string, unknown>,
       opts?: TransactionOptions
     ) => Promise<{
       operation: CallContractOperationNested;
       transaction?: TransactionJson;
+      transactionResponse?: SendTransactionResponse;
       result?: T;
     }>;
   };
@@ -211,12 +211,13 @@ export class Contract {
 
     if (this.signer && this.provider && this.abi && this.abi.methods) {
       Object.keys(this.abi.methods).forEach((name) => {
-        this.functions[name] = async <T = Record<string, unknown> | unknown>(
+        this.functions[name] = async <T = Record<string, unknown>>(
           args: Record<string, unknown> = {},
           options?: TransactionOptions
         ): Promise<{
           operation: CallContractOperationNested;
           transaction?: TransactionJson;
+          transactionResponse?: SendTransactionResponse;
           result?: T;
         }> => {
           if (!this.provider) throw new Error("provider not found");
@@ -263,19 +264,18 @@ export class Contract {
             const contractId = encodeBase58(this.id as Uint8Array);
             abis[contractId] = this.abi;
           }
-          const result = await this.signer.sendTransaction<T>(
+          const transactionResponse = await this.signer.sendTransaction(
             transaction,
             abis
           );
-          return { operation, transaction, result };
+          return { operation, transaction, transactionResponse };
         };
       });
     }
   }
 
   static computeContractId(address: string): Uint8Array {
-    const signerHash = ripemd160(address);
-    return toUint8Array(signerHash);
+    return decodeBase58(address);
   }
 
   getId(): string {
@@ -290,7 +290,7 @@ export class Contract {
   async deploy(options?: TransactionOptions): Promise<{
     operation: UploadContractOperationNested;
     transaction?: TransactionJson;
-    result?: unknown;
+    transactionResponse?: SendTransactionResponse;
   }> {
     if (!this.signer) throw new Error("signer not found");
     if (!this.bytecode) throw new Error("bytecode not found");
@@ -312,8 +312,8 @@ export class Contract {
       ...opts,
       operations: [operation],
     });
-    const result = await this.signer.sendTransaction(transaction);
-    return { operation, transaction, result };
+    const transactionResponse = await this.signer.sendTransaction(transaction);
+    return { operation, transaction, transactionResponse };
   }
 
   /**

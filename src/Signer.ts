@@ -2,7 +2,7 @@
 import { sha256 } from "js-sha256";
 import * as secp from "noble-secp256k1";
 import { Root } from "protobufjs/light";
-import { Provider } from "./Provider";
+import { Provider, SendTransactionResponse } from "./Provider";
 import { TransactionJson, ActiveTransactionData } from "./interface";
 import protocolJson from "./protocol-proto.json";
 import {
@@ -24,10 +24,10 @@ export interface SignerInterface {
   getAddress(compressed?: boolean): string;
   getPrivateKey(format: "wif" | "hex", compressed?: boolean): string;
   signTransaction(tx: TransactionJson): Promise<TransactionJson>;
-  sendTransaction<T = unknown>(
+  sendTransaction(
     tx: TransactionJson,
     abis?: Record<string, Abi>
-  ): Promise<T>;
+  ): Promise<SendTransactionResponse>;
   encodeTransaction(
     activeData: ActiveTransactionData
   ): Promise<TransactionJson>;
@@ -260,13 +260,15 @@ export class Signer implements SignerInterface {
    * transaction. This parameter is optional.
    * @returns
    */
-  async sendTransaction<T = unknown>(
+  async sendTransaction(
     tx: TransactionJson,
     _abis?: Record<string, Abi>
-  ): Promise<T> {
+  ): Promise<{
+    wait: () => Promise<string>;
+  }> {
     if (!tx.signatureData || !tx.id) await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
-    return this.provider.sendTransaction<T>(tx);
+    return this.provider.sendTransaction(tx);
   }
 
   /**

@@ -5,6 +5,14 @@ import {
   CallContractOperationJson,
 } from "./interface";
 
+export interface SendTransactionResponse {
+  wait: () => Promise<string>;
+}
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 /**
  * Class to connect with the RPC node
  */
@@ -142,6 +150,39 @@ export class Provider {
   }
 
   /**
+   * Get transactions by id and their corresponding block ids
+   */
+  async getTransactionsById(transactionIds: string[]): Promise<{
+    transactions: {
+      transaction: TransactionJson[];
+      containing_blocks: string[];
+    }[];
+  }> {
+    return this.call<{
+      transactions: {
+        transaction: TransactionJson[];
+        containing_blocks: string[];
+      }[];
+    }>("transaction_store.get_transactions_by_id", {
+      transaction_ids: transactionIds,
+    });
+  }
+
+  async getBlocksById(blockIds: string[]): Promise<{
+    block_items: {
+      block_id: string;
+      block_height: string;
+      block: BlockJson;
+    }[];
+  }> {
+    return this.call("block_store.get_blocks_by_id", {
+      block_id: blockIds,
+      return_block: true,
+      return_receipt: false,
+    });
+  }
+
+  /**
    * Function to get info from the head block in the blockchain
    */
   async getHeadInfo(): Promise<{
@@ -225,12 +266,35 @@ export class Provider {
 
   /**
    * Function to call "chain.submit_transaction" to send a signed
-   * transaction to the blockchain
+   * transaction to the blockchain. It returns an object with the async
+   * function "wait", which can be called to wait for the
+   * transaction to be mined.
    * @param transaction - Signed transaction
-   * @returns
    */
-  async sendTransaction<T = unknown>(transaction: TransactionJson): Promise<T> {
-    return this.call("chain.submit_transaction", { transaction });
+  async sendTransaction(
+    transaction: TransactionJson
+  ): Promise<SendTransactionResponse> {
+    await this.call("chain.submit_transaction", { transaction });
+    const startTime = Date.now() + 10000;
+    return {
+      wait: async () => {
+        // sleep some seconds before it gets mined
+        await sleep(startTime - Date.now() - 1000);
+        for (let i = 0; i < 30; i += 1) {
+          await sleep(1000);
+          const { transactions } = await this.getTransactionsById([
+            transaction.id as string,
+          ]);
+          if (
+            transactions &&
+            transactions[0] &&
+            transactions[0].containing_blocks
+          )
+            return transactions[0].containing_blocks[0];
+        }
+        throw new Error(`Transaction not mined after 40 seconds`);
+      },
+    };
   }
 
   /**

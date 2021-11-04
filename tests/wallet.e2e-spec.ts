@@ -1,17 +1,22 @@
 /* eslint-disable no-console */
 import crypto from "crypto";
 import * as dotenv from "dotenv";
-import { Signer, Provider, Contract, utils } from "../src";
+import { Signer, Provider, Contract, utils, BlockJson } from "../src";
 
 dotenv.config();
+
+jest.setTimeout(60000);
 
 if (!process.env.RPC_NODES)
   throw new Error("env variable RPC_NODES not defined");
 if (!process.env.PRIVATE_KEY_WIF)
   throw new Error("env variable PRIVATE_KEY not defined");
+if (!process.env.ADDRESS_RECEIVER)
+  throw new Error("env variable ADDRESS_RECEIVER not defined");
 
 const privateKeyHex = process.env.PRIVATE_KEY_WIF;
 const rpcNodes = process.env.RPC_NODES.split(",");
+const addressReceiver = process.env.ADDRESS_RECEIVER;
 const provider = new Provider(rpcNodes);
 // signer with history and balance
 const signer = Signer.fromWif(privateKeyHex);
@@ -60,11 +65,15 @@ describe("Provider", () => {
 });
 
 describe("Contract", () => {
-  it.skip("upload a contract", async () => {
-    expect.assertions(0);
+  it("upload a contract", async () => {
+    expect.assertions(2);
     const bytecode = new Uint8Array(crypto.randomBytes(6));
     const contract = new Contract({ signer, provider, bytecode });
-    await contract.deploy();
+    const { transactionResponse } = await contract.deploy();
+    expect(transactionResponse).toBeDefined();
+    if (!transactionResponse) throw new Error("Transaction response undefined");
+    const blockId = await transactionResponse.wait();
+    expect(typeof blockId).toBe("string");
   });
 
   it("connect with koin smart contract", async () => {
@@ -81,13 +90,41 @@ describe("Contract", () => {
     });
     console.log(
       `Balance of ${signer.getAddress()} is ${
-        resultBalance ? resultBalance.value : "undefined"
-      }`
+        resultBalance ? Number(resultBalance.value) / 1e8 : "undefined"
+      } tKoin`
     );
 
     const { result: resultBalance2 } = await koin.balanceOf({
       owner: signer2.getAddress(),
     });
     expect(resultBalance2).toBeUndefined();
+  });
+
+  it("should transfer and get receipt", async () => {
+    expect.assertions(6);
+    const { operation, transaction, transactionResponse, result } =
+      await koin.transfer({
+        from: signer.getAddress(),
+        to: addressReceiver,
+        value: Number(1e8).toString(),
+      });
+    expect(operation).toBeDefined();
+    expect(transaction).toBeDefined();
+    expect(transactionResponse).toBeDefined();
+    expect(result).toBeUndefined();
+    if (!transactionResponse) throw new Error("Transaction response undefined");
+    const blockId = await transactionResponse.wait();
+    expect(typeof blockId).toBe("string");
+
+    const blocksByIdResponse = await provider.getBlocksById([blockId]);
+    expect(blocksByIdResponse).toStrictEqual({
+      block_items: [
+        {
+          block_id: blockId,
+          block_height: expect.any(String) as string,
+          block: expect.objectContaining({}) as BlockJson,
+        },
+      ],
+    });
   });
 });
