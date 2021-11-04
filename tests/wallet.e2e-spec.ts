@@ -62,6 +62,18 @@ describe("Provider", () => {
       last_irreversible_block: expect.any(String) as string,
     });
   });
+
+  it("should get blocks by height", async () => {
+    expect.assertions(1);
+    const blocks = await provider.getBlocks(1, 2);
+    expect(blocks).toStrictEqual(expect.arrayContaining([]));
+  });
+
+  it("should get account rc", async () => {
+    expect.assertions(1);
+    const rc = await provider.getAccountRc(signer.getAddress());
+    expect(rc).toBeDefined();
+  });
 });
 
 describe("Contract", () => {

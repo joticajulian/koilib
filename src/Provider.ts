@@ -149,6 +149,14 @@ export class Provider {
     return Number(nonce);
   }
 
+  async getAccountRc(account: string): Promise<string> {
+    const { rc } = await this.call<{ rc: string }>("chain.get_account_rc", {
+      account,
+    });
+    if (!rc) return "0";
+    return rc;
+  }
+
   /**
    * Get transactions by id and their corresponding block ids
    */
