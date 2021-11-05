@@ -278,6 +278,18 @@ export class Provider {
    * function "wait", which can be called to wait for the
    * transaction to be mined.
    * @param transaction - Signed transaction
+   * @example
+   * ```ts
+   * const { transactionResponse } = await provider.sendTransaction({
+   *   id: "1220...",
+   *   active: "...",
+   *   signatureData: "...",
+   * });
+   * console.log("Transaction submitted to the mempool");
+   * // wait to be mined
+   * const blockId = await transactionResponse.wait();
+   * console.log("Transaction mined")
+   * ```
    */
   async sendTransaction(
     transaction: TransactionJson
@@ -307,12 +319,8 @@ export class Provider {
 
   /**
    * Function to call "chain.read_contract" to read a contract.
-   * The operation must be encoded (see [[EncodedOperation]]).
-   * See also [[Wallet.readContract]] which, apart from the Provider,
-   * uses the contract definition and it is prepared to receive
-   * the operation decoded and return the result decoded as well.
-   * @param operation - Encoded operation
-   * @returns Encoded result
+   * This function is used by [[Contract]] class when read methods
+   * are invoked.
    */
   async readContract(operation: CallContractOperationJson): Promise<{
     result: string;

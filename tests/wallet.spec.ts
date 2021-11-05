@@ -206,11 +206,13 @@ describe("Wallet and Contract", () => {
     expect.assertions(9);
     mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
 
-    const { transaction, operation, transactionResponse } = await koin.transfer({
-      from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
-      to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
-      value: "1000",
-    });
+    const { transaction, operation, transactionResponse } = await koin.transfer(
+      {
+        from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+        to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+        value: "1000",
+      }
+    );
 
     expect(operation).toStrictEqual({
       callContract: {
@@ -316,7 +318,8 @@ describe("Wallet and Contract", () => {
       return axiosResponse({ nonce: "0" });
     });
 
-    const { operation, transaction, transactionResponse } = await koinContract.deploy();
+    const { operation, transaction, transactionResponse } =
+      await koinContract.deploy();
 
     expect(operation).toStrictEqual({
       uploadContract: {

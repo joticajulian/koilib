@@ -253,7 +253,8 @@ export class Signer implements SignerInterface {
   }
 
   /**
-   * Function to sign and send a transaction
+   * Function to sign and send a transaction. It internally uses
+   * [[Provider.sendTransaction]]
    * @param tx - Transaction to send. It will be signed inside this function
    * if it is not signed yet
    * @param _abis - Collection of Abis to parse the operations in the
@@ -263,9 +264,7 @@ export class Signer implements SignerInterface {
   async sendTransaction(
     tx: TransactionJson,
     _abis?: Record<string, Abi>
-  ): Promise<{
-    wait: () => Promise<string>;
-  }> {
+  ): Promise<SendTransactionResponse> {
     if (!tx.signatureData || !tx.id) await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
     return this.provider.sendTransaction(tx);

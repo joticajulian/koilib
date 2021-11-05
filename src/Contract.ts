@@ -20,8 +20,54 @@ const OP_BYTES = "(koinos_bytes_type)";
 /**
  * Application Binary Interface (ABI)
  *
- * Set of definitions to tell to the library how to serialize
- * and deserialize data in Koinos.
+ * ABIs are composed of 2 elements: methods and types.
+ * - The methods define the names of the entries of the smart contract,
+ * the corresponding endpoints and the name of the types used.
+ * - The types all the description to serialize and deserialize
+ * using proto buffers.
+ *
+ * To generate the types is necessary to use the dependency
+ * protobufjs. The following example shows how to generate the
+ * protobuf descriptor from a .proto file.
+ *
+ * ```js
+ * const fs = require("fs");
+ * const pbjs = require("protobufjs/cli/pbjs");
+ *
+ * pbjs.main(
+ *   ["--target", "json", "./token.proto"],
+ *   (err, output) => {
+ *     if (err) throw err;
+ *     fs.writeFileSync("./token-proto.json", output);
+ *   }
+ * );
+ * ```
+ *
+ * Then this descriptor can be loaded to define the ABI:
+ * ```js
+ * const tokenJson = require("./token-proto.json");
+ * const abiToken = {
+ *   methods: {
+ *     balanceOf: {
+ *       entryPoint: 0x15619248,
+ *       inputs: "balance_of_arguments",
+ *       outputs: "balance_of_result",
+ *       readOnly: true,
+ *     },
+ *     transfer: {
+ *       entryPoint: 0x62efa292,
+ *       inputs: "transfer_arguments",
+ *       outputs: "transfer_result",
+ *     },
+ *     mint: {
+ *       entryPoint: 0xc2f82bdc,
+ *       inputs: "mint_argumnets",
+ *       outputs: "mint_result",
+ *     },
+ *   },
+ *   types: tokenJson,
+ * };
+ * ```
  */
 export interface Abi {
   methods: {
@@ -117,18 +163,23 @@ function copyValue(value: unknown): unknown {
  * const koin = koinContract.functions;
  *
  * async funtion main() {
+ *   // Get balance
+ *   const { result } = await koin.balanceOf({
+ *     owner: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD"
+ *   });
+ *   console.log(balance.result)
+ *
  *   // Transfer
- *   const { transaction, operation, result } = await koin.transfer({
+ *   const { transaction, transactionResponse } = await koin.transfer({
  *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
  *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
  *     value: "1000",
  *   });
+ *   console.log(`Transaction id ${transaction.id} submitted`);
  *
- *   // Get balance
- *   const balance = await koin.balanceOf({
- *     owner: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD"
- *   });
- *   console.log(balance.result)
+ *   // wait to be mined
+ *   const blockId = await transactionResponse.wait();
+ *   console.log(`Transaction mined. Block id: ${blockId}`);
  * }
  *
  * main();
@@ -147,8 +198,8 @@ export class Contract {
 
   /**
    * Set of functions to interact with the smart
-   * contract. These functions are generated in
-   * the constructor of the class
+   * contract. These functions are automatically generated
+   * in the constructor of the class
    */
   functions: {
     [x: string]: <T = Record<string, unknown>>(
@@ -173,7 +224,7 @@ export class Contract {
   signer?: SignerInterface;
 
   /**
-   * Provider
+   * Provider to connect with the blockchain
    */
   provider?: Provider;
 
@@ -183,7 +234,9 @@ export class Contract {
   bytecode?: Uint8Array;
 
   /**
-   * Options to apply when creating transactions
+   * Options to apply when creating transactions.
+   * By default it set rcLimit to 1e8, sendTransaction true,
+   * sendAbis true, and nonce undefined (to get it from the blockchain)
    */
   options: TransactionOptions;
 
@@ -274,10 +327,16 @@ export class Contract {
     }
   }
 
+  /**
+   * Compute contract Id
+   */
   static computeContractId(address: string): Uint8Array {
     return decodeBase58(address);
   }
 
+  /**
+   * Get contract Id
+   */
   getId(): string {
     if (!this.id) throw new Error("id is not defined");
     return encodeBase58(this.id);
@@ -286,6 +345,17 @@ export class Contract {
   /**
    * Function to deploy a new smart contract.
    * The Bytecode must be defined in the constructor of the class
+   * @example
+   * ```ts
+   * const signer = new Signer("f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200", true, provider);
+   * const provider = new Provider(["http://api.koinos.io:8080"]);
+   * const bytecode = new Uint8Array([1, 2, 3, 4]);
+   * const contract = new Contract({ signer, provider, bytecode });
+   * const { transactionResponse } = await contract.deploy();
+   * // wait to be mined
+   * const blockId = await transactionResponse.wait();
+   * console.log(`Contract uploaded in block id ${blockId}`);
+   * ```
    */
   async deploy(options?: TransactionOptions): Promise<{
     operation: UploadContractOperationNested;

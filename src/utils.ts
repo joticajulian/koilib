@@ -151,6 +151,9 @@ export function bitcoinAddress(publicKey: Uint8Array): string {
   return bitcoinEncode(hash160, "public");
 }
 
+/**
+ * ABI for tokens
+ */
 export const Krc20Abi: Abi = {
   methods: {
     name: {
