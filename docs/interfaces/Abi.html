@@ -1,0 +1,308 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Abi | koilib - v1.5.0</title>
+	<meta name="description" content="Documentation for koilib - v1.5.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="../assets/css/main.css">
+	<script async src="../assets/js/search.js" id="search-script"></script>
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="../assets/js/search.json" data-base="..">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="../index.html" class="title">koilib - v1.5.0</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="../modules.html">koilib - v1.5.0</a>
+				</li>
+				<li>
+					<a href="Abi.html">Abi</a>
+				</li>
+			</ul>
+			<h1>Interface Abi</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Application Binary Interface (ABI)</p>
+					</div>
+					<p>ABIs are composed of 2 elements: methods and types.</p>
+					<ul>
+						<li>The methods define the names of the entries of the smart contract,
+						the corresponding endpoints and the name of the types used.</li>
+						<li>The types all the description to serialize and deserialize
+						using proto buffers.</li>
+					</ul>
+					<p>To generate the types is necessary to use the dependency
+						protobufjs. The following example shows how to generate the
+					protobuf descriptor from a .proto file.</p>
+					<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">fs</span><span style="color: #000000"> = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;fs&quot;</span><span style="color: #000000">);</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">pbjs</span><span style="color: #000000"> = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;protobufjs/cli/pbjs&quot;</span><span style="color: #000000">);</span>
+
+<span style="color: #001080">pbjs</span><span style="color: #000000">.</span><span style="color: #795E26">main</span><span style="color: #000000">(</span>
+<span style="color: #000000">  [</span><span style="color: #A31515">&quot;--target&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;json&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;./token.proto&quot;</span><span style="color: #000000">],</span>
+<span style="color: #000000">  (</span><span style="color: #001080">err</span><span style="color: #000000">, </span><span style="color: #001080">output</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">    </span><span style="color: #AF00DB">if</span><span style="color: #000000"> (</span><span style="color: #001080">err</span><span style="color: #000000">) </span><span style="color: #AF00DB">throw</span><span style="color: #000000"> </span><span style="color: #001080">err</span><span style="color: #000000">;</span>
+<span style="color: #000000">    </span><span style="color: #001080">fs</span><span style="color: #000000">.</span><span style="color: #795E26">writeFileSync</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;./token-proto.json&quot;</span><span style="color: #000000">, </span><span style="color: #001080">output</span><span style="color: #000000">);</span>
+<span style="color: #000000">  }</span>
+<span style="color: #000000">);</span>
+</code></pre>
+					<p>Then this descriptor can be loaded to define the ABI:</p>
+					<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">tokenJson</span><span style="color: #000000"> = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;./token-proto.json&quot;</span><span style="color: #000000">);</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">abiToken</span><span style="color: #000000"> = {</span>
+<span style="color: #000000">  </span><span style="color: #001080">methods:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">    </span><span style="color: #001080">balanceOf:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">entryPoint:</span><span style="color: #000000"> </span><span style="color: #098658">0x15619248</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">inputs:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;balance_of_arguments&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">outputs:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;balance_of_result&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">readOnly:</span><span style="color: #000000"> </span><span style="color: #0000FF">true</span><span style="color: #000000">,</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">    </span><span style="color: #001080">transfer:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">entryPoint:</span><span style="color: #000000"> </span><span style="color: #098658">0x62efa292</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">inputs:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;transfer_arguments&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">outputs:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;transfer_result&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">    </span><span style="color: #001080">mint:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">entryPoint:</span><span style="color: #000000"> </span><span style="color: #098658">0xc2f82bdc</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">inputs:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;mint_argumnets&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">outputs:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;mint_result&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">  </span><span style="color: #001080">types:</span><span style="color: #000000"> </span><span style="color: #001080">tokenJson</span><span style="color: #000000">,</span>
+<span style="color: #000000">};</span>
+</code></pre>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-hierarchy">
+				<h3>Hierarchy</h3>
+				<ul class="tsd-hierarchy">
+					<li>
+						<span class="target">Abi</span>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel-group tsd-index-group">
+				<h2>Index</h2>
+				<section class="tsd-panel tsd-index-panel">
+					<div class="tsd-index-content">
+						<section class="tsd-index-section ">
+							<h3>Properties</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="Abi.html#methods" class="tsd-kind-icon">methods</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="Abi.html#types" class="tsd-kind-icon">types</a></li>
+							</ul>
+						</section>
+					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="methods" class="tsd-anchor"></a>
+					<h3>methods</h3>
+					<div class="tsd-signature tsd-kind-icon">methods<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/116ab27/src/Contract.ts#L73">Contract.ts:73</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-index-signature">
+								<h5><span class="tsd-signature-symbol">[</span>x: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-symbol">{ </span>description<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>entryPoint<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>inputs<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>outputs<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>readOnly<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> }</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Name of the method</p>
+									</div>
+								</div>
+								<ul class="tsd-parameters">
+									<li class="tsd-parameter">
+										<h5><span class="tsd-flag ts-flagOptional">Optional</span> description<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>Description of the method</p>
+											</div>
+										</div>
+									</li>
+									<li class="tsd-parameter">
+										<h5>entry<wbr>Point<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></h5>
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>Entry point ID</p>
+											</div>
+										</div>
+									</li>
+									<li class="tsd-parameter">
+										<h5><span class="tsd-flag ts-flagOptional">Optional</span> inputs<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>Protobuffer type for input</p>
+											</div>
+										</div>
+									</li>
+									<li class="tsd-parameter">
+										<h5><span class="tsd-flag ts-flagOptional">Optional</span> outputs<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>Protobuffer type for output</p>
+											</div>
+										</div>
+									</li>
+									<li class="tsd-parameter">
+										<h5><span class="tsd-flag ts-flagOptional">Optional</span> read<wbr>Only<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span></h5>
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>Boolean to differentiate write methods
+													(using transactions) from read methods
+												(query the contract)</p>
+											</div>
+										</div>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="types" class="tsd-anchor"></a>
+					<h3>types</h3>
+					<div class="tsd-signature tsd-kind-icon">types<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">INamespace</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/116ab27/src/Contract.ts#L95">Contract.ts:95</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Protobuffers descriptor in JSON format.
+							See <a href="https://www.npmjs.com/package/protobufjs#using-json-descriptors">https://www.npmjs.com/package/protobufjs#using-json-descriptors</a></p>
+						</div>
+					</div>
+				</section>
+			</section>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class=" ">
+						<a href="../modules.html">Exports</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-class">
+						<a href="../classes/Contract.html" class="tsd-kind-icon">Contract</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="../classes/Provider.html" class="tsd-kind-icon">Provider</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="../classes/Signer.html" class="tsd-kind-icon">Signer</a>
+					</li>
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-interface">
+						<a href="Abi.html" class="tsd-kind-icon">Abi</a>
+						<ul>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="Abi.html#methods" class="tsd-kind-icon">methods</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="Abi.html#types" class="tsd-kind-icon">types</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="after-current">
+					<li class=" tsd-kind-interface">
+						<a href="DecodedOperationJson.html" class="tsd-kind-icon">Decoded<wbr>Operation<wbr>Json</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="SendTransactionResponse.html" class="tsd-kind-icon">Send<wbr>Transaction<wbr>Response</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="SignerInterface.html" class="tsd-kind-icon">Signer<wbr>Interface</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="TransactionOptions.html" class="tsd-kind-icon">Transaction<wbr>Options</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="../assets/js/main.js"></script>
+</body>
+</html>
