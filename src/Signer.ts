@@ -1,19 +1,38 @@
 /* eslint-disable no-param-reassign */
-
 import { sha256 } from "js-sha256";
 import * as secp from "noble-secp256k1";
-import { abiActiveData } from "./abi";
-import { Transaction } from "./interface";
-import { Multihash } from "./Multihash";
-import { serialize } from "./serializer";
+import { Root } from "protobufjs/light";
+import { Provider, SendTransactionResponse } from "./Provider";
+import { TransactionJson, ActiveTransactionData } from "./interface";
+import protocolJson from "./protocol-proto.json";
 import {
   bitcoinAddress,
   bitcoinDecode,
   bitcoinEncode,
+  decodeBase64,
+  encodeBase64,
   toHexString,
   toUint8Array,
 } from "./utils";
-import { VariableBlob } from "./VariableBlob";
+import { Abi } from "./Contract";
+
+const root = Root.fromJSON(protocolJson);
+const ActiveTxDataMsg = root.lookupType("active_transaction_data");
+
+export interface SignerInterface {
+  provider?: Provider;
+  getAddress(compressed?: boolean): string;
+  getPrivateKey(format: "wif" | "hex", compressed?: boolean): string;
+  signTransaction(tx: TransactionJson): Promise<TransactionJson>;
+  sendTransaction(
+    tx: TransactionJson,
+    abis?: Record<string, Abi>
+  ): Promise<SendTransactionResponse>;
+  encodeTransaction(
+    activeData: ActiveTransactionData
+  ): Promise<TransactionJson>;
+  // decodeTransaction(tx: TransactionJson): ActiveTransactionData;
+}
 
 /**
  * The Signer Class contains the private key needed to sign transactions.
@@ -57,8 +76,16 @@ import { VariableBlob } from "./VariableBlob";
  * ```ts
  * var signer = Signer.fromWif("L59UtJcTdNBnrH2QSBA5beSUhRufRu3g6tScDTite6Msuj7U93tM");
  * ```
+ *
+ * <br>
+ *
+ * defining a provider
+ * ```ts
+ * var provider = new Provider(["https://example.com/jsonrpc"]);
+ * var signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c", true, provider);
+ * ```
  */
-export class Signer {
+export class Signer implements SignerInterface {
   /**
    * Boolean determining if the public/private key
    * is using the compressed format
@@ -75,12 +102,18 @@ export class Signer {
   address: string;
 
   /**
+   * Provider used to connect with the blockchain
+   */
+  provider: Provider | undefined;
+
+  /**
    * The constructor receives de private key as hexstring, bigint or Uint8Array.
    * See also the functions [[Signer.fromWif]] and [[Signer.fromSeed]]
    * to create the signer from the WIF or Seed respectively.
    *
    * @param privateKey - Private key as hexstring, bigint or Uint8Array
    * @param compressed - compressed format is true by default
+   * @param provider - provider to connect with the blockchain
    * @example
    * ```ts
    * cons signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
@@ -90,10 +123,12 @@ export class Signer {
    */
   constructor(
     privateKey: string | number | bigint | Uint8Array,
-    compressed = true
+    compressed = true,
+    provider?: Provider
   ) {
     this.compressed = compressed;
     this.privateKey = privateKey;
+    this.provider = provider;
     if (typeof privateKey === "string") {
       this.publicKey = secp.getPublicKey(privateKey, this.compressed);
       this.address = bitcoinAddress(toUint8Array(this.publicKey));
@@ -198,9 +233,9 @@ export class Signer {
    * @param tx - Unsigned transaction
    * @returns
    */
-  async signTransaction(tx: Transaction): Promise<Transaction> {
-    const blobActiveData = serialize(tx.active_data, abiActiveData);
-    const hash = sha256(blobActiveData.buffer);
+  async signTransaction(tx: TransactionJson): Promise<TransactionJson> {
+    if (!tx.active) throw new Error("Active data is not defined");
+    const hash = sha256(decodeBase64(tx.active));
     const [hex, recovery] = await secp.sign(hash, this.privateKey, {
       recovered: true,
       canonical: true,
@@ -211,11 +246,28 @@ export class Signer {
     const rHex = r.toString(16).padStart(64, "0");
     const sHex = s.toString(16).padStart(64, "0");
     const recId = (recovery + 31).toString(16).padStart(2, "0");
-    tx.signature_data = new VariableBlob(
-      toUint8Array(recId + rHex + sHex)
-    ).toString();
-    tx.id = new Multihash(toUint8Array(hash)).toString();
+    tx.signatureData = encodeBase64(toUint8Array(recId + rHex + sHex));
+    const multihash = `0x1220${hash}`; // 12: code sha2-256. 20: length (32 bytes)
+    tx.id = multihash;
     return tx;
+  }
+
+  /**
+   * Function to sign and send a transaction. It internally uses
+   * [[Provider.sendTransaction]]
+   * @param tx - Transaction to send. It will be signed inside this function
+   * if it is not signed yet
+   * @param _abis - Collection of Abis to parse the operations in the
+   * transaction. This parameter is optional.
+   * @returns
+   */
+  async sendTransaction(
+    tx: TransactionJson,
+    _abis?: Record<string, Abi>
+  ): Promise<SendTransactionResponse> {
+    if (!tx.signatureData || !tx.id) await this.signTransaction(tx);
+    if (!this.provider) throw new Error("provider is undefined");
+    return this.provider.sendTransaction(tx);
   }
 
   /**
@@ -224,18 +276,16 @@ export class Signer {
    * @param tx - signed transaction
    * @param compressed - output format (compressed by default)
    */
-  static recoverPublicKey(tx: Transaction, compressed = true): string {
-    if (!tx.active_data) throw new Error("active_data is not defined");
-    if (!tx.signature_data) throw new Error("signature_data is not defined");
-    const blobActiveData = serialize(tx.active_data, abiActiveData);
-    const hash = sha256(blobActiveData.buffer);
-    const bufferCompactSignature = new VariableBlob(tx.signature_data).buffer;
-    const compactSignatureHex = toHexString(bufferCompactSignature);
-    const recovery = Number("0x" + compactSignatureHex.slice(0, 2)) - 31;
+  static recoverPublicKey(tx: TransactionJson, compressed = true): string {
+    if (!tx.active) throw new Error("activeData is not defined");
+    if (!tx.signatureData) throw new Error("signatureData is not defined");
+    const hash = sha256(decodeBase64(tx.active));
+    const compactSignatureHex = toHexString(decodeBase64(tx.signatureData));
+    const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
     const rHex = compactSignatureHex.slice(2, 66);
     const sHex = compactSignatureHex.slice(66);
-    const r = BigInt("0x" + rHex);
-    const s = BigInt("0x" + sHex);
+    const r = BigInt(`0x${rHex}`);
+    const s = BigInt(`0x${sHex}`);
     const sig = new secp.Signature(r, s);
     const publicKey = secp.recoverPublicKey(hash, sig.toHex(), recovery);
     if (!publicKey) throw new Error("Public key cannot be recovered");
@@ -249,9 +299,58 @@ export class Signer {
    * @param tx - signed transaction
    * @param compressed - output format (compressed by default)
    */
-  static recoverAddress(tx: Transaction, compressed = true): string {
+  static recoverAddress(tx: TransactionJson, compressed = true): string {
     const publicKey = Signer.recoverPublicKey(tx, compressed);
     return bitcoinAddress(toUint8Array(publicKey));
+  }
+
+  /**
+   * Function to encode a transaction
+   * @param activeData - Active data consists of nonce, rcLimit, and
+   * operations. Do not set the nonce to get it from the blockchain
+   * using the provider. The rcLimit is 1000000 by default.
+   * @returns A transaction encoded. The active field is encoded in
+   * base64url
+   */
+  async encodeTransaction(
+    activeData: ActiveTransactionData
+  ): Promise<TransactionJson> {
+    let { nonce } = activeData;
+    if (activeData.nonce === undefined) {
+      if (!this.provider)
+        throw new Error(
+          "Cannot get the nonce because provider is undefined. To skip this call set a nonce in the parameters"
+        );
+      // TODO: Option to resolve names
+      // this depends on the final architecture for names on Koinos
+      nonce = await this.provider.getNonce(this.getAddress());
+    }
+    const rcLimit =
+      activeData.rcLimit === undefined ? 1000000 : activeData.rcLimit;
+    const operations = activeData.operations ? activeData.operations : [];
+
+    const activeData2: ActiveTransactionData = {
+      rcLimit,
+      nonce,
+      operations,
+    };
+
+    const message = ActiveTxDataMsg.create(activeData2);
+    const buffer = ActiveTxDataMsg.encode(message).finish();
+
+    return {
+      active: encodeBase64(buffer),
+    } as TransactionJson;
+  }
+
+  /**
+   * Function to decode a transaction
+   */
+  static decodeTransaction(tx: TransactionJson): ActiveTransactionData {
+    if (!tx.active) throw new Error("Active data is not defined");
+    const buffer = decodeBase64(tx.active);
+    const message = ActiveTxDataMsg.decode(buffer);
+    return ActiveTxDataMsg.toObject(message, { longs: String });
   }
 }
 

@@ -1,11 +1,21 @@
 import axios, { AxiosResponse } from "axios";
 import crypto from "crypto";
-import { /* bitcoinEncode, */ bitcoinDecode, toHexString } from "../src/utils";
+import { Type } from "protobufjs";
 import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
-import { Wallet } from "../src/Wallet";
 import { Provider } from "../src/Provider";
-import { Transaction } from "../src/interface";
+import {
+  bitcoinDecode,
+  encodeBase64,
+  toHexString,
+  Krc20Abi,
+} from "../src/utils";
+import {
+  CallContractOperationNested,
+  SetSystemCallOperationNested,
+  UploadContractOperationNested,
+  TransactionJson,
+} from "../src";
 
 const mockAxiosGet = jest.spyOn(axios, "get");
 const mockAxiosPost = jest.spyOn(axios, "post");
@@ -56,39 +66,23 @@ const publicKey =
   "042921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf291e7c6dbcc8c0cf132db40d32722301b5244b1274dc16a5a54c3220b7def3423";
 const publicKeyCompressed =
   "032921dd54fdd8fb5d2ab1a9928db7e9e08b34f8711a3332e0f1b36e71076b9cf2";
+
 const address = "1AjfrkFYS28SgPWrvaUeY6pThbzF1fUrjQ";
 const addressCompressed = "1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs";
-const rpcNodes = ["http://45.56.104.152:8080", "http://159.203.119.0:8080"];
+const rpcNodes = [
+  "http://example.koinos.io:8080",
+  "http://example2.koinos.io:8080",
+];
 
-const contract = new Contract({
-  id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
-  entries: {
-    transfer: {
-      id: 0x62efa292,
-      inputs: {
-        type: [
-          {
-            name: "from",
-            type: "string",
-          },
-          {
-            name: "to",
-            type: "string",
-          },
-          {
-            name: "value",
-            type: "uint64",
-          },
-        ],
-      },
-    },
-    balance_of: {
-      id: 0x15619248,
-      inputs: { type: "string" },
-      outputs: { type: "uint64" },
-    },
-  },
+const provider = new Provider(rpcNodes);
+const signer = new Signer(privateKeyHex, true, provider);
+const koinContract = new Contract({
+  id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+  abi: Krc20Abi,
+  provider,
+  signer,
 });
+const koin = koinContract.functions;
 
 describe("Signer", () => {
   it("should get private key", () => {
@@ -149,53 +143,95 @@ describe("Wallet and Contract", () => {
     const opTransfer = {
       name: "transfer",
       args: {
-        from: "alice",
-        to: "bob",
-        value: BigInt(1000),
+        from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+        to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+        value: "1000",
       },
     };
 
-    const opEncoded = contract.encodeOperation(opTransfer);
-    const opDecoded = contract.decodeOperation(opEncoded);
+    const opEncoded = koinContract.encodeOperation(opTransfer);
+    const opDecoded = koinContract.decodeOperation(opEncoded);
 
     expect(opEncoded).toStrictEqual({
-      type: "koinos::protocol::call_contract_operation",
-      value: {
-        contract_id: contract.id,
-        entry_point: 0x62efa292,
-        args: expect.any(String) as string,
+      callContract: {
+        contractId: koinContract.id,
+        entryPoint: koinContract.abi?.methods?.transfer?.entryPoint,
+        args: expect.any(Uint8Array) as Uint8Array,
       },
-    });
+    } as CallContractOperationNested);
 
     expect(opDecoded).toStrictEqual(opTransfer);
   });
 
-  it("should sign a transaction and recover the public key and address", async () => {
-    expect.assertions(7);
-    const signer = new Signer(privateKeyHex);
-    const operation = contract.encodeOperation({
-      name: "transfer",
-      args: {
-        from: "alice",
-        to: "bob",
-        value: BigInt(1000),
-      },
-    });
-    const transaction: Transaction = {
-      active_data: {
-        resource_limit: 1000000,
-        nonce: 0,
-        operations: [operation],
-      },
+  it("should encode and decode a transaction", async () => {
+    expect.assertions(2);
+
+    const activeData = {
+      nonce: "8",
+      rcLimit: "10",
+      operations: [
+        {
+          callContract: {
+            contractId: new Uint8Array(crypto.randomBytes(20)),
+            entryPoint: 12,
+            args: new Uint8Array(crypto.randomBytes(12)),
+          },
+        } as CallContractOperationNested,
+        {
+          setSystemCall: {
+            callId: 23,
+            target: {
+              thunkId: 234,
+            },
+          },
+        } as SetSystemCallOperationNested,
+        {
+          uploadContract: {
+            contractId: new Uint8Array(crypto.randomBytes(20)),
+            bytecode: new Uint8Array(crypto.randomBytes(23)),
+          },
+        } as UploadContractOperationNested,
+      ],
     };
-    await signer.signTransaction(transaction);
+
+    const tx = await signer.encodeTransaction(activeData);
+    const activeData2 = Signer.decodeTransaction(tx);
+    expect(tx).toStrictEqual({
+      active: expect.any(String) as string,
+    } as TransactionJson);
+    expect(activeData2).toStrictEqual(activeData);
+  });
+
+  it("should sign a transaction and recover the public key and address", async () => {
+    expect.assertions(9);
+    mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
+
+    const { transaction, operation, transactionResponse } = await koin.transfer(
+      {
+        from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+        to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+        value: "1000",
+      }
+    );
+
+    expect(operation).toStrictEqual({
+      callContract: {
+        contractId: koinContract.id,
+        entryPoint: koinContract.abi?.methods?.transfer?.entryPoint,
+        args: expect.any(Uint8Array) as Uint8Array,
+      },
+    } as CallContractOperationNested);
+
     expect(transaction).toStrictEqual({
       id: expect.any(String) as string,
-      active_data: expect.objectContaining({}) as unknown,
-      signature_data: expect.any(String) as string,
-    } as Transaction);
+      active: expect.any(String) as string,
+      signatureData: expect.any(String) as string,
+    } as TransactionJson);
+
+    expect(transactionResponse).toBeDefined();
 
     // recover public key and address
+    if (!transaction) throw new Error("transaction is not defined");
 
     const recoveredPublicKey = Signer.recoverPublicKey(transaction, false);
     expect(recoveredPublicKey).toBe(publicKey);
@@ -213,60 +249,48 @@ describe("Wallet and Contract", () => {
     expect(Signer.recoverAddress(transaction)).toBe(addressCompressed);
   });
 
-  it("should create a wallet and sign a transaction", async () => {
-    expect.assertions(0);
-    const wallet = new Wallet({
-      signer: new Signer(privateKeyHex),
-      contract,
-      provider: new Provider(rpcNodes),
-    });
-
-    const operation = wallet.encodeOperation({
-      name: "transfer",
-      args: {
-        from: wallet.getAddress(),
-        to: "bob",
-        value: BigInt(1000),
-      },
-    });
-
+  it("should rewrite the default options when creating transactions", async () => {
+    expect.assertions(3);
     mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
 
-    const tx = await wallet.newTransaction({
-      operations: [operation],
-    });
+    const { transaction, operation, result } = await koin.transfer(
+      {
+        from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+        to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+        value: "1000",
+      },
+      { sendTransaction: false }
+    );
 
-    await wallet.signTransaction(tx);
-    await wallet.sendTransaction(tx);
+    // As send is false only operation is defined
+    expect(operation).toBeDefined();
+    expect(transaction).not.toBeDefined();
+    expect(result).not.toBeDefined();
   });
 
   it("should get the balance of an account", async () => {
-    const wallet = new Wallet({
-      contract,
-      provider: new Provider(rpcNodes),
-    });
-
+    const type = koinContract.protobuffers?.lookupType(
+      "balance_of_result"
+    ) as Type;
+    const message = type.create({ value: "123456" });
+    const resultEncoded = encodeBase64(type.encode(message).finish());
     mockAxiosPost.mockImplementation(async () =>
-      axiosResponse({ result: "MAAAAAAECAwQ=" })
+      axiosResponse({ result: resultEncoded })
     );
 
-    const result = await wallet.readContract({
-      name: "balance_of",
-      args: "1Krs7v1rtpgRyfwEZncuKMQQnY5JhqXVSx",
-    });
-
-    expect(result).toBeDefined();
+    const { result } = await koin.balanceOf({ owner: address });
+    expect(result).toStrictEqual({ value: "123456" });
   });
 
   it("should change node", async () => {
     expect.assertions(2);
-    const provider = new Provider([
+    const myProvider = new Provider([
       "http://bad-server1",
       "http://bad-server2",
       "http://good-server",
     ]);
     let numErrors = 0;
-    provider.onError = () => {
+    myProvider.onError = () => {
       numErrors += 1;
       return false;
     };
@@ -276,32 +300,40 @@ describe("Wallet and Contract", () => {
         // eslint-disable-next-line @typescript-eslint/no-throw-literal
         throw axiosResponse(undefined, 500);
       }
-      return axiosResponse({ nonce: "0" });
+      return axiosResponse({ nonce: "123" });
     });
 
-    const nonce = await provider.getNonce(address);
+    const nonce = await myProvider.getNonce(address);
 
     expect(numErrors).toBe(2);
-    expect(nonce).toBe(0);
+    expect(nonce).toBe(123);
   });
 
   it("should upload a contract", async () => {
-    expect.assertions(0);
-    const provider = new Provider("http://node");
-    const signer = Signer.fromSeed(seed);
-    const wallet = new Wallet({ provider, signer });
+    expect.assertions(3);
     const bytecode = new Uint8Array(crypto.randomBytes(100));
-    const op = wallet.encodeUploadContractOperation(bytecode);
+    koinContract.bytecode = bytecode;
 
     mockAxiosPost.mockImplementation(async () => {
       return axiosResponse({ nonce: "0" });
     });
 
-    const tx = await wallet.newTransaction({
-      operations: [op],
-    });
-    // sign and send transaction
-    await wallet.signTransaction(tx);
-    await wallet.sendTransaction(tx);
+    const { operation, transaction, transactionResponse } =
+      await koinContract.deploy();
+
+    expect(operation).toStrictEqual({
+      uploadContract: {
+        contractId: expect.any(Uint8Array) as Uint8Array,
+        bytecode: expect.any(Uint8Array) as Uint8Array,
+      },
+    } as UploadContractOperationNested);
+
+    expect(transaction).toStrictEqual({
+      id: expect.any(String) as string,
+      active: expect.any(String) as string,
+      signatureData: expect.any(String) as string,
+    } as TransactionJson);
+
+    expect(transactionResponse).toBeDefined();
   });
 });

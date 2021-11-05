@@ -17,7 +17,7 @@ Install the package from NPM
 npm install koilib
 ```
 
-You can also load it directly to the browser by downloading the bunble file located at `dist/koinos.min.js`, or it's non-minified version `dist/koinos.js` (useful for debugging).
+You can also load it directly to the browser by downloading the bunble file located at `dist/koinos.min.js`, or its non-minified version `dist/koinos.js` (useful for debugging).
 
 ## Usage
 
@@ -32,25 +32,22 @@ You can also load it directly to the browser by downloading the bunble file loca
     <script src="koinos.min.js"></script>
     <script>
       (async () => {
+        const provider = new Provider(["http://api.koinos.io:8080"]);
         const signer = Signer.fromSeed("my seed");
-        const provider = new Provider("http://45.56.104.152:8080");
-        const contract = new Contract({
-          id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
-          entries: {
-            balance_of: {
-              id: 0x15619248,
-              inputs: { type: "string" },
-              outputs: { type: "uint64" },
-            },
-          },
+        signer.provider = provider;
+        const koinContract = new Contract({
+          id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+          abi: utils.Krc20Abi,
+          provider,
+          signer,
         });
+        const koin = koinContract.functions;
 
-        const wallet = new Wallet({ signer, contract, provider });
-        const balance = await wallet.readContract({
-          name: "balance_of",
-          args: wallet.getAddress(),
+        // Get balance
+        const { result } = await koin.balanceOf({
+          owner: signer.getAddress(),
         });
-        console.log(Number(balance) / 1e8);
+        console.log(balance.result);
       })();
     </script>
   </head>
@@ -63,13 +60,13 @@ You can also load it directly to the browser by downloading the bunble file loca
 With Typescript import the library
 
 ```typescript
-import { Wallet, Signer, Contract, Provider } from "koilib";
+import { Signer, Contract, Provider, utils } from "koilib";
 ```
 
 With Javascript import the library with require
 
 ```javascript
-const { Wallet, Signer, Contract, Provider } = require("koilib");
+const { Signer, Contract, Provider, utils } = require("koilib");
 ```
 
 There are 4 principal classes:
@@ -77,74 +74,41 @@ There are 4 principal classes:
 - **Signer**: Class containing the private key. It is used to sign.
 - **Provider**: Class to connect with the RPC node.
 - **Contract**: Class defining the contract to interact with.
-- **Wallet**: Class that packages signer, provider, and contract classes.
 
-The following code shows how to create a wallet, sign a transaction, broadcast
+The following code shows how to sign a transaction, broadcast
 a transaction, and read contracts.
 
 ```typescript
 (async () => {
   // define signer, provider, and contract
+  const provider = new Provider(["http://api.koinos.io:8080"]);
   const signer = Signer.fromSeed("my seed");
-  const provider = new Provider("http://45.56.104.152:8080");
-  const contract = new Contract({
-    id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
-    entries: {
-      transfer: {
-        id: 0x62efa292,
-        inputs: {
-          type: [
-            {
-              name: "from",
-              type: "string",
-            },
-            {
-              name: "to",
-              type: "string",
-            },
-            {
-              name: "value",
-              type: "uint64",
-            },
-          ],
-        },
-      },
-      balance_of: {
-        id: 0x15619248,
-        inputs: { type: "string" },
-        outputs: { type: "uint64" },
-      },
-    },
+  signer.provider = provider;
+  const koinContract = new Contract({
+    id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+    abi: utils.Krc20Abi,
+    provider,
+    signer,
   });
+  const koin = koinContract.functions;
 
-  // create a wallet with signer, provider and contract
-  const wallet = new Wallet({ signer, provider, contract });
-
-  // encode a contract operation to make a transfer
-  const opTransfer = wallet.encodeOperation({
-    name: "transfer",
-    args: {
-      from: wallet.getAddress(),
-      to: "bob",
-      value: BigInt(1000),
-    },
+  // Transfer
+  const { transaction, transactionResponse } = await koin.transfer({
+    from: signer.getAddress(),
+    to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+    value: "1000",
   });
+  console.log(`Transaction id ${transaction.id} submitted`);
 
-  // create a transaction
-  const tx = await wallet.newTransaction({
-    operations: [opTransfer],
-  });
-
-  // sign and send transaction
-  await wallet.signTransaction(tx);
-  await wallet.sendTransaction(tx);
+  // wait to be mined
+  const blockId = await transactionResponse.wait();
+  console.log(`Transaction mined. Block id: ${blockId}`);
 
   // read the balance
-  const balance = await wallet.readContract({
-    name: "balance_of",
-    args: wallet.getAddress(),
+  const { result } = await koin.balanceOf({
+    owner: signer.getAddress(),
   });
-  console.log(Number(balance) / 1e8);
+  console.log(balance.result);
 })();
 ```
 
@@ -152,24 +116,65 @@ It's also possible to upload contracts. First, follow the instructions in [koino
 
 ```typescript
 (async () => {
-  // define signer, provider and wallet
+  // define signer, provider and bytecode
+  const provider = new Provider(["http://api.koinos.io:8080"]);
   const signer = Signer.fromSeed("my seed");
-  const provider = new Provider("http://45.56.104.152:8080");
-  const wallet = new Wallet({ signer, provider });
-  // encode operation to upload the contract
+  signer.provider = provider;
   const bytecode = fs.readFileSync("my_contract.wasm");
-  const op = wallet.encodeUploadContractOperation(bytecode);
-  // create a transaction
-  const tx = await wallet.newTransaction({
-    operations: [op],
-  });
-  // sign and send transaction
-  await wallet.signTransaction(tx);
-  await wallet.sendTransaction(tx);
 
-  const contractId = Wallet.computeContractId(wallet.getAddress());
-  console.log(`Deployed. contract id: ${contractId}`);
+  // create contract and deploy
+  const contract = new Contract({ signer, provider, bytecode });
+  const { transactionResponse } = await contract.deploy();
+  // wait to be mined
+  const blockId = await transactionResponse.wait();
+  console.log(`Contract uploaded in block id ${blockId}`);
 })();
+```
+
+### Create ABIs
+
+ABIs are composed of 2 elements: methods and types.
+
+- The methods define the names of the entries of the smart contract, the corresponding endpoints and the name of the types used.
+- The types all the description to serialize and deserialize using proto buffers.
+
+To generate the types is necessary to use the dependency protobufjs. The following example shows how to generate the protobuf descriptor from a .proto file.
+
+```js
+const fs = require("fs");
+const pbjs = require("protobufjs/cli/pbjs");
+
+pbjs.main(["--target", "json", "./token.proto"], (err, output) => {
+  if (err) throw err;
+  fs.writeFileSync("./token-proto.json", output);
+});
+```
+
+Then this descriptor can be loaded to define the ABI:
+
+```js
+const tokenJson = require("./token-proto.json");
+const abiToken = {
+  methods: {
+    balanceOf: {
+      entryPoint: 0x15619248,
+      inputs: "balance_of_arguments",
+      outputs: "balance_of_result",
+      readOnly: true,
+    },
+    transfer: {
+      entryPoint: 0x62efa292,
+      inputs: "transfer_arguments",
+      outputs: "transfer_result",
+    },
+    mint: {
+      entryPoint: 0xc2f82bdc,
+      inputs: "mint_argumnets",
+      outputs: "mint_result",
+    },
+  },
+  types: tokenJson,
+};
 ```
 
 ## Documentation

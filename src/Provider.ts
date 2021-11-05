@@ -1,7 +1,17 @@
-import multibase from "multibase";
 import axios, { AxiosResponse } from "axios";
-import { EncodedOperation } from "./Contract";
-import { Block, Transaction } from "./interface";
+import {
+  BlockJson,
+  TransactionJson,
+  CallContractOperationJson,
+} from "./interface";
+
+export interface SendTransactionResponse {
+  wait: () => Promise<string>;
+}
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 /**
  * Class to connect with the RPC node
@@ -115,11 +125,10 @@ export class Provider {
         const currentNode = this.rpcNodes[this.currentNodeId];
         this.currentNodeId = (this.currentNodeId + 1) % this.rpcNodes.length;
         const newNode = this.rpcNodes[this.currentNodeId];
-        const abort = this.onError(e, currentNode, newNode);
+        const abort = this.onError(e as Error, currentNode, newNode);
         if (abort) throw e;
       }
     }
-
     if (response.data.error) throw new Error(response.data.error.message);
     return response.data.result as T;
   }
@@ -128,21 +137,57 @@ export class Provider {
    * Function to call "chain.get_account_nonce" to return the number of
    * transactions for a particular account. This call is used
    * when creating new transactions.
-   * @param address - account address
+   * @param account - account address
    * @returns Nonce
    */
-  async getNonce(address: string): Promise<number> {
-    const bufferAddress = new TextEncoder().encode(address);
-    const encBase64 = new TextDecoder().decode(
-      multibase.encode("M", bufferAddress)
-    );
-    const result = await this.call<{ nonce: string }>(
+  async getNonce(account: string): Promise<number> {
+    const { nonce } = await this.call<{ nonce: string }>(
       "chain.get_account_nonce",
-      {
-        account: encBase64,
-      }
+      { account }
     );
-    return Number(result.nonce);
+    if (!nonce) return 0;
+    return Number(nonce);
+  }
+
+  async getAccountRc(account: string): Promise<string> {
+    const { rc } = await this.call<{ rc: string }>("chain.get_account_rc", {
+      account,
+    });
+    if (!rc) return "0";
+    return rc;
+  }
+
+  /**
+   * Get transactions by id and their corresponding block ids
+   */
+  async getTransactionsById(transactionIds: string[]): Promise<{
+    transactions: {
+      transaction: TransactionJson[];
+      containing_blocks: string[];
+    }[];
+  }> {
+    return this.call<{
+      transactions: {
+        transaction: TransactionJson[];
+        containing_blocks: string[];
+      }[];
+    }>("transaction_store.get_transactions_by_id", {
+      transaction_ids: transactionIds,
+    });
+  }
+
+  async getBlocksById(blockIds: string[]): Promise<{
+    block_items: {
+      block_id: string;
+      block_height: string;
+      block: BlockJson;
+    }[];
+  }> {
+    return this.call("block_store.get_blocks_by_id", {
+      block_id: blockIds,
+      return_block: true,
+      return_receipt: false,
+    });
   }
 
   /**
@@ -151,18 +196,18 @@ export class Provider {
   async getHeadInfo(): Promise<{
     head_topology: {
       id: string;
-      height: number;
+      height: string;
       previous: string;
     };
-    last_irreversible_height: number;
+    last_irreversible_height: string;
   }> {
     return this.call<{
       head_topology: {
         id: string;
-        height: number;
+        height: string;
         previous: string;
       };
-      last_irreversible_height: number;
+      last_irreversible_height: string;
     }>("chain.get_head_info", {});
   }
 
@@ -182,7 +227,7 @@ export class Provider {
     {
       block_id: string;
       block_height: number;
-      block: Block;
+      block: BlockJson;
       block_receipt: {
         [x: string]: unknown;
       };
@@ -198,7 +243,7 @@ export class Provider {
         block_items: {
           block_id: string;
           block_height: number;
-          block: Block;
+          block: BlockJson;
           block_receipt: {
             [x: string]: unknown;
           };
@@ -219,7 +264,7 @@ export class Provider {
   async getBlock(height: number): Promise<{
     block_id: string;
     block_height: number;
-    block: Block;
+    block: BlockJson;
     block_receipt: {
       [x: string]: unknown;
     };
@@ -229,28 +274,59 @@ export class Provider {
 
   /**
    * Function to call "chain.submit_transaction" to send a signed
-   * transaction to the blockchain
+   * transaction to the blockchain. It returns an object with the async
+   * function "wait", which can be called to wait for the
+   * transaction to be mined.
    * @param transaction - Signed transaction
-   * @returns
+   * @example
+   * ```ts
+   * const { transactionResponse } = await provider.sendTransaction({
+   *   id: "1220...",
+   *   active: "...",
+   *   signatureData: "...",
+   * });
+   * console.log("Transaction submitted to the mempool");
+   * // wait to be mined
+   * const blockId = await transactionResponse.wait();
+   * console.log("Transaction mined")
+   * ```
    */
-  async sendTransaction(transaction: Transaction): Promise<unknown> {
-    return this.call("chain.submit_transaction", { transaction });
+  async sendTransaction(
+    transaction: TransactionJson
+  ): Promise<SendTransactionResponse> {
+    await this.call("chain.submit_transaction", { transaction });
+    const startTime = Date.now() + 10000;
+    return {
+      wait: async () => {
+        // sleep some seconds before it gets mined
+        await sleep(startTime - Date.now() - 1000);
+        for (let i = 0; i < 30; i += 1) {
+          await sleep(1000);
+          const { transactions } = await this.getTransactionsById([
+            transaction.id as string,
+          ]);
+          if (
+            transactions &&
+            transactions[0] &&
+            transactions[0].containing_blocks
+          )
+            return transactions[0].containing_blocks[0];
+        }
+        throw new Error(`Transaction not mined after 40 seconds`);
+      },
+    };
   }
 
   /**
    * Function to call "chain.read_contract" to read a contract.
-   * The operation must be encoded (see [[EncodedOperation]]).
-   * See also [[Wallet.readContract]] which, apart from the Provider,
-   * uses the contract definition and it is prepared to receive
-   * the operation decoded and return the result decoded as well.
-   * @param operation - Encoded operation
-   * @returns Encoded result
+   * This function is used by [[Contract]] class when read methods
+   * are invoked.
    */
-  async readContract(operation: EncodedOperation): Promise<{
+  async readContract(operation: CallContractOperationJson): Promise<{
     result: string;
     logs: string;
   }> {
-    return this.call("chain.read_contract", operation.value);
+    return this.call("chain.read_contract", operation);
   }
 }
 
