@@ -152,6 +152,50 @@ export function bitcoinAddress(publicKey: Uint8Array): string {
 }
 
 /**
+ * Function to format a number in a decimal point number
+ * @example
+ * ```js
+ * const amount = formatUnits("123456", 8);
+ * console.log(amount);
+ * // '0.00123456'
+ * ```
+ */
+export function formatUnits(
+  value: string | number | bigint,
+  decimals: number
+): string {
+  let v = typeof value === "string" ? value : BigInt(value).toString();
+  const sign = v[0] === "-" ? "-" : "";
+  v = v.replace("-", "").padStart(decimals + 1, "0");
+  const integerPart = v
+    .substring(0, v.length - decimals)
+    .replace(/^0+(?=\d)/, "");
+  const decimalPart = v.substring(v.length - decimals);
+  return `${sign}${integerPart}.${decimalPart}`.replace(/(\.0+)?(0+)$/, "");
+}
+
+/**
+ * Function to format a decimal point number in an integer
+ * @example
+ * ```js
+ * const amount = parseUnits("0.00123456", 8);
+ * console.log(amount);
+ * // '123456'
+ * ```
+ */
+export function parseUnits(value: string, decimals: number): string {
+  const sign = value[0] === "-" ? "-" : "";
+  // eslint-disable-next-line prefer-const
+  let [integerPart, decimalPart] = value
+    .replace("-", "")
+    .replace(",", ".")
+    .split(".");
+  if (!decimalPart) decimalPart = "";
+  decimalPart = decimalPart.padEnd(decimals, "0");
+  return `${sign}${`${integerPart}${decimalPart}`.replace(/^0+(?=\d)/, "")}`;
+}
+
+/**
  * ABI for tokens
  */
 export const Krc20Abi: Abi = {
