@@ -69,7 +69,7 @@ With Javascript import the library with require
 const { Signer, Contract, Provider, utils } = require("koilib");
 ```
 
-There are 4 principal classes:
+There are 3 principal classes:
 
 - **Signer**: Class containing the private key. It is used to sign.
 - **Provider**: Class to connect with the RPC node.
@@ -176,6 +176,28 @@ const abiToken = {
   types: tokenJson,
 };
 ```
+
+## FAQ
+
+1. Can this library be used to create smart contracts?
+   No. You need to install [koinos-cdt](https://github.com/koinos/koinos-cdt) for
+   this purpose.
+
+2. Can this library be used to deploy smart contracts?
+   Yes. If you already have the contract compiled as a .wasm file you can use
+   the Contract class to load the bytecode and deploy it.
+
+3. Can this library be used to create the ABI for any smart contract?
+   For the ABI you need the .proto file and the library
+   [protobufjs](https://www.npmjs.com/package/protobufjs). Then follow the format
+   for the ABI as described in the previous section. It's important to note that
+   this ABI is not the same ABI used in [koinos-cli](https://github.com/koinos/koinos-cli).
+   In particular, descriptors use different format (koilib using json format, cli
+   using binary format).
+
+4. Can this library be used to interact with smart contracts?
+   Yes. You can use it to call readOnly functions, or send transactions
+   to the contract by calling write functions.
 
 ## Documentation
 
