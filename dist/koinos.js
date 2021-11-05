@@ -11504,17 +11504,13 @@ BufferWriter._configure();
 /***/ }),
 
 /***/ 9822:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Contract = void 0;
 const light_1 = __webpack_require__(4492);
-const noble_ripemd160_1 = __importDefault(__webpack_require__(6389));
 const utils_1 = __webpack_require__(8593);
 const OP_BYTES = "(koinos_bytes_type)";
 /**
@@ -11533,128 +11529,70 @@ function copyValue(value) {
     return JSON.parse(JSON.stringify(value));
 }
 /**
- * The contract class contains the contract ID and contrac entries
+ * The contract class contains the contract ID and contract entries
  * definition needed to encode/decode operations during the
  * interaction with the user and the communication with the RPC node.
- *
- * Operations are encoded to communicate with the RPC node. However,
- * this format is not human readable as the data is serialized and
- * encoded in Base64 format. When decoding operations, they can be
- * read by the user (see [[EncodedOperation]] and [[DecodedOperation]]).
  *
  * @example
  *
  * ```ts
- * const contract = new Contract({
- *   id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
- *   entries: {
- *     transfer: {
- *       id: 0x62efa292,
- *       inputs: {
- *         type: [
- *           {
- *             name: "from",
- *             type: "string",
- *           },
- *           {
- *             name: "to",
- *             type: "string",
- *           },
- *           {
- *             name: "value",
- *             type: "uint64",
- *           },
- *         ],
- *       },
- *     },
- *     balance_of: {
- *       id: 0x15619248,
- *       inputs: { type: "string" },
- *       outputs: { type: "uint64" },
- *     },
- *   },
+ * const { Contract, Provider, Signer, utils } = require("koilib");
+ * const rpcNodes = ["http://api.koinos.io:8080"];
+ * const privateKeyHex = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
+ * const provider = new Provider(rpcNodes);
+ * const signer = new Signer(privateKeyHex, true, provider);
+ * const koinContract = new Contract({
+ *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+ *   abi: utils.Krc20Abi,
+ *   provider,
+ *   signer,
  * });
+ * const koin = koinContract.functions;
  *
- * const opEncoded = contract.encodeOperation({
- *   name: "transfer",
- *   args: {
- *     from: "alice",
- *     to: "bob",
- *     value: BigInt(1000),
- *   },
- * });
+ * async funtion main() {
+ *   // Get balance
+ *   const { result } = await koin.balanceOf({
+ *     owner: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD"
+ *   });
+ *   console.log(balance.result)
  *
- * console.log(opEncoded);
- * // {
- * //   type: "koinos::protocol::call_contract_operation",
- * //   value: {
- * //     contract_id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
- * //     entry_point: 0x62efa292,
- * //     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
- * //   }
- * // }
+ *   // Transfer
+ *   const { transaction, transactionResponse } = await koin.transfer({
+ *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+ *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+ *     value: "1000",
+ *   });
+ *   console.log(`Transaction id ${transaction.id} submitted`);
  *
- * const opDecoded = contract.decodeOperation(opEncoded);
- * console.log(opDecoded);
- * // {
- * //   name: "transfer",
- * //   args: {
- * //     from: "alice",
- * //     to: "bob",
- * //     value: 1000n,
- * //   },
- * // }
+ *   // wait to be mined
+ *   const blockId = await transactionResponse.wait();
+ *   console.log(`Transaction mined. Block id: ${blockId}`);
+ * }
  *
- * const resultDecoded = contract.decodeResult("MAAsZnAzyD0E=", "balance_of");
- * console.log(resultDecoded)
- * // 3124382766600001n
+ * main();
  * ```
  */
 class Contract {
-    /**
-     * The constructor receives the contract ID and
-     * contract entries definition
-     * @param c - Object with contract id and contract entries
-     *
-     * @example
-     * ```ts
-     * const contract = new Contract({
-     *   id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
-     *   entries: {
-     *     transfer: {
-     *       id: 0x62efa292,
-     *       inputs: "transfer_arguments",
-     *       outputs: "transfer_result",
-     *     },
-     *     balance_of: {
-     *       id: 0x62efa292,
-     *       inputs: "balance_of_arguments",
-     *       outputs: "balance_of_result",
-     *       readOnly: true,
-     *     },
-     *   },
-     *   protoDef: { ... }, // protobuffer definitions in json
-     * });
-     * ```
-     */
     constructor(c) {
-        var _a;
-        this.id = c.id;
+        var _a, _b;
+        if (c.id)
+            this.id = utils_1.decodeBase58(c.id);
         this.signer = c.signer;
-        this.provider = c.provider;
+        this.provider = c.provider || ((_a = c.signer) === null || _a === void 0 ? void 0 : _a.provider);
         this.abi = c.abi;
         this.bytecode = c.bytecode;
-        if ((_a = c.abi) === null || _a === void 0 ? void 0 : _a.types)
+        if ((_b = c.abi) === null || _b === void 0 ? void 0 : _b.types)
             this.protobuffers = light_1.Root.fromJSON(c.abi.types);
         this.options = {
-            resource_limit: 1e8,
-            send: true,
+            rcLimit: 1e8,
+            sendTransaction: true,
+            sendAbis: true,
             ...c.options,
         };
         this.functions = {};
         if (this.signer && this.provider && this.abi && this.abi.methods) {
             Object.keys(this.abi.methods).forEach((name) => {
-                this.functions[name] = async (args, options) => {
+                this.functions[name] = async (args = {}, options) => {
                     if (!this.provider)
                         throw new Error("provider not found");
                     if (!this.abi || !this.abi.methods)
@@ -11668,30 +11606,67 @@ class Contract {
                         if (!this.abi.methods[name].outputs)
                             throw new Error(`No outputs defined for ${name}`);
                         // read contract
-                        const { result: resultEncoded } = await this.provider.readContract(operation);
-                        const result = this.decodeType(resultEncoded, this.abi.methods[name].outputs);
+                        const { result: resultEncoded } = await this.provider.readContract({
+                            contractId: utils_1.encodeBase58(operation.callContract.contractId),
+                            entryPoint: operation.callContract.entryPoint,
+                            args: utils_1.encodeBase64(operation.callContract.args),
+                        });
+                        let result;
+                        if (resultEncoded) {
+                            result = this.decodeType(resultEncoded, this.abi.methods[name].outputs);
+                        }
                         return { operation, result };
                     }
                     // return operation if send is false
-                    if (!(opts === null || opts === void 0 ? void 0 : opts.send))
+                    if (!(opts === null || opts === void 0 ? void 0 : opts.sendTransaction))
                         return { operation };
                     // write contract (sign and send)
                     if (!this.signer)
                         throw new Error("signer not found");
-                    const transaction = await this.signer.populateTransaction({
+                    const transaction = await this.signer.encodeTransaction({
                         ...opts,
                         operations: [operation],
                     });
-                    const result = await this.signer.sendTransaction(transaction);
-                    return { operation, transaction, result };
+                    const abis = {};
+                    if (opts === null || opts === void 0 ? void 0 : opts.sendAbis) {
+                        const contractId = utils_1.encodeBase58(this.id);
+                        abis[contractId] = this.abi;
+                    }
+                    const transactionResponse = await this.signer.sendTransaction(transaction, abis);
+                    return { operation, transaction, transactionResponse };
                 };
             });
         }
     }
+    /**
+     * Compute contract Id
+     */
     static computeContractId(address) {
-        const signerHash = noble_ripemd160_1.default(address);
-        return utils_1.toUint8Array(signerHash);
+        return utils_1.decodeBase58(address);
     }
+    /**
+     * Get contract Id
+     */
+    getId() {
+        if (!this.id)
+            throw new Error("id is not defined");
+        return utils_1.encodeBase58(this.id);
+    }
+    /**
+     * Function to deploy a new smart contract.
+     * The Bytecode must be defined in the constructor of the class
+     * @example
+     * ```ts
+     * const signer = new Signer("f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200", true, provider);
+     * const provider = new Provider(["http://api.koinos.io:8080"]);
+     * const bytecode = new Uint8Array([1, 2, 3, 4]);
+     * const contract = new Contract({ signer, provider, bytecode });
+     * const { transactionResponse } = await contract.deploy();
+     * // wait to be mined
+     * const blockId = await transactionResponse.wait();
+     * console.log(`Contract uploaded in block id ${blockId}`);
+     * ```
+     */
     async deploy(options) {
         if (!this.signer)
             throw new Error("signer not found");
@@ -11702,26 +11677,21 @@ class Contract {
             ...options,
         };
         const operation = {
-            contract_id: Contract.computeContractId(this.signer.getAddress()),
-            bytecode: this.bytecode,
+            uploadContract: {
+                contractId: Contract.computeContractId(this.signer.getAddress()),
+                bytecode: this.bytecode,
+            },
         };
         // return operation if send is false
-        if (!(opts === null || opts === void 0 ? void 0 : opts.send))
+        if (!(opts === null || opts === void 0 ? void 0 : opts.sendTransaction))
             return { operation };
-        const transaction = await this.signer.populateTransaction({
+        const transaction = await this.signer.encodeTransaction({
             ...opts,
             operations: [operation],
         });
-        const result = await this.signer.sendTransaction(transaction);
-        return { operation, transaction, result };
+        const transactionResponse = await this.signer.sendTransaction(transaction);
+        return { operation, transaction, transactionResponse };
     }
-    // TODO: buildEstimate - function to estimate consumption of resources
-    // the contract uses
-    //   readonly signer: Signer;
-    //   readonly provider: Provider;
-    //   constructor(contractId or name, interface, signerOrProvider)
-    //     uses defineReadOnly(this, "signer", signerOrProvider) to set this readOnly var for first time
-    // connect() to set a different signer or provider
     /**
      * Encondes a contract operation using Koinos serialization
      * and taking the contract entries as reference to build it
@@ -11732,18 +11702,17 @@ class Contract {
      * const opEncoded = contract.encodeOperation({
      *   name: "transfer",
      *   args: {
-     *     from: "alice",
-     *     to: "bob",
-     *     value: 1000,
+     *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+     *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+     *     value: "1000",
      *   }
      * });
      *
      * console.log(opEncoded);
      * // {
-     * //   type: "koinos::protocol::call_contract_operation",
-     * //   value: {
-     * //     contract_id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
-     * //     entry_point: 0x62efa292,
+     * //   callContract: {
+     * //     contractId: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+     * //     entryPoint: 0x62efa292,
      * //     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
      * //   }
      * // }
@@ -11764,9 +11733,11 @@ class Contract {
             bufferInputs = this.encodeType(op.args, method.inputs);
         }
         return {
-            contract_id: utils_1.decodeBase58(this.id),
-            entry_point: method.entryPoint,
-            args: bufferInputs,
+            callContract: {
+                contractId: this.id,
+                entryPoint: method.entryPoint,
+                args: bufferInputs,
+            },
         };
     }
     /**
@@ -11774,10 +11745,9 @@ class Contract {
      * @example
      * ```ts
      * const opDecoded = contract.decodeOperation({
-     *   type: "koinos::protocol::call_contract_operation",
-     *   value: {
-     *     contract_id: "Mkw96mR+Hh71IWwJoT/2lJXBDl5Q=",
-     *     entry_point: 0x62efa292,
+     *   callContract: {
+     *     contractId: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+     *     entryPoint: 0x62efa292,
      *     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
      *   }
      * });
@@ -11785,9 +11755,9 @@ class Contract {
      * // {
      * //   name: "transfer",
      * //   args: {
-     * //     from: "alice",
-     * //     to: "bob",
-     * //     value: 1000n,
+     * //     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+     * //     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+     * //     value: "1000",
      * //   },
      * // }
      * ```
@@ -11797,23 +11767,28 @@ class Contract {
             throw new Error("Contract id is not defined");
         if (!this.abi || !this.abi.methods)
             throw new Error("Methods are not defined");
-        const contractId = utils_1.encodeBase58(op.contract_id);
-        if (contractId !== this.id)
-            throw new Error(`Invalid contract id. Expected: ${this.id}. Received: ${contractId}`);
+        if (!op.callContract)
+            throw new Error("Operation is not CallContractOperation");
+        if (op.callContract.contractId !== this.id)
+            throw new Error(`Invalid contract id. Expected: ${utils_1.encodeBase58(this.id)}. Received: ${utils_1.encodeBase58(op.callContract.contractId)}`);
         for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
             const opName = Object.keys(this.abi.methods)[i];
             const method = this.abi.methods[opName];
-            if (op.entry_point === method.entryPoint) {
+            if (op.callContract.entryPoint === method.entryPoint) {
                 if (!method.inputs)
                     return { name: opName };
                 return {
                     name: opName,
-                    args: this.decodeType(op.args, method.inputs),
+                    args: this.decodeType(op.callContract.args, method.inputs),
                 };
             }
         }
-        throw new Error(`Unknown method id ${op.entry_point}`);
+        throw new Error(`Unknown method id ${op.callContract.entryPoint}`);
     }
+    /**
+     * Function to encode a type using the protobuffer definitions
+     * It also prepares the bytes for special cases (base58, hex string)
+     */
     encodeType(valueDecoded, typeName) {
         if (!this.protobuffers)
             throw new Error("Protobuffers are not defined");
@@ -11855,6 +11830,10 @@ class Contract {
         const buffer = protobufType.encode(message).finish();
         return buffer;
     }
+    /**
+     * Function to decode bytes using the protobuffer definitions
+     * It also encodes the bytes for special cases (base58, hex string)
+     */
     decodeType(valueEncoded, typeName) {
         if (!this.protobuffers)
             throw new Error("Protobuffers are not defined");
@@ -11913,8 +11892,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Provider = void 0;
-const multibase_1 = __importDefault(__webpack_require__(6957));
 const axios_1 = __importDefault(__webpack_require__(9669));
+async function sleep(ms) {
+    return new Promise((r) => setTimeout(r, ms));
+}
 /**
  * Class to connect with the RPC node
  */
@@ -11992,16 +11973,37 @@ class Provider {
      * Function to call "chain.get_account_nonce" to return the number of
      * transactions for a particular account. This call is used
      * when creating new transactions.
-     * @param address - account address
+     * @param account - account address
      * @returns Nonce
      */
-    async getNonce(address) {
-        const bufferAddress = new TextEncoder().encode(address);
-        const encBase64 = new TextDecoder().decode(multibase_1.default.encode("M", bufferAddress));
-        const result = await this.call("chain.get_account_nonce", {
-            account: encBase64,
+    async getNonce(account) {
+        const { nonce } = await this.call("chain.get_account_nonce", { account });
+        if (!nonce)
+            return 0;
+        return Number(nonce);
+    }
+    async getAccountRc(account) {
+        const { rc } = await this.call("chain.get_account_rc", {
+            account,
         });
-        return Number(result.nonce);
+        if (!rc)
+            return "0";
+        return rc;
+    }
+    /**
+     * Get transactions by id and their corresponding block ids
+     */
+    async getTransactionsById(transactionIds) {
+        return this.call("transaction_store.get_transactions_by_id", {
+            transaction_ids: transactionIds,
+        });
+    }
+    async getBlocksById(blockIds) {
+        return this.call("block_store.get_blocks_by_id", {
+            block_id: blockIds,
+            return_block: true,
+            return_receipt: false,
+        });
     }
     /**
      * Function to get info from the head block in the blockchain
@@ -12039,21 +12041,48 @@ class Provider {
     }
     /**
      * Function to call "chain.submit_transaction" to send a signed
-     * transaction to the blockchain
+     * transaction to the blockchain. It returns an object with the async
+     * function "wait", which can be called to wait for the
+     * transaction to be mined.
      * @param transaction - Signed transaction
-     * @returns
+     * @example
+     * ```ts
+     * const { transactionResponse } = await provider.sendTransaction({
+     *   id: "1220...",
+     *   active: "...",
+     *   signatureData: "...",
+     * });
+     * console.log("Transaction submitted to the mempool");
+     * // wait to be mined
+     * const blockId = await transactionResponse.wait();
+     * console.log("Transaction mined")
+     * ```
      */
     async sendTransaction(transaction) {
-        return this.call("chain.submit_transaction", { transaction });
+        await this.call("chain.submit_transaction", { transaction });
+        const startTime = Date.now() + 10000;
+        return {
+            wait: async () => {
+                // sleep some seconds before it gets mined
+                await sleep(startTime - Date.now() - 1000);
+                for (let i = 0; i < 30; i += 1) {
+                    await sleep(1000);
+                    const { transactions } = await this.getTransactionsById([
+                        transaction.id,
+                    ]);
+                    if (transactions &&
+                        transactions[0] &&
+                        transactions[0].containing_blocks)
+                        return transactions[0].containing_blocks[0];
+                }
+                throw new Error(`Transaction not mined after 40 seconds`);
+            },
+        };
     }
     /**
      * Function to call "chain.read_contract" to read a contract.
-     * The operation must be encoded (see [[EncodedOperation]]).
-     * See also [[Wallet.readContract]] which, apart from the Provider,
-     * uses the contract definition and it is prepared to receive
-     * the operation decoded and return the result decoded as well.
-     * @param operation - Encoded operation
-     * @returns Encoded result
+     * This function is used by [[Contract]] class when read methods
+     * are invoked.
      */
     async readContract(operation) {
         return this.call("chain.read_contract", operation);
@@ -12070,7 +12099,6 @@ exports.default = Provider;
 
 "use strict";
 
-/* eslint-disable no-param-reassign */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
@@ -12095,6 +12123,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Signer = void 0;
+/* eslint-disable no-param-reassign */
 const js_sha256_1 = __webpack_require__(2023);
 const secp = __importStar(__webpack_require__(1795));
 const light_1 = __webpack_require__(4492);
@@ -12144,6 +12173,14 @@ const ActiveTxDataMsg = root.lookupType("active_transaction_data");
  * ```ts
  * var signer = Signer.fromWif("L59UtJcTdNBnrH2QSBA5beSUhRufRu3g6tScDTite6Msuj7U93tM");
  * ```
+ *
+ * <br>
+ *
+ * defining a provider
+ * ```ts
+ * var provider = new Provider(["https://example.com/jsonrpc"]);
+ * var signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c", true, provider);
+ * ```
  */
 class Signer {
     /**
@@ -12153,6 +12190,7 @@ class Signer {
      *
      * @param privateKey - Private key as hexstring, bigint or Uint8Array
      * @param compressed - compressed format is true by default
+     * @param provider - provider to connect with the blockchain
      * @example
      * ```ts
      * cons signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
@@ -12160,9 +12198,10 @@ class Signer {
      * // 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b
      * ```
      */
-    constructor(privateKey, compressed = true) {
+    constructor(privateKey, compressed = true, provider) {
         this.compressed = compressed;
         this.privateKey = privateKey;
+        this.provider = provider;
         if (typeof privateKey === "string") {
             this.publicKey = secp.getPublicKey(privateKey, this.compressed);
             this.address = utils_1.bitcoinAddress(utils_1.toUint8Array(this.publicKey));
@@ -12276,13 +12315,22 @@ class Signer {
         const rHex = r.toString(16).padStart(64, "0");
         const sHex = s.toString(16).padStart(64, "0");
         const recId = (recovery + 31).toString(16).padStart(2, "0");
-        tx.signature_data = utils_1.encodeBase64(utils_1.toUint8Array(recId + rHex + sHex));
+        tx.signatureData = utils_1.encodeBase64(utils_1.toUint8Array(recId + rHex + sHex));
         const multihash = `0x1220${hash}`; // 12: code sha2-256. 20: length (32 bytes)
         tx.id = multihash;
         return tx;
     }
-    async sendTransaction(tx) {
-        if (!tx.signature_data || !tx.id)
+    /**
+     * Function to sign and send a transaction. It internally uses
+     * [[Provider.sendTransaction]]
+     * @param tx - Transaction to send. It will be signed inside this function
+     * if it is not signed yet
+     * @param _abis - Collection of Abis to parse the operations in the
+     * transaction. This parameter is optional.
+     * @returns
+     */
+    async sendTransaction(tx, _abis) {
+        if (!tx.signatureData || !tx.id)
             await this.signTransaction(tx);
         if (!this.provider)
             throw new Error("provider is undefined");
@@ -12296,11 +12344,11 @@ class Signer {
      */
     static recoverPublicKey(tx, compressed = true) {
         if (!tx.active)
-            throw new Error("active_data is not defined");
-        if (!tx.signature_data)
-            throw new Error("signature_data is not defined");
+            throw new Error("activeData is not defined");
+        if (!tx.signatureData)
+            throw new Error("signatureData is not defined");
         const hash = js_sha256_1.sha256(utils_1.decodeBase64(tx.active));
-        const compactSignatureHex = utils_1.toHexString(utils_1.decodeBase64(tx.signature_data));
+        const compactSignatureHex = utils_1.toHexString(utils_1.decodeBase64(tx.signatureData));
         const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
         const rHex = compactSignatureHex.slice(2, 66);
         const sHex = compactSignatureHex.slice(66);
@@ -12325,31 +12373,44 @@ class Signer {
         return utils_1.bitcoinAddress(utils_1.toUint8Array(publicKey));
     }
     /**
-     * Creates an unsigned transaction
+     * Function to encode a transaction
+     * @param activeData - Active data consists of nonce, rcLimit, and
+     * operations. Do not set the nonce to get it from the blockchain
+     * using the provider. The rcLimit is 1000000 by default.
+     * @returns A transaction encoded. The active field is encoded in
+     * base64url
      */
-    async populateTransaction(opts) {
-        let nonce;
-        if (opts.nonce === undefined)
-            nonce = 0;
-        else {
+    async encodeTransaction(activeData) {
+        let { nonce } = activeData;
+        if (activeData.nonce === undefined) {
             if (!this.provider)
                 throw new Error("Cannot get the nonce because provider is undefined. To skip this call set a nonce in the parameters");
             // TODO: Option to resolve names
             // this depends on the final architecture for names on Koinos
             nonce = await this.provider.getNonce(this.getAddress());
         }
-        const resourceLimit = opts.resource_limit === undefined ? 1000000 : opts.resource_limit;
-        const operations = opts.operations ? opts.operations : [];
-        const activeData = {
-            rc_limit: resourceLimit,
+        const rcLimit = activeData.rcLimit === undefined ? 1000000 : activeData.rcLimit;
+        const operations = activeData.operations ? activeData.operations : [];
+        const activeData2 = {
+            rcLimit,
             nonce,
             operations,
         };
-        const message = ActiveTxDataMsg.create(activeData);
+        const message = ActiveTxDataMsg.create(activeData2);
         const buffer = ActiveTxDataMsg.encode(message).finish();
         return {
             active: utils_1.encodeBase64(buffer),
         };
+    }
+    /**
+     * Function to decode a transaction
+     */
+    static decodeTransaction(tx) {
+        if (!tx.active)
+            throw new Error("Active data is not defined");
+        const buffer = utils_1.decodeBase64(tx.active);
+        const message = ActiveTxDataMsg.decode(buffer);
+        return ActiveTxDataMsg.toObject(message, { longs: String });
     }
 }
 exports.Signer = Signer;
@@ -12467,14 +12528,14 @@ exports.decodeBase58 = decodeBase58;
  * Encodes an Uint8Array in base64
  */
 function encodeBase64(buffer) {
-    return new TextDecoder().decode(multibase.encode("M", buffer)).slice(1);
+    return new TextDecoder().decode(multibase.encode("U", buffer)).slice(1);
 }
 exports.encodeBase64 = encodeBase64;
 /**
  * Decodes a buffer formatted in base64
  */
 function decodeBase64(bs64) {
-    return multibase.decode(`M${bs64}`);
+    return multibase.decode(`U${bs64}`);
 }
 exports.decodeBase64 = decodeBase64;
 /**
@@ -12565,6 +12626,9 @@ function bitcoinAddress(publicKey) {
     return bitcoinEncode(hash160, "public");
 }
 exports.bitcoinAddress = bitcoinAddress;
+/**
+ * ABI for tokens
+ */
 exports.Krc20Abi = {
     methods: {
         name: {
@@ -12625,7 +12689,7 @@ exports.Krc20Abi = {
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested":{"token":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/contracts/token"},"nested":{"name_arguments":{"fields":{}},"name_result":{"fields":{"value":{"type":"string","id":1}}},"symbol_arguments":{"fields":{}},"symbol_result":{"fields":{"value":{"type":"string","id":1}}},"decimals_arguments":{"fields":{}},"decimals_result":{"fields":{"value":{"type":"uint32","id":1}}},"total_supply_arguments":{"fields":{}},"total_supply_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"balance_of_arguments":{"fields":{"owner":{"type":"bytes","id":1}}},"balance_of_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"transfer_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"BASE58"}},"to":{"type":"bytes","id":2,"options":{"(koinos_bytes_type)":"BASE58"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"transfer_result":{"fields":{"value":{"type":"bool","id":1}}},"mint_arguments":{"fields":{"to":{"type":"bytes","id":1},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_result":{"fields":{"value":{"type":"bool","id":1}}},"balance_object":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"mana_balance_object":{"fields":{"balance":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"mana":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"lastManaUpdate":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}}}}}}}}}}');
+module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested":{"token":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/contracts/token"},"nested":{"name_arguments":{"fields":{}},"name_result":{"fields":{"value":{"type":"string","id":1}}},"symbol_arguments":{"fields":{}},"symbol_result":{"fields":{"value":{"type":"string","id":1}}},"decimals_arguments":{"fields":{}},"decimals_result":{"fields":{"value":{"type":"uint32","id":1}}},"total_supply_arguments":{"fields":{}},"total_supply_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"balance_of_arguments":{"fields":{"owner":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"ADDRESS"}}}},"balance_of_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"transfer_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(koinos_bytes_type)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"transfer_result":{"fields":{"value":{"type":"bool","id":1}}},"mint_arguments":{"fields":{"to":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_result":{"fields":{"value":{"type":"bool","id":1}}},"balance_object":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"mana_balance_object":{"fields":{"balance":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"mana":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"lastManaUpdate":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}}}}}}}}}}');
 
 /***/ }),
 
@@ -12633,7 +12697,7 @@ module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"protocol":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/protocol"},"nested":{"contract_call_bundle":{"fields":{"contractId":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"BASE58"}},"entryPoint":{"type":"uint32","id":2}}},"system_call_target":{"oneofs":{"target":{"oneof":["thunkId","systemCallBundle"]}},"fields":{"thunkId":{"type":"uint32","id":1},"systemCallBundle":{"type":"contract_call_bundle","id":2}}},"upload_contract_operation":{"fields":{"contractId":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"BASE58"}},"bytecode":{"type":"bytes","id":2}}},"call_contract_operation":{"fields":{"contractId":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"BASE58"}},"entryPoint":{"type":"uint32","id":2},"args":{"type":"bytes","id":3}}},"set_system_call_operation":{"fields":{"callId":{"type":"uint32","id":1},"target":{"type":"system_call_target","id":2}}},"operation":{"oneofs":{"op":{"oneof":["uploadContract","callContract","setSystemCall"]}},"fields":{"uploadContract":{"type":"upload_contract_operation","id":1},"callContract":{"type":"call_contract_operation","id":2},"setSystemCall":{"type":"set_system_call_operation","id":3}}},"active_transaction_data":{"fields":{"rcLimit":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"nonce":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"operations":{"rule":"repeated","type":"operation","id":3}}},"passive_transaction_data":{"fields":{}},"transaction":{"fields":{"id":{"type":"bytes","id":1},"active":{"type":"bytes","id":2},"passive":{"type":"bytes","id":3},"signatureData":{"type":"bytes","id":4}}},"active_block_data":{"fields":{"transactionMerkleRoot":{"type":"bytes","id":1},"passiveDataMerkleRoot":{"type":"bytes","id":2},"signer":{"type":"bytes","id":3}}},"passive_block_data":{"fields":{}},"block_header":{"fields":{"previous":{"type":"bytes","id":1},"height":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"timestamp":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"block":{"fields":{"id":{"type":"bytes","id":1},"header":{"type":"block_header","id":2},"active":{"type":"bytes","id":3},"passive":{"type":"bytes","id":4},"signatureData":{"type":"bytes","id":5},"transactions":{"rule":"repeated","type":"transaction","id":6}}},"block_receipt":{"fields":{}}}}}}}}');
+module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"protocol":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/protocol"},"nested":{"contract_call_bundle":{"fields":{"contractId":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"CONTRACT_ID"}},"entryPoint":{"type":"uint32","id":2}}},"system_call_target":{"oneofs":{"target":{"oneof":["thunkId","systemCallBundle"]}},"fields":{"thunkId":{"type":"uint32","id":1},"systemCallBundle":{"type":"contract_call_bundle","id":2}}},"upload_contract_operation":{"fields":{"contractId":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"CONTRACT_ID"}},"bytecode":{"type":"bytes","id":2}}},"call_contract_operation":{"fields":{"contractId":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"CONTRACT_ID"}},"entryPoint":{"type":"uint32","id":2},"args":{"type":"bytes","id":3}}},"set_system_call_operation":{"fields":{"callId":{"type":"uint32","id":1},"target":{"type":"system_call_target","id":2}}},"operation":{"oneofs":{"op":{"oneof":["uploadContract","callContract","setSystemCall"]}},"fields":{"uploadContract":{"type":"upload_contract_operation","id":1},"callContract":{"type":"call_contract_operation","id":2},"setSystemCall":{"type":"set_system_call_operation","id":3}}},"active_transaction_data":{"fields":{"rcLimit":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"nonce":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"operations":{"rule":"repeated","type":"operation","id":3}}},"passive_transaction_data":{"fields":{}},"transaction":{"fields":{"id":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"TRANSACTION_ID"}},"active":{"type":"bytes","id":2},"passive":{"type":"bytes","id":3},"signatureData":{"type":"bytes","id":4}}},"active_block_data":{"fields":{"transactionMerkleRoot":{"type":"bytes","id":1},"passiveDataMerkleRoot":{"type":"bytes","id":2},"signer":{"type":"bytes","id":3}}},"passive_block_data":{"fields":{}},"block_header":{"fields":{"previous":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"BLOCK_ID"}},"height":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"timestamp":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"block":{"fields":{"id":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"BLOCK_ID"}},"header":{"type":"block_header","id":2},"active":{"type":"bytes","id":3},"passive":{"type":"bytes","id":4},"signatureData":{"type":"bytes","id":5},"transactions":{"rule":"repeated","type":"transaction","id":6}}},"block_receipt":{"fields":{}}}}}}}}');
 
 /***/ })
 
