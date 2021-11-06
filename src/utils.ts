@@ -229,6 +229,7 @@ export const Krc20Abi: Abi = {
       inputs: "balance_of_arguments",
       outputs: "balance_of_result",
       readOnly: true,
+      defaultOutput: { value: "0" },
     },
     transfer: {
       entryPoint: 0x62efa292,

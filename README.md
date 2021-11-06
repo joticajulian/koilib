@@ -161,6 +161,7 @@ const abiToken = {
       inputs: "balance_of_arguments",
       outputs: "balance_of_result",
       readOnly: true,
+      defaultOutput: { value: "0" },
     },
     transfer: {
       entryPoint: 0x62efa292,
@@ -176,6 +177,12 @@ const abiToken = {
   types: tokenJson,
 };
 ```
+
+Note that this example uses "defaultOutput" for the method
+"balanceOf". This is used when the smart contract returns an
+empty response (for instance when there are no balance records
+for a specific address) and you require a default output in
+such cases.
 
 ## FAQ
 
