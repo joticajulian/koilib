@@ -5,5 +5,114 @@
     <title>Koinos Library</title>
     <script src="koinos.js"></script>
   </head>
-  <body></body>
+  <body>
+    // define signer, provider, and contract
+let errors = 0;
+const provider = new Provider(["http://localhost:8080/jsonrpc"]);
+provider.onError = () => {
+  errors += 1;
+  return errors > 10;
+};
+const signer = Signer.fromWif(
+  "5HzP7VXcKyzqQu2h42uENEjQMDfNuUk6jLQ57t8rfwNadtxzyqZ"
+);
+signer.provider = provider;
+const koinContract = new Contract({
+  id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+  abi: utils.Krc20Abi,
+  provider,
+  signer,
+});
+const koin = koinContract.functions;
+const myAddress = signer.getAddress();
+const receiver = "1BqtgWBcqm9cSZ97avLGZGJdgso7wx6pCA";
+let resBalance, resBalance2, resBalance3, resBalance4;
+let resMana, resMana2;
+let resTransfer;
+let blockId, resTx, resBlocks;
+
+(async () => {
+  // read the balance of sender
+  resBalance = await koin.balanceOf({
+    owner: myAddress,
+  });
+  console.log(resBalance);
+  console.log(
+    `Balance of ${myAddress} is ${utils.formatUnits(
+      resBalance.result.value,
+      8
+    )} tKoin`
+  );
+
+  // read the balance of receiver
+  resBalance2 = await koin.balanceOf({
+    owner: receiver,
+  });
+  console.log(resBalance2);
+  console.log(
+    `Balance of ${receiver} is ${utils.formatUnits(
+      resBalance2.result.value,
+      8
+    )} tKoin`
+  );
+
+  // get mana
+  resMana = await provider.getAccountRc(myAddress);
+  console.log(`Current mana of ${myAddress} is ${resMana}`);
+
+  // transfer tKoin
+  resTransfer = await koin.transfer({
+    from: myAddress,
+    to: receiver,
+    value: utils.parseUnits("0.00000001", 8),
+  });
+  console.log(resTransfer);
+  console.log(
+    `Transfer submitted to the mempool. Transaction Id: ${resTransfer.transaction.id}`
+  );
+  console.log("Now waiting to be mined...");
+
+  // waiting to be mined
+  blockId = await resTransfer.transactionResponse.wait();
+  console.log(`Transaction mined in blockId ${blockId}`);
+
+  // the wait() function in the previous step is periodically
+  // consulting the transaction by its id
+  resTx = await provider.getTransactionsById([resTransfer.transaction.id]);
+  console.log(resTx);
+
+  // get block with the transaction
+  resBlocks = await provider.getBlocksById([blockId]);
+  console.log(resBlocks);
+
+  // get new mana
+  resMana2 = await provider.getAccountRc(myAddress);
+  console.log(`New mana of ${myAddress} is ${resMana2}`);
+
+  // check new balance of sender
+  resBalance3 = await koin.balanceOf({
+    owner: myAddress,
+  });
+  console.log(resBalance3);
+  console.log(
+    `New balance of ${myAddress} is ${utils.formatUnits(
+      resBalance3.result.value,
+      8
+    )} tKoin`
+  );
+
+  // check new balance of receiver
+  resBalance4 = await koin.balanceOf({
+    owner: receiver,
+  });
+  console.log(resBalance4);
+  console.log(
+    `Balance of ${receiver} is ${utils.formatUnits(
+      resBalance4.result.value,
+      8
+    )} tKoin`
+  );
+})();
+
+  </body>
 </html>
