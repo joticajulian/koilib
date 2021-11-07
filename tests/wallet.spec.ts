@@ -9,13 +9,15 @@ import {
   encodeBase64,
   toHexString,
   Krc20Abi,
+  formatUnits,
+  parseUnits,
 } from "../src/utils";
 import {
   CallContractOperationNested,
   SetSystemCallOperationNested,
   UploadContractOperationNested,
   TransactionJson,
-} from "../src";
+} from "../src/interface";
 
 const mockAxiosGet = jest.spyOn(axios, "get");
 const mockAxiosPost = jest.spyOn(axios, "post");
@@ -83,6 +85,64 @@ const koinContract = new Contract({
   signer,
 });
 const koin = koinContract.functions;
+
+describe("utils", () => {
+  it.each([
+    // positive numbers
+    ["1", 8, "0.00000001"],
+    ["123456", 8, "0.00123456"],
+    ["12345678", 8, "0.12345678"],
+    ["123456789", 8, "1.23456789"],
+    ["0123456789", 8, "1.23456789"],
+    ["20123456789", 8, "201.23456789"],
+    ["0", 8, "0"],
+    ["1200000000", 8, "12"],
+    ["1230000000", 8, "12.3"],
+    // negative numbers
+    ["-1", 8, "-0.00000001"],
+    ["-123456", 8, "-0.00123456"],
+    ["-12345678", 8, "-0.12345678"],
+    ["-123456789", 8, "-1.23456789"],
+    ["-0123456789", 8, "-1.23456789"],
+    ["-20123456789", 8, "-201.23456789"],
+    ["-0", 8, "-0"],
+    ["-1200000000", 8, "-12"],
+    ["-1230000000", 8, "-12.3"],
+  ])(
+    "should format numbers from integer to decimal point",
+    (v, d, expected) => {
+      expect(formatUnits(v, d)).toBe(expected);
+    }
+  );
+
+  it.each([
+    // positive numbers
+    ["0.00000001", 8, "1"],
+    ["0.00123456", 8, "123456"],
+    ["0.12345678", 8, "12345678"],
+    ["1.23456789", 8, "123456789"],
+    ["01.23456789", 8, "123456789"],
+    ["201.23456789", 8, "20123456789"],
+    ["0", 8, "0"],
+    ["12", 8, "1200000000"],
+    ["12.3", 8, "1230000000"],
+    // negative numbers
+    ["-0.00000001", 8, "-1"],
+    ["-0.00123456", 8, "-123456"],
+    ["-0.12345678", 8, "-12345678"],
+    ["-1.23456789", 8, "-123456789"],
+    ["-01.23456789", 8, "-123456789"],
+    ["-201.23456789", 8, "-20123456789"],
+    ["-0", 8, "-0"],
+    ["-12", 8, "-1200000000"],
+    ["-12.3", 8, "-1230000000"],
+  ])(
+    "should format numbers from decimal point to integer",
+    (v, d, expected) => {
+      expect(parseUnits(v, d)).toBe(expected);
+    }
+  );
+});
 
 describe("Signer", () => {
   it("should get private key", () => {

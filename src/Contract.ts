@@ -53,6 +53,7 @@ const OP_BYTES = "(koinos_bytes_type)";
  *       inputs: "balance_of_arguments",
  *       outputs: "balance_of_result",
  *       readOnly: true,
+ *       defaultOutput: { value: "0" },
  *     },
  *     transfer: {
  *       entryPoint: 0x62efa292,
@@ -68,6 +69,12 @@ const OP_BYTES = "(koinos_bytes_type)";
  *   types: tokenJson,
  * };
  * ```
+ *
+ * Note that this example uses "defaultOutput" for the method
+ * "balanceOf". This is used when the smart contract returns an
+ * empty response (for instance when there are no balance records
+ * for a specific address) and you require a default output in
+ * such cases.
  */
 export interface Abi {
   methods: {
@@ -84,6 +91,8 @@ export interface Abi {
        * (query the contract)
        */
       readOnly?: boolean;
+      /** Default value when the output is undefined */
+      defaultOutput?: unknown;
       /** Description of the method */
       description?: string;
     };
@@ -292,7 +301,7 @@ export class Contract {
               entryPoint: operation.callContract.entryPoint,
               args: encodeBase64(operation.callContract.args),
             });
-            let result: T | undefined;
+            let result = this.abi.methods[name].defaultOutput as T;
             if (resultEncoded) {
               result = this.decodeType<T>(
                 resultEncoded,

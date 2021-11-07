@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
 import crypto from "crypto";
 import * as dotenv from "dotenv";
-import { Signer, Provider, Contract, utils, BlockJson } from "../src";
+import { Signer, Provider, Contract, utils } from "../src";
+import { BlockJson } from "../src/interface";
 
 dotenv.config();
 
@@ -109,7 +110,7 @@ describe("Contract", () => {
     const { result: resultBalance2 } = await koin.balanceOf({
       owner: signer2.getAddress(),
     });
-    expect(resultBalance2).toBeUndefined();
+    expect(resultBalance2).toStrictEqual({ value: "0" });
   });
 
   it("should transfer and get receipt", async () => {
