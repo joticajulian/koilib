@@ -11611,7 +11611,7 @@ class Contract {
                             entryPoint: operation.callContract.entryPoint,
                             args: utils_1.encodeBase64(operation.callContract.args),
                         });
-                        let result;
+                        let result = this.abi.methods[name].defaultOutput;
                         if (resultEncoded) {
                             result = this.decodeType(resultEncoded, this.abi.methods[name].outputs);
                         }
@@ -12485,7 +12485,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Krc20Abi = exports.bitcoinAddress = exports.bitcoinDecode = exports.copyUint8Array = exports.bitcoinEncode = exports.decodeBase64 = exports.encodeBase64 = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
+exports.Krc20Abi = exports.parseUnits = exports.formatUnits = exports.bitcoinAddress = exports.bitcoinDecode = exports.copyUint8Array = exports.bitcoinEncode = exports.decodeBase64 = exports.encodeBase64 = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
 const multibase = __importStar(__webpack_require__(6957));
 const js_sha256_1 = __webpack_require__(2023);
 const noble_ripemd160_1 = __importDefault(__webpack_require__(6389));
@@ -12627,6 +12627,48 @@ function bitcoinAddress(publicKey) {
 }
 exports.bitcoinAddress = bitcoinAddress;
 /**
+ * Function to format a number in a decimal point number
+ * @example
+ * ```js
+ * const amount = formatUnits("123456", 8);
+ * console.log(amount);
+ * // '0.00123456'
+ * ```
+ */
+function formatUnits(value, decimals) {
+    let v = typeof value === "string" ? value : BigInt(value).toString();
+    const sign = v[0] === "-" ? "-" : "";
+    v = v.replace("-", "").padStart(decimals + 1, "0");
+    const integerPart = v
+        .substring(0, v.length - decimals)
+        .replace(/^0+(?=\d)/, "");
+    const decimalPart = v.substring(v.length - decimals);
+    return `${sign}${integerPart}.${decimalPart}`.replace(/(\.0+)?(0+)$/, "");
+}
+exports.formatUnits = formatUnits;
+/**
+ * Function to format a decimal point number in an integer
+ * @example
+ * ```js
+ * const amount = parseUnits("0.00123456", 8);
+ * console.log(amount);
+ * // '123456'
+ * ```
+ */
+function parseUnits(value, decimals) {
+    const sign = value[0] === "-" ? "-" : "";
+    // eslint-disable-next-line prefer-const
+    let [integerPart, decimalPart] = value
+        .replace("-", "")
+        .replace(",", ".")
+        .split(".");
+    if (!decimalPart)
+        decimalPart = "";
+    decimalPart = decimalPart.padEnd(decimals, "0");
+    return `${sign}${`${integerPart}${decimalPart}`.replace(/^0+(?=\d)/, "")}`;
+}
+exports.parseUnits = parseUnits;
+/**
  * ABI for tokens
  */
 exports.Krc20Abi = {
@@ -12660,6 +12702,7 @@ exports.Krc20Abi = {
             inputs: "balance_of_arguments",
             outputs: "balance_of_result",
             readOnly: true,
+            defaultOutput: { value: "0" },
         },
         transfer: {
             entryPoint: 0x62efa292,
