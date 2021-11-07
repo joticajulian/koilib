@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Abi | koilib - v2.0.0</title>
-	<meta name="description" content="Documentation for koilib - v2.0.0">
+	<title>Abi | koilib - v2.1.0</title>
+	<meta name="description" content="Documentation for koilib - v2.1.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">koilib - v2.0.0</a>
+					<a href="../index.html" class="title">koilib - v2.1.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">koilib - v2.0.0</a>
+					<a href="../modules.html">koilib - v2.1.0</a>
 				</li>
 				<li>
 					<a href="Abi.html">Abi</a>
@@ -100,6 +100,7 @@
 <span style="color: #000000">      </span><span style="color: #001080">inputs:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;balance_of_arguments&quot;</span><span style="color: #000000">,</span>
 <span style="color: #000000">      </span><span style="color: #001080">outputs:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;balance_of_result&quot;</span><span style="color: #000000">,</span>
 <span style="color: #000000">      </span><span style="color: #001080">readOnly:</span><span style="color: #000000"> </span><span style="color: #0000FF">true</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">defaultOutput:</span><span style="color: #000000"> { </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;0&quot;</span><span style="color: #000000"> },</span>
 <span style="color: #000000">    },</span>
 <span style="color: #000000">    </span><span style="color: #001080">transfer:</span><span style="color: #000000"> {</span>
 <span style="color: #000000">      </span><span style="color: #001080">entryPoint:</span><span style="color: #000000"> </span><span style="color: #098658">0x62efa292</span><span style="color: #000000">,</span>
@@ -115,6 +116,11 @@
 <span style="color: #000000">  </span><span style="color: #001080">types:</span><span style="color: #000000"> </span><span style="color: #001080">tokenJson</span><span style="color: #000000">,</span>
 <span style="color: #000000">};</span>
 </code></pre>
+					<p>Note that this example uses &quot;defaultOutput&quot; for the method
+						&quot;balanceOf&quot;. This is used when the smart contract returns an
+						empty response (for instance when there are no balance records
+						for a specific address) and you require a default output in
+					such cases.</p>
 				</div>
 			</section>
 			<section class="tsd-panel tsd-hierarchy">
@@ -147,20 +153,28 @@
 					<div class="tsd-signature tsd-kind-icon">methods<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/3945cb5/src/Contract.ts#L73">Contract.ts:73</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/38f2cb8/src/Contract.ts#L80">Contract.ts:80</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
 						<h4>Type declaration</h4>
 						<ul class="tsd-parameters">
 							<li class="tsd-parameter-index-signature">
-								<h5><span class="tsd-signature-symbol">[</span>x: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-symbol">{ </span>description<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>entryPoint<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>inputs<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>outputs<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>readOnly<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> }</span></h5>
+								<h5><span class="tsd-signature-symbol">[</span>x: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-symbol">{ </span>defaultOutput<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">; </span>description<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>entryPoint<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>inputs<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>outputs<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>readOnly<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> }</span></h5>
 								<div class="tsd-comment tsd-typography">
 									<div class="lead">
 										<p>Name of the method</p>
 									</div>
 								</div>
 								<ul class="tsd-parameters">
+									<li class="tsd-parameter">
+										<h5><span class="tsd-flag ts-flagOptional">Optional</span> default<wbr>Output<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">unknown</span></h5>
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>Default value when the output is undefined</p>
+											</div>
+										</div>
+									</li>
 									<li class="tsd-parameter">
 										<h5><span class="tsd-flag ts-flagOptional">Optional</span> description<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
 										<div class="tsd-comment tsd-typography">
@@ -214,7 +228,7 @@
 					<div class="tsd-signature tsd-kind-icon">types<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">INamespace</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/3945cb5/src/Contract.ts#L95">Contract.ts:95</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/38f2cb8/src/Contract.ts#L104">Contract.ts:104</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
