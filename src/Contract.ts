@@ -83,9 +83,9 @@ export interface Abi {
       /** Entry point ID */
       entryPoint: number;
       /** Protobuffer type for input */
-      inputs?: string;
+      input?: string;
       /** Protobuffer type for output */
-      outputs?: string;
+      output?: string;
       /** Boolean to differentiate write methods
        * (using transactions) from read methods
        * (query the contract)
@@ -93,6 +93,10 @@ export interface Abi {
       readOnly?: boolean;
       /** Default value when the output is undefined */
       defaultOutput?: unknown;
+      /** Optional function to preformat the input */
+      preformatInput?: (input: unknown) => Record<string, unknown>;
+      /** Optional function to preformat the output */
+      preformatOutput?: (output: Record<string, unknown>) => unknown;
       /** Description of the method */
       description?: string;
     };
@@ -212,7 +216,7 @@ export class Contract {
    */
   functions: {
     [x: string]: <T = Record<string, unknown>>(
-      args?: Record<string, unknown>,
+      args?: unknown,
       opts?: TransactionOptions
     ) => Promise<{
       operation: CallContractOperationNested;
@@ -274,7 +278,7 @@ export class Contract {
     if (this.signer && this.provider && this.abi && this.abi.methods) {
       Object.keys(this.abi.methods).forEach((name) => {
         this.functions[name] = async <T = Record<string, unknown>>(
-          args: Record<string, unknown> = {},
+          argu: unknown = {},
           options?: TransactionOptions
         ): Promise<{
           operation: CallContractOperationNested;
@@ -285,28 +289,43 @@ export class Contract {
           if (!this.provider) throw new Error("provider not found");
           if (!this.abi || !this.abi.methods)
             throw new Error("Methods are not defined");
+          if (!this.abi.methods[name])
+            throw new Error(`Method ${name} not defined in the ABI`);
           const opts = {
             ...this.options,
             ...options,
           };
 
+          const {
+            readOnly,
+            output,
+            defaultOutput,
+            preformatInput,
+            preformatOutput,
+          } = this.abi.methods[name];
+          let args: Record<string, unknown>;
+          if (typeof preformatInput === "function") {
+            args = preformatInput(argu);
+          } else {
+            args = argu as Record<string, unknown>;
+          }
+
           const operation = this.encodeOperation({ name, args });
 
-          if (this.abi.methods[name].readOnly) {
-            if (!this.abi.methods[name].outputs)
-              throw new Error(`No outputs defined for ${name}`);
+          if (readOnly) {
+            if (!output) throw new Error(`No output defined for ${name}`);
             // read contract
             const { result: resultEncoded } = await this.provider.readContract({
               contractId: encodeBase58(operation.callContract.contractId),
               entryPoint: operation.callContract.entryPoint,
               args: encodeBase64(operation.callContract.args),
             });
-            let result = this.abi.methods[name].defaultOutput as T;
+            let result = defaultOutput as T;
             if (resultEncoded) {
-              result = this.decodeType<T>(
-                resultEncoded,
-                this.abi.methods[name].outputs as string
-              );
+              result = this.decodeType<T>(resultEncoded, output as string);
+            }
+            if (typeof preformatOutput === "function") {
+              result = preformatOutput(result as Record<string, unknown>) as T;
             }
             return { operation, result };
           }
@@ -429,10 +448,10 @@ export class Contract {
     const method = this.abi.methods[op.name];
 
     let bufferInputs = new Uint8Array(0);
-    if (method.inputs) {
+    if (method.input) {
       if (!op.args)
-        throw new Error(`No arguments defined for type '${method.inputs}'`);
-      bufferInputs = this.encodeType(op.args, method.inputs);
+        throw new Error(`No arguments defined for type '${method.input}'`);
+      bufferInputs = this.encodeType(op.args, method.input);
     }
 
     return {
@@ -482,10 +501,10 @@ export class Contract {
       const opName = Object.keys(this.abi.methods)[i];
       const method = this.abi.methods[opName];
       if (op.callContract.entryPoint === method.entryPoint) {
-        if (!method.inputs) return { name: opName };
+        if (!method.input) return { name: opName };
         return {
           name: opName,
-          args: this.decodeType(op.callContract.args, method.inputs),
+          args: this.decodeType(op.callContract.args, method.input),
         };
       }
     }

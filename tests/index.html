@@ -42,7 +42,7 @@
 // define signer, provider, and contract
 const provider = new Provider([
   "http://api.koinos.io:8080",
-  "http://localhost:8080/jsonrpc",
+  "/jsonrpc",
 ]);
 errors=0;
 provider.onError = () => { errors++; return errors > 10; }
@@ -57,22 +57,32 @@ const koinContract = new Contract({
 const koin = koinContract.functions;
 const myAddress = signer.getAddress();
 const receiver = "1BqtgWBcqm9cSZ97avLGZGJdgso7wx6pCA";
+
+// optional: preformat input/output
+koinContract.abi.methods.balanceOf.preformatInput = (owner) =>
+  ({ owner });
+koinContract.abi.methods.balanceOf.preformatOutput = (res) =>
+  utils.formatUnits(res.value, 8);
+koinContract.abi.methods.transfer.preformatInput = (input) => ({
+  from: myAddress,
+  to: input.to,
+  value: utils.parseUnits(input.value, 8),
+});
+
 let resBalance1, resBalance2, resBalance3, resBalance4;
 let resMana1, resMana2, resTransfer;
 let blockId, resTx, resBlocks;
 
 (async () => {
   // read the balance of sender
-  resBalance1 = await koin.balanceOf({ owner: myAddress });
-  console.log(resBalance1);
-  bal1 = utils.formatUnits(resBalance1.result.value, 8);
-  console.log(`Balance of ${myAddress} is ${bal1} tKoin`);
+  bal1 = await koin.balanceOf(myAddress);
+  console.log(bal1);
+  console.log(`Balance of ${myAddress} is ${bal1.result} tKoin`);
 
   // read the balance of receiver
-  resBalance2 = await koin.balanceOf({ owner: receiver });
-  console.log(resBalance2);
-  bal2 = utils.formatUnits(resBalance2.result.value, 8);
-  console.log(`Balance of ${receiver} is ${bal2} tKoin`);
+  bal2 = await koin.balanceOf(receiver);
+  console.log(bal2);
+  console.log(`Balance of ${receiver} is ${bal2.result} tKoin`);
 
   // get mana
   resMana1 = await provider.getAccountRc(myAddress);
@@ -80,9 +90,8 @@ let blockId, resTx, resBlocks;
 
   // transfer tKoin
   resTransfer = await koin.transfer({
-    from: myAddress,
     to: receiver,
-    value: utils.parseUnits("0.00000001", 8),
+    value: "0.00000001",
   });
   console.log(resTransfer);
   txId = resTransfer.transaction.id;
@@ -110,16 +119,14 @@ let blockId, resTx, resBlocks;
   console.log(`New mana of ${myAddress} is ${resMana2}`);
 
   // check new balance of sender
-  resBalance3 = await koin.balanceOf({ owner: myAddress });
-  console.log(resBalance3);
-  bal3 = utils.formatUnits(resBalance3.result.value, 8);
-  console.log(`New balance of ${myAddress} is ${bal3} tKoin`);
+  bal3 = await koin.balanceOf(myAddress);
+  console.log(bal3);
+  console.log(`New balance of ${myAddress} is ${bal3.result} tKoin`);
 
   // check new balance of receiver
-  resBalance4 = await koin.balanceOf({ owner: receiver });
-  console.log(resBalance4);
-  bal4 = utils.formatUnits(resBalance4.result.value, 8);
-  console.log(`New balance of ${receiver} is ${bal4} tKoin`);
+  bal4 = await koin.balanceOf(receiver);
+  console.log(bal4);
+  console.log(`New balance of ${receiver} is ${bal4.result} tKoin`);
 })();</code>
         </pre>
       </div>
