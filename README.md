@@ -212,7 +212,7 @@ such cases.
 
 ## Documentation
 
-The complete documentation can be found at http://167.99.245.198:8081
+The complete documentation can be found at https://joticajulian.github.io/koilib/
 
 ## License
 

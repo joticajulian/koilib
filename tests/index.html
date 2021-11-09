@@ -10,7 +10,7 @@
   <body>
     <script src="assets-index/prism.js"></script>
     <div class="container">
-      <h1>Koilib - v2.1.0</h1>
+      <h1>Koilib - v2.2.0</h1>
       <h3>Koinos Library for Javascript and Typescript</h3>
       <h3><a href="http://koinos.io">koinos.io</a></h3>
 
@@ -40,10 +40,7 @@
  */
 
 // define signer, provider, and contract
-const provider = new Provider([
-  "http://api.koinos.io:8080",
-  "/jsonrpc",
-]);
+const provider = new Provider(["https://api.koinos.io:8080"]);
 errors=0;
 provider.onError = () => { errors++; return errors > 10; }
 const privKeyWif = "5HzP7VXcKyzqQu2h42uENEjQMDfNuUk6jLQ57t8rfwNadtxzyqZ";

@@ -11592,28 +11592,41 @@ class Contract {
         this.functions = {};
         if (this.signer && this.provider && this.abi && this.abi.methods) {
             Object.keys(this.abi.methods).forEach((name) => {
-                this.functions[name] = async (args = {}, options) => {
+                this.functions[name] = async (argu = {}, options) => {
                     if (!this.provider)
                         throw new Error("provider not found");
                     if (!this.abi || !this.abi.methods)
                         throw new Error("Methods are not defined");
+                    if (!this.abi.methods[name])
+                        throw new Error(`Method ${name} not defined in the ABI`);
                     const opts = {
                         ...this.options,
                         ...options,
                     };
+                    const { readOnly, output, defaultOutput, preformatInput, preformatOutput, } = this.abi.methods[name];
+                    let args;
+                    if (typeof preformatInput === "function") {
+                        args = preformatInput(argu);
+                    }
+                    else {
+                        args = argu;
+                    }
                     const operation = this.encodeOperation({ name, args });
-                    if (this.abi.methods[name].readOnly) {
-                        if (!this.abi.methods[name].outputs)
-                            throw new Error(`No outputs defined for ${name}`);
+                    if (readOnly) {
+                        if (!output)
+                            throw new Error(`No output defined for ${name}`);
                         // read contract
                         const { result: resultEncoded } = await this.provider.readContract({
                             contractId: utils_1.encodeBase58(operation.callContract.contractId),
                             entryPoint: operation.callContract.entryPoint,
                             args: utils_1.encodeBase64(operation.callContract.args),
                         });
-                        let result = this.abi.methods[name].defaultOutput;
+                        let result = defaultOutput;
                         if (resultEncoded) {
-                            result = this.decodeType(resultEncoded, this.abi.methods[name].outputs);
+                            result = this.decodeType(resultEncoded, output);
+                        }
+                        if (typeof preformatOutput === "function") {
+                            result = preformatOutput(result);
                         }
                         return { operation, result };
                     }
@@ -11727,10 +11740,10 @@ class Contract {
             throw new Error("Contract id is not defined");
         const method = this.abi.methods[op.name];
         let bufferInputs = new Uint8Array(0);
-        if (method.inputs) {
+        if (method.input) {
             if (!op.args)
-                throw new Error(`No arguments defined for type '${method.inputs}'`);
-            bufferInputs = this.encodeType(op.args, method.inputs);
+                throw new Error(`No arguments defined for type '${method.input}'`);
+            bufferInputs = this.encodeType(op.args, method.input);
         }
         return {
             callContract: {
@@ -11775,11 +11788,11 @@ class Contract {
             const opName = Object.keys(this.abi.methods)[i];
             const method = this.abi.methods[opName];
             if (op.callContract.entryPoint === method.entryPoint) {
-                if (!method.inputs)
+                if (!method.input)
                     return { name: opName };
                 return {
                     name: opName,
-                    args: this.decodeType(op.callContract.args, method.inputs),
+                    args: this.decodeType(op.callContract.args, method.input),
                 };
             }
         }
@@ -12675,44 +12688,44 @@ exports.Krc20Abi = {
     methods: {
         name: {
             entryPoint: 0x76ea4297,
-            inputs: "name_arguments",
-            outputs: "name_result",
+            input: "name_arguments",
+            output: "name_result",
             readOnly: true,
         },
         symbol: {
             entryPoint: 0x7e794b24,
-            inputs: "symbol_arguments",
-            outputs: "symbol_result",
+            input: "symbol_arguments",
+            output: "symbol_result",
             readOnly: true,
         },
         decimals: {
             entryPoint: 0x59dc15ce,
-            inputs: "decimals_arguments",
-            outputs: "decimals_result",
+            input: "decimals_arguments",
+            output: "decimals_result",
             readOnly: true,
         },
         totalSupply: {
             entryPoint: 0xcf2e8212,
-            inputs: "total_supply_arguments",
-            outputs: "total_supply_result",
+            input: "total_supply_arguments",
+            output: "total_supply_result",
             readOnly: true,
         },
         balanceOf: {
             entryPoint: 0x15619248,
-            inputs: "balance_of_arguments",
-            outputs: "balance_of_result",
+            input: "balance_of_arguments",
+            output: "balance_of_result",
             readOnly: true,
             defaultOutput: { value: "0" },
         },
         transfer: {
             entryPoint: 0x62efa292,
-            inputs: "transfer_arguments",
-            outputs: "transfer_result",
+            input: "transfer_arguments",
+            output: "transfer_result",
         },
         mint: {
             entryPoint: 0xc2f82bdc,
-            inputs: "mint_argumnets",
-            outputs: "mint_result",
+            input: "mint_argumnets",
+            output: "mint_result",
         },
     },
     types: krc20_proto_json_1.default,
