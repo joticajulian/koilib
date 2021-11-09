@@ -342,6 +342,35 @@ describe("Wallet and Contract", () => {
     expect(result).toStrictEqual({ value: "123456" });
   });
 
+  it("should get the balance of an account using the preformatInput and preformatOutput", async () => {
+    expect.assertions(2);
+    const type = koinContract.protobuffers?.lookupType(
+      "balance_of_result"
+    ) as Type;
+    const message = type.create({ value: "123456" });
+    const resultEncoded = encodeBase64(type.encode(message).finish());
+    mockAxiosPost.mockImplementation(async () =>
+      axiosResponse({ result: resultEncoded })
+    );
+
+    const contractInstance = new Contract({
+      id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+      signer,
+      abi: JSON.parse(JSON.stringify(Krc20Abi)),
+    });
+    contractInstance.abi!.methods.balanceOf.preformatInput = (owner) => ({
+      owner,
+    });
+    contractInstance.abi!.methods.balanceOf.preformatOutput = (res) =>
+      formatUnits((res as { value: string }).value, 8);
+    const contract = contractInstance.functions;
+
+    const { operation, result } = await contract.balanceOf(address);
+    const { operation: opKoin } = await koin.balanceOf({ owner: address });
+    expect(result).toBe("0.00123456");
+    expect(operation).toStrictEqual(opKoin);
+  });
+
   it("should change node", async () => {
     expect.assertions(2);
     const myProvider = new Provider([
