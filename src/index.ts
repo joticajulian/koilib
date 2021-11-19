@@ -5,3 +5,4 @@ export * as interfaces from "./interface";
 export * from "./Contract";
 export * from "./Signer";
 export * from "./Provider";
+export * from "./Serializer";

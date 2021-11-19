@@ -1,21 +1,14 @@
-import { Root, INamespace } from "protobufjs/light";
+/* eslint-disable no-await-in-loop */
+import { INamespace } from "protobufjs/light";
 import { Signer, SignerInterface } from "./Signer";
 import { Provider, SendTransactionResponse } from "./Provider";
+import { Serializer } from "./Serializer";
 import {
   CallContractOperationNested,
   UploadContractOperationNested,
   TransactionJson,
 } from "./interface";
-import {
-  decodeBase58,
-  decodeBase64,
-  encodeBase58,
-  encodeBase64,
-  toHexString,
-  toUint8Array,
-} from "./utils";
-
-const OP_BYTES = "(koinos_bytes_type)";
+import { decodeBase58, encodeBase58, encodeBase64 } from "./utils";
 
 /**
  * Application Binary Interface (ABI)
@@ -139,22 +132,6 @@ export interface TransactionOptions {
 }
 
 /**
- * Makes a copy of a value. The returned value can be modified
- * without altering the original one. Although this is not needed
- * for strings or numbers and only needed for objects and arrays,
- * all these options are covered in a single function
- *
- * It is assumed that the argument is number, string, or contructions
- * of these types inside objects or arrays.
- */
-function copyValue(value: unknown): unknown {
-  if (typeof value === "string" || typeof value === "number") {
-    return value;
-  }
-  return JSON.parse(JSON.stringify(value)) as unknown;
-}
-
-/**
  * The contract class contains the contract ID and contract entries
  * definition needed to encode/decode operations during the
  * interaction with the user and the communication with the RPC node.
@@ -205,11 +182,6 @@ export class Contract {
   id?: Uint8Array;
 
   /**
-   * Protobuffer definitions
-   */
-  protobuffers?: Root;
-
-  /**
    * Set of functions to interact with the smart
    * contract. These functions are automatically generated
    * in the constructor of the class
@@ -242,6 +214,11 @@ export class Contract {
   provider?: Provider;
 
   /**
+   * Serializer to serialize/deserialize data types
+   */
+  serializer?: Serializer;
+
+  /**
    * Bytecode. Needed to deploy the smart contract.
    */
   bytecode?: Uint8Array;
@@ -260,13 +237,18 @@ export class Contract {
     options?: TransactionOptions;
     signer?: Signer;
     provider?: Provider;
+    serializer?: Serializer;
   }) {
     if (c.id) this.id = decodeBase58(c.id);
     this.signer = c.signer;
     this.provider = c.provider || c.signer?.provider;
     this.abi = c.abi;
     this.bytecode = c.bytecode;
-    if (c.abi?.types) this.protobuffers = Root.fromJSON(c.abi.types);
+    if (c.serializer) {
+      this.serializer = c.serializer;
+    } else if (c.abi && c.abi.types) {
+      this.serializer = new Serializer(c.abi.types);
+    }
     this.options = {
       rcLimit: 1e8,
       sendTransaction: true,
@@ -275,7 +257,13 @@ export class Contract {
     };
     this.functions = {};
 
-    if (this.signer && this.provider && this.abi && this.abi.methods) {
+    if (
+      this.signer &&
+      this.provider &&
+      this.abi &&
+      this.abi.methods &&
+      this.serializer
+    ) {
       Object.keys(this.abi.methods).forEach((name) => {
         this.functions[name] = async <T = Record<string, unknown>>(
           argu: unknown = {},
@@ -310,7 +298,7 @@ export class Contract {
             args = argu as Record<string, unknown>;
           }
 
-          const operation = this.encodeOperation({ name, args });
+          const operation = await this.encodeOperation({ name, args });
 
           if (readOnly) {
             if (!output) throw new Error(`No output defined for ${name}`);
@@ -322,7 +310,10 @@ export class Contract {
             });
             let result = defaultOutput as T;
             if (resultEncoded) {
-              result = this.decodeType<T>(resultEncoded, output as string);
+              result = await this.serializer!.deserialize<T>(
+                resultEncoded,
+                output
+              );
             }
             if (typeof preformatOutput === "function") {
               result = preformatOutput(result as Record<string, unknown>) as T;
@@ -440,10 +431,12 @@ export class Contract {
    * // }
    * ```
    */
-  encodeOperation(op: DecodedOperationJson): CallContractOperationNested {
+  async encodeOperation(
+    op: DecodedOperationJson
+  ): Promise<CallContractOperationNested> {
     if (!this.abi || !this.abi.methods || !this.abi.methods[op.name])
       throw new Error(`Operation ${op.name} unknown`);
-    if (!this.protobuffers) throw new Error("Protobuffers are not defined");
+    if (!this.serializer) throw new Error("Serializer is not defined");
     if (!this.id) throw new Error("Contract id is not defined");
     const method = this.abi.methods[op.name];
 
@@ -451,7 +444,7 @@ export class Contract {
     if (method.input) {
       if (!op.args)
         throw new Error(`No arguments defined for type '${method.input}'`);
-      bufferInputs = this.encodeType(op.args, method.input);
+      bufferInputs = await this.serializer.serialize(op.args, method.input);
     }
 
     return {
@@ -485,10 +478,13 @@ export class Contract {
    * // }
    * ```
    */
-  decodeOperation(op: CallContractOperationNested): DecodedOperationJson {
+  async decodeOperation(
+    op: CallContractOperationNested
+  ): Promise<DecodedOperationJson> {
     if (!this.id) throw new Error("Contract id is not defined");
     if (!this.abi || !this.abi.methods)
       throw new Error("Methods are not defined");
+    if (!this.serializer) throw new Error("Serializer is not defined");
     if (!op.callContract)
       throw new Error("Operation is not CallContractOperation");
     if (op.callContract.contractId !== this.id)
@@ -504,119 +500,14 @@ export class Contract {
         if (!method.input) return { name: opName };
         return {
           name: opName,
-          args: this.decodeType(op.callContract.args, method.input),
+          args: await this.serializer.deserialize(
+            op.callContract.args,
+            method.input
+          ),
         };
       }
     }
     throw new Error(`Unknown method id ${op.callContract.entryPoint}`);
-  }
-
-  /**
-   * Function to encode a type using the protobuffer definitions
-   * It also prepares the bytes for special cases (base58, hex string)
-   */
-  encodeType(
-    valueDecoded: Record<string, unknown>,
-    typeName: string
-  ): Uint8Array {
-    if (!this.protobuffers) throw new Error("Protobuffers are not defined");
-    const protobufType = this.protobuffers.lookupType(typeName);
-    const object: Record<string, unknown> = {};
-    // TODO: format from Buffer to base58/base64 for nested fields
-    Object.keys(protobufType.fields).forEach((fieldName) => {
-      const { options, name, type } = protobufType.fields[fieldName];
-
-      // No byte conversion
-      if (type !== "bytes") {
-        object[name] = copyValue(valueDecoded[name]);
-        return;
-      }
-
-      // Default byte conversion
-      if (!options || !options[OP_BYTES]) {
-        object[name] = decodeBase64(valueDecoded[name] as string);
-        return;
-      }
-
-      // Specific byte conversion
-      switch (options[OP_BYTES]) {
-        case "BASE58":
-        case "CONTRACT_ID":
-        case "ADDRESS":
-          object[name] = decodeBase58(valueDecoded[name] as string);
-          break;
-        case "BASE64":
-          object[name] = decodeBase64(valueDecoded[name] as string);
-          break;
-        case "HEX":
-        case "BLOCK_ID":
-        case "TRANSACTION_ID":
-          object[name] = toUint8Array(
-            (valueDecoded[name] as string).replace("0x", "")
-          );
-          break;
-        default:
-          throw new Error(
-            `unknown koinos_byte_type ${options[OP_BYTES] as string}`
-          );
-      }
-    });
-    const message = protobufType.create(object);
-    const buffer = protobufType.encode(message).finish();
-    return buffer;
-  }
-
-  /**
-   * Function to decode bytes using the protobuffer definitions
-   * It also encodes the bytes for special cases (base58, hex string)
-   */
-  decodeType<T = Record<string, unknown>>(
-    valueEncoded: string | Uint8Array,
-    typeName: string
-  ): T {
-    if (!this.protobuffers) throw new Error("Protobuffers are not defined");
-    const valueBuffer =
-      typeof valueEncoded === "string"
-        ? decodeBase64(valueEncoded)
-        : valueEncoded;
-    const protobufType = this.protobuffers.lookupType(typeName);
-    const message = protobufType.decode(valueBuffer);
-    const object = protobufType.toObject(message, { longs: String });
-    // TODO: format from Buffer to base58/base64 for nested fields
-    Object.keys(protobufType.fields).forEach((fieldName) => {
-      const { options, name, type } = protobufType.fields[fieldName];
-
-      // No byte conversion
-      if (type !== "bytes") return;
-
-      // Default byte conversion
-      if (!options || !options[OP_BYTES]) {
-        object[name] = encodeBase64(object[name]);
-        return;
-      }
-
-      // Specific byte conversion
-      switch (options[OP_BYTES]) {
-        case "BASE58":
-        case "CONTRACT_ID":
-        case "ADDRESS":
-          object[name] = encodeBase58(object[name]);
-          break;
-        case "BASE64":
-          object[name] = encodeBase64(object[name]);
-          break;
-        case "HEX":
-        case "BLOCK_ID":
-        case "TRANSACTION_ID":
-          object[name] = `0x${toHexString(object[name])}`;
-          break;
-        default:
-          throw new Error(
-            `unknown koinos_byte_type ${options[OP_BYTES] as string}`
-          );
-      }
-    });
-    return object as T;
   }
 }
 

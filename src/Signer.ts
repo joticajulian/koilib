@@ -1,7 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { sha256 } from "js-sha256";
 import * as secp from "noble-secp256k1";
-import { Root } from "protobufjs/light";
 import { Provider, SendTransactionResponse } from "./Provider";
 import { TransactionJson, ActiveTransactionData } from "./interface";
 import protocolJson from "./protocol-proto.json";
@@ -15,12 +14,11 @@ import {
   toUint8Array,
 } from "./utils";
 import { Abi } from "./Contract";
-
-const root = Root.fromJSON(protocolJson);
-const ActiveTxDataMsg = root.lookupType("active_transaction_data");
+import { Serializer } from "./Serializer";
 
 export interface SignerInterface {
   provider?: Provider;
+  serializer?: Serializer;
   getAddress(compressed?: boolean): string;
   getPrivateKey(format: "wif" | "hex", compressed?: boolean): string;
   signTransaction(tx: TransactionJson): Promise<TransactionJson>;
@@ -31,7 +29,7 @@ export interface SignerInterface {
   encodeTransaction(
     activeData: ActiveTransactionData
   ): Promise<TransactionJson>;
-  // decodeTransaction(tx: TransactionJson): ActiveTransactionData;
+  decodeTransaction(tx: TransactionJson): Promise<ActiveTransactionData>;
 }
 
 /**
@@ -102,9 +100,14 @@ export class Signer implements SignerInterface {
   address: string;
 
   /**
-   * Provider used to connect with the blockchain
+   * Provider to connect with the blockchain
    */
-  provider: Provider | undefined;
+  provider?: Provider;
+
+  /**
+   * Serializer to serialize/deserialize data types
+   */
+  serializer?: Serializer;
 
   /**
    * The constructor receives de private key as hexstring, bigint or Uint8Array.
@@ -121,19 +124,28 @@ export class Signer implements SignerInterface {
    * // 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b
    * ```
    */
-  constructor(
-    privateKey: string | number | bigint | Uint8Array,
-    compressed = true,
-    provider?: Provider
-  ) {
-    this.compressed = compressed;
-    this.privateKey = privateKey;
-    this.provider = provider;
-    if (typeof privateKey === "string") {
-      this.publicKey = secp.getPublicKey(privateKey, this.compressed);
+  constructor(c: {
+    privateKey: string | number | bigint | Uint8Array;
+    compressed?: boolean;
+    provider?: Provider;
+    serializer?: Serializer;
+  }) {
+    this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;
+    this.privateKey = c.privateKey;
+    this.provider = c.provider;
+    if (c.serializer) {
+      this.serializer = c.serializer;
+    } else {
+      this.serializer = new Serializer(protocolJson, {
+        defaultTypeName: "active_transaction_data",
+        bytesConversion: false,
+      });
+    }
+    if (typeof c.privateKey === "string") {
+      this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
       this.address = bitcoinAddress(toUint8Array(this.publicKey));
     } else {
-      this.publicKey = secp.getPublicKey(privateKey, this.compressed);
+      this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
       this.address = bitcoinAddress(this.publicKey);
     }
   }
@@ -152,7 +164,10 @@ export class Signer implements SignerInterface {
   static fromWif(wif: string): Signer {
     const compressed = wif[0] !== "5";
     const privateKey = bitcoinDecode(wif);
-    return new Signer(toHexString(privateKey), compressed);
+    return new Signer({
+      privateKey: toHexString(privateKey),
+      compressed,
+    });
   }
 
   /**
@@ -169,7 +184,7 @@ export class Signer implements SignerInterface {
    */
   static fromSeed(seed: string, compressed?: boolean): Signer {
     const privateKey = sha256(seed);
-    return new Signer(privateKey, compressed);
+    return new Signer({ privateKey, compressed });
   }
 
   /**
@@ -335,8 +350,7 @@ export class Signer implements SignerInterface {
       operations,
     };
 
-    const message = ActiveTxDataMsg.create(activeData2);
-    const buffer = ActiveTxDataMsg.encode(message).finish();
+    const buffer = await this.serializer!.serialize(activeData2);
 
     return {
       active: encodeBase64(buffer),
@@ -346,11 +360,9 @@ export class Signer implements SignerInterface {
   /**
    * Function to decode a transaction
    */
-  static decodeTransaction(tx: TransactionJson): ActiveTransactionData {
+  async decodeTransaction(tx: TransactionJson): Promise<ActiveTransactionData> {
     if (!tx.active) throw new Error("Active data is not defined");
-    const buffer = decodeBase64(tx.active);
-    const message = ActiveTxDataMsg.decode(buffer);
-    return ActiveTxDataMsg.toObject(message, { longs: String });
+    return this.serializer!.deserialize(tx.active);
   }
 }
 
