@@ -24,11 +24,10 @@ const signer = Signer.fromWif(privateKeyHex);
 signer.compressed = true;
 signer.provider = provider;
 // random signer. No balance or history
-const signer2 = new Signer(
-  crypto.randomBytes(32).toString("hex"),
-  true,
+const signer2 = new Signer({
+  privateKey: crypto.randomBytes(32).toString("hex"),
   provider
-);
+});
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
   abi: utils.Krc20Abi,

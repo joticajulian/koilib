@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from "axios";
 import crypto from "crypto";
 import { Type } from "protobufjs";
 import { Signer } from "../src/Signer";
-import { Contract } from "../src/Contract";
+import { Abi, Contract } from "../src/Contract";
 import { Provider } from "../src/Provider";
 import {
   bitcoinDecode,
@@ -59,7 +59,7 @@ const axiosResponse = <T = unknown>(
   });
 };
 
-const privateKeyHex =
+const privateKey =
   "bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37";
 const seed = "one two three four five six";
 const wif = "5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd";
@@ -77,7 +77,7 @@ const rpcNodes = [
 ];
 
 const provider = new Provider(rpcNodes);
-const signer = new Signer(privateKeyHex, true, provider);
+const signer = new Signer({ privateKey, provider });
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
   abi: Krc20Abi,
@@ -150,32 +150,32 @@ describe("Signer", () => {
     const signer1 = Signer.fromWif(wif);
     expect(signer1.getPrivateKey("wif")).toBe(wif);
     expect(signer1.getPrivateKey("wif", true)).toBe(wifCompressed);
-    expect(signer1.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer1.getPrivateKey("hex")).toBe(privateKey);
 
     const signer2 = Signer.fromWif(wifCompressed);
     expect(signer2.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer2.getPrivateKey("wif", false)).toBe(wif);
-    expect(signer2.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer2.getPrivateKey("hex")).toBe(privateKey);
 
-    const signer3 = new Signer(privateKeyHex);
+    const signer3 = new Signer({ privateKey });
     expect(signer3.getPrivateKey("wif", false)).toBe(wif);
     expect(signer3.getPrivateKey("wif")).toBe(wifCompressed);
-    expect(signer3.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer3.getPrivateKey("hex")).toBe(privateKey);
 
-    const signer4 = new Signer(privateKeyHex, false);
+    const signer4 = new Signer({ privateKey, compressed: false });
     expect(signer4.getPrivateKey("wif")).toBe(wif);
     expect(signer4.getPrivateKey("wif", true)).toBe(wifCompressed);
-    expect(signer4.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer4.getPrivateKey("hex")).toBe(privateKey);
 
     const signer5 = Signer.fromSeed(seed);
     expect(signer5.getPrivateKey("wif", false)).toBe(wif);
     expect(signer5.getPrivateKey("wif")).toBe(wifCompressed);
-    expect(signer5.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer5.getPrivateKey("hex")).toBe(privateKey);
 
     const signer6 = Signer.fromSeed(seed, false);
     expect(signer6.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer6.getPrivateKey("wif")).toBe(wif);
-    expect(signer6.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer6.getPrivateKey("hex")).toBe(privateKey);
   });
 });
 
@@ -186,19 +186,19 @@ describe("Wallet and Contract", () => {
     const decodedPrivateKey2 = toHexString(
       bitcoinDecode(wifCompressed)
     ).toLowerCase();
-    expect(decodedPrivateKey).toBe(privateKeyHex);
-    expect(decodedPrivateKey2).toBe(privateKeyHex);
+    expect(decodedPrivateKey).toBe(privateKey);
+    expect(decodedPrivateKey2).toBe(privateKey);
   });
 
   it("should compute address", () => {
     expect.assertions(2);
-    const wallet1 = new Signer(privateKeyHex);
-    const wallet2 = new Signer(privateKeyHex, false);
+    const wallet1 = new Signer({ privateKey });
+    const wallet2 = new Signer({ privateKey, compressed: false });
     expect(wallet1.address).toBe(addressCompressed);
     expect(wallet2.address).toBe(address);
   });
 
-  it("should encode and decode an operation", () => {
+  it("should encode and decode an operation", async () => {
     expect.assertions(2);
     const opTransfer = {
       name: "transfer",
@@ -209,8 +209,8 @@ describe("Wallet and Contract", () => {
       },
     };
 
-    const opEncoded = koinContract.encodeOperation(opTransfer);
-    const opDecoded = koinContract.decodeOperation(opEncoded);
+    const opEncoded = await koinContract.encodeOperation(opTransfer);
+    const opDecoded = await koinContract.decodeOperation(opEncoded);
 
     expect(opEncoded).toStrictEqual({
       callContract: {
@@ -255,7 +255,7 @@ describe("Wallet and Contract", () => {
     };
 
     const tx = await signer.encodeTransaction(activeData);
-    const activeData2 = Signer.decodeTransaction(tx);
+    const activeData2 = await signer.decodeTransaction(tx);
     expect(tx).toStrictEqual({
       active: expect.any(String) as string,
     } as TransactionJson);
@@ -329,7 +329,7 @@ describe("Wallet and Contract", () => {
   });
 
   it("should get the balance of an account", async () => {
-    const type = koinContract.protobuffers?.lookupType(
+    const type = koinContract.serializer?.root?.lookupType(
       "balance_of_result"
     ) as Type;
     const message = type.create({ value: "123456" });
@@ -344,7 +344,7 @@ describe("Wallet and Contract", () => {
 
   it("should get the balance of an account using the preformatInput and preformatOutput", async () => {
     expect.assertions(2);
-    const type = koinContract.protobuffers?.lookupType(
+    const type = koinContract.serializer?.root?.lookupType(
       "balance_of_result"
     ) as Type;
     const message = type.create({ value: "123456" });
@@ -356,7 +356,7 @@ describe("Wallet and Contract", () => {
     const contractInstance = new Contract({
       id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
       signer,
-      abi: JSON.parse(JSON.stringify(Krc20Abi)),
+      abi: JSON.parse(JSON.stringify(Krc20Abi)) as Abi,
     });
     contractInstance.abi!.methods.balanceOf.preformatInput = (owner) => ({
       owner,
