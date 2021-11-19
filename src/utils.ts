@@ -3,7 +3,7 @@ import { sha256 } from "js-sha256";
 import ripemd160 from "noble-ripemd160";
 import krc20ProtoJson from "./krc20-proto.json";
 import protocolJson from "./protocol-proto.json";
-import { Abi } from "./Contract";
+import { Abi } from "./interface";
 
 /**
  * Converts an hex string to Uint8Array

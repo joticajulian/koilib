@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from "axios";
 import crypto from "crypto";
 import { Type } from "protobufjs";
 import { Signer } from "../src/Signer";
-import { Abi, Contract } from "../src/Contract";
+import { Contract } from "../src/Contract";
 import { Provider } from "../src/Provider";
 import {
   bitcoinDecode,
@@ -17,6 +17,7 @@ import {
   SetSystemCallOperationNested,
   UploadContractOperationNested,
   TransactionJson,
+  Abi,
 } from "../src/interface";
 
 const mockAxiosGet = jest.spyOn(axios, "get");

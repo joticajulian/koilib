@@ -3,11 +3,8 @@ import {
   BlockJson,
   TransactionJson,
   CallContractOperationJson,
+  SendTransactionResponse,
 } from "./interface";
-
-export interface SendTransactionResponse {
-  wait: () => Promise<string>;
-}
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));

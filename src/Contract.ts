@@ -1,135 +1,17 @@
 /* eslint-disable no-await-in-loop */
-import { INamespace } from "protobufjs/light";
 import { Signer, SignerInterface } from "./Signer";
-import { Provider, SendTransactionResponse } from "./Provider";
+import { Provider } from "./Provider";
 import { Serializer } from "./Serializer";
 import {
   CallContractOperationNested,
   UploadContractOperationNested,
   TransactionJson,
+  Abi,
+  TransactionOptions,
+  DecodedOperationJson,
+  SendTransactionResponse,
 } from "./interface";
 import { decodeBase58, encodeBase58, encodeBase64 } from "./utils";
-
-/**
- * Application Binary Interface (ABI)
- *
- * ABIs are composed of 2 elements: methods and types.
- * - The methods define the names of the entries of the smart contract,
- * the corresponding endpoints and the name of the types used.
- * - The types all the description to serialize and deserialize
- * using proto buffers.
- *
- * To generate the types is necessary to use the dependency
- * protobufjs. The following example shows how to generate the
- * protobuf descriptor from a .proto file.
- *
- * ```js
- * const fs = require("fs");
- * const pbjs = require("protobufjs/cli/pbjs");
- *
- * pbjs.main(
- *   ["--target", "json", "./token.proto"],
- *   (err, output) => {
- *     if (err) throw err;
- *     fs.writeFileSync("./token-proto.json", output);
- *   }
- * );
- * ```
- *
- * Then this descriptor can be loaded to define the ABI:
- * ```js
- * const tokenJson = require("./token-proto.json");
- * const abiToken = {
- *   methods: {
- *     balanceOf: {
- *       entryPoint: 0x15619248,
- *       inputs: "balance_of_arguments",
- *       outputs: "balance_of_result",
- *       readOnly: true,
- *       defaultOutput: { value: "0" },
- *     },
- *     transfer: {
- *       entryPoint: 0x62efa292,
- *       inputs: "transfer_arguments",
- *       outputs: "transfer_result",
- *     },
- *     mint: {
- *       entryPoint: 0xc2f82bdc,
- *       inputs: "mint_argumnets",
- *       outputs: "mint_result",
- *     },
- *   },
- *   types: tokenJson,
- * };
- * ```
- *
- * Note that this example uses "defaultOutput" for the method
- * "balanceOf". This is used when the smart contract returns an
- * empty response (for instance when there are no balance records
- * for a specific address) and you require a default output in
- * such cases.
- */
-export interface Abi {
-  methods: {
-    /** Name of the method */
-    [x: string]: {
-      /** Entry point ID */
-      entryPoint: number;
-      /** Protobuffer type for input */
-      input?: string;
-      /** Protobuffer type for output */
-      output?: string;
-      /** Boolean to differentiate write methods
-       * (using transactions) from read methods
-       * (query the contract)
-       */
-      readOnly?: boolean;
-      /** Default value when the output is undefined */
-      defaultOutput?: unknown;
-      /** Optional function to preformat the input */
-      preformatInput?: (input: unknown) => Record<string, unknown>;
-      /** Optional function to preformat the output */
-      preformatOutput?: (output: Record<string, unknown>) => unknown;
-      /** Description of the method */
-      description?: string;
-    };
-  };
-  /**
-   * Protobuffers descriptor in JSON format.
-   * See https://www.npmjs.com/package/protobufjs#using-json-descriptors
-   */
-  types: INamespace;
-}
-
-/**
- * Human readable format operation
- *
- * @example
- * ```ts
- * const opDecoded = {
- *   name: "transfer",
- *   args: {
- *     from: "1Krs7v1rtpgRyfwEZncuKMQQnY5JhqXVSx",
- *     to: "1BqtgWBcqm9cSZ97avLGZGJdgso7wx6pCA",
- *     value: 1000,
- *   },
- * };
- * ```
- */
-export interface DecodedOperationJson {
-  /** Operation name */
-  name: string;
-
-  /** Arguments decoded. See [[Abi]] */
-  args?: Record<string, unknown>;
-}
-
-export interface TransactionOptions {
-  rcLimit?: number | bigint | string;
-  nonce?: number;
-  sendTransaction?: boolean;
-  sendAbis?: boolean;
-}
 
 /**
  * The contract class contains the contract ID and contract entries
@@ -141,9 +23,9 @@ export interface TransactionOptions {
  * ```ts
  * const { Contract, Provider, Signer, utils } = require("koilib");
  * const rpcNodes = ["http://api.koinos.io:8080"];
- * const privateKeyHex = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
+ * const privateKey = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
  * const provider = new Provider(rpcNodes);
- * const signer = new Signer(privateKeyHex, true, provider);
+ * const signer = new Signer({ privateKey, provider });
  * const koinContract = new Contract({
  *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
  *   abi: utils.Krc20Abi,
@@ -152,18 +34,26 @@ export interface TransactionOptions {
  * });
  * const koin = koinContract.functions;
  *
+ * // optional: preformat input/output
+ * koinContract.abi.methods.balanceOf.preformatInput = (owner) =>
+ *   ({ owner });
+ * koinContract.abi.methods.balanceOf.preformatOutput = (res) =>
+ *   utils.formatUnits(res.value, 8);
+ * koinContract.abi.methods.transfer.preformatInput = (input) => ({
+ *   from: signer.getAddress(),
+ *   to: input.to,
+ *   value: utils.parseUnits(input.value, 8),
+ * });
+ *
  * async funtion main() {
  *   // Get balance
- *   const { result } = await koin.balanceOf({
- *     owner: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD"
- *   });
- *   console.log(balance.result)
+ *   const { result } = await koin.balanceOf("12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD");
+ *   console.log(result)
  *
  *   // Transfer
  *   const { transaction, transactionResponse } = await koin.transfer({
- *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
  *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
- *     value: "1000",
+ *     value: "10.0001",
  *   });
  *   console.log(`Transaction id ${transaction.id} submitted`);
  *
@@ -185,6 +75,12 @@ export class Contract {
    * Set of functions to interact with the smart
    * contract. These functions are automatically generated
    * in the constructor of the class
+   *
+   * @example
+   * ```ts
+   * const owner = "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb";
+   * await koinContract.functions.balanceOf({ owner });
+   * ```
    */
   functions: {
     [x: string]: <T = Record<string, unknown>>(
@@ -237,6 +133,12 @@ export class Contract {
     options?: TransactionOptions;
     signer?: Signer;
     provider?: Provider;
+    /**
+     * Set this option if you can not use _eval_ functions
+     * in the current environment. In such cases, the
+     * serializer must come from an environment where it
+     * is able to use those functions.
+     */
     serializer?: Serializer;
   }) {
     if (c.id) this.id = decodeBase58(c.id);
@@ -366,8 +268,9 @@ export class Contract {
    * The Bytecode must be defined in the constructor of the class
    * @example
    * ```ts
-   * const signer = new Signer("f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200", true, provider);
+   * const privateKey = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
    * const provider = new Provider(["http://api.koinos.io:8080"]);
+   * const signer = new Signer({ privateKey, provider });
    * const bytecode = new Uint8Array([1, 2, 3, 4]);
    * const contract = new Contract({ signer, provider, bytecode });
    * const { transactionResponse } = await contract.deploy();

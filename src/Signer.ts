@@ -1,8 +1,13 @@
 /* eslint-disable no-param-reassign */
 import { sha256 } from "js-sha256";
 import * as secp from "noble-secp256k1";
-import { Provider, SendTransactionResponse } from "./Provider";
-import { TransactionJson, ActiveTransactionData } from "./interface";
+import { Provider } from "./Provider";
+import {
+  TransactionJson,
+  ActiveTransactionData,
+  Abi,
+  SendTransactionResponse,
+} from "./interface";
 import protocolJson from "./protocol-proto.json";
 import {
   bitcoinAddress,
@@ -13,7 +18,6 @@ import {
   toHexString,
   toUint8Array,
 } from "./utils";
-import { Abi } from "./Contract";
 import { Serializer } from "./Serializer";
 
 export interface SignerInterface {
@@ -39,7 +43,8 @@ export interface SignerInterface {
  * @example
  * using private key as hex string
  * ```ts
- * var signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
+ * var privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+ * var signer = new Signer({ privateKey });
  * ```
  * <br>
  *
@@ -51,14 +56,15 @@ export interface SignerInterface {
  *     1, 203,  55, 128, 187,   2, 192, 249,
  *   205, 254, 157,   9, 218, 173, 223, 156
  * ]);
- * var signer = new Signer(buffer);
+ * var signer = new Signer({ privateKey: buffer });
  * ```
  *
  * <br>
  *
  * using private key as bigint
  * ```ts
- * var signer = new Signer(106982601049961974618234078204952280507266494766432547312316920283818886029212n);
+ * var privateKey = 106982601049961974618234078204952280507266494766432547312316920283818886029212n;
+ * var signer = new Signer({ privateKey });
  * ```
  *
  * <br>
@@ -80,7 +86,8 @@ export interface SignerInterface {
  * defining a provider
  * ```ts
  * var provider = new Provider(["https://example.com/jsonrpc"]);
- * var signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c", true, provider);
+ * var privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+ * var signer = new Signer({ privateKey, provider });
  * ```
  */
 export class Signer implements SignerInterface {
@@ -119,7 +126,8 @@ export class Signer implements SignerInterface {
    * @param provider - provider to connect with the blockchain
    * @example
    * ```ts
-   * cons signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
+   * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+   * cons signer = new Signer({ privateKey });
    * console.log(signer.getAddress());
    * // 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b
    * ```
@@ -128,6 +136,12 @@ export class Signer implements SignerInterface {
     privateKey: string | number | bigint | Uint8Array;
     compressed?: boolean;
     provider?: Provider;
+    /**
+     * Set this option if you can not use _eval_ functions
+     * in the current environment. In such cases, the
+     * serializer must come from an environment where it
+     * is able to use those functions.
+     */
     serializer?: Serializer;
   }) {
     this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;

@@ -60,20 +60,22 @@ You can also load it directly to the browser by downloading the bunble file loca
 With Typescript import the library
 
 ```typescript
-import { Signer, Contract, Provider, utils } from "koilib";
+import { Signer, Contract, Provider, Serializer, utils } from "koilib";
 ```
 
 With Javascript import the library with require
 
 ```javascript
-const { Signer, Contract, Provider, utils } = require("koilib");
+const { Signer, Contract, Provider, Serializer, utils } = require("koilib");
 ```
 
-There are 3 principal classes:
+There are 4 principal classes:
 
 - **Signer**: Class containing the private key. It is used to sign.
 - **Provider**: Class to connect with the RPC node.
 - **Contract**: Class defining the contract to interact with.
+- **Serializer**: Class with the protocol buffers definitions to
+  serialize/deserialize data types.
 
 The following code shows how to sign a transaction, broadcast
 a transaction, and read contracts.
@@ -92,11 +94,20 @@ a transaction, and read contracts.
   });
   const koin = koinContract.functions;
 
+  // optional: preformat input/output
+  koinContract.abi.methods.balanceOf.preformatInput = (owner) => ({ owner });
+  koinContract.abi.methods.balanceOf.preformatOutput = (res) =>
+    utils.formatUnits(res.value, 8);
+  koinContract.abi.methods.transfer.preformatInput = (input) => ({
+    from: signer.getAddress(),
+    to: input.to,
+    value: utils.parseUnits(input.value, 8),
+  });
+
   // Transfer
   const { transaction, transactionResponse } = await koin.transfer({
-    from: signer.getAddress(),
     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
-    value: "1000",
+    value: "10.0001",
   });
   console.log(`Transaction id ${transaction.id} submitted`);
 
@@ -105,9 +116,7 @@ a transaction, and read contracts.
   console.log(`Transaction mined. Block id: ${blockId}`);
 
   // read the balance
-  const { result } = await koin.balanceOf({
-    owner: signer.getAddress(),
-  });
+  const { result } = await koin.balanceOf(signer.getAddress());
   console.log(balance.result);
 })();
 ```
