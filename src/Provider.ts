@@ -126,7 +126,8 @@ export class Provider {
         if (abort) throw e;
       }
     }
-    if (response.data.error) throw new Error(response.data.error.message);
+    if (response.data.error)
+      throw new Error(JSON.stringify(response.data.error));
     return response.data.result as T;
   }
 
