@@ -336,9 +336,9 @@ export class Signer implements SignerInterface {
 
   /**
    * Function to encode a transaction
-   * @param activeData - Active data consists of nonce, rcLimit, and
+   * @param activeData - Active data consists of nonce, rc_limit, and
    * operations. Do not set the nonce to get it from the blockchain
-   * using the provider. The rcLimit is 1000000 by default.
+   * using the provider. The rc_limit is 1000000 by default.
    * @returns A transaction encoded. The active field is encoded in
    * base64url
    */
@@ -356,11 +356,11 @@ export class Signer implements SignerInterface {
       nonce = await this.provider.getNonce(this.getAddress());
     }
     const rcLimit =
-      activeData.rcLimit === undefined ? 1000000 : activeData.rcLimit;
+      activeData.rc_limit === undefined ? 1000000 : activeData.rc_limit;
     const operations = activeData.operations ? activeData.operations : [];
 
     const activeData2: ActiveTransactionData = {
-      rcLimit,
+      rc_limit: rcLimit,
       nonce,
       operations,
     };

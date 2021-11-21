@@ -229,7 +229,7 @@ describe("Wallet and Contract", () => {
 
     const activeData = {
       nonce: "8",
-      rcLimit: "10",
+      rc_limit: "10",
       operations: [
         {
           call_contract: {
@@ -286,7 +286,7 @@ describe("Wallet and Contract", () => {
     expect(transaction).toStrictEqual({
       id: expect.any(String) as string,
       active: expect.any(String) as string,
-      signatureData: expect.any(String) as string,
+      signature_data: expect.any(String) as string,
     } as TransactionJson);
 
     expect(transactionResponse).toBeDefined();
@@ -421,7 +421,7 @@ describe("Wallet and Contract", () => {
     expect(transaction).toStrictEqual({
       id: expect.any(String) as string,
       active: expect.any(String) as string,
-      signatureData: expect.any(String) as string,
+      signature_data: expect.any(String) as string,
     } as TransactionJson);
 
     expect(transactionResponse).toBeDefined();
