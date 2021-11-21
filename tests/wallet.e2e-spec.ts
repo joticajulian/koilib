@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 import crypto from "crypto";
 import * as dotenv from "dotenv";
-import { Signer, Provider, Contract, utils } from "../src";
+import { Signer, Provider, Contract, utils, Serializer } from "../src";
 import { BlockJson } from "../src/interface";
+import powJson from "../src/jsonDescriptors/pow-proto.json";
 
 dotenv.config();
 
@@ -67,6 +68,33 @@ describe("Provider", () => {
     expect.assertions(1);
     const blocks = await provider.getBlocks(1, 2);
     expect(blocks).toStrictEqual(expect.arrayContaining([]));
+  });
+
+  it("should get a a block with federated consensus and get the signer address", async () => {
+    expect.assertions(2);
+    const block = await provider.getBlock(1);
+    const signer = await Signer.recoverAddress(block.block);
+    expect(signer).toBeDefined();
+    expect(signer.length).toBe(34);
+  });
+
+  it("should get a a block with pow consensus and get the signer address", async () => {
+    expect.assertions(2);
+    const block = await provider.getBlock(1000);
+    const signer = await Signer.recoverAddress(block.block, {
+      transformSignature: async (signatureData) => {
+        const serializer = new Serializer(powJson, {
+          defaultTypeName: "pow_signature_data",
+        });
+        const powSignatureData: {
+          nonce: string;
+          recoverable_signature: string;
+        } = await serializer.deserialize(signatureData);
+        return powSignatureData.recoverable_signature;
+      },
+    });
+    expect(signer).toBeDefined();
+    expect(signer.length).toBe(34);
   });
 
   it("should get account rc", async () => {

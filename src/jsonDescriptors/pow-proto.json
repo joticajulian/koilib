@@ -1,0 +1,68 @@
+{
+  "nested": {
+    "koinos": {
+      "nested": {
+        "contracts": {
+          "nested": {
+            "pow": {
+              "options": {
+                "go_package": "github.com/koinos/koinos-proto-golang/koinos/contracts/pow"
+              },
+              "nested": {
+                "difficulty_metadata": {
+                  "fields": {
+                    "target": {
+                      "type": "bytes",
+                      "id": 1
+                    },
+                    "last_block_time": {
+                      "type": "uint64",
+                      "id": 2,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
+                    },
+                    "difficulty": {
+                      "type": "bytes",
+                      "id": 3
+                    },
+                    "target_block_interval": {
+                      "type": "uint64",
+                      "id": 4,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
+                    }
+                  }
+                },
+                "get_difficulty_metadata_arguments": {
+                  "fields": {}
+                },
+                "get_difficulty_metadata_result": {
+                  "fields": {
+                    "value": {
+                      "type": "difficulty_metadata",
+                      "id": 1
+                    }
+                  }
+                },
+                "pow_signature_data": {
+                  "fields": {
+                    "nonce": {
+                      "type": "bytes",
+                      "id": 1
+                    },
+                    "recoverable_signature": {
+                      "type": "bytes",
+                      "id": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

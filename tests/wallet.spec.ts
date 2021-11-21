@@ -294,20 +294,30 @@ describe("Wallet and Contract", () => {
     // recover public key and address
     if (!transaction) throw new Error("transaction is not defined");
 
-    const recoveredPublicKey = Signer.recoverPublicKey(transaction, false);
+    const recoveredPublicKey = await Signer.recoverPublicKey(transaction, {
+      compressed: false,
+    });
     expect(recoveredPublicKey).toBe(publicKey);
 
-    const recoveredPublicKeyComp = Signer.recoverPublicKey(transaction, true);
+    const recoveredPublicKeyComp = await Signer.recoverPublicKey(transaction, {
+      compressed: true,
+    });
     expect(recoveredPublicKeyComp).toBe(publicKeyCompressed);
 
-    const recoveredAddress = Signer.recoverAddress(transaction, false);
+    const recoveredAddress = await Signer.recoverAddress(transaction, {
+      compressed: false,
+    });
     expect(recoveredAddress).toBe(address);
 
-    const recoveredAddressComp = Signer.recoverAddress(transaction, true);
+    const recoveredAddressComp = await Signer.recoverAddress(transaction, {
+      compressed: true,
+    });
     expect(recoveredAddressComp).toBe(addressCompressed);
 
-    expect(Signer.recoverPublicKey(transaction)).toBe(publicKeyCompressed);
-    expect(Signer.recoverAddress(transaction)).toBe(addressCompressed);
+    expect(await Signer.recoverPublicKey(transaction)).toBe(
+      publicKeyCompressed
+    );
+    expect(await Signer.recoverAddress(transaction)).toBe(addressCompressed);
   });
 
   it("should rewrite the default options when creating transactions", async () => {

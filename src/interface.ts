@@ -121,6 +121,24 @@ export interface TransactionOptions {
   sendAbis?: boolean;
 }
 
+export interface RecoverPublicKeyOptions {
+  /**
+   * Boolean to define if the public key should
+   * be compressed or not. It is true by default
+   */
+  compressed?: boolean;
+
+  /**
+   * Asynchronous function to transform the signature
+   * before calculating the public key associated.
+   * This transformation is useful in cases were the
+   * signature contains additional data. For instance,
+   * the signatures for blocks in the PoW consensus
+   * algorithm contain the nonce.
+   */
+  transformSignature?: (signatureData: string) => Promise<string>;
+}
+
 export interface SendTransactionResponse {
   wait: () => Promise<string>;
 }

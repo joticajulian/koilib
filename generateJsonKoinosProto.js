@@ -11,7 +11,7 @@ pbjs.main(
   ],
   (err, output) => {
     if (err) throw err;
-    fs.writeFileSync("./src/protocol-proto.json", output);
+    fs.writeFileSync("./src/jsonDescriptors/protocol-proto.json", output);
   }
 );
 
@@ -24,6 +24,19 @@ pbjs.main(
   ],
   (err, output) => {
     if (err) throw err;
-    fs.writeFileSync("./src/krc20-proto.json", output);
+    fs.writeFileSync("./src/jsonDescriptors/krc20-proto.json", output);
+  }
+);
+
+pbjs.main(
+  [
+    "--keep-case",
+    "--target",
+    "json",
+    "./koinos-proto/koinos/contracts/pow/pow.proto",
+  ],
+  (err, output) => {
+    if (err) throw err;
+    fs.writeFileSync("./src/jsonDescriptors/pow-proto.json", output);
   }
 );

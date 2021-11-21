@@ -7,8 +7,10 @@ import {
   ActiveTransactionData,
   Abi,
   SendTransactionResponse,
+  RecoverPublicKeyOptions,
+  BlockJson,
 } from "./interface";
-import protocolJson from "./protocol-proto.json";
+import protocolJson from "./jsonDescriptors/protocol-proto.json";
 import {
   bitcoinAddress,
   bitcoinDecode,
@@ -300,17 +302,30 @@ export class Signer implements SignerInterface {
   }
 
   /**
-   * Function to recover the public key from a signed transaction.
+   * Function to recover the public key from a signed
+   * transaction or block.
    * The output format can be compressed or uncompressed.
    * @param tx - signed transaction
    * @param compressed - output format (compressed by default)
    */
-  static recoverPublicKey(tx: TransactionJson, compressed = true): string {
-    if (!tx.active) throw new Error("activeData is not defined");
-    if (!tx.signature_data) throw new Error("signatureData is not defined");
+  static async recoverPublicKey(
+    txOrBlock: TransactionJson | BlockJson,
+    opts?: RecoverPublicKeyOptions
+  ): Promise<string> {
+    if (!txOrBlock.active) throw new Error("active is not defined");
+    if (!txOrBlock.signature_data)
+      throw new Error("signature_data is not defined");
+    let signatureData = txOrBlock.signature_data;
+    if (opts && typeof opts.transformSignature === "function") {
+      signatureData = await opts.transformSignature(txOrBlock.signature_data);
+    }
+    let compressed = true;
+    if (opts && typeof opts.compressed !== "undefined") {
+      compressed = opts.compressed;
+    }
 
-    const hash = sha256(decodeBase64(tx.active));
-    const compactSignatureHex = toHexString(decodeBase64(tx.signature_data));
+    const hash = sha256(decodeBase64(txOrBlock.active));
+    const compactSignatureHex = toHexString(decodeBase64(signatureData));
     const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
     const rHex = compactSignatureHex.slice(2, 66);
     const sHex = compactSignatureHex.slice(66);
@@ -324,13 +339,17 @@ export class Signer implements SignerInterface {
   }
 
   /**
-   * Function to recover the signer address from a signed transaction.
+   * Function to recover the signer address from a signed
+   * transaction or block.
    * The output format can be compressed or uncompressed.
    * @param tx - signed transaction
    * @param compressed - output format (compressed by default)
    */
-  static recoverAddress(tx: TransactionJson, compressed = true): string {
-    const publicKey = Signer.recoverPublicKey(tx, compressed);
+  static async recoverAddress(
+    txOrBlock: TransactionJson | BlockJson,
+    opts?: RecoverPublicKeyOptions
+  ): Promise<string> {
+    const publicKey = await Signer.recoverPublicKey(txOrBlock, opts);
     return bitcoinAddress(toUint8Array(publicKey));
   }
 
