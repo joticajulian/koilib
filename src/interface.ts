@@ -115,7 +115,7 @@ export interface DecodedOperationJson {
 }
 
 export interface TransactionOptions {
-  rcLimit?: number | bigint | string;
+  rc_limit?: number | bigint | string;
   nonce?: number;
   sendTransaction?: boolean;
   sendAbis?: boolean;
@@ -128,76 +128,76 @@ export interface SendTransactionResponse {
 type NumberLike = number | bigint | string;
 
 export interface UploadContractOperation {
-  contractId?: Uint8Array;
+  contract_id?: Uint8Array;
 
   bytecode?: Uint8Array;
 }
 
 export interface UploadContractOperationJson {
-  contractId?: string; // base58
+  contract_id?: string; // base58
 
   bytecode?: string; // base64
 }
 
 export interface CallContractOperation {
-  contractId: Uint8Array;
+  contract_id: Uint8Array;
 
-  entryPoint: number;
+  entry_point: number;
 
   args: Uint8Array;
 }
 
 export interface CallContractOperationJson {
-  contractId: string; // base58
+  contract_id: string; // base58
 
-  entryPoint: number;
+  entry_point: number;
 
   args: string; // base64
 }
 
 export interface ContractCallBundle {
-  contractId: Uint8Array;
-  entryPoint: number;
+  contract_id: Uint8Array;
+  entry_point: number;
 }
 
 export interface ContractCallBundleJson {
-  contractId: string; // base58
+  contract_id: string; // base58
 
-  entryPoint: number;
+  entry_point: number;
 }
 
 export interface ThunkIdNested {
-  thunkId: number;
+  thunk_id: number;
 }
 
 export interface ContractCallBundleNested {
-  systemCallBundle: ContractCallBundle;
+  system_call_bundle: ContractCallBundle;
 }
 
 export type SystemCallTarget = ThunkIdNested | ContractCallBundleNested;
 
 export interface SetSystemCallOperation {
-  callId: number;
+  call_id: number;
 
   target: SystemCallTarget;
 }
 
 export interface SetSystemCallOperationJson {
-  callId: number;
+  call_id: number;
 
   target: number | ContractCallBundleJson;
 }
 
 export interface UploadContractOperationNested {
-  uploadContract: UploadContractOperation;
+  upload_contract: UploadContractOperation;
 }
 
 export interface CallContractOperationNested {
-  callContract: CallContractOperation;
+  call_contract: CallContractOperation;
 }
 
 export interface SetSystemCallOperationNested {
-  setSystemCall: SetSystemCallOperation;
+  set_system_call: SetSystemCallOperation;
 }
 
 export type Operation =
@@ -206,16 +206,16 @@ export type Operation =
   | SetSystemCallOperationNested;
 
 export type OperationJson = {
-  uploadContract?: UploadContractOperationJson;
-  callContract?: CallContractOperationJson;
-  setSystemCall?: SetSystemCallOperationJson;
+  upload_contract?: UploadContractOperationJson;
+  call_contract?: CallContractOperationJson;
+  set_system_call?: SetSystemCallOperationJson;
 };
 
 export interface ActiveTransactionData {
   /**
    * Resource credits limit
    */
-  rcLimit?: string | number | bigint;
+  rc_limit?: string | number | bigint;
 
   /**
    * Account nonce
@@ -234,7 +234,7 @@ export interface ActiveTransactionDataJson {
   /**
    * Resource credits limit
    */
-  rcLimit?: string | number | bigint;
+  rc_limit?: string | number | bigint;
 
   /**
    * Account nonce
@@ -272,7 +272,7 @@ export interface TransactionJson {
   /**
    * Signature in compact format enconded in multi base64
    */
-  signatureData?: string;
+  signature_data?: string;
 }
 
 export interface BlockHeaderJson {
@@ -287,7 +287,7 @@ export interface BlockJson {
   header?: BlockHeaderJson;
   active?: string;
   passive?: string;
-  signatureData?: string;
+  signature_data?: string;
   transactions?: TransactionJson[];
   [x: string]: unknown;
 }

@@ -214,9 +214,9 @@ describe("Wallet and Contract", () => {
     const opDecoded = await koinContract.decodeOperation(opEncoded);
 
     expect(opEncoded).toStrictEqual({
-      callContract: {
-        contractId: koinContract.id,
-        entryPoint: koinContract.abi?.methods?.transfer?.entryPoint,
+      call_contract: {
+        contract_id: koinContract.id,
+        entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
         args: expect.any(Uint8Array) as Uint8Array,
       },
     } as CallContractOperationNested);
@@ -232,23 +232,23 @@ describe("Wallet and Contract", () => {
       rcLimit: "10",
       operations: [
         {
-          callContract: {
-            contractId: new Uint8Array(crypto.randomBytes(20)),
-            entryPoint: 12,
+          call_contract: {
+            contract_id: new Uint8Array(crypto.randomBytes(20)),
+            entry_point: 12,
             args: new Uint8Array(crypto.randomBytes(12)),
           },
         } as CallContractOperationNested,
         {
-          setSystemCall: {
-            callId: 23,
+          set_system_call: {
+            call_id: 23,
             target: {
-              thunkId: 234,
+              thunk_id: 234,
             },
           },
         } as SetSystemCallOperationNested,
         {
-          uploadContract: {
-            contractId: new Uint8Array(crypto.randomBytes(20)),
+          upload_contract: {
+            contract_id: new Uint8Array(crypto.randomBytes(20)),
             bytecode: new Uint8Array(crypto.randomBytes(23)),
           },
         } as UploadContractOperationNested,
@@ -276,9 +276,9 @@ describe("Wallet and Contract", () => {
     );
 
     expect(operation).toStrictEqual({
-      callContract: {
-        contractId: koinContract.id,
-        entryPoint: koinContract.abi?.methods?.transfer?.entryPoint,
+      call_contract: {
+        contract_id: koinContract.id,
+        entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
         args: expect.any(Uint8Array) as Uint8Array,
       },
     } as CallContractOperationNested);
@@ -412,8 +412,8 @@ describe("Wallet and Contract", () => {
       await koinContract.deploy();
 
     expect(operation).toStrictEqual({
-      uploadContract: {
-        contractId: expect.any(Uint8Array) as Uint8Array,
+      upload_contract: {
+        contract_id: expect.any(Uint8Array) as Uint8Array,
         bytecode: expect.any(Uint8Array) as Uint8Array,
       },
     } as UploadContractOperationNested);

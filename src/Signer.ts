@@ -275,7 +275,7 @@ export class Signer implements SignerInterface {
     const rHex = r.toString(16).padStart(64, "0");
     const sHex = s.toString(16).padStart(64, "0");
     const recId = (recovery + 31).toString(16).padStart(2, "0");
-    tx.signatureData = encodeBase64(toUint8Array(recId + rHex + sHex));
+    tx.signature_data = encodeBase64(toUint8Array(recId + rHex + sHex));
     const multihash = `0x1220${hash}`; // 12: code sha2-256. 20: length (32 bytes)
     tx.id = multihash;
     return tx;
@@ -294,7 +294,7 @@ export class Signer implements SignerInterface {
     tx: TransactionJson,
     _abis?: Record<string, Abi>
   ): Promise<SendTransactionResponse> {
-    if (!tx.signatureData || !tx.id) await this.signTransaction(tx);
+    if (!tx.signature_data || !tx.id) await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
     return this.provider.sendTransaction(tx);
   }
@@ -307,9 +307,10 @@ export class Signer implements SignerInterface {
    */
   static recoverPublicKey(tx: TransactionJson, compressed = true): string {
     if (!tx.active) throw new Error("activeData is not defined");
-    if (!tx.signatureData) throw new Error("signatureData is not defined");
+    if (!tx.signature_data) throw new Error("signatureData is not defined");
+
     const hash = sha256(decodeBase64(tx.active));
-    const compactSignatureHex = toHexString(decodeBase64(tx.signatureData));
+    const compactSignatureHex = toHexString(decodeBase64(tx.signature_data));
     const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
     const rHex = compactSignatureHex.slice(2, 66);
     const sHex = compactSignatureHex.slice(66);

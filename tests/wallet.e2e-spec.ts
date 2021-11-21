@@ -65,7 +65,12 @@ describe("Provider", () => {
 
   it("should get blocks by height", async () => {
     expect.assertions(1);
-    const blocks = await provider.getBlocks(1, 2);
+    const blocks = await provider.getBlocks(10, 2);
+    console.log(blocks);
+    const b = blocks[0].block;
+    const tx = { active: b.active, signatureData: b.signature_data as string };
+    const address = Signer.recoverAddress(tx);
+    console.log(address);
     expect(blocks).toStrictEqual(expect.arrayContaining([]));
   });
 
@@ -95,7 +100,8 @@ describe("Contract", () => {
     expect(resultName).toStrictEqual({ value: "Test Koinos" });
 
     const { result: resultBalance } = await koin.balanceOf<{ value: string }>({
-      owner: signer.getAddress(),
+      //owner: signer.getAddress(),
+      owner: "16WVwztd9wg7hC6tDTE3TEiQVvE9HDC7oB",
     });
     expect(resultBalance).toStrictEqual({
       value: expect.any(String) as string,
@@ -112,7 +118,7 @@ describe("Contract", () => {
     expect(resultBalance2).toStrictEqual({ value: "0" });
   });
 
-  it("should transfer and get receipt", async () => {
+  it.only("should transfer and get receipt", async () => {
     expect.assertions(6);
     const { operation, transaction, transactionResponse, result } =
       await koin.transfer({

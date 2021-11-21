@@ -121,7 +121,7 @@ export class Contract {
 
   /**
    * Options to apply when creating transactions.
-   * By default it set rcLimit to 1e8, sendTransaction true,
+   * By default it set rc_limit to 1e8, sendTransaction true,
    * sendAbis true, and nonce undefined (to get it from the blockchain)
    */
   options: TransactionOptions;
@@ -152,7 +152,7 @@ export class Contract {
       this.serializer = new Serializer(c.abi.types);
     }
     this.options = {
-      rcLimit: 1e8,
+      rc_limit: 1e8,
       sendTransaction: true,
       sendAbis: true,
       ...c.options,
@@ -206,9 +206,9 @@ export class Contract {
             if (!output) throw new Error(`No output defined for ${name}`);
             // read contract
             const { result: resultEncoded } = await this.provider.readContract({
-              contractId: encodeBase58(operation.callContract.contractId),
-              entryPoint: operation.callContract.entryPoint,
-              args: encodeBase64(operation.callContract.args),
+              contract_id: encodeBase58(operation.call_contract.contract_id),
+              entry_point: operation.call_contract.entry_point,
+              args: encodeBase64(operation.call_contract.args),
             });
             let result = defaultOutput as T;
             if (resultEncoded) {
@@ -291,8 +291,8 @@ export class Contract {
       ...options,
     };
     const operation: UploadContractOperationNested = {
-      uploadContract: {
-        contractId: Contract.computeContractId(this.signer.getAddress()),
+      upload_contract: {
+        contract_id: Contract.computeContractId(this.signer.getAddress()),
         bytecode: this.bytecode,
       },
     };
@@ -326,9 +326,9 @@ export class Contract {
    *
    * console.log(opEncoded);
    * // {
-   * //   callContract: {
-   * //     contractId: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-   * //     entryPoint: 0x62efa292,
+   * //   call_contract: {
+   * //     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   * //     entry_point: 0x62efa292,
    * //     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
    * //   }
    * // }
@@ -351,9 +351,9 @@ export class Contract {
     }
 
     return {
-      callContract: {
-        contractId: this.id,
-        entryPoint: method.entryPoint,
+      call_contract: {
+        contract_id: this.id,
+        entry_point: method.entryPoint,
         args: bufferInputs,
       },
     };
@@ -364,9 +364,9 @@ export class Contract {
    * @example
    * ```ts
    * const opDecoded = contract.decodeOperation({
-   *   callContract: {
-   *     contractId: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-   *     entryPoint: 0x62efa292,
+   *   call_contract: {
+   *     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *     entry_point: 0x62efa292,
    *     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
    *   }
    * });
@@ -388,29 +388,29 @@ export class Contract {
     if (!this.abi || !this.abi.methods)
       throw new Error("Methods are not defined");
     if (!this.serializer) throw new Error("Serializer is not defined");
-    if (!op.callContract)
+    if (!op.call_contract)
       throw new Error("Operation is not CallContractOperation");
-    if (op.callContract.contractId !== this.id)
+    if (op.call_contract.contract_id !== this.id)
       throw new Error(
         `Invalid contract id. Expected: ${encodeBase58(
           this.id
-        )}. Received: ${encodeBase58(op.callContract.contractId)}`
+        )}. Received: ${encodeBase58(op.call_contract.contract_id)}`
       );
     for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
       const opName = Object.keys(this.abi.methods)[i];
       const method = this.abi.methods[opName];
-      if (op.callContract.entryPoint === method.entryPoint) {
+      if (op.call_contract.entry_point === method.entryPoint) {
         if (!method.input) return { name: opName };
         return {
           name: opName,
           args: await this.serializer.deserialize(
-            op.callContract.args,
+            op.call_contract.args,
             method.input
           ),
         };
       }
     }
-    throw new Error(`Unknown method id ${op.callContract.entryPoint}`);
+    throw new Error(`Unknown method id ${op.call_contract.entry_point}`);
   }
 }
 
