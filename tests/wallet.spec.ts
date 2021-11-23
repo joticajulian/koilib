@@ -17,7 +17,9 @@ import {
   SetSystemCallOperationNested,
   UploadContractOperationNested,
   TransactionJson,
+  Abi,
 } from "../src/interface";
+import { Serializer } from "../src";
 
 const mockAxiosGet = jest.spyOn(axios, "get");
 const mockAxiosPost = jest.spyOn(axios, "post");
@@ -59,7 +61,7 @@ const axiosResponse = <T = unknown>(
   });
 };
 
-const privateKeyHex =
+const privateKey =
   "bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37";
 const seed = "one two three four five six";
 const wif = "5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd";
@@ -77,7 +79,7 @@ const rpcNodes = [
 ];
 
 const provider = new Provider(rpcNodes);
-const signer = new Signer(privateKeyHex, true, provider);
+const signer = new Signer({ privateKey, provider });
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
   abi: Krc20Abi,
@@ -150,32 +152,32 @@ describe("Signer", () => {
     const signer1 = Signer.fromWif(wif);
     expect(signer1.getPrivateKey("wif")).toBe(wif);
     expect(signer1.getPrivateKey("wif", true)).toBe(wifCompressed);
-    expect(signer1.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer1.getPrivateKey("hex")).toBe(privateKey);
 
     const signer2 = Signer.fromWif(wifCompressed);
     expect(signer2.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer2.getPrivateKey("wif", false)).toBe(wif);
-    expect(signer2.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer2.getPrivateKey("hex")).toBe(privateKey);
 
-    const signer3 = new Signer(privateKeyHex);
+    const signer3 = new Signer({ privateKey });
     expect(signer3.getPrivateKey("wif", false)).toBe(wif);
     expect(signer3.getPrivateKey("wif")).toBe(wifCompressed);
-    expect(signer3.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer3.getPrivateKey("hex")).toBe(privateKey);
 
-    const signer4 = new Signer(privateKeyHex, false);
+    const signer4 = new Signer({ privateKey, compressed: false });
     expect(signer4.getPrivateKey("wif")).toBe(wif);
     expect(signer4.getPrivateKey("wif", true)).toBe(wifCompressed);
-    expect(signer4.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer4.getPrivateKey("hex")).toBe(privateKey);
 
     const signer5 = Signer.fromSeed(seed);
     expect(signer5.getPrivateKey("wif", false)).toBe(wif);
     expect(signer5.getPrivateKey("wif")).toBe(wifCompressed);
-    expect(signer5.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer5.getPrivateKey("hex")).toBe(privateKey);
 
     const signer6 = Signer.fromSeed(seed, false);
     expect(signer6.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer6.getPrivateKey("wif")).toBe(wif);
-    expect(signer6.getPrivateKey("hex")).toBe(privateKeyHex);
+    expect(signer6.getPrivateKey("hex")).toBe(privateKey);
   });
 });
 
@@ -186,19 +188,19 @@ describe("Wallet and Contract", () => {
     const decodedPrivateKey2 = toHexString(
       bitcoinDecode(wifCompressed)
     ).toLowerCase();
-    expect(decodedPrivateKey).toBe(privateKeyHex);
-    expect(decodedPrivateKey2).toBe(privateKeyHex);
+    expect(decodedPrivateKey).toBe(privateKey);
+    expect(decodedPrivateKey2).toBe(privateKey);
   });
 
   it("should compute address", () => {
     expect.assertions(2);
-    const wallet1 = new Signer(privateKeyHex);
-    const wallet2 = new Signer(privateKeyHex, false);
+    const wallet1 = new Signer({ privateKey });
+    const wallet2 = new Signer({ privateKey, compressed: false });
     expect(wallet1.address).toBe(addressCompressed);
     expect(wallet2.address).toBe(address);
   });
 
-  it("should encode and decode an operation", () => {
+  it("should encode and decode an operation", async () => {
     expect.assertions(2);
     const opTransfer = {
       name: "transfer",
@@ -209,13 +211,13 @@ describe("Wallet and Contract", () => {
       },
     };
 
-    const opEncoded = koinContract.encodeOperation(opTransfer);
-    const opDecoded = koinContract.decodeOperation(opEncoded);
+    const opEncoded = await koinContract.encodeOperation(opTransfer);
+    const opDecoded = await koinContract.decodeOperation(opEncoded);
 
     expect(opEncoded).toStrictEqual({
-      callContract: {
-        contractId: koinContract.id,
-        entryPoint: koinContract.abi?.methods?.transfer?.entryPoint,
+      call_contract: {
+        contract_id: koinContract.id,
+        entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
         args: expect.any(Uint8Array) as Uint8Array,
       },
     } as CallContractOperationNested);
@@ -228,26 +230,26 @@ describe("Wallet and Contract", () => {
 
     const activeData = {
       nonce: "8",
-      rcLimit: "10",
+      rc_limit: "10",
       operations: [
         {
-          callContract: {
-            contractId: new Uint8Array(crypto.randomBytes(20)),
-            entryPoint: 12,
+          call_contract: {
+            contract_id: new Uint8Array(crypto.randomBytes(20)),
+            entry_point: 12,
             args: new Uint8Array(crypto.randomBytes(12)),
           },
         } as CallContractOperationNested,
         {
-          setSystemCall: {
-            callId: 23,
+          set_system_call: {
+            call_id: 23,
             target: {
-              thunkId: 234,
+              thunk_id: 234,
             },
           },
         } as SetSystemCallOperationNested,
         {
-          uploadContract: {
-            contractId: new Uint8Array(crypto.randomBytes(20)),
+          upload_contract: {
+            contract_id: new Uint8Array(crypto.randomBytes(20)),
             bytecode: new Uint8Array(crypto.randomBytes(23)),
           },
         } as UploadContractOperationNested,
@@ -255,7 +257,7 @@ describe("Wallet and Contract", () => {
     };
 
     const tx = await signer.encodeTransaction(activeData);
-    const activeData2 = Signer.decodeTransaction(tx);
+    const activeData2 = await signer.decodeTransaction(tx);
     expect(tx).toStrictEqual({
       active: expect.any(String) as string,
     } as TransactionJson);
@@ -275,9 +277,9 @@ describe("Wallet and Contract", () => {
     );
 
     expect(operation).toStrictEqual({
-      callContract: {
-        contractId: koinContract.id,
-        entryPoint: koinContract.abi?.methods?.transfer?.entryPoint,
+      call_contract: {
+        contract_id: koinContract.id,
+        entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
         args: expect.any(Uint8Array) as Uint8Array,
       },
     } as CallContractOperationNested);
@@ -285,7 +287,7 @@ describe("Wallet and Contract", () => {
     expect(transaction).toStrictEqual({
       id: expect.any(String) as string,
       active: expect.any(String) as string,
-      signatureData: expect.any(String) as string,
+      signature_data: expect.any(String) as string,
     } as TransactionJson);
 
     expect(transactionResponse).toBeDefined();
@@ -293,20 +295,30 @@ describe("Wallet and Contract", () => {
     // recover public key and address
     if (!transaction) throw new Error("transaction is not defined");
 
-    const recoveredPublicKey = Signer.recoverPublicKey(transaction, false);
+    const recoveredPublicKey = await Signer.recoverPublicKey(transaction, {
+      compressed: false,
+    });
     expect(recoveredPublicKey).toBe(publicKey);
 
-    const recoveredPublicKeyComp = Signer.recoverPublicKey(transaction, true);
+    const recoveredPublicKeyComp = await Signer.recoverPublicKey(transaction, {
+      compressed: true,
+    });
     expect(recoveredPublicKeyComp).toBe(publicKeyCompressed);
 
-    const recoveredAddress = Signer.recoverAddress(transaction, false);
+    const recoveredAddress = await Signer.recoverAddress(transaction, {
+      compressed: false,
+    });
     expect(recoveredAddress).toBe(address);
 
-    const recoveredAddressComp = Signer.recoverAddress(transaction, true);
+    const recoveredAddressComp = await Signer.recoverAddress(transaction, {
+      compressed: true,
+    });
     expect(recoveredAddressComp).toBe(addressCompressed);
 
-    expect(Signer.recoverPublicKey(transaction)).toBe(publicKeyCompressed);
-    expect(Signer.recoverAddress(transaction)).toBe(addressCompressed);
+    expect(await Signer.recoverPublicKey(transaction)).toBe(
+      publicKeyCompressed
+    );
+    expect(await Signer.recoverAddress(transaction)).toBe(addressCompressed);
   });
 
   it("should rewrite the default options when creating transactions", async () => {
@@ -329,7 +341,7 @@ describe("Wallet and Contract", () => {
   });
 
   it("should get the balance of an account", async () => {
-    const type = koinContract.protobuffers?.lookupType(
+    const type = koinContract.serializer?.root?.lookupType(
       "balance_of_result"
     ) as Type;
     const message = type.create({ value: "123456" });
@@ -344,7 +356,7 @@ describe("Wallet and Contract", () => {
 
   it("should get the balance of an account using the preformatInput and preformatOutput", async () => {
     expect.assertions(2);
-    const type = koinContract.protobuffers?.lookupType(
+    const type = koinContract.serializer?.root?.lookupType(
       "balance_of_result"
     ) as Type;
     const message = type.create({ value: "123456" });
@@ -356,7 +368,7 @@ describe("Wallet and Contract", () => {
     const contractInstance = new Contract({
       id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
       signer,
-      abi: JSON.parse(JSON.stringify(Krc20Abi)),
+      abi: JSON.parse(JSON.stringify(Krc20Abi)) as Abi,
     });
     contractInstance.abi!.methods.balanceOf.preformatInput = (owner) => ({
       owner,
@@ -411,8 +423,8 @@ describe("Wallet and Contract", () => {
       await koinContract.deploy();
 
     expect(operation).toStrictEqual({
-      uploadContract: {
-        contractId: expect.any(Uint8Array) as Uint8Array,
+      upload_contract: {
+        contract_id: expect.any(Uint8Array) as Uint8Array,
         bytecode: expect.any(Uint8Array) as Uint8Array,
       },
     } as UploadContractOperationNested);
@@ -420,9 +432,89 @@ describe("Wallet and Contract", () => {
     expect(transaction).toStrictEqual({
       id: expect.any(String) as string,
       active: expect.any(String) as string,
-      signatureData: expect.any(String) as string,
+      signature_data: expect.any(String) as string,
     } as TransactionJson);
 
     expect(transactionResponse).toBeDefined();
+  });
+
+  it("should get a a block with federated consensus and get the signer address", async () => {
+    expect.assertions(2);
+    mockAxiosPost.mockImplementation(async () => {
+      return axiosResponse({
+        block_items: [
+          {
+            block: {
+              active:
+                "CiISIOOwxEKY_BwUmvv0yJlvuSQnrkHkZJuTTKSVmRt4UrhVEiISIC26XbwznnMWrqJoP6-DnBt7HuIxPbeSESWIEY3wZqo1GhkAadIc8ziAPySyhmNk00yjM3dIdxatR7-8",
+              signature_data:
+                "HxhGjxdnrpNMhiKgi03AT9B2r7hWGOMnM47SbhtWWgDjTrZGQSOVt1ZG2N5L9JmbIXegzbtggHaBi3o0DTpYhB4=",
+            },
+          },
+        ],
+      });
+    });
+    const blocks = await provider.getBlocks(1, 1, "randomId");
+    const signer = await Signer.recoverAddress(blocks[0].block);
+    expect(signer).toBeDefined();
+    expect(signer.length).toBe(34);
+  });
+
+  it("should get a a block with pow consensus and get the signer address", async () => {
+    expect.assertions(2);
+    mockAxiosPost.mockImplementation(async () => {
+      return axiosResponse({
+        block_items: [
+          {
+            block: {
+              active:
+                "CiISIOOwxEKY_BwUmvv0yJlvuSQnrkHkZJuTTKSVmRt4UrhVEiISIC26XbwznnMWrqJoP6-DnBt7HuIxPbeSESWIEY3wZqo1GhkAadIc8ziAPySyhmNk00yjM3dIdxatR7-8",
+              signature_data:
+                "CiDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB2bvRJBH8FKri7J2bR6sWa-mRgRFrqolnnxMl48HtSsl_8y-YaIcm7RzsevuEZP8b5g1TiPfGZK1QBkH7mrPD4UlEl2iN4=",
+            },
+          },
+        ],
+      });
+    });
+    const blocks = await provider.getBlocks(1, 1, "randomId");
+    const serializer = new Serializer(
+      {
+        nested: {
+          mypackage: {
+            nested: {
+              pow_signature_data: {
+                fields: {
+                  nonce: {
+                    type: "bytes",
+                    id: 1,
+                  },
+                  recoverable_signature: {
+                    type: "bytes",
+                    id: 2,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        defaultTypeName: "pow_signature_data",
+      }
+    );
+    interface PowSigData {
+      nonce: string;
+      recoverable_signature: string;
+    }
+    const signer = await Signer.recoverAddress(blocks[0].block, {
+      transformSignature: async (signatureData) => {
+        const powSignatureData: PowSigData = await serializer.deserialize(
+          signatureData
+        );
+        return powSignatureData.recoverable_signature;
+      },
+    });
+    expect(signer).toBeDefined();
+    expect(signer.length).toBe(34);
   });
 });

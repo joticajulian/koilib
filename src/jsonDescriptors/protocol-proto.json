@@ -9,14 +9,14 @@
           "nested": {
             "contract_call_bundle": {
               "fields": {
-                "contractId": {
+                "contract_id": {
                   "type": "bytes",
                   "id": 1,
                   "options": {
                     "(koinos_bytes_type)": "CONTRACT_ID"
                   }
                 },
-                "entryPoint": {
+                "entry_point": {
                   "type": "uint32",
                   "id": 2
                 }
@@ -25,15 +25,15 @@
             "system_call_target": {
               "oneofs": {
                 "target": {
-                  "oneof": ["thunkId", "systemCallBundle"]
+                  "oneof": ["thunk_id", "system_call_bundle"]
                 }
               },
               "fields": {
-                "thunkId": {
+                "thunk_id": {
                   "type": "uint32",
                   "id": 1
                 },
-                "systemCallBundle": {
+                "system_call_bundle": {
                   "type": "contract_call_bundle",
                   "id": 2
                 }
@@ -41,7 +41,7 @@
             },
             "upload_contract_operation": {
               "fields": {
-                "contractId": {
+                "contract_id": {
                   "type": "bytes",
                   "id": 1,
                   "options": {
@@ -56,14 +56,14 @@
             },
             "call_contract_operation": {
               "fields": {
-                "contractId": {
+                "contract_id": {
                   "type": "bytes",
                   "id": 1,
                   "options": {
                     "(koinos_bytes_type)": "CONTRACT_ID"
                   }
                 },
-                "entryPoint": {
+                "entry_point": {
                   "type": "uint32",
                   "id": 2
                 },
@@ -75,7 +75,7 @@
             },
             "set_system_call_operation": {
               "fields": {
-                "callId": {
+                "call_id": {
                   "type": "uint32",
                   "id": 1
                 },
@@ -88,19 +88,23 @@
             "operation": {
               "oneofs": {
                 "op": {
-                  "oneof": ["uploadContract", "callContract", "setSystemCall"]
+                  "oneof": [
+                    "upload_contract",
+                    "call_contract",
+                    "set_system_call"
+                  ]
                 }
               },
               "fields": {
-                "uploadContract": {
+                "upload_contract": {
                   "type": "upload_contract_operation",
                   "id": 1
                 },
-                "callContract": {
+                "call_contract": {
                   "type": "call_contract_operation",
                   "id": 2
                 },
-                "setSystemCall": {
+                "set_system_call": {
                   "type": "set_system_call_operation",
                   "id": 3
                 }
@@ -108,7 +112,7 @@
             },
             "active_transaction_data": {
               "fields": {
-                "rcLimit": {
+                "rc_limit": {
                   "type": "uint64",
                   "id": 1,
                   "options": {
@@ -149,7 +153,7 @@
                   "type": "bytes",
                   "id": 3
                 },
-                "signatureData": {
+                "signature_data": {
                   "type": "bytes",
                   "id": 4
                 }
@@ -157,11 +161,11 @@
             },
             "active_block_data": {
               "fields": {
-                "transactionMerkleRoot": {
+                "transaction_merkle_root": {
                   "type": "bytes",
                   "id": 1
                 },
-                "passiveDataMerkleRoot": {
+                "passive_data_merkle_root": {
                   "type": "bytes",
                   "id": 2
                 },
@@ -220,7 +224,7 @@
                   "type": "bytes",
                   "id": 4
                 },
-                "signatureData": {
+                "signature_data": {
                   "type": "bytes",
                   "id": 5
                 },

@@ -1,158 +1,17 @@
-import { Root, INamespace } from "protobufjs/light";
+/* eslint-disable no-await-in-loop */
 import { Signer, SignerInterface } from "./Signer";
-import { Provider, SendTransactionResponse } from "./Provider";
+import { Provider } from "./Provider";
+import { Serializer } from "./Serializer";
 import {
   CallContractOperationNested,
   UploadContractOperationNested,
   TransactionJson,
+  Abi,
+  TransactionOptions,
+  DecodedOperationJson,
+  SendTransactionResponse,
 } from "./interface";
-import {
-  decodeBase58,
-  decodeBase64,
-  encodeBase58,
-  encodeBase64,
-  toHexString,
-  toUint8Array,
-} from "./utils";
-
-const OP_BYTES = "(koinos_bytes_type)";
-
-/**
- * Application Binary Interface (ABI)
- *
- * ABIs are composed of 2 elements: methods and types.
- * - The methods define the names of the entries of the smart contract,
- * the corresponding endpoints and the name of the types used.
- * - The types all the description to serialize and deserialize
- * using proto buffers.
- *
- * To generate the types is necessary to use the dependency
- * protobufjs. The following example shows how to generate the
- * protobuf descriptor from a .proto file.
- *
- * ```js
- * const fs = require("fs");
- * const pbjs = require("protobufjs/cli/pbjs");
- *
- * pbjs.main(
- *   ["--target", "json", "./token.proto"],
- *   (err, output) => {
- *     if (err) throw err;
- *     fs.writeFileSync("./token-proto.json", output);
- *   }
- * );
- * ```
- *
- * Then this descriptor can be loaded to define the ABI:
- * ```js
- * const tokenJson = require("./token-proto.json");
- * const abiToken = {
- *   methods: {
- *     balanceOf: {
- *       entryPoint: 0x15619248,
- *       inputs: "balance_of_arguments",
- *       outputs: "balance_of_result",
- *       readOnly: true,
- *       defaultOutput: { value: "0" },
- *     },
- *     transfer: {
- *       entryPoint: 0x62efa292,
- *       inputs: "transfer_arguments",
- *       outputs: "transfer_result",
- *     },
- *     mint: {
- *       entryPoint: 0xc2f82bdc,
- *       inputs: "mint_argumnets",
- *       outputs: "mint_result",
- *     },
- *   },
- *   types: tokenJson,
- * };
- * ```
- *
- * Note that this example uses "defaultOutput" for the method
- * "balanceOf". This is used when the smart contract returns an
- * empty response (for instance when there are no balance records
- * for a specific address) and you require a default output in
- * such cases.
- */
-export interface Abi {
-  methods: {
-    /** Name of the method */
-    [x: string]: {
-      /** Entry point ID */
-      entryPoint: number;
-      /** Protobuffer type for input */
-      input?: string;
-      /** Protobuffer type for output */
-      output?: string;
-      /** Boolean to differentiate write methods
-       * (using transactions) from read methods
-       * (query the contract)
-       */
-      readOnly?: boolean;
-      /** Default value when the output is undefined */
-      defaultOutput?: unknown;
-      /** Optional function to preformat the input */
-      preformatInput?: (input: unknown) => Record<string, unknown>;
-      /** Optional function to preformat the output */
-      preformatOutput?: (output: Record<string, unknown>) => unknown;
-      /** Description of the method */
-      description?: string;
-    };
-  };
-  /**
-   * Protobuffers descriptor in JSON format.
-   * See https://www.npmjs.com/package/protobufjs#using-json-descriptors
-   */
-  types: INamespace;
-}
-
-/**
- * Human readable format operation
- *
- * @example
- * ```ts
- * const opDecoded = {
- *   name: "transfer",
- *   args: {
- *     from: "1Krs7v1rtpgRyfwEZncuKMQQnY5JhqXVSx",
- *     to: "1BqtgWBcqm9cSZ97avLGZGJdgso7wx6pCA",
- *     value: 1000,
- *   },
- * };
- * ```
- */
-export interface DecodedOperationJson {
-  /** Operation name */
-  name: string;
-
-  /** Arguments decoded. See [[Abi]] */
-  args?: Record<string, unknown>;
-}
-
-export interface TransactionOptions {
-  rcLimit?: number | bigint | string;
-  nonce?: number;
-  sendTransaction?: boolean;
-  sendAbis?: boolean;
-}
-
-/**
- * Makes a copy of a value. The returned value can be modified
- * without altering the original one. Although this is not needed
- * for strings or numbers and only needed for objects and arrays,
- * all these options are covered in a single function
- *
- * It is assumed that the argument is number, string, or contructions
- * of these types inside objects or arrays.
- */
-function copyValue(value: unknown): unknown {
-  if (typeof value === "string" || typeof value === "number") {
-    return value;
-  }
-  return JSON.parse(JSON.stringify(value)) as unknown;
-}
+import { decodeBase58, encodeBase58, encodeBase64 } from "./utils";
 
 /**
  * The contract class contains the contract ID and contract entries
@@ -164,9 +23,9 @@ function copyValue(value: unknown): unknown {
  * ```ts
  * const { Contract, Provider, Signer, utils } = require("koilib");
  * const rpcNodes = ["http://api.koinos.io:8080"];
- * const privateKeyHex = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
+ * const privateKey = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
  * const provider = new Provider(rpcNodes);
- * const signer = new Signer(privateKeyHex, true, provider);
+ * const signer = new Signer({ privateKey, provider });
  * const koinContract = new Contract({
  *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
  *   abi: utils.Krc20Abi,
@@ -175,18 +34,26 @@ function copyValue(value: unknown): unknown {
  * });
  * const koin = koinContract.functions;
  *
+ * // optional: preformat input/output
+ * koinContract.abi.methods.balanceOf.preformatInput = (owner) =>
+ *   ({ owner });
+ * koinContract.abi.methods.balanceOf.preformatOutput = (res) =>
+ *   utils.formatUnits(res.value, 8);
+ * koinContract.abi.methods.transfer.preformatInput = (input) => ({
+ *   from: signer.getAddress(),
+ *   to: input.to,
+ *   value: utils.parseUnits(input.value, 8),
+ * });
+ *
  * async funtion main() {
  *   // Get balance
- *   const { result } = await koin.balanceOf({
- *     owner: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD"
- *   });
- *   console.log(balance.result)
+ *   const { result } = await koin.balanceOf("12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD");
+ *   console.log(result)
  *
  *   // Transfer
  *   const { transaction, transactionResponse } = await koin.transfer({
- *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
  *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
- *     value: "1000",
+ *     value: "10.0001",
  *   });
  *   console.log(`Transaction id ${transaction.id} submitted`);
  *
@@ -205,14 +72,15 @@ export class Contract {
   id?: Uint8Array;
 
   /**
-   * Protobuffer definitions
-   */
-  protobuffers?: Root;
-
-  /**
    * Set of functions to interact with the smart
    * contract. These functions are automatically generated
    * in the constructor of the class
+   *
+   * @example
+   * ```ts
+   * const owner = "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb";
+   * await koinContract.functions.balanceOf({ owner });
+   * ```
    */
   functions: {
     [x: string]: <T = Record<string, unknown>>(
@@ -242,13 +110,18 @@ export class Contract {
   provider?: Provider;
 
   /**
+   * Serializer to serialize/deserialize data types
+   */
+  serializer?: Serializer;
+
+  /**
    * Bytecode. Needed to deploy the smart contract.
    */
   bytecode?: Uint8Array;
 
   /**
    * Options to apply when creating transactions.
-   * By default it set rcLimit to 1e8, sendTransaction true,
+   * By default it set rc_limit to 1e8, sendTransaction true,
    * sendAbis true, and nonce undefined (to get it from the blockchain)
    */
   options: TransactionOptions;
@@ -260,22 +133,39 @@ export class Contract {
     options?: TransactionOptions;
     signer?: Signer;
     provider?: Provider;
+    /**
+     * Set this option if you can not use _eval_ functions
+     * in the current environment. In such cases, the
+     * serializer must come from an environment where it
+     * is able to use those functions.
+     */
+    serializer?: Serializer;
   }) {
     if (c.id) this.id = decodeBase58(c.id);
     this.signer = c.signer;
     this.provider = c.provider || c.signer?.provider;
     this.abi = c.abi;
     this.bytecode = c.bytecode;
-    if (c.abi?.types) this.protobuffers = Root.fromJSON(c.abi.types);
+    if (c.serializer) {
+      this.serializer = c.serializer;
+    } else if (c.abi && c.abi.types) {
+      this.serializer = new Serializer(c.abi.types);
+    }
     this.options = {
-      rcLimit: 1e8,
+      rc_limit: 1e8,
       sendTransaction: true,
       sendAbis: true,
       ...c.options,
     };
     this.functions = {};
 
-    if (this.signer && this.provider && this.abi && this.abi.methods) {
+    if (
+      this.signer &&
+      this.provider &&
+      this.abi &&
+      this.abi.methods &&
+      this.serializer
+    ) {
       Object.keys(this.abi.methods).forEach((name) => {
         this.functions[name] = async <T = Record<string, unknown>>(
           argu: unknown = {},
@@ -310,19 +200,22 @@ export class Contract {
             args = argu as Record<string, unknown>;
           }
 
-          const operation = this.encodeOperation({ name, args });
+          const operation = await this.encodeOperation({ name, args });
 
           if (readOnly) {
             if (!output) throw new Error(`No output defined for ${name}`);
             // read contract
             const { result: resultEncoded } = await this.provider.readContract({
-              contractId: encodeBase58(operation.callContract.contractId),
-              entryPoint: operation.callContract.entryPoint,
-              args: encodeBase64(operation.callContract.args),
+              contract_id: encodeBase58(operation.call_contract.contract_id),
+              entry_point: operation.call_contract.entry_point,
+              args: encodeBase64(operation.call_contract.args),
             });
             let result = defaultOutput as T;
             if (resultEncoded) {
-              result = this.decodeType<T>(resultEncoded, output as string);
+              result = await this.serializer!.deserialize<T>(
+                resultEncoded,
+                output
+              );
             }
             if (typeof preformatOutput === "function") {
               result = preformatOutput(result as Record<string, unknown>) as T;
@@ -375,8 +268,9 @@ export class Contract {
    * The Bytecode must be defined in the constructor of the class
    * @example
    * ```ts
-   * const signer = new Signer("f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200", true, provider);
+   * const privateKey = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
    * const provider = new Provider(["http://api.koinos.io:8080"]);
+   * const signer = new Signer({ privateKey, provider });
    * const bytecode = new Uint8Array([1, 2, 3, 4]);
    * const contract = new Contract({ signer, provider, bytecode });
    * const { transactionResponse } = await contract.deploy();
@@ -397,8 +291,8 @@ export class Contract {
       ...options,
     };
     const operation: UploadContractOperationNested = {
-      uploadContract: {
-        contractId: Contract.computeContractId(this.signer.getAddress()),
+      upload_contract: {
+        contract_id: Contract.computeContractId(this.signer.getAddress()),
         bytecode: this.bytecode,
       },
     };
@@ -432,18 +326,20 @@ export class Contract {
    *
    * console.log(opEncoded);
    * // {
-   * //   callContract: {
-   * //     contractId: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-   * //     entryPoint: 0x62efa292,
+   * //   call_contract: {
+   * //     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   * //     entry_point: 0x62efa292,
    * //     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
    * //   }
    * // }
    * ```
    */
-  encodeOperation(op: DecodedOperationJson): CallContractOperationNested {
+  async encodeOperation(
+    op: DecodedOperationJson
+  ): Promise<CallContractOperationNested> {
     if (!this.abi || !this.abi.methods || !this.abi.methods[op.name])
       throw new Error(`Operation ${op.name} unknown`);
-    if (!this.protobuffers) throw new Error("Protobuffers are not defined");
+    if (!this.serializer) throw new Error("Serializer is not defined");
     if (!this.id) throw new Error("Contract id is not defined");
     const method = this.abi.methods[op.name];
 
@@ -451,13 +347,13 @@ export class Contract {
     if (method.input) {
       if (!op.args)
         throw new Error(`No arguments defined for type '${method.input}'`);
-      bufferInputs = this.encodeType(op.args, method.input);
+      bufferInputs = await this.serializer.serialize(op.args, method.input);
     }
 
     return {
-      callContract: {
-        contractId: this.id,
-        entryPoint: method.entryPoint,
+      call_contract: {
+        contract_id: this.id,
+        entry_point: method.entryPoint,
         args: bufferInputs,
       },
     };
@@ -468,9 +364,9 @@ export class Contract {
    * @example
    * ```ts
    * const opDecoded = contract.decodeOperation({
-   *   callContract: {
-   *     contractId: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-   *     entryPoint: 0x62efa292,
+   *   call_contract: {
+   *     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *     entry_point: 0x62efa292,
    *     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
    *   }
    * });
@@ -485,138 +381,36 @@ export class Contract {
    * // }
    * ```
    */
-  decodeOperation(op: CallContractOperationNested): DecodedOperationJson {
+  async decodeOperation(
+    op: CallContractOperationNested
+  ): Promise<DecodedOperationJson> {
     if (!this.id) throw new Error("Contract id is not defined");
     if (!this.abi || !this.abi.methods)
       throw new Error("Methods are not defined");
-    if (!op.callContract)
+    if (!this.serializer) throw new Error("Serializer is not defined");
+    if (!op.call_contract)
       throw new Error("Operation is not CallContractOperation");
-    if (op.callContract.contractId !== this.id)
+    if (op.call_contract.contract_id !== this.id)
       throw new Error(
         `Invalid contract id. Expected: ${encodeBase58(
           this.id
-        )}. Received: ${encodeBase58(op.callContract.contractId)}`
+        )}. Received: ${encodeBase58(op.call_contract.contract_id)}`
       );
     for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
       const opName = Object.keys(this.abi.methods)[i];
       const method = this.abi.methods[opName];
-      if (op.callContract.entryPoint === method.entryPoint) {
+      if (op.call_contract.entry_point === method.entryPoint) {
         if (!method.input) return { name: opName };
         return {
           name: opName,
-          args: this.decodeType(op.callContract.args, method.input),
+          args: await this.serializer.deserialize(
+            op.call_contract.args,
+            method.input
+          ),
         };
       }
     }
-    throw new Error(`Unknown method id ${op.callContract.entryPoint}`);
-  }
-
-  /**
-   * Function to encode a type using the protobuffer definitions
-   * It also prepares the bytes for special cases (base58, hex string)
-   */
-  encodeType(
-    valueDecoded: Record<string, unknown>,
-    typeName: string
-  ): Uint8Array {
-    if (!this.protobuffers) throw new Error("Protobuffers are not defined");
-    const protobufType = this.protobuffers.lookupType(typeName);
-    const object: Record<string, unknown> = {};
-    // TODO: format from Buffer to base58/base64 for nested fields
-    Object.keys(protobufType.fields).forEach((fieldName) => {
-      const { options, name, type } = protobufType.fields[fieldName];
-
-      // No byte conversion
-      if (type !== "bytes") {
-        object[name] = copyValue(valueDecoded[name]);
-        return;
-      }
-
-      // Default byte conversion
-      if (!options || !options[OP_BYTES]) {
-        object[name] = decodeBase64(valueDecoded[name] as string);
-        return;
-      }
-
-      // Specific byte conversion
-      switch (options[OP_BYTES]) {
-        case "BASE58":
-        case "CONTRACT_ID":
-        case "ADDRESS":
-          object[name] = decodeBase58(valueDecoded[name] as string);
-          break;
-        case "BASE64":
-          object[name] = decodeBase64(valueDecoded[name] as string);
-          break;
-        case "HEX":
-        case "BLOCK_ID":
-        case "TRANSACTION_ID":
-          object[name] = toUint8Array(
-            (valueDecoded[name] as string).replace("0x", "")
-          );
-          break;
-        default:
-          throw new Error(
-            `unknown koinos_byte_type ${options[OP_BYTES] as string}`
-          );
-      }
-    });
-    const message = protobufType.create(object);
-    const buffer = protobufType.encode(message).finish();
-    return buffer;
-  }
-
-  /**
-   * Function to decode bytes using the protobuffer definitions
-   * It also encodes the bytes for special cases (base58, hex string)
-   */
-  decodeType<T = Record<string, unknown>>(
-    valueEncoded: string | Uint8Array,
-    typeName: string
-  ): T {
-    if (!this.protobuffers) throw new Error("Protobuffers are not defined");
-    const valueBuffer =
-      typeof valueEncoded === "string"
-        ? decodeBase64(valueEncoded)
-        : valueEncoded;
-    const protobufType = this.protobuffers.lookupType(typeName);
-    const message = protobufType.decode(valueBuffer);
-    const object = protobufType.toObject(message, { longs: String });
-    // TODO: format from Buffer to base58/base64 for nested fields
-    Object.keys(protobufType.fields).forEach((fieldName) => {
-      const { options, name, type } = protobufType.fields[fieldName];
-
-      // No byte conversion
-      if (type !== "bytes") return;
-
-      // Default byte conversion
-      if (!options || !options[OP_BYTES]) {
-        object[name] = encodeBase64(object[name]);
-        return;
-      }
-
-      // Specific byte conversion
-      switch (options[OP_BYTES]) {
-        case "BASE58":
-        case "CONTRACT_ID":
-        case "ADDRESS":
-          object[name] = encodeBase58(object[name]);
-          break;
-        case "BASE64":
-          object[name] = encodeBase64(object[name]);
-          break;
-        case "HEX":
-        case "BLOCK_ID":
-        case "TRANSACTION_ID":
-          object[name] = `0x${toHexString(object[name])}`;
-          break;
-        default:
-          throw new Error(
-            `unknown koinos_byte_type ${options[OP_BYTES] as string}`
-          );
-      }
-    });
-    return object as T;
+    throw new Error(`Unknown method id ${op.call_contract.entry_point}`);
   }
 }
 

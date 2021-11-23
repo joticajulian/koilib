@@ -164,7 +164,7 @@
                         "jstype": "JS_STRING"
                       }
                     },
-                    "lastManaUpdate": {
+                    "last_mana_update": {
                       "type": "uint64",
                       "id": 3,
                       "options": {

@@ -1,76 +1,221 @@
+import { INamespace } from "protobufjs/light";
+
+/**
+ * Application Binary Interface (ABI)
+ *
+ * ABIs are composed of 2 elements: methods and types.
+ * - The methods define the names of the entries of the smart contract,
+ * the corresponding endpoints and the name of the types used.
+ * - The types all the description to serialize and deserialize
+ * using proto buffers.
+ *
+ * To generate the types is necessary to use the dependency
+ * protobufjs. The following example shows how to generate the
+ * protobuf descriptor from a .proto file.
+ *
+ * ```js
+ * const fs = require("fs");
+ * const pbjs = require("protobufjs/cli/pbjs");
+ *
+ * pbjs.main(
+ *   ["--target", "json", "./token.proto"],
+ *   (err, output) => {
+ *     if (err) throw err;
+ *     fs.writeFileSync("./token-proto.json", output);
+ *   }
+ * );
+ * ```
+ *
+ * Then this descriptor can be loaded to define the ABI:
+ * ```js
+ * const tokenJson = require("./token-proto.json");
+ * const abiToken = {
+ *   methods: {
+ *     balanceOf: {
+ *       entryPoint: 0x15619248,
+ *       inputs: "balance_of_arguments",
+ *       outputs: "balance_of_result",
+ *       readOnly: true,
+ *       defaultOutput: { value: "0" },
+ *     },
+ *     transfer: {
+ *       entryPoint: 0x62efa292,
+ *       inputs: "transfer_arguments",
+ *       outputs: "transfer_result",
+ *     },
+ *     mint: {
+ *       entryPoint: 0xc2f82bdc,
+ *       inputs: "mint_argumnets",
+ *       outputs: "mint_result",
+ *     },
+ *   },
+ *   types: tokenJson,
+ * };
+ * ```
+ *
+ * Note that this example uses "defaultOutput" for the method
+ * "balanceOf". This is used when the smart contract returns an
+ * empty response (for instance when there are no balance records
+ * for a specific address) and you require a default output in
+ * such cases.
+ */
+export interface Abi {
+  methods: {
+    /** Name of the method */
+    [x: string]: {
+      /** Entry point ID */
+      entryPoint: number;
+      /** Protobuffer type for input */
+      input?: string;
+      /** Protobuffer type for output */
+      output?: string;
+      /** Boolean to differentiate write methods
+       * (using transactions) from read methods
+       * (query the contract)
+       */
+      readOnly?: boolean;
+      /** Default value when the output is undefined */
+      defaultOutput?: unknown;
+      /** Optional function to preformat the input */
+      preformatInput?: (input: unknown) => Record<string, unknown>;
+      /** Optional function to preformat the output */
+      preformatOutput?: (output: Record<string, unknown>) => unknown;
+      /** Description of the method */
+      description?: string;
+    };
+  };
+  /**
+   * Protobuffers descriptor in JSON format.
+   * See https://www.npmjs.com/package/protobufjs#using-json-descriptors
+   */
+  types: INamespace;
+}
+
+/**
+ * Human readable format operation
+ *
+ * @example
+ * ```ts
+ * const opDecoded = {
+ *   name: "transfer",
+ *   args: {
+ *     from: "1Krs7v1rtpgRyfwEZncuKMQQnY5JhqXVSx",
+ *     to: "1BqtgWBcqm9cSZ97avLGZGJdgso7wx6pCA",
+ *     value: 1000,
+ *   },
+ * };
+ * ```
+ */
+export interface DecodedOperationJson {
+  /** Operation name */
+  name: string;
+
+  /** Arguments decoded. See [[Abi]] */
+  args?: Record<string, unknown>;
+}
+
+export interface TransactionOptions {
+  rc_limit?: number | bigint | string;
+  nonce?: number;
+  sendTransaction?: boolean;
+  sendAbis?: boolean;
+}
+
+export interface RecoverPublicKeyOptions {
+  /**
+   * Boolean to define if the public key should
+   * be compressed or not. It is true by default
+   */
+  compressed?: boolean;
+
+  /**
+   * Asynchronous function to transform the signature
+   * before calculating the public key associated.
+   * This transformation is useful in cases were the
+   * signature contains additional data. For instance,
+   * the signatures for blocks in the PoW consensus
+   * algorithm contain the nonce.
+   */
+  transformSignature?: (signatureData: string) => Promise<string>;
+}
+
+export interface SendTransactionResponse {
+  wait: () => Promise<string>;
+}
+
 type NumberLike = number | bigint | string;
 
 export interface UploadContractOperation {
-  contractId?: Uint8Array;
+  contract_id?: Uint8Array;
 
   bytecode?: Uint8Array;
 }
 
 export interface UploadContractOperationJson {
-  contractId?: string; // base58
+  contract_id?: string; // base58
 
   bytecode?: string; // base64
 }
 
 export interface CallContractOperation {
-  contractId: Uint8Array;
+  contract_id: Uint8Array;
 
-  entryPoint: number;
+  entry_point: number;
 
   args: Uint8Array;
 }
 
 export interface CallContractOperationJson {
-  contractId: string; // base58
+  contract_id: string; // base58
 
-  entryPoint: number;
+  entry_point: number;
 
   args: string; // base64
 }
 
 export interface ContractCallBundle {
-  contractId: Uint8Array;
-  entryPoint: number;
+  contract_id: Uint8Array;
+  entry_point: number;
 }
 
 export interface ContractCallBundleJson {
-  contractId: string; // base58
+  contract_id: string; // base58
 
-  entryPoint: number;
+  entry_point: number;
 }
 
 export interface ThunkIdNested {
-  thunkId: number;
+  thunk_id: number;
 }
 
 export interface ContractCallBundleNested {
-  systemCallBundle: ContractCallBundle;
+  system_call_bundle: ContractCallBundle;
 }
 
 export type SystemCallTarget = ThunkIdNested | ContractCallBundleNested;
 
 export interface SetSystemCallOperation {
-  callId: number;
+  call_id: number;
 
   target: SystemCallTarget;
 }
 
 export interface SetSystemCallOperationJson {
-  callId: number;
+  call_id: number;
 
   target: number | ContractCallBundleJson;
 }
 
 export interface UploadContractOperationNested {
-  uploadContract: UploadContractOperation;
+  upload_contract: UploadContractOperation;
 }
 
 export interface CallContractOperationNested {
-  callContract: CallContractOperation;
+  call_contract: CallContractOperation;
 }
 
 export interface SetSystemCallOperationNested {
-  setSystemCall: SetSystemCallOperation;
+  set_system_call: SetSystemCallOperation;
 }
 
 export type Operation =
@@ -79,16 +224,16 @@ export type Operation =
   | SetSystemCallOperationNested;
 
 export type OperationJson = {
-  uploadContract?: UploadContractOperationJson;
-  callContract?: CallContractOperationJson;
-  setSystemCall?: SetSystemCallOperationJson;
+  upload_contract?: UploadContractOperationJson;
+  call_contract?: CallContractOperationJson;
+  set_system_call?: SetSystemCallOperationJson;
 };
 
 export interface ActiveTransactionData {
   /**
    * Resource credits limit
    */
-  rcLimit?: string | number | bigint;
+  rc_limit?: string | number | bigint;
 
   /**
    * Account nonce
@@ -107,7 +252,7 @@ export interface ActiveTransactionDataJson {
   /**
    * Resource credits limit
    */
-  rcLimit?: string | number | bigint;
+  rc_limit?: string | number | bigint;
 
   /**
    * Account nonce
@@ -145,7 +290,7 @@ export interface TransactionJson {
   /**
    * Signature in compact format enconded in multi base64
    */
-  signatureData?: string;
+  signature_data?: string;
 }
 
 export interface BlockHeaderJson {
@@ -160,7 +305,7 @@ export interface BlockJson {
   header?: BlockHeaderJson;
   active?: string;
   passive?: string;
-  signatureData?: string;
+  signature_data?: string;
   transactions?: TransactionJson[];
   [x: string]: unknown;
 }

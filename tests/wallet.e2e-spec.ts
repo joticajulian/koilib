@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 import crypto from "crypto";
 import * as dotenv from "dotenv";
-import { Signer, Provider, Contract, utils } from "../src";
+import { Signer, Provider, Contract, utils, Serializer } from "../src";
 import { BlockJson } from "../src/interface";
+import powJson from "../src/jsonDescriptors/pow-proto.json";
 
 dotenv.config();
 
@@ -24,11 +25,10 @@ const signer = Signer.fromWif(privateKeyHex);
 signer.compressed = true;
 signer.provider = provider;
 // random signer. No balance or history
-const signer2 = new Signer(
-  crypto.randomBytes(32).toString("hex"),
-  true,
-  provider
-);
+const signer2 = new Signer({
+  privateKey: crypto.randomBytes(32).toString("hex"),
+  provider,
+});
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
   abi: utils.Krc20Abi,
@@ -68,6 +68,36 @@ describe("Provider", () => {
     expect.assertions(1);
     const blocks = await provider.getBlocks(1, 2);
     expect(blocks).toStrictEqual(expect.arrayContaining([]));
+  });
+
+  it("should get a a block with federated consensus and get the signer address", async () => {
+    expect.assertions(2);
+    const block = await provider.getBlock(1);
+    const signer = await Signer.recoverAddress(block.block);
+    expect(signer).toBeDefined();
+    expect(signer.length).toBe(34);
+  });
+
+  it("should get a a block with pow consensus and get the signer address", async () => {
+    expect.assertions(2);
+    const block = await provider.getBlock(1000);
+    const serializer = new Serializer(powJson, {
+      defaultTypeName: "pow_signature_data",
+    });
+    interface PowSigData {
+      nonce: string;
+      recoverable_signature: string;
+    }
+    const signer = await Signer.recoverAddress(block.block, {
+      transformSignature: async (signatureData) => {
+        const powSigData: PowSigData = await serializer.deserialize(
+          signatureData
+        );
+        return powSigData.recoverable_signature;
+      },
+    });
+    expect(signer).toBeDefined();
+    expect(signer.length).toBe(34);
   });
 
   it("should get account rc", async () => {

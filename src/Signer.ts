@@ -1,10 +1,16 @@
 /* eslint-disable no-param-reassign */
 import { sha256 } from "js-sha256";
 import * as secp from "noble-secp256k1";
-import { Root } from "protobufjs/light";
-import { Provider, SendTransactionResponse } from "./Provider";
-import { TransactionJson, ActiveTransactionData } from "./interface";
-import protocolJson from "./protocol-proto.json";
+import { Provider } from "./Provider";
+import {
+  TransactionJson,
+  ActiveTransactionData,
+  Abi,
+  SendTransactionResponse,
+  RecoverPublicKeyOptions,
+  BlockJson,
+} from "./interface";
+import protocolJson from "./jsonDescriptors/protocol-proto.json";
 import {
   bitcoinAddress,
   bitcoinDecode,
@@ -14,13 +20,11 @@ import {
   toHexString,
   toUint8Array,
 } from "./utils";
-import { Abi } from "./Contract";
-
-const root = Root.fromJSON(protocolJson);
-const ActiveTxDataMsg = root.lookupType("active_transaction_data");
+import { Serializer } from "./Serializer";
 
 export interface SignerInterface {
   provider?: Provider;
+  serializer?: Serializer;
   getAddress(compressed?: boolean): string;
   getPrivateKey(format: "wif" | "hex", compressed?: boolean): string;
   signTransaction(tx: TransactionJson): Promise<TransactionJson>;
@@ -31,7 +35,7 @@ export interface SignerInterface {
   encodeTransaction(
     activeData: ActiveTransactionData
   ): Promise<TransactionJson>;
-  // decodeTransaction(tx: TransactionJson): ActiveTransactionData;
+  decodeTransaction(tx: TransactionJson): Promise<ActiveTransactionData>;
 }
 
 /**
@@ -41,7 +45,8 @@ export interface SignerInterface {
  * @example
  * using private key as hex string
  * ```ts
- * var signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
+ * var privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+ * var signer = new Signer({ privateKey });
  * ```
  * <br>
  *
@@ -53,14 +58,15 @@ export interface SignerInterface {
  *     1, 203,  55, 128, 187,   2, 192, 249,
  *   205, 254, 157,   9, 218, 173, 223, 156
  * ]);
- * var signer = new Signer(buffer);
+ * var signer = new Signer({ privateKey: buffer });
  * ```
  *
  * <br>
  *
  * using private key as bigint
  * ```ts
- * var signer = new Signer(106982601049961974618234078204952280507266494766432547312316920283818886029212n);
+ * var privateKey = 106982601049961974618234078204952280507266494766432547312316920283818886029212n;
+ * var signer = new Signer({ privateKey });
  * ```
  *
  * <br>
@@ -82,7 +88,8 @@ export interface SignerInterface {
  * defining a provider
  * ```ts
  * var provider = new Provider(["https://example.com/jsonrpc"]);
- * var signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c", true, provider);
+ * var privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+ * var signer = new Signer({ privateKey, provider });
  * ```
  */
 export class Signer implements SignerInterface {
@@ -102,9 +109,14 @@ export class Signer implements SignerInterface {
   address: string;
 
   /**
-   * Provider used to connect with the blockchain
+   * Provider to connect with the blockchain
    */
-  provider: Provider | undefined;
+  provider?: Provider;
+
+  /**
+   * Serializer to serialize/deserialize data types
+   */
+  serializer?: Serializer;
 
   /**
    * The constructor receives de private key as hexstring, bigint or Uint8Array.
@@ -116,24 +128,40 @@ export class Signer implements SignerInterface {
    * @param provider - provider to connect with the blockchain
    * @example
    * ```ts
-   * cons signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
+   * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+   * cons signer = new Signer({ privateKey });
    * console.log(signer.getAddress());
    * // 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b
    * ```
    */
-  constructor(
-    privateKey: string | number | bigint | Uint8Array,
-    compressed = true,
-    provider?: Provider
-  ) {
-    this.compressed = compressed;
-    this.privateKey = privateKey;
-    this.provider = provider;
-    if (typeof privateKey === "string") {
-      this.publicKey = secp.getPublicKey(privateKey, this.compressed);
+  constructor(c: {
+    privateKey: string | number | bigint | Uint8Array;
+    compressed?: boolean;
+    provider?: Provider;
+    /**
+     * Set this option if you can not use _eval_ functions
+     * in the current environment. In such cases, the
+     * serializer must come from an environment where it
+     * is able to use those functions.
+     */
+    serializer?: Serializer;
+  }) {
+    this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;
+    this.privateKey = c.privateKey;
+    this.provider = c.provider;
+    if (c.serializer) {
+      this.serializer = c.serializer;
+    } else {
+      this.serializer = new Serializer(protocolJson, {
+        defaultTypeName: "active_transaction_data",
+        bytesConversion: false,
+      });
+    }
+    if (typeof c.privateKey === "string") {
+      this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
       this.address = bitcoinAddress(toUint8Array(this.publicKey));
     } else {
-      this.publicKey = secp.getPublicKey(privateKey, this.compressed);
+      this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
       this.address = bitcoinAddress(this.publicKey);
     }
   }
@@ -152,7 +180,10 @@ export class Signer implements SignerInterface {
   static fromWif(wif: string): Signer {
     const compressed = wif[0] !== "5";
     const privateKey = bitcoinDecode(wif);
-    return new Signer(toHexString(privateKey), compressed);
+    return new Signer({
+      privateKey: toHexString(privateKey),
+      compressed,
+    });
   }
 
   /**
@@ -169,7 +200,7 @@ export class Signer implements SignerInterface {
    */
   static fromSeed(seed: string, compressed?: boolean): Signer {
     const privateKey = sha256(seed);
-    return new Signer(privateKey, compressed);
+    return new Signer({ privateKey, compressed });
   }
 
   /**
@@ -246,7 +277,7 @@ export class Signer implements SignerInterface {
     const rHex = r.toString(16).padStart(64, "0");
     const sHex = s.toString(16).padStart(64, "0");
     const recId = (recovery + 31).toString(16).padStart(2, "0");
-    tx.signatureData = encodeBase64(toUint8Array(recId + rHex + sHex));
+    tx.signature_data = encodeBase64(toUint8Array(recId + rHex + sHex));
     const multihash = `0x1220${hash}`; // 12: code sha2-256. 20: length (32 bytes)
     tx.id = multihash;
     return tx;
@@ -265,22 +296,78 @@ export class Signer implements SignerInterface {
     tx: TransactionJson,
     _abis?: Record<string, Abi>
   ): Promise<SendTransactionResponse> {
-    if (!tx.signatureData || !tx.id) await this.signTransaction(tx);
+    if (!tx.signature_data || !tx.id) await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
     return this.provider.sendTransaction(tx);
   }
 
   /**
-   * Function to recover the public key from a signed transaction.
-   * The output format can be compressed or uncompressed.
-   * @param tx - signed transaction
-   * @param compressed - output format (compressed by default)
+   * Function to recover the public key from a signed
+   * transaction or block.
+   * The output format can be compressed (default) or uncompressed.
+   *
+   * @example
+   * ```ts
+   * const publicKey = await Signer.recoverPublicKey(tx);
+   * ```
+   *
+   * If the signature data contains more data, like in the
+   * blocks for PoW consensus, use the "transformSignature"
+   * function to extract the signature.
+   *
+   * @example
+   * ```ts
+   *  const powDescriptorJson = {
+   *    nested: {
+   *      mypackage: {
+   *        nested: {
+   *          pow_signature_data: {
+   *            fields: {
+   *              nonce: {
+   *                type: "bytes",
+   *                id: 1,
+   *              },
+   *              recoverable_signature: {
+   *                type: "bytes",
+   *                id: 2,
+   *              },
+   *            },
+   *          },
+   *        },
+   *      },
+   *    },
+   *  };
+   *
+   *  const serializer = new Serializer(powDescriptorJson, {
+   *   defaultTypeName: "pow_signature_data",
+   *  });
+   *
+   *  const signer = await Signer.recoverPublicKey(block, {
+   *    transformSignature: async (signatureData) => {
+   *      const powSignatureData = await serializer.deserialize(signatureData);
+   *      return powSignatureData.recoverable_signature;
+   *    },
+   *  });
+   * ```
    */
-  static recoverPublicKey(tx: TransactionJson, compressed = true): string {
-    if (!tx.active) throw new Error("activeData is not defined");
-    if (!tx.signatureData) throw new Error("signatureData is not defined");
-    const hash = sha256(decodeBase64(tx.active));
-    const compactSignatureHex = toHexString(decodeBase64(tx.signatureData));
+  static async recoverPublicKey(
+    txOrBlock: TransactionJson | BlockJson,
+    opts?: RecoverPublicKeyOptions
+  ): Promise<string> {
+    if (!txOrBlock.active) throw new Error("active is not defined");
+    if (!txOrBlock.signature_data)
+      throw new Error("signature_data is not defined");
+    let signatureData = txOrBlock.signature_data;
+    if (opts && typeof opts.transformSignature === "function") {
+      signatureData = await opts.transformSignature(txOrBlock.signature_data);
+    }
+    let compressed = true;
+    if (opts && typeof opts.compressed !== "undefined") {
+      compressed = opts.compressed;
+    }
+
+    const hash = sha256(decodeBase64(txOrBlock.active));
+    const compactSignatureHex = toHexString(decodeBase64(signatureData));
     const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
     const rHex = compactSignatureHex.slice(2, 66);
     const sHex = compactSignatureHex.slice(66);
@@ -294,21 +381,66 @@ export class Signer implements SignerInterface {
   }
 
   /**
-   * Function to recover the signer address from a signed transaction.
-   * The output format can be compressed or uncompressed.
-   * @param tx - signed transaction
-   * @param compressed - output format (compressed by default)
+   * Function to recover the signer address from a signed
+   * transaction or block.
+   * The output format can be compressed (default) or uncompressed.
+   * @example
+   * ```ts
+   * const publicKey = await Signer.recoverAddress(tx);
+   * ```
+   *
+   * If the signature data contains more data, like in the
+   * blocks for PoW consensus, use the "transformSignature"
+   * function to extract the signature.
+   *
+   * @example
+   * ```ts
+   *  const powDescriptorJson = {
+   *    nested: {
+   *      mypackage: {
+   *        nested: {
+   *          pow_signature_data: {
+   *            fields: {
+   *              nonce: {
+   *                type: "bytes",
+   *                id: 1,
+   *              },
+   *              recoverable_signature: {
+   *                type: "bytes",
+   *                id: 2,
+   *              },
+   *            },
+   *          },
+   *        },
+   *      },
+   *    },
+   *  };
+   *
+   *  const serializer = new Serializer(powDescriptorJson, {
+   *   defaultTypeName: "pow_signature_data",
+   *  });
+   *
+   *  const signer = await Signer.recoverAddress(block, {
+   *    transformSignature: async (signatureData) => {
+   *      const powSignatureData = await serializer.deserialize(signatureData);
+   *      return powSignatureData.recoverable_signature;
+   *    },
+   *  });
+   * ```
    */
-  static recoverAddress(tx: TransactionJson, compressed = true): string {
-    const publicKey = Signer.recoverPublicKey(tx, compressed);
+  static async recoverAddress(
+    txOrBlock: TransactionJson | BlockJson,
+    opts?: RecoverPublicKeyOptions
+  ): Promise<string> {
+    const publicKey = await Signer.recoverPublicKey(txOrBlock, opts);
     return bitcoinAddress(toUint8Array(publicKey));
   }
 
   /**
    * Function to encode a transaction
-   * @param activeData - Active data consists of nonce, rcLimit, and
+   * @param activeData - Active data consists of nonce, rc_limit, and
    * operations. Do not set the nonce to get it from the blockchain
-   * using the provider. The rcLimit is 1000000 by default.
+   * using the provider. The rc_limit is 1000000 by default.
    * @returns A transaction encoded. The active field is encoded in
    * base64url
    */
@@ -326,17 +458,16 @@ export class Signer implements SignerInterface {
       nonce = await this.provider.getNonce(this.getAddress());
     }
     const rcLimit =
-      activeData.rcLimit === undefined ? 1000000 : activeData.rcLimit;
+      activeData.rc_limit === undefined ? 1000000 : activeData.rc_limit;
     const operations = activeData.operations ? activeData.operations : [];
 
     const activeData2: ActiveTransactionData = {
-      rcLimit,
+      rc_limit: rcLimit,
       nonce,
       operations,
     };
 
-    const message = ActiveTxDataMsg.create(activeData2);
-    const buffer = ActiveTxDataMsg.encode(message).finish();
+    const buffer = await this.serializer!.serialize(activeData2);
 
     return {
       active: encodeBase64(buffer),
@@ -346,11 +477,9 @@ export class Signer implements SignerInterface {
   /**
    * Function to decode a transaction
    */
-  static decodeTransaction(tx: TransactionJson): ActiveTransactionData {
+  async decodeTransaction(tx: TransactionJson): Promise<ActiveTransactionData> {
     if (!tx.active) throw new Error("Active data is not defined");
-    const buffer = decodeBase64(tx.active);
-    const message = ActiveTxDataMsg.decode(buffer);
-    return ActiveTxDataMsg.toObject(message, { longs: String });
+    return this.serializer!.deserialize(tx.active);
   }
 }
 

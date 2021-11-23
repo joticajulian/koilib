@@ -11510,24 +11510,8 @@ BufferWriter._configure();
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Contract = void 0;
-const light_1 = __webpack_require__(4492);
+const Serializer_1 = __webpack_require__(7187);
 const utils_1 = __webpack_require__(8593);
-const OP_BYTES = "(koinos_bytes_type)";
-/**
- * Makes a copy of a value. The returned value can be modified
- * without altering the original one. Although this is not needed
- * for strings or numbers and only needed for objects and arrays,
- * all these options are covered in a single function
- *
- * It is assumed that the argument is number, string, or contructions
- * of these types inside objects or arrays.
- */
-function copyValue(value) {
-    if (typeof value === "string" || typeof value === "number") {
-        return value;
-    }
-    return JSON.parse(JSON.stringify(value));
-}
 /**
  * The contract class contains the contract ID and contract entries
  * definition needed to encode/decode operations during the
@@ -11538,9 +11522,9 @@ function copyValue(value) {
  * ```ts
  * const { Contract, Provider, Signer, utils } = require("koilib");
  * const rpcNodes = ["http://api.koinos.io:8080"];
- * const privateKeyHex = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
+ * const privateKey = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
  * const provider = new Provider(rpcNodes);
- * const signer = new Signer(privateKeyHex, true, provider);
+ * const signer = new Signer({ privateKey, provider });
  * const koinContract = new Contract({
  *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
  *   abi: utils.Krc20Abi,
@@ -11549,18 +11533,26 @@ function copyValue(value) {
  * });
  * const koin = koinContract.functions;
  *
+ * // optional: preformat input/output
+ * koinContract.abi.methods.balanceOf.preformatInput = (owner) =>
+ *   ({ owner });
+ * koinContract.abi.methods.balanceOf.preformatOutput = (res) =>
+ *   utils.formatUnits(res.value, 8);
+ * koinContract.abi.methods.transfer.preformatInput = (input) => ({
+ *   from: signer.getAddress(),
+ *   to: input.to,
+ *   value: utils.parseUnits(input.value, 8),
+ * });
+ *
  * async funtion main() {
  *   // Get balance
- *   const { result } = await koin.balanceOf({
- *     owner: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD"
- *   });
- *   console.log(balance.result)
+ *   const { result } = await koin.balanceOf("12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD");
+ *   console.log(result)
  *
  *   // Transfer
  *   const { transaction, transactionResponse } = await koin.transfer({
- *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
  *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
- *     value: "1000",
+ *     value: "10.0001",
  *   });
  *   console.log(`Transaction id ${transaction.id} submitted`);
  *
@@ -11574,23 +11566,31 @@ function copyValue(value) {
  */
 class Contract {
     constructor(c) {
-        var _a, _b;
+        var _a;
         if (c.id)
             this.id = utils_1.decodeBase58(c.id);
         this.signer = c.signer;
         this.provider = c.provider || ((_a = c.signer) === null || _a === void 0 ? void 0 : _a.provider);
         this.abi = c.abi;
         this.bytecode = c.bytecode;
-        if ((_b = c.abi) === null || _b === void 0 ? void 0 : _b.types)
-            this.protobuffers = light_1.Root.fromJSON(c.abi.types);
+        if (c.serializer) {
+            this.serializer = c.serializer;
+        }
+        else if (c.abi && c.abi.types) {
+            this.serializer = new Serializer_1.Serializer(c.abi.types);
+        }
         this.options = {
-            rcLimit: 1e8,
+            rc_limit: 1e8,
             sendTransaction: true,
             sendAbis: true,
             ...c.options,
         };
         this.functions = {};
-        if (this.signer && this.provider && this.abi && this.abi.methods) {
+        if (this.signer &&
+            this.provider &&
+            this.abi &&
+            this.abi.methods &&
+            this.serializer) {
             Object.keys(this.abi.methods).forEach((name) => {
                 this.functions[name] = async (argu = {}, options) => {
                     if (!this.provider)
@@ -11611,19 +11611,19 @@ class Contract {
                     else {
                         args = argu;
                     }
-                    const operation = this.encodeOperation({ name, args });
+                    const operation = await this.encodeOperation({ name, args });
                     if (readOnly) {
                         if (!output)
                             throw new Error(`No output defined for ${name}`);
                         // read contract
                         const { result: resultEncoded } = await this.provider.readContract({
-                            contractId: utils_1.encodeBase58(operation.callContract.contractId),
-                            entryPoint: operation.callContract.entryPoint,
-                            args: utils_1.encodeBase64(operation.callContract.args),
+                            contract_id: utils_1.encodeBase58(operation.call_contract.contract_id),
+                            entry_point: operation.call_contract.entry_point,
+                            args: utils_1.encodeBase64(operation.call_contract.args),
                         });
                         let result = defaultOutput;
                         if (resultEncoded) {
-                            result = this.decodeType(resultEncoded, output);
+                            result = await this.serializer.deserialize(resultEncoded, output);
                         }
                         if (typeof preformatOutput === "function") {
                             result = preformatOutput(result);
@@ -11670,8 +11670,9 @@ class Contract {
      * The Bytecode must be defined in the constructor of the class
      * @example
      * ```ts
-     * const signer = new Signer("f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200", true, provider);
+     * const privateKey = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
      * const provider = new Provider(["http://api.koinos.io:8080"]);
+     * const signer = new Signer({ privateKey, provider });
      * const bytecode = new Uint8Array([1, 2, 3, 4]);
      * const contract = new Contract({ signer, provider, bytecode });
      * const { transactionResponse } = await contract.deploy();
@@ -11690,8 +11691,8 @@ class Contract {
             ...options,
         };
         const operation = {
-            uploadContract: {
-                contractId: Contract.computeContractId(this.signer.getAddress()),
+            upload_contract: {
+                contract_id: Contract.computeContractId(this.signer.getAddress()),
                 bytecode: this.bytecode,
             },
         };
@@ -11723,19 +11724,19 @@ class Contract {
      *
      * console.log(opEncoded);
      * // {
-     * //   callContract: {
-     * //     contractId: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-     * //     entryPoint: 0x62efa292,
+     * //   call_contract: {
+     * //     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+     * //     entry_point: 0x62efa292,
      * //     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
      * //   }
      * // }
      * ```
      */
-    encodeOperation(op) {
+    async encodeOperation(op) {
         if (!this.abi || !this.abi.methods || !this.abi.methods[op.name])
             throw new Error(`Operation ${op.name} unknown`);
-        if (!this.protobuffers)
-            throw new Error("Protobuffers are not defined");
+        if (!this.serializer)
+            throw new Error("Serializer is not defined");
         if (!this.id)
             throw new Error("Contract id is not defined");
         const method = this.abi.methods[op.name];
@@ -11743,12 +11744,12 @@ class Contract {
         if (method.input) {
             if (!op.args)
                 throw new Error(`No arguments defined for type '${method.input}'`);
-            bufferInputs = this.encodeType(op.args, method.input);
+            bufferInputs = await this.serializer.serialize(op.args, method.input);
         }
         return {
-            callContract: {
-                contractId: this.id,
-                entryPoint: method.entryPoint,
+            call_contract: {
+                contract_id: this.id,
+                entry_point: method.entryPoint,
                 args: bufferInputs,
             },
         };
@@ -11758,9 +11759,9 @@ class Contract {
      * @example
      * ```ts
      * const opDecoded = contract.decodeOperation({
-     *   callContract: {
-     *     contractId: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-     *     entryPoint: 0x62efa292,
+     *   call_contract: {
+     *     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+     *     entry_point: 0x62efa292,
      *     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
      *   }
      * });
@@ -11775,118 +11776,30 @@ class Contract {
      * // }
      * ```
      */
-    decodeOperation(op) {
+    async decodeOperation(op) {
         if (!this.id)
             throw new Error("Contract id is not defined");
         if (!this.abi || !this.abi.methods)
             throw new Error("Methods are not defined");
-        if (!op.callContract)
+        if (!this.serializer)
+            throw new Error("Serializer is not defined");
+        if (!op.call_contract)
             throw new Error("Operation is not CallContractOperation");
-        if (op.callContract.contractId !== this.id)
-            throw new Error(`Invalid contract id. Expected: ${utils_1.encodeBase58(this.id)}. Received: ${utils_1.encodeBase58(op.callContract.contractId)}`);
+        if (op.call_contract.contract_id !== this.id)
+            throw new Error(`Invalid contract id. Expected: ${utils_1.encodeBase58(this.id)}. Received: ${utils_1.encodeBase58(op.call_contract.contract_id)}`);
         for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
             const opName = Object.keys(this.abi.methods)[i];
             const method = this.abi.methods[opName];
-            if (op.callContract.entryPoint === method.entryPoint) {
+            if (op.call_contract.entry_point === method.entryPoint) {
                 if (!method.input)
                     return { name: opName };
                 return {
                     name: opName,
-                    args: this.decodeType(op.callContract.args, method.input),
+                    args: await this.serializer.deserialize(op.call_contract.args, method.input),
                 };
             }
         }
-        throw new Error(`Unknown method id ${op.callContract.entryPoint}`);
-    }
-    /**
-     * Function to encode a type using the protobuffer definitions
-     * It also prepares the bytes for special cases (base58, hex string)
-     */
-    encodeType(valueDecoded, typeName) {
-        if (!this.protobuffers)
-            throw new Error("Protobuffers are not defined");
-        const protobufType = this.protobuffers.lookupType(typeName);
-        const object = {};
-        // TODO: format from Buffer to base58/base64 for nested fields
-        Object.keys(protobufType.fields).forEach((fieldName) => {
-            const { options, name, type } = protobufType.fields[fieldName];
-            // No byte conversion
-            if (type !== "bytes") {
-                object[name] = copyValue(valueDecoded[name]);
-                return;
-            }
-            // Default byte conversion
-            if (!options || !options[OP_BYTES]) {
-                object[name] = utils_1.decodeBase64(valueDecoded[name]);
-                return;
-            }
-            // Specific byte conversion
-            switch (options[OP_BYTES]) {
-                case "BASE58":
-                case "CONTRACT_ID":
-                case "ADDRESS":
-                    object[name] = utils_1.decodeBase58(valueDecoded[name]);
-                    break;
-                case "BASE64":
-                    object[name] = utils_1.decodeBase64(valueDecoded[name]);
-                    break;
-                case "HEX":
-                case "BLOCK_ID":
-                case "TRANSACTION_ID":
-                    object[name] = utils_1.toUint8Array(valueDecoded[name].replace("0x", ""));
-                    break;
-                default:
-                    throw new Error(`unknown koinos_byte_type ${options[OP_BYTES]}`);
-            }
-        });
-        const message = protobufType.create(object);
-        const buffer = protobufType.encode(message).finish();
-        return buffer;
-    }
-    /**
-     * Function to decode bytes using the protobuffer definitions
-     * It also encodes the bytes for special cases (base58, hex string)
-     */
-    decodeType(valueEncoded, typeName) {
-        if (!this.protobuffers)
-            throw new Error("Protobuffers are not defined");
-        const valueBuffer = typeof valueEncoded === "string"
-            ? utils_1.decodeBase64(valueEncoded)
-            : valueEncoded;
-        const protobufType = this.protobuffers.lookupType(typeName);
-        const message = protobufType.decode(valueBuffer);
-        const object = protobufType.toObject(message, { longs: String });
-        // TODO: format from Buffer to base58/base64 for nested fields
-        Object.keys(protobufType.fields).forEach((fieldName) => {
-            const { options, name, type } = protobufType.fields[fieldName];
-            // No byte conversion
-            if (type !== "bytes")
-                return;
-            // Default byte conversion
-            if (!options || !options[OP_BYTES]) {
-                object[name] = utils_1.encodeBase64(object[name]);
-                return;
-            }
-            // Specific byte conversion
-            switch (options[OP_BYTES]) {
-                case "BASE58":
-                case "CONTRACT_ID":
-                case "ADDRESS":
-                    object[name] = utils_1.encodeBase58(object[name]);
-                    break;
-                case "BASE64":
-                    object[name] = utils_1.encodeBase64(object[name]);
-                    break;
-                case "HEX":
-                case "BLOCK_ID":
-                case "TRANSACTION_ID":
-                    object[name] = `0x${utils_1.toHexString(object[name])}`;
-                    break;
-                default:
-                    throw new Error(`unknown koinos_byte_type ${options[OP_BYTES]}`);
-            }
-        });
-        return object;
+        throw new Error(`Unknown method id ${op.call_contract.entry_point}`);
     }
 }
 exports.Contract = Contract;
@@ -11979,7 +11892,7 @@ class Provider {
             }
         }
         if (response.data.error)
-            throw new Error(response.data.error.message);
+            throw new Error(JSON.stringify(response.data.error));
         return response.data.result;
     }
     /**
@@ -12107,6 +12020,182 @@ exports.default = Provider;
 
 /***/ }),
 
+/***/ 7187:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Serializer = void 0;
+/* eslint-disable @typescript-eslint/require-await */
+const light_1 = __webpack_require__(4492);
+const utils_1 = __webpack_require__(8593);
+const OP_BYTES = "(koinos_bytes_type)";
+/**
+ * Makes a copy of a value. The returned value can be modified
+ * without altering the original one. Although this is not needed
+ * for strings or numbers and only needed for objects and arrays,
+ * all these options are covered in a single function
+ *
+ * It is assumed that the argument is number, string, or contructions
+ * of these types inside objects or arrays.
+ */
+function copyValue(value) {
+    if (typeof value === "string" || typeof value === "number") {
+        return value;
+    }
+    return JSON.parse(JSON.stringify(value));
+}
+/**
+ * The serializer class serialize and deserialize data using
+ * protocol buffers.
+ *
+ * NOTE: This class uses the [protobufjs/light](https://www.npmjs.com/package/protobufjs)
+ * library internally, which uses reflection (use of _eval_
+ * and _new Function_) for the construction of the types.
+ * This could cause issues in environments where _eval_ is not
+ * allowed, like in browser extensions. In such cases, this class
+ * must be confined in a [sandbox environment](https://developer.chrome.com/docs/apps/app_external/#sandboxing)
+ * where _eval_ is allowed. This is the principal reason of
+ * having the serializer in a separate class.
+ *
+ * @example
+ *
+ * ```ts
+ * const descriptorJson = {
+ *   nested: {
+ *     awesomepackage: {
+ *       nested: {
+ *         AwesomeMessage: {
+ *           fields: {
+ *             awesomeField: {
+ *               type: "string",
+ *               id: 1
+ *             }
+ *           }
+ *         }
+ *       }
+ *     }
+ *   }
+ * }
+ * const serializer = new Serializer(descriptorJson)
+ * ```
+ */
+class Serializer {
+    constructor(types, opts) {
+        /**
+         * Preformat bytes for base64, base58 or hex string
+         */
+        this.bytesConversion = true;
+        this.types = types;
+        this.root = light_1.Root.fromJSON(this.types);
+        if (opts === null || opts === void 0 ? void 0 : opts.defaultTypeName)
+            this.defaultType = this.root.lookupType(opts.defaultTypeName);
+        if (opts && typeof opts.bytesConversion !== "undefined")
+            this.bytesConversion = opts.bytesConversion;
+    }
+    /**
+     * Function to encode a type using the protobuffer definitions
+     * It also prepares the bytes for special cases (base58, hex string)
+     * when bytesConversion param is true.
+     */
+    async serialize(valueDecoded, typeName) {
+        const protobufType = this.defaultType || this.root.lookupType(typeName);
+        let object = {};
+        if (this.bytesConversion) {
+            // TODO: format from Buffer to base58/base64 for nested fields
+            Object.keys(protobufType.fields).forEach((fieldName) => {
+                const { options, name, type } = protobufType.fields[fieldName];
+                // No byte conversion
+                if (type !== "bytes") {
+                    object[name] = copyValue(valueDecoded[name]);
+                    return;
+                }
+                // Default byte conversion
+                if (!options || !options[OP_BYTES]) {
+                    object[name] = utils_1.decodeBase64(valueDecoded[name]);
+                    return;
+                }
+                // Specific byte conversion
+                switch (options[OP_BYTES]) {
+                    case "BASE58":
+                    case "CONTRACT_ID":
+                    case "ADDRESS":
+                        object[name] = utils_1.decodeBase58(valueDecoded[name]);
+                        break;
+                    case "BASE64":
+                        object[name] = utils_1.decodeBase64(valueDecoded[name]);
+                        break;
+                    case "HEX":
+                    case "BLOCK_ID":
+                    case "TRANSACTION_ID":
+                        object[name] = utils_1.toUint8Array(valueDecoded[name].replace("0x", ""));
+                        break;
+                    default:
+                        throw new Error(`unknown koinos_byte_type ${options[OP_BYTES]}`);
+                }
+            });
+        }
+        else {
+            object = valueDecoded;
+        }
+        const message = protobufType.create(object);
+        const buffer = protobufType.encode(message).finish();
+        return buffer;
+    }
+    /**
+     * Function to decode bytes using the protobuffer definitions
+     * It also encodes the bytes for special cases (base58, hex string)
+     * when bytesConversion param is true.
+     */
+    async deserialize(valueEncoded, typeName) {
+        const valueBuffer = typeof valueEncoded === "string"
+            ? utils_1.decodeBase64(valueEncoded)
+            : valueEncoded;
+        const protobufType = this.defaultType || this.root.lookupType(typeName);
+        const message = protobufType.decode(valueBuffer);
+        const object = protobufType.toObject(message, { longs: String });
+        if (!this.bytesConversion)
+            return object;
+        // TODO: format from Buffer to base58/base64 for nested fields
+        Object.keys(protobufType.fields).forEach((fieldName) => {
+            const { options, name, type } = protobufType.fields[fieldName];
+            // No byte conversion
+            if (type !== "bytes")
+                return;
+            // Default byte conversion
+            if (!options || !options[OP_BYTES]) {
+                object[name] = utils_1.encodeBase64(object[name]);
+                return;
+            }
+            // Specific byte conversion
+            switch (options[OP_BYTES]) {
+                case "BASE58":
+                case "CONTRACT_ID":
+                case "ADDRESS":
+                    object[name] = utils_1.encodeBase58(object[name]);
+                    break;
+                case "BASE64":
+                    object[name] = utils_1.encodeBase64(object[name]);
+                    break;
+                case "HEX":
+                case "BLOCK_ID":
+                case "TRANSACTION_ID":
+                    object[name] = `0x${utils_1.toHexString(object[name])}`;
+                    break;
+                default:
+                    throw new Error(`unknown koinos_byte_type ${options[OP_BYTES]}`);
+            }
+        });
+        return object;
+    }
+}
+exports.Serializer = Serializer;
+exports.default = Serializer;
+
+
+/***/ }),
+
 /***/ 6991:
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
@@ -12139,11 +12228,9 @@ exports.Signer = void 0;
 /* eslint-disable no-param-reassign */
 const js_sha256_1 = __webpack_require__(2023);
 const secp = __importStar(__webpack_require__(1795));
-const light_1 = __webpack_require__(4492);
-const protocol_proto_json_1 = __importDefault(__webpack_require__(2243));
+const protocol_proto_json_1 = __importDefault(__webpack_require__(6139));
 const utils_1 = __webpack_require__(8593);
-const root = light_1.Root.fromJSON(protocol_proto_json_1.default);
-const ActiveTxDataMsg = root.lookupType("active_transaction_data");
+const Serializer_1 = __webpack_require__(7187);
 /**
  * The Signer Class contains the private key needed to sign transactions.
  * It can be created using the seed, wif, or private key
@@ -12151,7 +12238,8 @@ const ActiveTxDataMsg = root.lookupType("active_transaction_data");
  * @example
  * using private key as hex string
  * ```ts
- * var signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
+ * var privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+ * var signer = new Signer({ privateKey });
  * ```
  * <br>
  *
@@ -12163,14 +12251,15 @@ const ActiveTxDataMsg = root.lookupType("active_transaction_data");
  *     1, 203,  55, 128, 187,   2, 192, 249,
  *   205, 254, 157,   9, 218, 173, 223, 156
  * ]);
- * var signer = new Signer(buffer);
+ * var signer = new Signer({ privateKey: buffer });
  * ```
  *
  * <br>
  *
  * using private key as bigint
  * ```ts
- * var signer = new Signer(106982601049961974618234078204952280507266494766432547312316920283818886029212n);
+ * var privateKey = 106982601049961974618234078204952280507266494766432547312316920283818886029212n;
+ * var signer = new Signer({ privateKey });
  * ```
  *
  * <br>
@@ -12192,7 +12281,8 @@ const ActiveTxDataMsg = root.lookupType("active_transaction_data");
  * defining a provider
  * ```ts
  * var provider = new Provider(["https://example.com/jsonrpc"]);
- * var signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c", true, provider);
+ * var privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+ * var signer = new Signer({ privateKey, provider });
  * ```
  */
 class Signer {
@@ -12206,21 +12296,31 @@ class Signer {
      * @param provider - provider to connect with the blockchain
      * @example
      * ```ts
-     * cons signer = new Signer("ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c");
+     * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+     * cons signer = new Signer({ privateKey });
      * console.log(signer.getAddress());
      * // 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b
      * ```
      */
-    constructor(privateKey, compressed = true, provider) {
-        this.compressed = compressed;
-        this.privateKey = privateKey;
-        this.provider = provider;
-        if (typeof privateKey === "string") {
-            this.publicKey = secp.getPublicKey(privateKey, this.compressed);
+    constructor(c) {
+        this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;
+        this.privateKey = c.privateKey;
+        this.provider = c.provider;
+        if (c.serializer) {
+            this.serializer = c.serializer;
+        }
+        else {
+            this.serializer = new Serializer_1.Serializer(protocol_proto_json_1.default, {
+                defaultTypeName: "active_transaction_data",
+                bytesConversion: false,
+            });
+        }
+        if (typeof c.privateKey === "string") {
+            this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
             this.address = utils_1.bitcoinAddress(utils_1.toUint8Array(this.publicKey));
         }
         else {
-            this.publicKey = secp.getPublicKey(privateKey, this.compressed);
+            this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
             this.address = utils_1.bitcoinAddress(this.publicKey);
         }
     }
@@ -12238,7 +12338,10 @@ class Signer {
     static fromWif(wif) {
         const compressed = wif[0] !== "5";
         const privateKey = utils_1.bitcoinDecode(wif);
-        return new Signer(utils_1.toHexString(privateKey), compressed);
+        return new Signer({
+            privateKey: utils_1.toHexString(privateKey),
+            compressed,
+        });
     }
     /**
      * Function to import a private key from the seed
@@ -12254,7 +12357,7 @@ class Signer {
      */
     static fromSeed(seed, compressed) {
         const privateKey = js_sha256_1.sha256(seed);
-        return new Signer(privateKey, compressed);
+        return new Signer({ privateKey, compressed });
     }
     /**
      * @param compressed - determines if the address should be
@@ -12328,7 +12431,7 @@ class Signer {
         const rHex = r.toString(16).padStart(64, "0");
         const sHex = s.toString(16).padStart(64, "0");
         const recId = (recovery + 31).toString(16).padStart(2, "0");
-        tx.signatureData = utils_1.encodeBase64(utils_1.toUint8Array(recId + rHex + sHex));
+        tx.signature_data = utils_1.encodeBase64(utils_1.toUint8Array(recId + rHex + sHex));
         const multihash = `0x1220${hash}`; // 12: code sha2-256. 20: length (32 bytes)
         tx.id = multihash;
         return tx;
@@ -12343,25 +12446,76 @@ class Signer {
      * @returns
      */
     async sendTransaction(tx, _abis) {
-        if (!tx.signatureData || !tx.id)
+        if (!tx.signature_data || !tx.id)
             await this.signTransaction(tx);
         if (!this.provider)
             throw new Error("provider is undefined");
         return this.provider.sendTransaction(tx);
     }
     /**
-     * Function to recover the public key from a signed transaction.
-     * The output format can be compressed or uncompressed.
-     * @param tx - signed transaction
-     * @param compressed - output format (compressed by default)
+     * Function to recover the public key from a signed
+     * transaction or block.
+     * The output format can be compressed (default) or uncompressed.
+     *
+     * @example
+     * ```ts
+     * const publicKey = await Signer.recoverPublicKey(tx);
+     * ```
+     *
+     * If the signature data contains more data, like in the
+     * blocks for PoW consensus, use the "transformSignature"
+     * function to extract the signature.
+     *
+     * @example
+     * ```ts
+     *  const powDescriptorJson = {
+     *    nested: {
+     *      mypackage: {
+     *        nested: {
+     *          pow_signature_data: {
+     *            fields: {
+     *              nonce: {
+     *                type: "bytes",
+     *                id: 1,
+     *              },
+     *              recoverable_signature: {
+     *                type: "bytes",
+     *                id: 2,
+     *              },
+     *            },
+     *          },
+     *        },
+     *      },
+     *    },
+     *  };
+     *
+     *  const serializer = new Serializer(powDescriptorJson, {
+     *   defaultTypeName: "pow_signature_data",
+     *  });
+     *
+     *  const signer = await Signer.recoverPublicKey(block, {
+     *    transformSignature: async (signatureData) => {
+     *      const powSignatureData = await serializer.deserialize(signatureData);
+     *      return powSignatureData.recoverable_signature;
+     *    },
+     *  });
+     * ```
      */
-    static recoverPublicKey(tx, compressed = true) {
-        if (!tx.active)
-            throw new Error("activeData is not defined");
-        if (!tx.signatureData)
-            throw new Error("signatureData is not defined");
-        const hash = js_sha256_1.sha256(utils_1.decodeBase64(tx.active));
-        const compactSignatureHex = utils_1.toHexString(utils_1.decodeBase64(tx.signatureData));
+    static async recoverPublicKey(txOrBlock, opts) {
+        if (!txOrBlock.active)
+            throw new Error("active is not defined");
+        if (!txOrBlock.signature_data)
+            throw new Error("signature_data is not defined");
+        let signatureData = txOrBlock.signature_data;
+        if (opts && typeof opts.transformSignature === "function") {
+            signatureData = await opts.transformSignature(txOrBlock.signature_data);
+        }
+        let compressed = true;
+        if (opts && typeof opts.compressed !== "undefined") {
+            compressed = opts.compressed;
+        }
+        const hash = js_sha256_1.sha256(utils_1.decodeBase64(txOrBlock.active));
+        const compactSignatureHex = utils_1.toHexString(utils_1.decodeBase64(signatureData));
         const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
         const rHex = compactSignatureHex.slice(2, 66);
         const sHex = compactSignatureHex.slice(66);
@@ -12376,20 +12530,62 @@ class Signer {
         return secp.Point.fromHex(publicKey).toHex(true);
     }
     /**
-     * Function to recover the signer address from a signed transaction.
-     * The output format can be compressed or uncompressed.
-     * @param tx - signed transaction
-     * @param compressed - output format (compressed by default)
+     * Function to recover the signer address from a signed
+     * transaction or block.
+     * The output format can be compressed (default) or uncompressed.
+     * @example
+     * ```ts
+     * const publicKey = await Signer.recoverAddress(tx);
+     * ```
+     *
+     * If the signature data contains more data, like in the
+     * blocks for PoW consensus, use the "transformSignature"
+     * function to extract the signature.
+     *
+     * @example
+     * ```ts
+     *  const powDescriptorJson = {
+     *    nested: {
+     *      mypackage: {
+     *        nested: {
+     *          pow_signature_data: {
+     *            fields: {
+     *              nonce: {
+     *                type: "bytes",
+     *                id: 1,
+     *              },
+     *              recoverable_signature: {
+     *                type: "bytes",
+     *                id: 2,
+     *              },
+     *            },
+     *          },
+     *        },
+     *      },
+     *    },
+     *  };
+     *
+     *  const serializer = new Serializer(powDescriptorJson, {
+     *   defaultTypeName: "pow_signature_data",
+     *  });
+     *
+     *  const signer = await Signer.recoverAddress(block, {
+     *    transformSignature: async (signatureData) => {
+     *      const powSignatureData = await serializer.deserialize(signatureData);
+     *      return powSignatureData.recoverable_signature;
+     *    },
+     *  });
+     * ```
      */
-    static recoverAddress(tx, compressed = true) {
-        const publicKey = Signer.recoverPublicKey(tx, compressed);
+    static async recoverAddress(txOrBlock, opts) {
+        const publicKey = await Signer.recoverPublicKey(txOrBlock, opts);
         return utils_1.bitcoinAddress(utils_1.toUint8Array(publicKey));
     }
     /**
      * Function to encode a transaction
-     * @param activeData - Active data consists of nonce, rcLimit, and
+     * @param activeData - Active data consists of nonce, rc_limit, and
      * operations. Do not set the nonce to get it from the blockchain
-     * using the provider. The rcLimit is 1000000 by default.
+     * using the provider. The rc_limit is 1000000 by default.
      * @returns A transaction encoded. The active field is encoded in
      * base64url
      */
@@ -12402,15 +12598,14 @@ class Signer {
             // this depends on the final architecture for names on Koinos
             nonce = await this.provider.getNonce(this.getAddress());
         }
-        const rcLimit = activeData.rcLimit === undefined ? 1000000 : activeData.rcLimit;
+        const rcLimit = activeData.rc_limit === undefined ? 1000000 : activeData.rc_limit;
         const operations = activeData.operations ? activeData.operations : [];
         const activeData2 = {
-            rcLimit,
+            rc_limit: rcLimit,
             nonce,
             operations,
         };
-        const message = ActiveTxDataMsg.create(activeData2);
-        const buffer = ActiveTxDataMsg.encode(message).finish();
+        const buffer = await this.serializer.serialize(activeData2);
         return {
             active: utils_1.encodeBase64(buffer),
         };
@@ -12418,12 +12613,10 @@ class Signer {
     /**
      * Function to decode a transaction
      */
-    static decodeTransaction(tx) {
+    async decodeTransaction(tx) {
         if (!tx.active)
             throw new Error("Active data is not defined");
-        const buffer = utils_1.decodeBase64(tx.active);
-        const message = ActiveTxDataMsg.decode(buffer);
-        return ActiveTxDataMsg.toObject(message, { longs: String });
+        return this.serializer.deserialize(tx.active);
     }
 }
 exports.Signer = Signer;
@@ -12462,10 +12655,12 @@ const utils = __importStar(__webpack_require__(8593));
 const Contract_1 = __webpack_require__(9822);
 const Signer_1 = __webpack_require__(6991);
 const Provider_1 = __webpack_require__(5635);
+const Serializer_1 = __webpack_require__(7187);
 window.utils = utils;
 window.Contract = Contract_1.Contract;
 window.Signer = Signer_1.Signer;
 window.Provider = Provider_1.Provider;
+window.Serializer = Serializer_1.Serializer;
 
 
 /***/ }),
@@ -12498,11 +12693,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Krc20Abi = exports.parseUnits = exports.formatUnits = exports.bitcoinAddress = exports.bitcoinDecode = exports.copyUint8Array = exports.bitcoinEncode = exports.decodeBase64 = exports.encodeBase64 = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
+exports.ProtocolTypes = exports.Krc20Abi = exports.parseUnits = exports.formatUnits = exports.bitcoinAddress = exports.bitcoinDecode = exports.copyUint8Array = exports.bitcoinEncode = exports.decodeBase64 = exports.encodeBase64 = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
 const multibase = __importStar(__webpack_require__(6957));
 const js_sha256_1 = __webpack_require__(2023);
 const noble_ripemd160_1 = __importDefault(__webpack_require__(6389));
-const krc20_proto_json_1 = __importDefault(__webpack_require__(7410));
+const krc20_proto_json_1 = __importDefault(__webpack_require__(7177));
+const protocol_proto_json_1 = __importDefault(__webpack_require__(6139));
 /**
  * Converts an hex string to Uint8Array
  */
@@ -12730,6 +12926,7 @@ exports.Krc20Abi = {
     },
     types: krc20_proto_json_1.default,
 };
+exports.ProtocolTypes = protocol_proto_json_1.default;
 
 
 /***/ }),
@@ -12741,19 +12938,19 @@ exports.Krc20Abi = {
 
 /***/ }),
 
-/***/ 7410:
+/***/ 7177:
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested":{"token":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/contracts/token"},"nested":{"name_arguments":{"fields":{}},"name_result":{"fields":{"value":{"type":"string","id":1}}},"symbol_arguments":{"fields":{}},"symbol_result":{"fields":{"value":{"type":"string","id":1}}},"decimals_arguments":{"fields":{}},"decimals_result":{"fields":{"value":{"type":"uint32","id":1}}},"total_supply_arguments":{"fields":{}},"total_supply_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"balance_of_arguments":{"fields":{"owner":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"ADDRESS"}}}},"balance_of_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"transfer_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(koinos_bytes_type)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"transfer_result":{"fields":{"value":{"type":"bool","id":1}}},"mint_arguments":{"fields":{"to":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_result":{"fields":{"value":{"type":"bool","id":1}}},"balance_object":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"mana_balance_object":{"fields":{"balance":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"mana":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"lastManaUpdate":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}}}}}}}}}}');
+module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested":{"token":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/contracts/token"},"nested":{"name_arguments":{"fields":{}},"name_result":{"fields":{"value":{"type":"string","id":1}}},"symbol_arguments":{"fields":{}},"symbol_result":{"fields":{"value":{"type":"string","id":1}}},"decimals_arguments":{"fields":{}},"decimals_result":{"fields":{"value":{"type":"uint32","id":1}}},"total_supply_arguments":{"fields":{}},"total_supply_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"balance_of_arguments":{"fields":{"owner":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"ADDRESS"}}}},"balance_of_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"transfer_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(koinos_bytes_type)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"transfer_result":{"fields":{"value":{"type":"bool","id":1}}},"mint_arguments":{"fields":{"to":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_result":{"fields":{"value":{"type":"bool","id":1}}},"balance_object":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"mana_balance_object":{"fields":{"balance":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"mana":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"last_mana_update":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}}}}}}}}}}');
 
 /***/ }),
 
-/***/ 2243:
+/***/ 6139:
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"protocol":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/protocol"},"nested":{"contract_call_bundle":{"fields":{"contractId":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"CONTRACT_ID"}},"entryPoint":{"type":"uint32","id":2}}},"system_call_target":{"oneofs":{"target":{"oneof":["thunkId","systemCallBundle"]}},"fields":{"thunkId":{"type":"uint32","id":1},"systemCallBundle":{"type":"contract_call_bundle","id":2}}},"upload_contract_operation":{"fields":{"contractId":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"CONTRACT_ID"}},"bytecode":{"type":"bytes","id":2}}},"call_contract_operation":{"fields":{"contractId":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"CONTRACT_ID"}},"entryPoint":{"type":"uint32","id":2},"args":{"type":"bytes","id":3}}},"set_system_call_operation":{"fields":{"callId":{"type":"uint32","id":1},"target":{"type":"system_call_target","id":2}}},"operation":{"oneofs":{"op":{"oneof":["uploadContract","callContract","setSystemCall"]}},"fields":{"uploadContract":{"type":"upload_contract_operation","id":1},"callContract":{"type":"call_contract_operation","id":2},"setSystemCall":{"type":"set_system_call_operation","id":3}}},"active_transaction_data":{"fields":{"rcLimit":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"nonce":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"operations":{"rule":"repeated","type":"operation","id":3}}},"passive_transaction_data":{"fields":{}},"transaction":{"fields":{"id":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"TRANSACTION_ID"}},"active":{"type":"bytes","id":2},"passive":{"type":"bytes","id":3},"signatureData":{"type":"bytes","id":4}}},"active_block_data":{"fields":{"transactionMerkleRoot":{"type":"bytes","id":1},"passiveDataMerkleRoot":{"type":"bytes","id":2},"signer":{"type":"bytes","id":3}}},"passive_block_data":{"fields":{}},"block_header":{"fields":{"previous":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"BLOCK_ID"}},"height":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"timestamp":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"block":{"fields":{"id":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"BLOCK_ID"}},"header":{"type":"block_header","id":2},"active":{"type":"bytes","id":3},"passive":{"type":"bytes","id":4},"signatureData":{"type":"bytes","id":5},"transactions":{"rule":"repeated","type":"transaction","id":6}}},"block_receipt":{"fields":{}}}}}}}}');
+module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"protocol":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/protocol"},"nested":{"contract_call_bundle":{"fields":{"contract_id":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"CONTRACT_ID"}},"entry_point":{"type":"uint32","id":2}}},"system_call_target":{"oneofs":{"target":{"oneof":["thunk_id","system_call_bundle"]}},"fields":{"thunk_id":{"type":"uint32","id":1},"system_call_bundle":{"type":"contract_call_bundle","id":2}}},"upload_contract_operation":{"fields":{"contract_id":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"CONTRACT_ID"}},"bytecode":{"type":"bytes","id":2}}},"call_contract_operation":{"fields":{"contract_id":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"CONTRACT_ID"}},"entry_point":{"type":"uint32","id":2},"args":{"type":"bytes","id":3}}},"set_system_call_operation":{"fields":{"call_id":{"type":"uint32","id":1},"target":{"type":"system_call_target","id":2}}},"operation":{"oneofs":{"op":{"oneof":["upload_contract","call_contract","set_system_call"]}},"fields":{"upload_contract":{"type":"upload_contract_operation","id":1},"call_contract":{"type":"call_contract_operation","id":2},"set_system_call":{"type":"set_system_call_operation","id":3}}},"active_transaction_data":{"fields":{"rc_limit":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"nonce":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"operations":{"rule":"repeated","type":"operation","id":3}}},"passive_transaction_data":{"fields":{}},"transaction":{"fields":{"id":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"TRANSACTION_ID"}},"active":{"type":"bytes","id":2},"passive":{"type":"bytes","id":3},"signature_data":{"type":"bytes","id":4}}},"active_block_data":{"fields":{"transaction_merkle_root":{"type":"bytes","id":1},"passive_data_merkle_root":{"type":"bytes","id":2},"signer":{"type":"bytes","id":3}}},"passive_block_data":{"fields":{}},"block_header":{"fields":{"previous":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"BLOCK_ID"}},"height":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"timestamp":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"block":{"fields":{"id":{"type":"bytes","id":1,"options":{"(koinos_bytes_type)":"BLOCK_ID"}},"header":{"type":"block_header","id":2},"active":{"type":"bytes","id":3},"passive":{"type":"bytes","id":4},"signature_data":{"type":"bytes","id":5},"transactions":{"rule":"repeated","type":"transaction","id":6}}},"block_receipt":{"fields":{}}}}}}}}');
 
 /***/ })
 

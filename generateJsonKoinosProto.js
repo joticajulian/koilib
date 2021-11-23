@@ -3,17 +3,40 @@ const fs = require("fs");
 const pbjs = require("protobufjs/cli/pbjs");
 
 pbjs.main(
-  ["--target", "json", "./koinos-proto/koinos/protocol/protocol.proto"],
+  [
+    "--keep-case",
+    "--target",
+    "json",
+    "./koinos-proto/koinos/protocol/protocol.proto",
+  ],
   (err, output) => {
     if (err) throw err;
-    fs.writeFileSync("./src/protocol-proto.json", output);
+    fs.writeFileSync("./src/jsonDescriptors/protocol-proto.json", output);
   }
 );
 
 pbjs.main(
-  ["--target", "json", "./koinos-proto/koinos/contracts/token/token.proto"],
+  [
+    "--keep-case",
+    "--target",
+    "json",
+    "./koinos-proto/koinos/contracts/token/token.proto",
+  ],
   (err, output) => {
     if (err) throw err;
-    fs.writeFileSync("./src/krc20-proto.json", output);
+    fs.writeFileSync("./src/jsonDescriptors/krc20-proto.json", output);
+  }
+);
+
+pbjs.main(
+  [
+    "--keep-case",
+    "--target",
+    "json",
+    "./koinos-proto/koinos/contracts/pow/pow.proto",
+  ],
+  (err, output) => {
+    if (err) throw err;
+    fs.writeFileSync("./src/jsonDescriptors/pow-proto.json", output);
   }
 );
