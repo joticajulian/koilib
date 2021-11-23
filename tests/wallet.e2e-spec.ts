@@ -81,16 +81,19 @@ describe("Provider", () => {
   it("should get a a block with pow consensus and get the signer address", async () => {
     expect.assertions(2);
     const block = await provider.getBlock(1000);
+    const serializer = new Serializer(powJson, {
+      defaultTypeName: "pow_signature_data",
+    });
+    interface PowSigData {
+      nonce: string;
+      recoverable_signature: string;
+    }
     const signer = await Signer.recoverAddress(block.block, {
       transformSignature: async (signatureData) => {
-        const serializer = new Serializer(powJson, {
-          defaultTypeName: "pow_signature_data",
-        });
-        const powSignatureData: {
-          nonce: string;
-          recoverable_signature: string;
-        } = await serializer.deserialize(signatureData);
-        return powSignatureData.recoverable_signature;
+        const powSigData: PowSigData = await serializer.deserialize(
+          signatureData
+        );
+        return powSigData.recoverable_signature;
       },
     });
     expect(signer).toBeDefined();

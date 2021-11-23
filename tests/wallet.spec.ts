@@ -19,6 +19,7 @@ import {
   TransactionJson,
   Abi,
 } from "../src/interface";
+import { Serializer } from "../src";
 
 const mockAxiosGet = jest.spyOn(axios, "get");
 const mockAxiosPost = jest.spyOn(axios, "post");
@@ -435,5 +436,85 @@ describe("Wallet and Contract", () => {
     } as TransactionJson);
 
     expect(transactionResponse).toBeDefined();
+  });
+
+  it("should get a a block with federated consensus and get the signer address", async () => {
+    expect.assertions(2);
+    mockAxiosPost.mockImplementation(async () => {
+      return axiosResponse({
+        block_items: [
+          {
+            block: {
+              active:
+                "CiISIOOwxEKY_BwUmvv0yJlvuSQnrkHkZJuTTKSVmRt4UrhVEiISIC26XbwznnMWrqJoP6-DnBt7HuIxPbeSESWIEY3wZqo1GhkAadIc8ziAPySyhmNk00yjM3dIdxatR7-8",
+              signature_data:
+                "HxhGjxdnrpNMhiKgi03AT9B2r7hWGOMnM47SbhtWWgDjTrZGQSOVt1ZG2N5L9JmbIXegzbtggHaBi3o0DTpYhB4=",
+            },
+          },
+        ],
+      });
+    });
+    const blocks = await provider.getBlocks(1, 1, "randomId");
+    const signer = await Signer.recoverAddress(blocks[0].block);
+    expect(signer).toBeDefined();
+    expect(signer.length).toBe(34);
+  });
+
+  it("should get a a block with pow consensus and get the signer address", async () => {
+    expect.assertions(2);
+    mockAxiosPost.mockImplementation(async () => {
+      return axiosResponse({
+        block_items: [
+          {
+            block: {
+              active:
+                "CiISIOOwxEKY_BwUmvv0yJlvuSQnrkHkZJuTTKSVmRt4UrhVEiISIC26XbwznnMWrqJoP6-DnBt7HuIxPbeSESWIEY3wZqo1GhkAadIc8ziAPySyhmNk00yjM3dIdxatR7-8",
+              signature_data:
+                "CiDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB2bvRJBH8FKri7J2bR6sWa-mRgRFrqolnnxMl48HtSsl_8y-YaIcm7RzsevuEZP8b5g1TiPfGZK1QBkH7mrPD4UlEl2iN4=",
+            },
+          },
+        ],
+      });
+    });
+    const blocks = await provider.getBlocks(1, 1, "randomId");
+    const serializer = new Serializer(
+      {
+        nested: {
+          mypackage: {
+            nested: {
+              pow_signature_data: {
+                fields: {
+                  nonce: {
+                    type: "bytes",
+                    id: 1,
+                  },
+                  recoverable_signature: {
+                    type: "bytes",
+                    id: 2,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        defaultTypeName: "pow_signature_data",
+      }
+    );
+    interface PowSigData {
+      nonce: string;
+      recoverable_signature: string;
+    }
+    const signer = await Signer.recoverAddress(blocks[0].block, {
+      transformSignature: async (signatureData) => {
+        const powSignatureData: PowSigData = await serializer.deserialize(
+          signatureData
+        );
+        return powSignatureData.recoverable_signature;
+      },
+    });
+    expect(signer).toBeDefined();
+    expect(signer.length).toBe(34);
   });
 });

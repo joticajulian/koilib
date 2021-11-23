@@ -304,9 +304,51 @@ export class Signer implements SignerInterface {
   /**
    * Function to recover the public key from a signed
    * transaction or block.
-   * The output format can be compressed or uncompressed.
-   * @param tx - signed transaction
-   * @param compressed - output format (compressed by default)
+   * The output format can be compressed (default) or uncompressed.
+   *
+   * @example
+   * ```ts
+   * const publicKey = await Signer.recoverPublicKey(tx);
+   * ```
+   *
+   * If the signature data contains more data, like in the
+   * blocks for PoW consensus, use the "transformSignature"
+   * function to extract the signature.
+   *
+   * @example
+   * ```ts
+   *  const powDescriptorJson = {
+   *    nested: {
+   *      mypackage: {
+   *        nested: {
+   *          pow_signature_data: {
+   *            fields: {
+   *              nonce: {
+   *                type: "bytes",
+   *                id: 1,
+   *              },
+   *              recoverable_signature: {
+   *                type: "bytes",
+   *                id: 2,
+   *              },
+   *            },
+   *          },
+   *        },
+   *      },
+   *    },
+   *  };
+   *
+   *  const serializer = new Serializer(powDescriptorJson, {
+   *   defaultTypeName: "pow_signature_data",
+   *  });
+   *
+   *  const signer = await Signer.recoverPublicKey(block, {
+   *    transformSignature: async (signatureData) => {
+   *      const powSignatureData = await serializer.deserialize(signatureData);
+   *      return powSignatureData.recoverable_signature;
+   *    },
+   *  });
+   * ```
    */
   static async recoverPublicKey(
     txOrBlock: TransactionJson | BlockJson,
@@ -341,9 +383,50 @@ export class Signer implements SignerInterface {
   /**
    * Function to recover the signer address from a signed
    * transaction or block.
-   * The output format can be compressed or uncompressed.
-   * @param tx - signed transaction
-   * @param compressed - output format (compressed by default)
+   * The output format can be compressed (default) or uncompressed.
+   * @example
+   * ```ts
+   * const publicKey = await Signer.recoverAddress(tx);
+   * ```
+   *
+   * If the signature data contains more data, like in the
+   * blocks for PoW consensus, use the "transformSignature"
+   * function to extract the signature.
+   *
+   * @example
+   * ```ts
+   *  const powDescriptorJson = {
+   *    nested: {
+   *      mypackage: {
+   *        nested: {
+   *          pow_signature_data: {
+   *            fields: {
+   *              nonce: {
+   *                type: "bytes",
+   *                id: 1,
+   *              },
+   *              recoverable_signature: {
+   *                type: "bytes",
+   *                id: 2,
+   *              },
+   *            },
+   *          },
+   *        },
+   *      },
+   *    },
+   *  };
+   *
+   *  const serializer = new Serializer(powDescriptorJson, {
+   *   defaultTypeName: "pow_signature_data",
+   *  });
+   *
+   *  const signer = await Signer.recoverAddress(block, {
+   *    transformSignature: async (signatureData) => {
+   *      const powSignatureData = await serializer.deserialize(signatureData);
+   *      return powSignatureData.recoverable_signature;
+   *    },
+   *  });
+   * ```
    */
   static async recoverAddress(
     txOrBlock: TransactionJson | BlockJson,
