@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>ContractCallBundleNested | koilib - v2.3.0</title>
+	<title>SendTransactionResponse | koilib - v2.3.0</title>
 	<meta name="description" content="Documentation for koilib - v2.3.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -58,10 +58,10 @@
 					<a href="../modules/interfaces.html">interfaces</a>
 				</li>
 				<li>
-					<a href="interfaces.ContractCallBundleNested.html">ContractCallBundleNested</a>
+					<a href="interfaces.SendTransactionResponse.html">SendTransactionResponse</a>
 				</li>
 			</ul>
-			<h1>Interface ContractCallBundleNested</h1>
+			<h1>Interface SendTransactionResponse</h1>
 		</div>
 	</div>
 </header>
@@ -72,7 +72,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">ContractCallBundleNested</span>
+						<span class="target">SendTransactionResponse</span>
 					</li>
 				</ul>
 			</section>
@@ -81,25 +81,32 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Properties</h3>
+							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.ContractCallBundleNested.html#system_call_bundle" class="tsd-kind-icon">system_<wbr>call_<wbr>bundle</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="interfaces.SendTransactionResponse.html#wait" class="tsd-kind-icon">wait</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="system_call_bundle" class="tsd-anchor"></a>
-					<h3>system_<wbr>call_<wbr>bundle</h3>
-					<div class="tsd-signature tsd-kind-icon">system_<wbr>call_<wbr>bundle<span class="tsd-signature-symbol">:</span> <a href="interfaces.ContractCallBundle.html" class="tsd-signature-type" data-tsd-kind="Interface">ContractCallBundle</a></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/interface.ts#L192">interface.ts:192</a></li>
-						</ul>
-					</aside>
+				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="wait" class="tsd-anchor"></a>
+					<h3>wait</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">wait<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/interface.ts#L143">interface.ts:143</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
 				</section>
 			</section>
 		</div>
@@ -149,27 +156,27 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.ContractCallBundleJson.html" class="tsd-kind-icon">Contract<wbr>Call<wbr>Bundle<wbr>Json</a>
 					</li>
-				</ul>
-				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-namespace">
+					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.ContractCallBundleNested.html" class="tsd-kind-icon">Contract<wbr>Call<wbr>Bundle<wbr>Nested</a>
-						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="interfaces.ContractCallBundleNested.html#system_call_bundle" class="tsd-kind-icon">system_<wbr>call_<wbr>bundle</a>
-							</li>
-						</ul>
 					</li>
-				</ul>
-				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.DecodedOperationJson.html" class="tsd-kind-icon">Decoded<wbr>Operation<wbr>Json</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.RecoverPublicKeyOptions.html" class="tsd-kind-icon">Recover<wbr>Public<wbr>Key<wbr>Options</a>
 					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.SendTransactionResponse.html" class="tsd-kind-icon">Send<wbr>Transaction<wbr>Response</a>
+						<ul>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="interfaces.SendTransactionResponse.html#wait" class="tsd-kind-icon">wait</a>
+							</li>
+						</ul>
 					</li>
+				</ul>
+				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.SetSystemCallOperation.html" class="tsd-kind-icon">Set<wbr>System<wbr>Call<wbr>Operation</a>
 					</li>

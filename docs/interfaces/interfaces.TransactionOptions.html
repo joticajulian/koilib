@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>ContractCallBundleNested | koilib - v2.3.0</title>
+	<title>TransactionOptions | koilib - v2.3.0</title>
 	<meta name="description" content="Documentation for koilib - v2.3.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -58,10 +58,10 @@
 					<a href="../modules/interfaces.html">interfaces</a>
 				</li>
 				<li>
-					<a href="interfaces.ContractCallBundleNested.html">ContractCallBundleNested</a>
+					<a href="interfaces.TransactionOptions.html">TransactionOptions</a>
 				</li>
 			</ul>
-			<h1>Interface ContractCallBundleNested</h1>
+			<h1>Interface TransactionOptions</h1>
 		</div>
 	</div>
 </header>
@@ -72,7 +72,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">ContractCallBundleNested</span>
+						<span class="target">TransactionOptions</span>
 					</li>
 				</ul>
 			</section>
@@ -83,7 +83,10 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.ContractCallBundleNested.html#system_call_bundle" class="tsd-kind-icon">system_<wbr>call_<wbr>bundle</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.TransactionOptions.html#nonce" class="tsd-kind-icon">nonce</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.TransactionOptions.html#rc_limit" class="tsd-kind-icon">rc_<wbr>limit</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.TransactionOptions.html#sendAbis" class="tsd-kind-icon">send<wbr>Abis</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.TransactionOptions.html#sendTransaction" class="tsd-kind-icon">send<wbr>Transaction</a></li>
 							</ul>
 						</section>
 					</div>
@@ -92,12 +95,42 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="system_call_bundle" class="tsd-anchor"></a>
-					<h3>system_<wbr>call_<wbr>bundle</h3>
-					<div class="tsd-signature tsd-kind-icon">system_<wbr>call_<wbr>bundle<span class="tsd-signature-symbol">:</span> <a href="interfaces.ContractCallBundle.html" class="tsd-signature-type" data-tsd-kind="Interface">ContractCallBundle</a></div>
+					<a name="nonce" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> nonce</h3>
+					<div class="tsd-signature tsd-kind-icon">nonce<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/interface.ts#L192">interface.ts:192</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/interface.ts#L119">interface.ts:119</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="rc_limit" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> rc_<wbr>limit</h3>
+					<div class="tsd-signature tsd-kind-icon">rc_<wbr>limit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/interface.ts#L118">interface.ts:118</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="sendAbis" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> send<wbr>Abis</h3>
+					<div class="tsd-signature tsd-kind-icon">send<wbr>Abis<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/interface.ts#L121">interface.ts:121</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="sendTransaction" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> send<wbr>Transaction</h3>
+					<div class="tsd-signature tsd-kind-icon">send<wbr>Transaction<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/interface.ts#L120">interface.ts:120</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -149,18 +182,9 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.ContractCallBundleJson.html" class="tsd-kind-icon">Contract<wbr>Call<wbr>Bundle<wbr>Json</a>
 					</li>
-				</ul>
-				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-namespace">
+					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.ContractCallBundleNested.html" class="tsd-kind-icon">Contract<wbr>Call<wbr>Bundle<wbr>Nested</a>
-						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="interfaces.ContractCallBundleNested.html#system_call_bundle" class="tsd-kind-icon">system_<wbr>call_<wbr>bundle</a>
-							</li>
-						</ul>
 					</li>
-				</ul>
-				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.DecodedOperationJson.html" class="tsd-kind-icon">Decoded<wbr>Operation<wbr>Json</a>
 					</li>
@@ -185,9 +209,27 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.TransactionJson.html" class="tsd-kind-icon">Transaction<wbr>Json</a>
 					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.TransactionOptions.html" class="tsd-kind-icon">Transaction<wbr>Options</a>
+						<ul>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="interfaces.TransactionOptions.html#nonce" class="tsd-kind-icon">nonce</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="interfaces.TransactionOptions.html#rc_limit" class="tsd-kind-icon">rc_<wbr>limit</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="interfaces.TransactionOptions.html#sendAbis" class="tsd-kind-icon">send<wbr>Abis</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="interfaces.TransactionOptions.html#sendTransaction" class="tsd-kind-icon">send<wbr>Transaction</a>
+							</li>
+						</ul>
 					</li>
+				</ul>
+				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-namespace">
 						<a href="interfaces.UploadContractOperation.html" class="tsd-kind-icon">Upload<wbr>Contract<wbr>Operation</a>
 					</li>

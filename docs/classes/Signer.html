@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Signer | koilib - v2.2.0</title>
-	<meta name="description" content="Documentation for koilib - v2.2.0">
+	<title>Signer | koilib - v2.3.0</title>
+	<meta name="description" content="Documentation for koilib - v2.3.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">koilib - v2.2.0</a>
+					<a href="../index.html" class="title">koilib - v2.3.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">koilib - v2.2.0</a>
+					<a href="../modules.html">koilib - v2.3.0</a>
 				</li>
 				<li>
 					<a href="Signer.html">Signer</a>
@@ -74,7 +74,8 @@
 					<dl class="tsd-comment-tags">
 						<dt>example</dt>
 						<dd><p>using private key as hex string</p>
-							<pre><code class="language-ts"><span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c&quot;</span><span style="color: #000000">);</span>
+							<pre><code class="language-ts"><span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">privateKey</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c&quot;</span><span style="color: #000000">;</span>
+<span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">({ </span><span style="color: #001080">privateKey</span><span style="color: #000000"> });</span>
 </code></pre>
 							<br>
 							<p>using private key as Uint8Array</p>
@@ -84,11 +85,12 @@
 <span style="color: #000000">    </span><span style="color: #098658">1</span><span style="color: #000000">, </span><span style="color: #098658">203</span><span style="color: #000000">,  </span><span style="color: #098658">55</span><span style="color: #000000">, </span><span style="color: #098658">128</span><span style="color: #000000">, </span><span style="color: #098658">187</span><span style="color: #000000">,   </span><span style="color: #098658">2</span><span style="color: #000000">, </span><span style="color: #098658">192</span><span style="color: #000000">, </span><span style="color: #098658">249</span><span style="color: #000000">,</span>
 <span style="color: #000000">  </span><span style="color: #098658">205</span><span style="color: #000000">, </span><span style="color: #098658">254</span><span style="color: #000000">, </span><span style="color: #098658">157</span><span style="color: #000000">,   </span><span style="color: #098658">9</span><span style="color: #000000">, </span><span style="color: #098658">218</span><span style="color: #000000">, </span><span style="color: #098658">173</span><span style="color: #000000">, </span><span style="color: #098658">223</span><span style="color: #000000">, </span><span style="color: #098658">156</span>
 <span style="color: #000000">]);</span>
-<span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">(</span><span style="color: #001080">buffer</span><span style="color: #000000">);</span>
+<span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">({ </span><span style="color: #001080">privateKey:</span><span style="color: #000000"> </span><span style="color: #001080">buffer</span><span style="color: #000000"> });</span>
 </code></pre>
 							<br>
 							<p>using private key as bigint</p>
-							<pre><code class="language-ts"><span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">(</span><span style="color: #098658">106982601049961974618234078204952280507266494766432547312316920283818886029212</span><span style="color: #0000FF">n</span><span style="color: #000000">);</span>
+							<pre><code class="language-ts"><span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">privateKey</span><span style="color: #000000"> = </span><span style="color: #098658">106982601049961974618234078204952280507266494766432547312316920283818886029212</span><span style="color: #0000FF">n</span><span style="color: #000000">;</span>
+<span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">({ </span><span style="color: #001080">privateKey</span><span style="color: #000000"> });</span>
 </code></pre>
 							<br>
 							<p>using the seed</p>
@@ -101,7 +103,8 @@
 							<br>
 							<p>defining a provider</p>
 							<pre><code class="language-ts"><span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">provider</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Provider</span><span style="color: #000000">([</span><span style="color: #A31515">&quot;https://example.com/jsonrpc&quot;</span><span style="color: #000000">]);</span>
-<span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c&quot;</span><span style="color: #000000">, </span><span style="color: #0000FF">true</span><span style="color: #000000">, </span><span style="color: #001080">provider</span><span style="color: #000000">);</span>
+<span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">privateKey</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c&quot;</span><span style="color: #000000">;</span>
+<span style="color: #0000FF">var</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">({ </span><span style="color: #001080">privateKey</span><span style="color: #000000">, </span><span style="color: #001080">provider</span><span style="color: #000000"> });</span>
 </code></pre>
 						</dd>
 					</dl>
@@ -139,17 +142,18 @@
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="Signer.html#privateKey" class="tsd-kind-icon">private<wbr>Key</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="Signer.html#provider" class="tsd-kind-icon">provider</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="Signer.html#publicKey" class="tsd-kind-icon">public<wbr>Key</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="Signer.html#serializer" class="tsd-kind-icon">serializer</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Signer.html#decodeTransaction" class="tsd-kind-icon">decode<wbr>Transaction</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Signer.html#encodeTransaction" class="tsd-kind-icon">encode<wbr>Transaction</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Signer.html#getAddress" class="tsd-kind-icon">get<wbr>Address</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Signer.html#getPrivateKey" class="tsd-kind-icon">get<wbr>Private<wbr>Key</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Signer.html#sendTransaction" class="tsd-kind-icon">send<wbr>Transaction</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="Signer.html#signTransaction" class="tsd-kind-icon">sign<wbr>Transaction</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="Signer.html#decodeTransaction" class="tsd-kind-icon">decode<wbr>Transaction</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="Signer.html#fromSeed" class="tsd-kind-icon">from<wbr>Seed</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="Signer.html#fromWif" class="tsd-kind-icon">from<wbr>Wif</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="Signer.html#recoverAddress" class="tsd-kind-icon">recover<wbr>Address</a></li>
@@ -165,13 +169,13 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Signer<span class="tsd-signature-symbol">(</span>privateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span>, compressed<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span>, provider<span class="tsd-signature-symbol">?: </span><a href="Provider.html" class="tsd-signature-type" data-tsd-kind="Class">Provider</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="Signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Signer<span class="tsd-signature-symbol">(</span>c<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>compressed<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span>privateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol">; </span>provider<span class="tsd-signature-symbol">?: </span><a href="Provider.html" class="tsd-signature-type" data-tsd-kind="Class">Provider</a><span class="tsd-signature-symbol">; </span>serializer<span class="tsd-signature-symbol">?: </span><a href="Serializer.html" class="tsd-signature-type" data-tsd-kind="Class">Serializer</a><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="Signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L124">Signer.ts:124</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L137">Signer.ts:137</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -182,7 +186,8 @@
 								</div>
 								<dl class="tsd-comment-tags">
 									<dt>example</dt>
-									<dd><pre><code class="language-ts"><span style="color: #001080">cons</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c&quot;</span><span style="color: #000000">);</span>
+									<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">privateKey</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c&quot;</span><span style="color: #000000">;</span>
+<span style="color: #001080">cons</span><span style="color: #000000"> </span><span style="color: #001080">signer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Signer</span><span style="color: #000000">({ </span><span style="color: #001080">privateKey</span><span style="color: #000000"> });</span>
 <span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">signer</span><span style="color: #000000">.</span><span style="color: #795E26">getAddress</span><span style="color: #000000">());</span>
 <span style="color: #008000">// 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b</span>
 </code></pre>
@@ -192,28 +197,29 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>privateKey: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<p>Private key as hexstring, bigint or Uint8Array</p>
-										</div>
-									</div>
-								</li>
-								<li>
-									<h5>compressed: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<p>compressed format is true by default</p>
-										</div>
-									</div>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> provider: <a href="Provider.html" class="tsd-signature-type" data-tsd-kind="Class">Provider</a></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<p>provider to connect with the blockchain</p>
-										</div>
-									</div>
+									<h5>c: <span class="tsd-signature-symbol">{ </span>compressed<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span>privateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol">; </span>provider<span class="tsd-signature-symbol">?: </span><a href="Provider.html" class="tsd-signature-type" data-tsd-kind="Class">Provider</a><span class="tsd-signature-symbol">; </span>serializer<span class="tsd-signature-symbol">?: </span><a href="Serializer.html" class="tsd-signature-type" data-tsd-kind="Class">Serializer</a><span class="tsd-signature-symbol"> }</span></h5>
+									<ul class="tsd-parameters">
+										<li class="tsd-parameter">
+											<h5><span class="tsd-flag ts-flagOptional">Optional</span> compressed<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span></h5>
+										</li>
+										<li class="tsd-parameter">
+											<h5>private<wbr>Key<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span></h5>
+										</li>
+										<li class="tsd-parameter">
+											<h5><span class="tsd-flag ts-flagOptional">Optional</span> provider<span class="tsd-signature-symbol">?: </span><a href="Provider.html" class="tsd-signature-type" data-tsd-kind="Class">Provider</a></h5>
+										</li>
+										<li class="tsd-parameter">
+											<h5><span class="tsd-flag ts-flagOptional">Optional</span> serializer<span class="tsd-signature-symbol">?: </span><a href="Serializer.html" class="tsd-signature-type" data-tsd-kind="Class">Serializer</a></h5>
+											<div class="tsd-comment tsd-typography">
+												<div class="lead">
+													<p>Set this option if you can not use <em>eval</em> functions
+														in the current environment. In such cases, the
+														serializer must come from an environment where it
+													is able to use those functions.</p>
+												</div>
+											</div>
+										</li>
+									</ul>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="Signer.html" class="tsd-signature-type" data-tsd-kind="Class">Signer</a></h4>
@@ -229,7 +235,7 @@
 					<div class="tsd-signature tsd-kind-icon">address<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L102">Signer.ts:102</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L109">Signer.ts:109</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -244,7 +250,7 @@
 					<div class="tsd-signature tsd-kind-icon">compressed<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L93">Signer.ts:93</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L100">Signer.ts:100</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -260,23 +266,23 @@
 					<div class="tsd-signature tsd-kind-icon">private<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">bigint</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L95">Signer.ts:95</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L102">Signer.ts:102</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="provider" class="tsd-anchor"></a>
-					<h3>provider</h3>
-					<div class="tsd-signature tsd-kind-icon">provider<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><a href="Provider.html" class="tsd-signature-type" data-tsd-kind="Class">Provider</a></div>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> provider</h3>
+					<div class="tsd-signature tsd-kind-icon">provider<span class="tsd-signature-symbol">:</span> <a href="Provider.html" class="tsd-signature-type" data-tsd-kind="Class">Provider</a></div>
 					<aside class="tsd-sources">
 						<p>Implementation of <a href="../interfaces/SignerInterface.html">SignerInterface</a>.<a href="../interfaces/SignerInterface.html#provider">provider</a></p>
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L107">Signer.ts:107</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L114">Signer.ts:114</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Provider used to connect with the blockchain</p>
+							<p>Provider to connect with the blockchain</p>
 						</div>
 					</div>
 				</section>
@@ -286,13 +292,58 @@
 					<div class="tsd-signature tsd-kind-icon">public<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L97">Signer.ts:97</a></li>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L104">Signer.ts:104</a></li>
 						</ul>
 					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="serializer" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> serializer</h3>
+					<div class="tsd-signature tsd-kind-icon">serializer<span class="tsd-signature-symbol">:</span> <a href="Serializer.html" class="tsd-signature-type" data-tsd-kind="Class">Serializer</a></div>
+					<aside class="tsd-sources">
+						<p>Implementation of <a href="../interfaces/SignerInterface.html">SignerInterface</a>.<a href="../interfaces/SignerInterface.html#serializer">serializer</a></p>
+						<ul>
+							<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L119">Signer.ts:119</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Serializer to serialize/deserialize data types</p>
+						</div>
+					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="decodeTransaction" class="tsd-anchor"></a>
+					<h3>decode<wbr>Transaction</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">decode<wbr>Transaction<span class="tsd-signature-symbol">(</span>tx<span class="tsd-signature-symbol">: </span><a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/interfaces.ActiveTransactionData.html" class="tsd-signature-type" data-tsd-kind="Interface">ActiveTransactionData</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Implementation of <a href="../interfaces/SignerInterface.html">SignerInterface</a>.<a href="../interfaces/SignerInterface.html#decodeTransaction">decodeTransaction</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L480">Signer.ts:480</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Function to decode a transaction</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>tx: <a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/interfaces.ActiveTransactionData.html" class="tsd-signature-type" data-tsd-kind="Interface">ActiveTransactionData</a><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="encodeTransaction" class="tsd-anchor"></a>
 					<h3>encode<wbr>Transaction</h3>
@@ -304,7 +355,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/SignerInterface.html">SignerInterface</a>.<a href="../interfaces/SignerInterface.html#encodeTransaction">encodeTransaction</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L315">Signer.ts:315</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L447">Signer.ts:447</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -317,9 +368,9 @@
 								<li>
 									<h5>activeData: <a href="../interfaces/interfaces.ActiveTransactionData.html" class="tsd-signature-type" data-tsd-kind="Interface">ActiveTransactionData</a></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>Active data consists of nonce, rcLimit, and
+										<p>Active data consists of nonce, rc_limit, and
 											operations. Do not set the nonce to get it from the blockchain
-										using the provider. The rcLimit is 1000000 by default.</p>
+										using the provider. The rc_limit is 1000000 by default.</p>
 									</div>
 								</li>
 							</ul>
@@ -340,7 +391,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/SignerInterface.html">SignerInterface</a>.<a href="../interfaces/SignerInterface.html#getAddress">getAddress</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L180">Signer.ts:180</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L211">Signer.ts:211</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -369,7 +420,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/SignerInterface.html">SignerInterface</a>.<a href="../interfaces/SignerInterface.html#getPrivateKey">getPrivateKey</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L207">Signer.ts:207</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L238">Signer.ts:238</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -415,14 +466,14 @@
 					<a name="sendTransaction" class="tsd-anchor"></a>
 					<h3>send<wbr>Transaction</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">send<wbr>Transaction<span class="tsd-signature-symbol">(</span>tx<span class="tsd-signature-symbol">: </span><a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a>, _abis<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/Abi.html" class="tsd-signature-type" data-tsd-kind="Interface">Abi</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/SendTransactionResponse.html" class="tsd-signature-type" data-tsd-kind="Interface">SendTransactionResponse</a><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">send<wbr>Transaction<span class="tsd-signature-symbol">(</span>tx<span class="tsd-signature-symbol">: </span><a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a>, _abis<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/interfaces.Abi.html" class="tsd-signature-type" data-tsd-kind="Interface">Abi</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/interfaces.SendTransactionResponse.html" class="tsd-signature-type" data-tsd-kind="Interface">SendTransactionResponse</a><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/SignerInterface.html">SignerInterface</a>.<a href="../interfaces/SignerInterface.html#sendTransaction">sendTransaction</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L264">Signer.ts:264</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L295">Signer.ts:295</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -441,14 +492,14 @@
 									</div>
 								</li>
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> _abis: <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/Abi.html" class="tsd-signature-type" data-tsd-kind="Interface">Abi</a><span class="tsd-signature-symbol">&gt;</span></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> _abis: <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/interfaces.Abi.html" class="tsd-signature-type" data-tsd-kind="Interface">Abi</a><span class="tsd-signature-symbol">&gt;</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>Collection of Abis to parse the operations in the
 										transaction. This parameter is optional.</p>
 									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/SendTransactionResponse.html" class="tsd-signature-type" data-tsd-kind="Interface">SendTransactionResponse</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/interfaces.SendTransactionResponse.html" class="tsd-signature-type" data-tsd-kind="Interface">SendTransactionResponse</a><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -463,7 +514,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/SignerInterface.html">SignerInterface</a>.<a href="../interfaces/SignerInterface.html#signTransaction">signTransaction</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L236">Signer.ts:236</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L267">Signer.ts:267</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -486,34 +537,6 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
-					<a name="decodeTransaction" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagStatic">Static</span> decode<wbr>Transaction</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">decode<wbr>Transaction<span class="tsd-signature-symbol">(</span>tx<span class="tsd-signature-symbol">: </span><a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/interfaces.ActiveTransactionData.html" class="tsd-signature-type" data-tsd-kind="Interface">ActiveTransactionData</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L349">Signer.ts:349</a></li>
-								</ul>
-							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Function to decode a transaction</p>
-								</div>
-							</div>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>tx: <a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="../interfaces/interfaces.ActiveTransactionData.html" class="tsd-signature-type" data-tsd-kind="Interface">ActiveTransactionData</a></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
 					<a name="fromSeed" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> from<wbr>Seed</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
@@ -523,7 +546,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L170">Signer.ts:170</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L201">Signer.ts:201</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -569,7 +592,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L152">Signer.ts:152</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L180">Signer.ts:180</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -603,37 +626,75 @@
 					<a name="recoverAddress" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> recover<wbr>Address</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">recover<wbr>Address<span class="tsd-signature-symbol">(</span>tx<span class="tsd-signature-symbol">: </span><a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a>, compressed<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+						<li class="tsd-signature tsd-kind-icon">recover<wbr>Address<span class="tsd-signature-symbol">(</span>txOrBlock<span class="tsd-signature-symbol">: </span><a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a><span class="tsd-signature-symbol"> | </span><a href="../interfaces/interfaces.BlockJson.html" class="tsd-signature-type" data-tsd-kind="Interface">BlockJson</a>, opts<span class="tsd-signature-symbol">?: </span><a href="../interfaces/interfaces.RecoverPublicKeyOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">RecoverPublicKeyOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L302">Signer.ts:302</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L431">Signer.ts:431</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Function to recover the signer address from a signed transaction.
-									The output format can be compressed or uncompressed.</p>
+									<p>Function to recover the signer address from a signed
+										transaction or block.
+									The output format can be compressed (default) or uncompressed.</p>
 								</div>
+								<dl class="tsd-comment-tags">
+									<dt>example</dt>
+									<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">publicKey</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">Signer</span><span style="color: #000000">.</span><span style="color: #795E26">recoverAddress</span><span style="color: #000000">(</span><span style="color: #001080">tx</span><span style="color: #000000">);</span>
+</code></pre>
+										<p>If the signature data contains more data, like in the
+											blocks for PoW consensus, use the &quot;transformSignature&quot;
+										function to extract the signature.</p>
+									</dd>
+									<dt>example</dt>
+									<dd><pre><code class="language-ts"><span style="color: #000000"> </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">powDescriptorJson</span><span style="color: #000000"> = {</span>
+<span style="color: #000000">   </span><span style="color: #001080">nested:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">     </span><span style="color: #001080">mypackage:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">       </span><span style="color: #001080">nested:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">         </span><span style="color: #001080">pow_signature_data:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">           </span><span style="color: #001080">fields:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">             </span><span style="color: #001080">nonce:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">               </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;bytes&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">               </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">1</span><span style="color: #000000">,</span>
+<span style="color: #000000">             },</span>
+<span style="color: #000000">             </span><span style="color: #001080">recoverable_signature:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">               </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;bytes&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">               </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">2</span><span style="color: #000000">,</span>
+<span style="color: #000000">             },</span>
+<span style="color: #000000">           },</span>
+<span style="color: #000000">         },</span>
+<span style="color: #000000">       },</span>
+<span style="color: #000000">     },</span>
+<span style="color: #000000">   },</span>
+<span style="color: #000000"> };</span>
+
+<span style="color: #000000"> </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">serializer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Serializer</span><span style="color: #000000">(</span><span style="color: #001080">powDescriptorJson</span><span style="color: #000000">, {</span>
+<span style="color: #000000">  </span><span style="color: #001080">defaultTypeName:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;pow_signature_data&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000"> });</span>
+
+<span style="color: #000000"> </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">signer</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">Signer</span><span style="color: #000000">.</span><span style="color: #795E26">recoverAddress</span><span style="color: #000000">(</span><span style="color: #001080">block</span><span style="color: #000000">, {</span>
+<span style="color: #000000">   </span><span style="color: #795E26">transformSignature</span><span style="color: #001080">:</span><span style="color: #000000"> </span><span style="color: #0000FF">async</span><span style="color: #000000"> (</span><span style="color: #001080">signatureData</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">     </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">powSignatureData</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">serializer</span><span style="color: #000000">.</span><span style="color: #795E26">deserialize</span><span style="color: #000000">(</span><span style="color: #001080">signatureData</span><span style="color: #000000">);</span>
+<span style="color: #000000">     </span><span style="color: #AF00DB">return</span><span style="color: #000000"> </span><span style="color: #001080">powSignatureData</span><span style="color: #000000">.</span><span style="color: #001080">recoverable_signature</span><span style="color: #000000">;</span>
+<span style="color: #000000">   },</span>
+<span style="color: #000000"> });</span>
+</code></pre>
+									</dd>
+								</dl>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>tx: <a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>signed transaction</p>
-									</div>
+									<h5>txOrBlock: <a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a><span class="tsd-signature-symbol"> | </span><a href="../interfaces/interfaces.BlockJson.html" class="tsd-signature-type" data-tsd-kind="Interface">BlockJson</a></h5>
 								</li>
 								<li>
-									<h5>compressed: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>output format (compressed by default)</p>
-									</div>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> opts: <a href="../interfaces/interfaces.RecoverPublicKeyOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">RecoverPublicKeyOptions</a></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -641,37 +702,75 @@
 					<a name="recoverPublicKey" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> recover<wbr>Public<wbr>Key</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">recover<wbr>Public<wbr>Key<span class="tsd-signature-symbol">(</span>tx<span class="tsd-signature-symbol">: </span><a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a>, compressed<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+						<li class="tsd-signature tsd-kind-icon">recover<wbr>Public<wbr>Key<span class="tsd-signature-symbol">(</span>txOrBlock<span class="tsd-signature-symbol">: </span><a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a><span class="tsd-signature-symbol"> | </span><a href="../interfaces/interfaces.BlockJson.html" class="tsd-signature-type" data-tsd-kind="Interface">BlockJson</a>, opts<span class="tsd-signature-symbol">?: </span><a href="../interfaces/interfaces.RecoverPublicKeyOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">RecoverPublicKeyOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/1c87f0e/src/Signer.ts#L279">Signer.ts:279</a></li>
+									<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/84aec16/src/Signer.ts#L353">Signer.ts:353</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Function to recover the public key from a signed transaction.
-									The output format can be compressed or uncompressed.</p>
+									<p>Function to recover the public key from a signed
+										transaction or block.
+									The output format can be compressed (default) or uncompressed.</p>
 								</div>
+								<dl class="tsd-comment-tags">
+									<dt>example</dt>
+									<dd><pre><code class="language-ts"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">publicKey</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">Signer</span><span style="color: #000000">.</span><span style="color: #795E26">recoverPublicKey</span><span style="color: #000000">(</span><span style="color: #001080">tx</span><span style="color: #000000">);</span>
+</code></pre>
+										<p>If the signature data contains more data, like in the
+											blocks for PoW consensus, use the &quot;transformSignature&quot;
+										function to extract the signature.</p>
+									</dd>
+									<dt>example</dt>
+									<dd><pre><code class="language-ts"><span style="color: #000000"> </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">powDescriptorJson</span><span style="color: #000000"> = {</span>
+<span style="color: #000000">   </span><span style="color: #001080">nested:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">     </span><span style="color: #001080">mypackage:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">       </span><span style="color: #001080">nested:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">         </span><span style="color: #001080">pow_signature_data:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">           </span><span style="color: #001080">fields:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">             </span><span style="color: #001080">nonce:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">               </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;bytes&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">               </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">1</span><span style="color: #000000">,</span>
+<span style="color: #000000">             },</span>
+<span style="color: #000000">             </span><span style="color: #001080">recoverable_signature:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">               </span><span style="color: #001080">type:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;bytes&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000">               </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #098658">2</span><span style="color: #000000">,</span>
+<span style="color: #000000">             },</span>
+<span style="color: #000000">           },</span>
+<span style="color: #000000">         },</span>
+<span style="color: #000000">       },</span>
+<span style="color: #000000">     },</span>
+<span style="color: #000000">   },</span>
+<span style="color: #000000"> };</span>
+
+<span style="color: #000000"> </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">serializer</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Serializer</span><span style="color: #000000">(</span><span style="color: #001080">powDescriptorJson</span><span style="color: #000000">, {</span>
+<span style="color: #000000">  </span><span style="color: #001080">defaultTypeName:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;pow_signature_data&quot;</span><span style="color: #000000">,</span>
+<span style="color: #000000"> });</span>
+
+<span style="color: #000000"> </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">signer</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">Signer</span><span style="color: #000000">.</span><span style="color: #795E26">recoverPublicKey</span><span style="color: #000000">(</span><span style="color: #001080">block</span><span style="color: #000000">, {</span>
+<span style="color: #000000">   </span><span style="color: #795E26">transformSignature</span><span style="color: #001080">:</span><span style="color: #000000"> </span><span style="color: #0000FF">async</span><span style="color: #000000"> (</span><span style="color: #001080">signatureData</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">     </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">powSignatureData</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">serializer</span><span style="color: #000000">.</span><span style="color: #795E26">deserialize</span><span style="color: #000000">(</span><span style="color: #001080">signatureData</span><span style="color: #000000">);</span>
+<span style="color: #000000">     </span><span style="color: #AF00DB">return</span><span style="color: #000000"> </span><span style="color: #001080">powSignatureData</span><span style="color: #000000">.</span><span style="color: #001080">recoverable_signature</span><span style="color: #000000">;</span>
+<span style="color: #000000">   },</span>
+<span style="color: #000000"> });</span>
+</code></pre>
+									</dd>
+								</dl>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>tx: <a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>signed transaction</p>
-									</div>
+									<h5>txOrBlock: <a href="../interfaces/interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a><span class="tsd-signature-symbol"> | </span><a href="../interfaces/interfaces.BlockJson.html" class="tsd-signature-type" data-tsd-kind="Interface">BlockJson</a></h5>
 								</li>
 								<li>
-									<h5>compressed: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>output format (compressed by default)</p>
-									</div>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> opts: <a href="../interfaces/interfaces.RecoverPublicKeyOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">RecoverPublicKeyOptions</a></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -692,6 +791,9 @@
 					</li>
 					<li class=" tsd-kind-class">
 						<a href="Provider.html" class="tsd-kind-icon">Provider</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="Serializer.html" class="tsd-kind-icon">Serializer</a>
 					</li>
 				</ul>
 				<ul class="current">
@@ -716,6 +818,12 @@
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="Signer.html#publicKey" class="tsd-kind-icon">public<wbr>Key</a>
 							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="Signer.html#serializer" class="tsd-kind-icon">serializer</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="Signer.html#decodeTransaction" class="tsd-kind-icon">decode<wbr>Transaction</a>
+							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="Signer.html#encodeTransaction" class="tsd-kind-icon">encode<wbr>Transaction</a>
 							</li>
@@ -730,9 +838,6 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="Signer.html#signTransaction" class="tsd-kind-icon">sign<wbr>Transaction</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
-								<a href="Signer.html#decodeTransaction" class="tsd-kind-icon">decode<wbr>Transaction</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
 								<a href="Signer.html#fromSeed" class="tsd-kind-icon">from<wbr>Seed</a>
@@ -751,19 +856,7 @@
 				</ul>
 				<ul class="after-current">
 					<li class=" tsd-kind-interface">
-						<a href="../interfaces/Abi.html" class="tsd-kind-icon">Abi</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="../interfaces/DecodedOperationJson.html" class="tsd-kind-icon">Decoded<wbr>Operation<wbr>Json</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="../interfaces/SendTransactionResponse.html" class="tsd-kind-icon">Send<wbr>Transaction<wbr>Response</a>
-					</li>
-					<li class=" tsd-kind-interface">
 						<a href="../interfaces/SignerInterface.html" class="tsd-kind-icon">Signer<wbr>Interface</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="../interfaces/TransactionOptions.html" class="tsd-kind-icon">Transaction<wbr>Options</a>
 					</li>
 				</ul>
 			</nav>
