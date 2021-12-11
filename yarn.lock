@@ -578,6 +578,16 @@
   resolved "https://registry.yarnpkg.com/@multiformats/base-x/-/base-x-4.0.1.tgz#95ff0fa58711789d53aefb2590a8b7a4e715d121"
   integrity sha512-eMk0b9ReBbV23xXU693TAIrLyeO5iTgBZGSJfpqriG8UkYvr/hC9u9pyMlAakDNHWmbhMZCDs6KQO0jzKD8OTw==
 
+"@noble/hashes@^0.4.3":
+  version "0.4.3"
+  resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-0.4.3.tgz#b83a2398f66ee4e4b14329255a88ebc89e95bb79"
+  integrity sha512-Ioifol4tJ4CUFGLgIHrjGmS4Lu9mWI/2a8NIOBORl28nvWFnhDpmjRJ6dwtsTbU98HqJSbqrWXRt9f8uGYvmXg==
+
+"@noble/secp256k1@^1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@noble/secp256k1/-/secp256k1-1.3.0.tgz#426880cf0355b24d81c129af1ec31dfa6eee8b9c"
+  integrity sha512-wuFthUc6Ul4xflhY5u1+p1bDILPzVEisekxt5M+iLg4R+gG6+k2jnRR19sC9fMtzlsN5sKloBwprziDS0XlmyQ==
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -3444,11 +3454,6 @@ joi@^17.3.0:
     "@sideway/formula" "^3.0.0"
     "@sideway/pinpoint" "^2.0.0"
 
-js-sha256@^0.9.0:
-  version "0.9.0"
-  resolved "https://registry.yarnpkg.com/js-sha256/-/js-sha256-0.9.0.tgz#0b89ac166583e91ef9123644bd3c5334ce9d0966"
-  integrity sha512-sga3MHh9sgQN2+pJ9VYZ+1LPwXOxuBJBA5nrR5/ofPfuiJBE2hnjsaN8se8JznOmGLN2p49Pe5U/ttafcs/apA==
-
 js-tokens@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
@@ -3810,16 +3815,6 @@ neo-async@^2.6.0, neo-async@^2.6.2:
   version "2.6.2"
   resolved "https://registry.yarnpkg.com/neo-async/-/neo-async-2.6.2.tgz#b4aafb93e3aeb2d8174ca53cf163ab7d7308305f"
   integrity sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==
-
-noble-ripemd160@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/noble-ripemd160/-/noble-ripemd160-0.2.0.tgz#2625014b2bcd47437fc925a1903697a44f06eb87"
-  integrity sha512-K/BtRfXuvscpnLLcYDQtBPNXeg+Exswnno5YEQaw6hdIXwKfR7D0gYT6WbfwhvLk87C/BOkDs9PJyrviMHJkOQ==
-
-noble-secp256k1@^1.2.9:
-  version "1.2.9"
-  resolved "https://registry.yarnpkg.com/noble-secp256k1/-/noble-secp256k1-1.2.9.tgz#9cbbed8b53f972453a7117a648076bdf173d6cdb"
-  integrity sha512-H4ygD9EDh0Ajm0xStA9ZwLKCBCS3MD7cZwGWftp3GdWPYot9NpOQ5Ludbi4zyi0w+aODDynXOwdghIJNs9Yyzg==
 
 node-int64@^0.4.0:
   version "0.4.0"

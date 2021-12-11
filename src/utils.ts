@@ -1,6 +1,6 @@
 import * as multibase from "multibase";
-import { sha256 } from "js-sha256";
-import ripemd160 from "noble-ripemd160";
+import { sha256 } from "@noble/hashes/lib/sha256";
+import { ripemd160 } from "@noble/hashes/lib/ripemd160";
 import krc20ProtoJson from "./jsonDescriptors/krc20-proto.json";
 import protocolJson from "./jsonDescriptors/protocol-proto.json";
 import { Abi } from "./interface";
@@ -92,8 +92,9 @@ export function bitcoinEncode(
   }
   prefixBuffer.set(buffer, 1);
   const firstHash = sha256(prefixBuffer);
-  const doubleHash = sha256(toUint8Array(firstHash));
-  const checksum = toUint8Array(doubleHash.substring(0, 8));
+  const doubleHash = sha256(firstHash);
+  const checksum = new Uint8Array(4);
+  copyUint8Array(doubleHash, checksum, 0, 0, 4);
   bufferCheck.set(buffer, 1);
   bufferCheck.set(checksum, offsetChecksum);
   return encodeBase58(bufferCheck);
@@ -148,7 +149,7 @@ export function bitcoinDecode(value: string): Uint8Array {
  */
 export function bitcoinAddress(publicKey: Uint8Array): string {
   const hash = sha256(publicKey);
-  const hash160 = ripemd160(toUint8Array(hash));
+  const hash160 = ripemd160(hash);
   return bitcoinEncode(hash160, "public");
 }
 

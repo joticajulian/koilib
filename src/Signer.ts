@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
-import { sha256 } from "js-sha256";
-import * as secp from "noble-secp256k1";
+import { sha256 } from "@noble/hashes/lib/sha256";
+import * as secp from "@noble/secp256k1";
 import { Provider } from "./Provider";
 import {
   TransactionJson,
@@ -374,7 +374,7 @@ export class Signer implements SignerInterface {
     const r = BigInt(`0x${rHex}`);
     const s = BigInt(`0x${sHex}`);
     const sig = new secp.Signature(r, s);
-    const publicKey = secp.recoverPublicKey(hash, sig.toHex(), recovery);
+    const publicKey = secp.recoverPublicKey(toHexString(hash), sig.toHex(), recovery);
     if (!publicKey) throw new Error("Public key cannot be recovered");
     if (!compressed) return publicKey;
     return secp.Point.fromHex(publicKey).toHex(true);
