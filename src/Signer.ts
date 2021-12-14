@@ -267,15 +267,15 @@ export class Signer implements SignerInterface {
   async signTransaction(tx: TransactionJson): Promise<TransactionJson> {
     if (!tx.active) throw new Error("Active data is not defined");
     const hash = sha256(decodeBase64(tx.active));
-    const [hex, recovery] = await secp.sign(hash, this.privateKey, {
+    const [compSignature, recovery] = await secp.sign(hash, this.privateKey, {
       recovered: true,
       canonical: true,
       der: false, // compact signature
     });
-
-    const recId = (recovery + 31).toString(16).padStart(2, "0");
-    const rsHex = toHexString(hex);
-    tx.signature_data = encodeBase64(toUint8Array(recId + rsHex));
+    const compactSignature = new Uint8Array(65);
+    compactSignature.set([recovery + 31], 0);
+    compactSignature.set(compSignature, 1);
+    tx.signature_data = encodeBase64(compactSignature);
     const multihash = `0x1220${toHexString(hash)}`; // 12: code sha2-256. 20: length (32 bytes)
     tx.id = multihash;
     return tx;

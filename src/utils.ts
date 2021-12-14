@@ -94,28 +94,10 @@ export function bitcoinEncode(
   const firstHash = sha256(prefixBuffer);
   const doubleHash = sha256(firstHash);
   const checksum = new Uint8Array(4);
-  copyUint8Array(doubleHash, checksum, 0, 0, 4);
+  checksum.set(doubleHash.slice(0, 4));
   bufferCheck.set(buffer, 1);
   bufferCheck.set(checksum, offsetChecksum);
   return encodeBase58(bufferCheck);
-}
-
-export function copyUint8Array(
-  source: Uint8Array,
-  target: Uint8Array,
-  targetStart: number,
-  sourceStart: number,
-  sourceEnd: number
-): void {
-  for (
-    let cursorSource = sourceStart;
-    cursorSource < sourceEnd;
-    cursorSource += 1
-  ) {
-    const cursorTarget = targetStart + cursorSource - sourceStart;
-    /* eslint-disable-next-line no-param-reassign */
-    target[cursorTarget] = source[cursorSource];
-  }
 }
 
 /**
@@ -131,12 +113,12 @@ export function bitcoinDecode(value: string): Uint8Array {
   const privateKey = new Uint8Array(32);
   const checksum = new Uint8Array(4);
   // const prefix = buffer[0];
-  copyUint8Array(buffer, privateKey, 0, 1, 33);
+  privateKey.set(buffer.slice(1, 33));
   if (value[0] !== "5") {
     // compressed
-    copyUint8Array(buffer, checksum, 0, 34, 38);
+    checksum.set(buffer.slice(34, 38));
   } else {
-    copyUint8Array(buffer, checksum, 0, 33, 37);
+    checksum.set(buffer.slice(33, 37));
   }
   // TODO: verify prefix and checksum
   return privateKey;
