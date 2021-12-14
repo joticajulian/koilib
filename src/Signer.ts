@@ -372,7 +372,11 @@ export class Signer implements SignerInterface {
     const r = BigInt(`0x${rHex}`);
     const s = BigInt(`0x${sHex}`);
     const sig = new secp.Signature(r, s);
-    const publicKey = secp.recoverPublicKey(toHexString(hash), sig.toHex(), recovery);
+    const publicKey = secp.recoverPublicKey(
+      toHexString(hash),
+      sig.toHex(),
+      recovery
+    );
     if (!publicKey) throw new Error("Public key cannot be recovered");
     if (!compressed) return publicKey;
     return secp.Point.fromHex(publicKey).toHex(true);
