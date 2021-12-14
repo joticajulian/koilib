@@ -270,15 +270,13 @@ export class Signer implements SignerInterface {
     const [hex, recovery] = await secp.sign(hash, this.privateKey, {
       recovered: true,
       canonical: true,
+      der: false, // compact signature
     });
 
-    // compact signature
-    const { r, s } = secp.Signature.fromHex(hex);
-    const rHex = r.toString(16).padStart(64, "0");
-    const sHex = s.toString(16).padStart(64, "0");
     const recId = (recovery + 31).toString(16).padStart(2, "0");
-    tx.signature_data = encodeBase64(toUint8Array(recId + rHex + sHex));
-    const multihash = `0x1220${hash}`; // 12: code sha2-256. 20: length (32 bytes)
+    const rsHex = toHexString(hex);
+    tx.signature_data = encodeBase64(toUint8Array(recId + rsHex));
+    const multihash = `0x1220${toHexString(hash)}`; // 12: code sha2-256. 20: length (32 bytes)
     tx.id = multihash;
     return tx;
   }
