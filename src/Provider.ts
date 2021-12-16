@@ -322,12 +322,14 @@ export class Provider {
         // byBlock
         let blockNumber = 0;
         let iniBlock = 0;
-        for (let i = 0; i < 30; i += 1) {
+        for (let i = 0; i < 90; i += 1) {
           await sleep(1000);
           const { head_topology: headTopology } = await this.getHeadInfo();
           if (i === 0) {
             blockNumber = Number(headTopology.height);
             iniBlock = blockNumber;
+          } else {
+            blockNumber += 1;
           }
           if (blockNumber > Number(headTopology.height)) continue;
           const [block] = await this.getBlocks(blockNumber, 1, headTopology.id);
@@ -342,10 +344,9 @@ export class Provider {
             (t) => t.id === transaction.id
           );
           if (tx) return blockNumber.toString();
-          blockNumber += 1;
         }
         throw new Error(
-          `Transaction not mined from block ${iniBlock} to ${blockNumber - 1}`
+          `Transaction not mined from block ${iniBlock} to ${blockNumber}`
         );
       },
     };

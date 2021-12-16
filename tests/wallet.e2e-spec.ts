@@ -7,7 +7,7 @@ import powJson from "../src/jsonDescriptors/pow-proto.json";
 
 dotenv.config();
 
-jest.setTimeout(60000);
+jest.setTimeout(300000);
 
 if (!process.env.RPC_NODES)
   throw new Error("env variable RPC_NODES not defined");
@@ -50,6 +50,8 @@ describe("Provider", () => {
     console.log(`Nonce of ${signer.getAddress()} is ${nonce}`);
     expect(nonce).toBeDefined();
   });
+
+  // TODO: test to check if the blockchain is producing blocks
 
   it("should get head info", async () => {
     expect.assertions(1);
