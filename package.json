@@ -33,7 +33,8 @@
     "proto": "node generateJsonKoinosProto.js",
     "test": "jest",
     "test:unit": "jest wallet.spec.ts",
-    "test:e2e": "jest wallet.e2e-spec.ts"
+    "test:e2e": "jest wallet.e2e-spec.ts",
+    "test:chain": "jest chain.e2e-spec.ts"
   },
   "exports": {
     "./package.json": "./package.json",

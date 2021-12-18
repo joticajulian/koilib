@@ -202,7 +202,7 @@ export class Provider {
       height: string;
       previous: string;
     };
-    last_irreversible_height: string;
+    last_irreversible_block: string;
   }> {
     return this.call<{
       head_topology: {
@@ -210,7 +210,7 @@ export class Provider {
         height: string;
         previous: string;
       };
-      last_irreversible_height: string;
+      last_irreversible_block: string;
     }>("chain.get_head_info", {});
   }
 
