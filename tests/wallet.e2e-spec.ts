@@ -51,8 +51,6 @@ describe("Provider", () => {
     expect(nonce).toBeDefined();
   });
 
-  // TODO: test to check if the blockchain is producing blocks
-
   it("should get head info", async () => {
     expect.assertions(1);
     const headInfo = await provider.getHeadInfo();
@@ -117,8 +115,8 @@ describe("Contract", () => {
     const { transactionResponse } = await contract.deploy();
     expect(transactionResponse).toBeDefined();
     if (!transactionResponse) throw new Error("Transaction response undefined");
-    const blockId = await transactionResponse.wait();
-    expect(typeof blockId).toBe("string");
+    const blockNumber = await transactionResponse.wait("byBlock");
+    expect(typeof blockNumber).toBe("string");
   });
 
   it("connect with koin smart contract", async () => {
