@@ -11757,7 +11757,10 @@ class Provider {
             }
         }
         if (response.data.error)
-            throw new Error(JSON.stringify(response.data.error));
+            throw new Error(JSON.stringify({
+                error: response.data.error,
+                request: { method, params },
+            }));
         return response.data.result;
     }
     /**
@@ -11853,20 +11856,48 @@ class Provider {
         await this.call("chain.submit_transaction", { transaction });
         const startTime = Date.now() + 10000;
         return {
-            wait: async () => {
+            wait: async (type = "byTransactionId") => {
                 // sleep some seconds before it gets mined
                 await sleep(startTime - Date.now() - 1000);
-                for (let i = 0; i < 30; i += 1) {
-                    await sleep(1000);
-                    const { transactions } = await this.getTransactionsById([
-                        transaction.id,
-                    ]);
-                    if (transactions &&
-                        transactions[0] &&
-                        transactions[0].containing_blocks)
-                        return transactions[0].containing_blocks[0];
+                if (type === "byTransactionId") {
+                    for (let i = 0; i < 30; i += 1) {
+                        await sleep(1000);
+                        const { transactions } = await this.getTransactionsById([
+                            transaction.id,
+                        ]);
+                        if (transactions &&
+                            transactions[0] &&
+                            transactions[0].containing_blocks)
+                            return transactions[0].containing_blocks[0];
+                    }
+                    throw new Error(`Transaction not mined after 40 seconds`);
                 }
-                throw new Error(`Transaction not mined after 40 seconds`);
+                // byBlock
+                let blockNumber = 0;
+                let iniBlock = 0;
+                for (let i = 0; i < 90; i += 1) {
+                    await sleep(1000);
+                    const { head_topology: headTopology } = await this.getHeadInfo();
+                    if (i === 0) {
+                        blockNumber = Number(headTopology.height);
+                        iniBlock = blockNumber;
+                    }
+                    else {
+                        blockNumber += 1;
+                    }
+                    if (blockNumber > Number(headTopology.height))
+                        continue;
+                    const [block] = await this.getBlocks(blockNumber, 1, headTopology.id);
+                    if (!block ||
+                        !block.block ||
+                        !block.block_id ||
+                        !block.block.transactions)
+                        continue;
+                    const tx = block.block.transactions.find((t) => t.id === transaction.id);
+                    if (tx)
+                        return blockNumber.toString();
+                }
+                throw new Error(`Transaction not mined from block ${iniBlock} to ${blockNumber}`);
             },
         };
     }
@@ -12287,17 +12318,16 @@ class Signer {
         if (!tx.active)
             throw new Error("Active data is not defined");
         const hash = sha256_1.sha256(utils_1.decodeBase64(tx.active));
-        const [hex, recovery] = await secp.sign(hash, this.privateKey, {
+        const [compSignature, recovery] = await secp.sign(hash, this.privateKey, {
             recovered: true,
             canonical: true,
+            der: false, // compact signature
         });
-        // compact signature
-        const { r, s } = secp.Signature.fromHex(hex);
-        const rHex = r.toString(16).padStart(64, "0");
-        const sHex = s.toString(16).padStart(64, "0");
-        const recId = (recovery + 31).toString(16).padStart(2, "0");
-        tx.signature_data = utils_1.encodeBase64(utils_1.toUint8Array(recId + rHex + sHex));
-        const multihash = `0x1220${hash}`; // 12: code sha2-256. 20: length (32 bytes)
+        const compactSignature = new Uint8Array(65);
+        compactSignature.set([recovery + 31], 0);
+        compactSignature.set(compSignature, 1);
+        tx.signature_data = utils_1.encodeBase64(compactSignature);
+        const multihash = `0x1220${utils_1.toHexString(hash)}`; // 12: code sha2-256. 20: length (32 bytes)
         tx.id = multihash;
         return tx;
     }
@@ -12558,7 +12588,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ProtocolTypes = exports.Krc20Abi = exports.parseUnits = exports.formatUnits = exports.bitcoinAddress = exports.bitcoinDecode = exports.copyUint8Array = exports.bitcoinEncode = exports.decodeBase64 = exports.encodeBase64 = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
+exports.ProtocolTypes = exports.Krc20Abi = exports.parseUnits = exports.formatUnits = exports.bitcoinAddress = exports.bitcoinDecode = exports.bitcoinEncode = exports.decodeBase64 = exports.encodeBase64 = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
 const multibase = __importStar(__webpack_require__(6957));
 const sha256_1 = __webpack_require__(5374);
 const ripemd160_1 = __webpack_require__(7050);
@@ -12651,20 +12681,12 @@ function bitcoinEncode(buffer, type, compressed = false) {
     const firstHash = sha256_1.sha256(prefixBuffer);
     const doubleHash = sha256_1.sha256(firstHash);
     const checksum = new Uint8Array(4);
-    copyUint8Array(doubleHash, checksum, 0, 0, 4);
+    checksum.set(doubleHash.slice(0, 4));
     bufferCheck.set(buffer, 1);
     bufferCheck.set(checksum, offsetChecksum);
     return encodeBase58(bufferCheck);
 }
 exports.bitcoinEncode = bitcoinEncode;
-function copyUint8Array(source, target, targetStart, sourceStart, sourceEnd) {
-    for (let cursorSource = sourceStart; cursorSource < sourceEnd; cursorSource += 1) {
-        const cursorTarget = targetStart + cursorSource - sourceStart;
-        /* eslint-disable-next-line no-param-reassign */
-        target[cursorTarget] = source[cursorSource];
-    }
-}
-exports.copyUint8Array = copyUint8Array;
 /**
  * Decodes a public or private key formatted in base58 using
  * the bitcoin format (see [Bitcoin Base58Check encoding](https://en.bitcoin.it/wiki/Base58Check_encoding)
@@ -12678,13 +12700,13 @@ function bitcoinDecode(value) {
     const privateKey = new Uint8Array(32);
     const checksum = new Uint8Array(4);
     // const prefix = buffer[0];
-    copyUint8Array(buffer, privateKey, 0, 1, 33);
+    privateKey.set(buffer.slice(1, 33));
     if (value[0] !== "5") {
         // compressed
-        copyUint8Array(buffer, checksum, 0, 34, 38);
+        checksum.set(buffer.slice(34, 38));
     }
     else {
-        copyUint8Array(buffer, checksum, 0, 33, 37);
+        checksum.set(buffer.slice(33, 37));
     }
     // TODO: verify prefix and checksum
     return privateKey;
