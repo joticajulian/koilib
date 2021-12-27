@@ -1,6 +1,6 @@
 import * as multibase from "multibase";
-import { sha256 } from "js-sha256";
-import ripemd160 from "noble-ripemd160";
+import { sha256 } from "@noble/hashes/lib/sha256";
+import { ripemd160 } from "@noble/hashes/lib/ripemd160";
 import krc20ProtoJson from "./jsonDescriptors/krc20-proto.json";
 import protocolJson from "./jsonDescriptors/protocol-proto.json";
 import { Abi } from "./interface";
@@ -92,29 +92,12 @@ export function bitcoinEncode(
   }
   prefixBuffer.set(buffer, 1);
   const firstHash = sha256(prefixBuffer);
-  const doubleHash = sha256(toUint8Array(firstHash));
-  const checksum = toUint8Array(doubleHash.substring(0, 8));
+  const doubleHash = sha256(firstHash);
+  const checksum = new Uint8Array(4);
+  checksum.set(doubleHash.slice(0, 4));
   bufferCheck.set(buffer, 1);
   bufferCheck.set(checksum, offsetChecksum);
   return encodeBase58(bufferCheck);
-}
-
-export function copyUint8Array(
-  source: Uint8Array,
-  target: Uint8Array,
-  targetStart: number,
-  sourceStart: number,
-  sourceEnd: number
-): void {
-  for (
-    let cursorSource = sourceStart;
-    cursorSource < sourceEnd;
-    cursorSource += 1
-  ) {
-    const cursorTarget = targetStart + cursorSource - sourceStart;
-    /* eslint-disable-next-line no-param-reassign */
-    target[cursorTarget] = source[cursorSource];
-  }
 }
 
 /**
@@ -130,12 +113,12 @@ export function bitcoinDecode(value: string): Uint8Array {
   const privateKey = new Uint8Array(32);
   const checksum = new Uint8Array(4);
   // const prefix = buffer[0];
-  copyUint8Array(buffer, privateKey, 0, 1, 33);
+  privateKey.set(buffer.slice(1, 33));
   if (value[0] !== "5") {
     // compressed
-    copyUint8Array(buffer, checksum, 0, 34, 38);
+    checksum.set(buffer.slice(34, 38));
   } else {
-    copyUint8Array(buffer, checksum, 0, 33, 37);
+    checksum.set(buffer.slice(33, 37));
   }
   // TODO: verify prefix and checksum
   return privateKey;
@@ -148,7 +131,7 @@ export function bitcoinDecode(value: string): Uint8Array {
  */
 export function bitcoinAddress(publicKey: Uint8Array): string {
   const hash = sha256(publicKey);
-  const hash160 = ripemd160(toUint8Array(hash));
+  const hash160 = ripemd160(hash);
   return bitcoinEncode(hash160, "public");
 }
 

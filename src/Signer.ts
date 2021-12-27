@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
-import { sha256 } from "js-sha256";
-import * as secp from "noble-secp256k1";
+import { sha256 } from "@noble/hashes/lib/sha256";
+import * as secp from "@noble/secp256k1";
 import { Provider } from "./Provider";
 import {
   TransactionJson,
@@ -267,18 +267,16 @@ export class Signer implements SignerInterface {
   async signTransaction(tx: TransactionJson): Promise<TransactionJson> {
     if (!tx.active) throw new Error("Active data is not defined");
     const hash = sha256(decodeBase64(tx.active));
-    const [hex, recovery] = await secp.sign(hash, this.privateKey, {
+    const [compSignature, recovery] = await secp.sign(hash, this.privateKey, {
       recovered: true,
       canonical: true,
+      der: false, // compact signature
     });
-
-    // compact signature
-    const { r, s } = secp.Signature.fromHex(hex);
-    const rHex = r.toString(16).padStart(64, "0");
-    const sHex = s.toString(16).padStart(64, "0");
-    const recId = (recovery + 31).toString(16).padStart(2, "0");
-    tx.signature_data = encodeBase64(toUint8Array(recId + rHex + sHex));
-    const multihash = `0x1220${hash}`; // 12: code sha2-256. 20: length (32 bytes)
+    const compactSignature = new Uint8Array(65);
+    compactSignature.set([recovery + 31], 0);
+    compactSignature.set(compSignature, 1);
+    tx.signature_data = encodeBase64(compactSignature);
+    const multihash = `0x1220${toHexString(hash)}`; // 12: code sha2-256. 20: length (32 bytes)
     tx.id = multihash;
     return tx;
   }
@@ -374,7 +372,11 @@ export class Signer implements SignerInterface {
     const r = BigInt(`0x${rHex}`);
     const s = BigInt(`0x${sHex}`);
     const sig = new secp.Signature(r, s);
-    const publicKey = secp.recoverPublicKey(hash, sig.toHex(), recovery);
+    const publicKey = secp.recoverPublicKey(
+      toHexString(hash),
+      sig.toHex(),
+      recovery
+    );
     if (!publicKey) throw new Error("Public key cannot be recovered");
     if (!compressed) return publicKey;
     return secp.Point.fromHex(publicKey).toHex(true);

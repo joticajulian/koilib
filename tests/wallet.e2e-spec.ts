@@ -2,12 +2,12 @@
 import crypto from "crypto";
 import * as dotenv from "dotenv";
 import { Signer, Provider, Contract, utils, Serializer } from "../src";
-import { BlockJson } from "../src/interface";
+// import { BlockJson } from "../src/interface";
 import powJson from "../src/jsonDescriptors/pow-proto.json";
 
 dotenv.config();
 
-jest.setTimeout(60000);
+jest.setTimeout(300000);
 
 if (!process.env.RPC_NODES)
   throw new Error("env variable RPC_NODES not defined");
@@ -115,8 +115,8 @@ describe("Contract", () => {
     const { transactionResponse } = await contract.deploy();
     expect(transactionResponse).toBeDefined();
     if (!transactionResponse) throw new Error("Transaction response undefined");
-    const blockId = await transactionResponse.wait();
-    expect(typeof blockId).toBe("string");
+    const blockNumber = await transactionResponse.wait("byBlock");
+    expect(typeof blockNumber).toBe("string");
   });
 
   it("connect with koin smart contract", async () => {
@@ -144,7 +144,7 @@ describe("Contract", () => {
   });
 
   it("should transfer and get receipt", async () => {
-    expect.assertions(6);
+    expect.assertions(5);
     const { operation, transaction, transactionResponse, result } =
       await koin.transfer({
         from: signer.getAddress(),
@@ -156,10 +156,12 @@ describe("Contract", () => {
     expect(transactionResponse).toBeDefined();
     expect(result).toBeUndefined();
     if (!transactionResponse) throw new Error("Transaction response undefined");
-    const blockId = await transactionResponse.wait();
-    expect(typeof blockId).toBe("string");
+    //const blockId = await transactionResponse.wait();
+    const blockNumber = await transactionResponse.wait("byBlock");
+    //expect(typeof blockId).toBe("string");
+    expect(typeof blockNumber).toBe("string");
 
-    const blocksByIdResponse = await provider.getBlocksById([blockId]);
+    /* const blocksByIdResponse = await provider.getBlocksById([blockId]);
     expect(blocksByIdResponse).toStrictEqual({
       block_items: [
         {
@@ -168,6 +170,6 @@ describe("Contract", () => {
           block: expect.objectContaining({}) as BlockJson,
         },
       ],
-    });
+    }); */
   });
 });

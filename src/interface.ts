@@ -140,7 +140,7 @@ export interface RecoverPublicKeyOptions {
 }
 
 export interface SendTransactionResponse {
-  wait: () => Promise<string>;
+  wait: (type?: "byTransactionId" | "byBlock") => Promise<string>;
 }
 
 type NumberLike = number | bigint | string;

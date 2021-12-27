@@ -127,7 +127,12 @@ export class Provider {
       }
     }
     if (response.data.error)
-      throw new Error(JSON.stringify(response.data.error));
+      throw new Error(
+        JSON.stringify({
+          error: response.data.error,
+          request: { method, params },
+        })
+      );
     return response.data.result as T;
   }
 
@@ -197,7 +202,7 @@ export class Provider {
       height: string;
       previous: string;
     };
-    last_irreversible_height: string;
+    last_irreversible_block: string;
   }> {
     return this.call<{
       head_topology: {
@@ -205,7 +210,7 @@ export class Provider {
         height: string;
         previous: string;
       };
-      last_irreversible_height: string;
+      last_irreversible_block: string;
     }>("chain.get_head_info", {});
   }
 
@@ -295,22 +300,54 @@ export class Provider {
     await this.call("chain.submit_transaction", { transaction });
     const startTime = Date.now() + 10000;
     return {
-      wait: async () => {
+      wait: async (type: "byTransactionId" | "byBlock" = "byTransactionId") => {
         // sleep some seconds before it gets mined
         await sleep(startTime - Date.now() - 1000);
-        for (let i = 0; i < 30; i += 1) {
-          await sleep(1000);
-          const { transactions } = await this.getTransactionsById([
-            transaction.id as string,
-          ]);
-          if (
-            transactions &&
-            transactions[0] &&
-            transactions[0].containing_blocks
-          )
-            return transactions[0].containing_blocks[0];
+        if (type === "byTransactionId") {
+          for (let i = 0; i < 30; i += 1) {
+            await sleep(1000);
+            const { transactions } = await this.getTransactionsById([
+              transaction.id as string,
+            ]);
+            if (
+              transactions &&
+              transactions[0] &&
+              transactions[0].containing_blocks
+            )
+              return transactions[0].containing_blocks[0];
+          }
+          throw new Error(`Transaction not mined after 40 seconds`);
         }
-        throw new Error(`Transaction not mined after 40 seconds`);
+
+        // byBlock
+        let blockNumber = 0;
+        let iniBlock = 0;
+        for (let i = 0; i < 90; i += 1) {
+          await sleep(1000);
+          const { head_topology: headTopology } = await this.getHeadInfo();
+          if (i === 0) {
+            blockNumber = Number(headTopology.height);
+            iniBlock = blockNumber;
+          } else {
+            blockNumber += 1;
+          }
+          if (blockNumber > Number(headTopology.height)) continue;
+          const [block] = await this.getBlocks(blockNumber, 1, headTopology.id);
+          if (
+            !block ||
+            !block.block ||
+            !block.block_id ||
+            !block.block.transactions
+          )
+            continue;
+          const tx = block.block.transactions.find(
+            (t) => t.id === transaction.id
+          );
+          if (tx) return blockNumber.toString();
+        }
+        throw new Error(
+          `Transaction not mined from block ${iniBlock} to ${blockNumber}`
+        );
       },
     };
   }
