@@ -298,13 +298,14 @@ export class Provider {
     transaction: TransactionJson
   ): Promise<SendTransactionResponse> {
     await this.call("chain.submit_transaction", { transaction });
-    const startTime = Date.now() + 10000;
     return {
-      wait: async (type: "byTransactionId" | "byBlock" = "byTransactionId") => {
-        // sleep some seconds before it gets mined
-        await sleep(startTime - Date.now() - 1000);
+      wait: async (
+        type: "byTransactionId" | "byBlock" = "byTransactionId",
+        timeout = 30000
+      ) => {
+        const iniTime = Date.now();
         if (type === "byTransactionId") {
-          for (let i = 0; i < 30; i += 1) {
+          while (Date.now() < iniTime + timeout) {
             await sleep(1000);
             const { transactions } = await this.getTransactionsById([
               transaction.id as string,
@@ -316,34 +317,68 @@ export class Provider {
             )
               return transactions[0].containing_blocks[0];
           }
-          throw new Error(`Transaction not mined after 40 seconds`);
+          throw new Error(`Transaction not mined after ${timeout} ms`);
         }
 
         // byBlock
+        const findTxInBlocks = async (
+          ini: number,
+          numBlocks: number,
+          idRef: string
+        ) => {
+          const blocks = await this.getBlocks(ini, numBlocks, idRef);
+          let bNum = "";
+          blocks.forEach((block) => {
+            if (
+              !block ||
+              !block.block ||
+              !block.block_id ||
+              !block.block.transactions
+            )
+              return;
+            const tx = block.block.transactions.find(
+              (t) => t.id === transaction.id
+            );
+            if (tx) bNum = block.block_height.toString();
+          });
+          let lastId = blocks[blocks.length - 1].block_id;
+          return [bNum, lastId];
+        };
+
         let blockNumber = 0;
         let iniBlock = 0;
-        for (let i = 0; i < 90; i += 1) {
+        let previousId = "";
+
+        while (Date.now() < iniTime + timeout) {
           await sleep(1000);
           const { head_topology: headTopology } = await this.getHeadInfo();
-          if (i === 0) {
+          if (blockNumber === 0) {
             blockNumber = Number(headTopology.height);
             iniBlock = blockNumber;
-          } else {
-            blockNumber += 1;
+          }
+          if (
+            Number(headTopology.height) === blockNumber - 1 &&
+            previousId &&
+            previousId !== headTopology.id
+          ) {
+            const [bNum, lastId] = await findTxInBlocks(
+              iniBlock,
+              Number(headTopology.height) - iniBlock + 1,
+              headTopology.id
+            );
+            if (bNum) return bNum;
+            previousId = lastId;
+            blockNumber = Number(headTopology.height) + 1;
           }
           if (blockNumber > Number(headTopology.height)) continue;
-          const [block] = await this.getBlocks(blockNumber, 1, headTopology.id);
-          if (
-            !block ||
-            !block.block ||
-            !block.block_id ||
-            !block.block.transactions
-          )
-            continue;
-          const tx = block.block.transactions.find(
-            (t) => t.id === transaction.id
+          const [bNum, lastId] = await findTxInBlocks(
+            blockNumber,
+            1,
+            headTopology.id
           );
-          if (tx) return blockNumber.toString();
+          if (bNum) return bNum;
+          if (!previousId) previousId = lastId;
+          blockNumber += 1;
         }
         throw new Error(
           `Transaction not mined from block ${iniBlock} to ${blockNumber}`

@@ -160,6 +160,7 @@ describe("Contract", () => {
     const blockNumber = await transactionResponse.wait("byBlock");
     //expect(typeof blockId).toBe("string");
     expect(typeof blockNumber).toBe("string");
+    console.log(`Tx mined in block ${blockNumber}`);
 
     /* const blocksByIdResponse = await provider.getBlocksById([blockId]);
     expect(blocksByIdResponse).toStrictEqual({
