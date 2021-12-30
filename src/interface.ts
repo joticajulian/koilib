@@ -140,7 +140,28 @@ export interface RecoverPublicKeyOptions {
 }
 
 export interface SendTransactionResponse {
-  wait: (type?: "byTransactionId" | "byBlock") => Promise<string>;
+  /**
+   * Function to wait for a transaction to be mined.
+   * This function comes as a response after sending a transaction.
+   * See [[Provider.sendTransaction]]
+   *
+   * @param type - Type must be "byBlock" (default) or "byTransactionId".
+   * _byBlock_ will query the blockchain to get blocks and search for the
+   * transaction there. _byTransactionId_ will query the "transaction store"
+   * microservice to search the transaction by its id. If non of them is
+   * specified the function will use "byBlock" (as "byTransactionId"
+   * requires the transaction store, which is an optional microservice).
+   *
+   * When _byBlock_ is used it returns the block number.
+   *
+   * When _byTransactionId_ is used it returns the block id.
+   *
+   * @param timeout - Timeout in milliseconds. By default it is 30000
+   */
+  wait: (
+    type?: "byBlock" | "byTransactionId",
+    timeout?: number
+  ) => Promise<string | number>;
 }
 
 type NumberLike = number | bigint | string;

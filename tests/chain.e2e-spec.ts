@@ -15,8 +15,10 @@ const provider = new Provider(rpcNodes);
 const formatDelay = (delay: number): string => {
   const absDelay = Math.abs(delay);
   const sign = delay >= 0 ? "" : "-";
-  if (absDelay < 60 * 1000) return `${sign}${Number(absDelay / 1000).toFixed(1)}s`;
-  if (absDelay < 3600 * 1000) return `${sign}${Number(absDelay / 60000).toFixed(1)}min`;
+  if (absDelay < 60 * 1000)
+    return `${sign}${Number(absDelay / 1000).toFixed(1)}s`;
+  if (absDelay < 3600 * 1000)
+    return `${sign}${Number(absDelay / 60000).toFixed(1)}min`;
   if (absDelay < 24 * 3600 * 1000)
     return `${sign}${Number(absDelay / 3600000).toFixed(1)}hours`;
   return `${sign}${Number(absDelay / 3600000 / 24).toFixed(1)}days`;
