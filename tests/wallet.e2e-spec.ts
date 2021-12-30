@@ -2,7 +2,7 @@
 import crypto from "crypto";
 import * as dotenv from "dotenv";
 import { Signer, Provider, Contract, utils, Serializer } from "../src";
-// import { BlockJson } from "../src/interface";
+import { BlockJson } from "../src/interface";
 import powJson from "../src/jsonDescriptors/pow-proto.json";
 
 dotenv.config();
@@ -66,8 +66,25 @@ describe("Provider", () => {
 
   it("should get blocks by height", async () => {
     expect.assertions(1);
-    const blocks = await provider.getBlocks(1, 2);
-    expect(blocks).toStrictEqual(expect.arrayContaining([]));
+    const blocks = await provider.getBlocks(482926, 2); //(1, 2);
+    expect(blocks).toStrictEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          block_id: expect.any(String) as string,
+          block_height: expect.any(String) as string,
+          block: {
+            id: expect.any(String) as string,
+            header: {
+              previous: expect.any(String) as string,
+              height: expect.any(String) as string,
+              timestamp: expect.any(String) as string,
+            },
+            active: expect.any(String) as string,
+            signature_data: expect.any(String) as string,
+          },
+        }),
+      ])
+    );
   });
 
   it("should get a a block with federated consensus and get the signer address", async () => {
@@ -116,7 +133,7 @@ describe("Contract", () => {
     expect(transactionResponse).toBeDefined();
     if (!transactionResponse) throw new Error("Transaction response undefined");
     const blockNumber = await transactionResponse.wait("byBlock");
-    expect(typeof blockNumber).toBe("string");
+    expect(typeof blockNumber).toBe("number");
   });
 
   it("connect with koin smart contract", async () => {
@@ -143,7 +160,7 @@ describe("Contract", () => {
     expect(resultBalance2).toStrictEqual({ value: "0" });
   });
 
-  it("should transfer and get receipt", async () => {
+  it("should transfer and get receipt - wait byBlock", async () => {
     expect.assertions(5);
     const { operation, transaction, transactionResponse, result } =
       await koin.transfer({
@@ -156,13 +173,32 @@ describe("Contract", () => {
     expect(transactionResponse).toBeDefined();
     expect(result).toBeUndefined();
     if (!transactionResponse) throw new Error("Transaction response undefined");
-    //const blockId = await transactionResponse.wait();
-    const blockNumber = await transactionResponse.wait("byBlock");
-    //expect(typeof blockId).toBe("string");
-    expect(typeof blockNumber).toBe("string");
+    const blockNumber = await transactionResponse.wait(); // byBlock by default
+    expect(typeof blockNumber).toBe("number");
     console.log(`Tx mined in block ${blockNumber}`);
+  });
 
-    /* const blocksByIdResponse = await provider.getBlocksById([blockId]);
+  it("should transfer and get receipt - wait byTransactionId", async () => {
+    expect.assertions(6);
+    const { operation, transaction, transactionResponse, result } =
+      await koin.transfer({
+        from: signer.getAddress(),
+        to: addressReceiver,
+        value: Number(1e8).toString(),
+      });
+    expect(operation).toBeDefined();
+    expect(transaction).toBeDefined();
+    expect(transactionResponse).toBeDefined();
+    expect(result).toBeUndefined();
+    if (!transactionResponse) throw new Error("Transaction response undefined");
+    const blockId = (await transactionResponse.wait(
+      "byTransactionId",
+      30000
+    )) as string;
+    expect(typeof blockId).toBe("string");
+    console.log(`Second tx mined in block id ${blockId}`);
+
+    const blocksByIdResponse = await provider.getBlocksById([blockId]);
     expect(blocksByIdResponse).toStrictEqual({
       block_items: [
         {
@@ -171,6 +207,6 @@ describe("Contract", () => {
           block: expect.objectContaining({}) as BlockJson,
         },
       ],
-    }); */
+    });
   });
 });
