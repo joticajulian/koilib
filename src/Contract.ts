@@ -390,7 +390,7 @@ export class Contract {
     if (!this.serializer) throw new Error("Serializer is not defined");
     if (!op.call_contract)
       throw new Error("Operation is not CallContractOperation");
-    if (op.call_contract.contract_id !== this.id)
+    if (encodeBase58(op.call_contract.contract_id) !== encodeBase58(this.id))
       throw new Error(
         `Invalid contract id. Expected: ${encodeBase58(
           this.id
