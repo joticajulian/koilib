@@ -222,7 +222,7 @@ export const Krc20Abi: Abi = {
     },
     mint: {
       entryPoint: 0xc2f82bdc,
-      input: "mint_argumnets",
+      input: "mint_arguments",
       output: "mint_result",
     },
   },
