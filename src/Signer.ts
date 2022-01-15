@@ -25,17 +25,17 @@ import { Serializer } from "./Serializer";
 export interface SignerInterface {
   provider?: Provider;
   serializer?: Serializer;
-  getAddress(compressed?: boolean): string;
-  getPrivateKey(format: "wif" | "hex", compressed?: boolean): string;
-  signTransaction(tx: TransactionJson): Promise<TransactionJson>;
-  sendTransaction(
+  getAddress: (compressed?: boolean) => string;
+  getPrivateKey: (format: "wif" | "hex", compressed?: boolean) => string;
+  signTransaction: (tx: TransactionJson) => Promise<TransactionJson>;
+  sendTransaction: (
     tx: TransactionJson,
     abis?: Record<string, Abi>
-  ): Promise<SendTransactionResponse>;
-  encodeTransaction(
+  ) => Promise<SendTransactionResponse>;
+  encodeTransaction: (
     activeData: ActiveTransactionData
-  ): Promise<TransactionJson>;
-  decodeTransaction(tx: TransactionJson): Promise<ActiveTransactionData>;
+  ) => Promise<TransactionJson>;
+  decodeTransaction: (tx: TransactionJson) => Promise<ActiveTransactionData>;
 }
 
 /**

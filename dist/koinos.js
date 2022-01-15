@@ -11650,7 +11650,7 @@ class Contract {
             throw new Error("Serializer is not defined");
         if (!op.call_contract)
             throw new Error("Operation is not CallContractOperation");
-        if (op.call_contract.contract_id !== this.id)
+        if (utils_1.encodeBase58(op.call_contract.contract_id) !== utils_1.encodeBase58(this.id))
             throw new Error(`Invalid contract id. Expected: ${utils_1.encodeBase58(this.id)}. Received: ${utils_1.encodeBase58(op.call_contract.contract_id)}`);
         for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
             const opName = Object.keys(this.abi.methods)[i];
@@ -12828,7 +12828,7 @@ exports.Krc20Abi = {
         },
         mint: {
             entryPoint: 0xc2f82bdc,
-            input: "mint_argumnets",
+            input: "mint_arguments",
             output: "mint_result",
         },
     },
