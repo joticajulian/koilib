@@ -164,8 +164,6 @@ export interface SendTransactionResponse {
   ) => Promise<string | number>;
 }
 
-type NumberLike = number | bigint | string;
-
 export interface UploadContractOperation {
   contract_id?: Uint8Array;
 
@@ -316,8 +314,8 @@ export interface TransactionJson {
 
 export interface BlockHeaderJson {
   previous?: string;
-  height?: NumberLike;
-  timestamp?: NumberLike;
+  height?: string;
+  timestamp?: string;
   [x: string]: unknown;
 }
 

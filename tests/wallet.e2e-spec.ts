@@ -7,7 +7,7 @@ import powJson from "../src/jsonDescriptors/pow-proto.json";
 
 dotenv.config();
 
-jest.setTimeout(300000);
+jest.setTimeout(100000);
 
 if (!process.env.RPC_NODES)
   throw new Error("env variable RPC_NODES not defined");
@@ -66,7 +66,7 @@ describe("Provider", () => {
 
   it("should get blocks by height", async () => {
     expect.assertions(1);
-    const blocks = await provider.getBlocks(482926, 2); //(1, 2);
+    const blocks = await provider.getBlocks(1, 2);
     expect(blocks).toStrictEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -90,9 +90,9 @@ describe("Provider", () => {
   it("should get a a block with federated consensus and get the signer address", async () => {
     expect.assertions(2);
     const block = await provider.getBlock(1);
-    const signer = await Signer.recoverAddress(block.block);
-    expect(signer).toBeDefined();
-    expect(signer.length).toBe(34);
+    const signer1 = await Signer.recoverAddress(block.block);
+    expect(signer1).toBeDefined();
+    expect(signer1).toHaveLength(34);
   });
 
   it("should get a a block with pow consensus and get the signer address", async () => {
@@ -105,7 +105,7 @@ describe("Provider", () => {
       nonce: string;
       recoverable_signature: string;
     }
-    const signer = await Signer.recoverAddress(block.block, {
+    const signer1 = await Signer.recoverAddress(block.block, {
       transformSignature: async (signatureData) => {
         const powSigData: PowSigData = await serializer.deserialize(
           signatureData
@@ -113,8 +113,8 @@ describe("Provider", () => {
         return powSigData.recoverable_signature;
       },
     });
-    expect(signer).toBeDefined();
-    expect(signer.length).toBe(34);
+    expect(signer1).toBeDefined();
+    expect(signer1).toHaveLength(34);
   });
 
   it("should get account rc", async () => {

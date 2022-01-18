@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios";
+import fetch from "cross-fetch";
 import {
   BlockJson,
   TransactionJson,
@@ -79,21 +79,9 @@ export class Provider {
    * @returns Result of jsonrpc response
    */
   async call<T = unknown>(method: string, params: unknown): Promise<T> {
-    let response: AxiosResponse<{
-      result?: T;
-      error?: { message: string };
-    }> = {
-      data: {},
-      status: 0,
-      statusText: "",
-      headers: {},
-      config: {},
-    };
-
-    let success = false;
-
     /* eslint-disable no-await-in-loop */
-    while (!success) {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
       try {
         const data = {
           id: Math.round(Math.random() * 1000),
@@ -104,20 +92,25 @@ export class Provider {
 
         const url = this.rpcNodes[this.currentNodeId];
 
-        // TODO: search conditional to enable fetch for Browser
-        /* const response = await fetch(url, {
+        const response = await fetch(url, {
           method: "POST",
           body: JSON.stringify(data),
         });
-        const json = await response.json();
-        if (json.error && json.error.message) throw new Error(json.error.message);
-        return json.result; */
-
-        response = await axios.post<{
-          result?: T;
-          error?: { message: string };
-        }>(url, data, { validateStatus: (s) => s < 400 });
-        success = true;
+        const json = (await response.json()) as {
+          result: T;
+          error?: {
+            message?: string;
+          };
+        };
+        if (json.error && json.error.message) {
+          const error = new Error(json.error.message);
+          (error as unknown as { request: unknown }).request = {
+            method,
+            params,
+          };
+          throw error;
+        }
+        return json.result;
       } catch (e) {
         const currentNode = this.rpcNodes[this.currentNodeId];
         this.currentNodeId = (this.currentNodeId + 1) % this.rpcNodes.length;
@@ -126,14 +119,6 @@ export class Provider {
         if (abort) throw e;
       }
     }
-    if (response.data.error)
-      throw new Error(
-        JSON.stringify({
-          error: response.data.error,
-          request: { method, params },
-        })
-      );
-    return response.data.result as T;
   }
 
   /**
@@ -343,7 +328,7 @@ export class Provider {
             );
             if (tx) bNum = Number(block.block_height);
           });
-          let lastId = blocks[blocks.length - 1].block_id;
+          const lastId = blocks[blocks.length - 1].block_id;
           return [bNum, lastId];
         };
 
@@ -372,6 +357,7 @@ export class Provider {
             previousId = lastId;
             blockNumber = Number(headTopology.height) + 1;
           }
+          // eslint-disable-next-line no-continue
           if (blockNumber > Number(headTopology.height)) continue;
           const [bNum, lastId] = await findTxInBlocks(
             blockNumber,
