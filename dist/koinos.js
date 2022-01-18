@@ -134,14 +134,14 @@ module.exports = base
 
 /***/ }),
 
-/***/ 6365:
+/***/ 7505:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SHA2 = void 0;
-const utils_1 = __webpack_require__(8359);
+const utils_js_1 = __webpack_require__(8089);
 // Polyfill for Safari 14
 function setBigUint64(view, byteOffset, value, isLE) {
     if (typeof view.setBigUint64 === 'function')
@@ -156,7 +156,7 @@ function setBigUint64(view, byteOffset, value, isLE) {
     view.setUint32(byteOffset + l, wl, isLE);
 }
 // Base SHA2 class (RFC 6234)
-class SHA2 extends utils_1.Hash {
+class SHA2 extends utils_js_1.Hash {
     constructor(blockLen, outputLen, padOffset, isLE) {
         super();
         this.blockLen = blockLen;
@@ -168,7 +168,7 @@ class SHA2 extends utils_1.Hash {
         this.pos = 0;
         this.destroyed = false;
         this.buffer = new Uint8Array(blockLen);
-        this.view = (0, utils_1.createView)(this.buffer);
+        this.view = (0, utils_js_1.createView)(this.buffer);
     }
     update(data) {
         if (this.destroyed)
@@ -176,13 +176,13 @@ class SHA2 extends utils_1.Hash {
         const { view, buffer, blockLen, finished } = this;
         if (finished)
             throw new Error('digest() was already called');
-        data = (0, utils_1.toBytes)(data);
+        data = (0, utils_js_1.toBytes)(data);
         const len = data.length;
         for (let pos = 0; pos < len;) {
             const take = Math.min(blockLen - this.pos, len - pos);
             // Fast path: we have at least one block in input, cast it to view and process
             if (take === blockLen) {
-                const dataView = (0, utils_1.createView)(data);
+                const dataView = (0, utils_js_1.createView)(data);
                 for (; blockLen <= len - pos; pos += blockLen)
                     this.process(dataView, pos);
                 continue;
@@ -228,7 +228,7 @@ class SHA2 extends utils_1.Hash {
         // So we just write lowest 64bit of that value.
         setBigUint64(view, blockLen - 8, BigInt(this.length * 8), isLE);
         this.process(view, 0);
-        const oview = (0, utils_1.createView)(out);
+        const oview = (0, utils_js_1.createView)(out);
         this.get().forEach((v, i) => oview.setUint32(4 * i, v, isLE));
     }
     digest() {
@@ -256,7 +256,7 @@ exports.SHA2 = SHA2;
 
 /***/ }),
 
-/***/ 901:
+/***/ 4421:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -271,15 +271,15 @@ exports.crypto = {
 
 /***/ }),
 
-/***/ 7050:
+/***/ 830:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ripemd160 = exports.RIPEMD160 = void 0;
-const _sha2_1 = __webpack_require__(6365);
-const utils_1 = __webpack_require__(8359);
+const _sha2_js_1 = __webpack_require__(7505);
+const utils_js_1 = __webpack_require__(8089);
 // https://homes.esat.kuleuven.be/~bosselae/ripemd160.html
 // https://homes.esat.kuleuven.be/~bosselae/ripemd160/pdf/AB-9601/AB-9601.pdf
 const Rho = new Uint8Array([7, 4, 13, 1, 10, 6, 15, 3, 12, 0, 9, 5, 2, 14, 11, 8]);
@@ -318,7 +318,7 @@ function f(group, x, y, z) {
 }
 // Temporary buffer, not used to store anything between runs
 const BUF = new Uint32Array(16);
-class RIPEMD160 extends _sha2_1.SHA2 {
+class RIPEMD160 extends _sha2_js_1.SHA2 {
     constructor() {
         super(64, 20, 8, true);
         this.h0 = 0x67452301 | 0;
@@ -373,20 +373,24 @@ class RIPEMD160 extends _sha2_1.SHA2 {
     }
 }
 exports.RIPEMD160 = RIPEMD160;
-exports.ripemd160 = (0, utils_1.wrapConstructor)(() => new RIPEMD160());
+/**
+ * RIPEMD-160 - a hash function from 1990s.
+ * @param message - msg that would be hashed
+ */
+exports.ripemd160 = (0, utils_js_1.wrapConstructor)(() => new RIPEMD160());
 
 
 /***/ }),
 
-/***/ 5374:
+/***/ 3061:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.sha256 = void 0;
-const _sha2_1 = __webpack_require__(6365);
-const utils_1 = __webpack_require__(8359);
+const _sha2_js_1 = __webpack_require__(7505);
+const utils_js_1 = __webpack_require__(8089);
 // Choice: a ? b : c
 const Chi = (a, b, c) => (a & b) ^ (~a & c);
 // Majority function, true if any two inpust is true
@@ -412,7 +416,7 @@ const IV = new Uint32Array([
 // Temporary buffer, not used to store anything between runs
 // Named this way because it matches specification.
 const SHA256_W = new Uint32Array(64);
-class SHA256 extends _sha2_1.SHA2 {
+class SHA256 extends _sha2_js_1.SHA2 {
     constructor() {
         super(64, 32, 8, false);
         // We cannot use array here since array allows indexing by variable
@@ -448,16 +452,16 @@ class SHA256 extends _sha2_1.SHA2 {
         for (let i = 16; i < 64; i++) {
             const W15 = SHA256_W[i - 15];
             const W2 = SHA256_W[i - 2];
-            const s0 = (0, utils_1.rotr)(W15, 7) ^ (0, utils_1.rotr)(W15, 18) ^ (W15 >>> 3);
-            const s1 = (0, utils_1.rotr)(W2, 17) ^ (0, utils_1.rotr)(W2, 19) ^ (W2 >>> 10);
+            const s0 = (0, utils_js_1.rotr)(W15, 7) ^ (0, utils_js_1.rotr)(W15, 18) ^ (W15 >>> 3);
+            const s1 = (0, utils_js_1.rotr)(W2, 17) ^ (0, utils_js_1.rotr)(W2, 19) ^ (W2 >>> 10);
             SHA256_W[i] = (s1 + SHA256_W[i - 7] + s0 + SHA256_W[i - 16]) | 0;
         }
         // Compression function main loop, 64 rounds
         let { A, B, C, D, E, F, G, H } = this;
         for (let i = 0; i < 64; i++) {
-            const sigma1 = (0, utils_1.rotr)(E, 6) ^ (0, utils_1.rotr)(E, 11) ^ (0, utils_1.rotr)(E, 25);
+            const sigma1 = (0, utils_js_1.rotr)(E, 6) ^ (0, utils_js_1.rotr)(E, 11) ^ (0, utils_js_1.rotr)(E, 25);
             const T1 = (H + sigma1 + Chi(E, F, G) + SHA256_K[i] + SHA256_W[i]) | 0;
-            const sigma0 = (0, utils_1.rotr)(A, 2) ^ (0, utils_1.rotr)(A, 13) ^ (0, utils_1.rotr)(A, 22);
+            const sigma0 = (0, utils_js_1.rotr)(A, 2) ^ (0, utils_js_1.rotr)(A, 13) ^ (0, utils_js_1.rotr)(A, 22);
             const T2 = (sigma0 + Maj(A, B, C)) | 0;
             H = G;
             G = F;
@@ -487,23 +491,27 @@ class SHA256 extends _sha2_1.SHA2 {
         this.buffer.fill(0);
     }
 }
-exports.sha256 = (0, utils_1.wrapConstructor)(() => new SHA256());
+/**
+ * SHA2-256 hash function
+ * @param message - data that would be hashed
+ */
+exports.sha256 = (0, utils_js_1.wrapConstructor)(() => new SHA256());
 
 
 /***/ }),
 
-/***/ 8359:
+/***/ 8089:
 /***/ ((module, exports, __webpack_require__) => {
 
 "use strict";
 /* module decorator */ module = __webpack_require__.nmd(module);
 
-/*! noble-hashes - MIT License (c) 2021 Paul Miller (paulmillr.com) */
+/*! noble-hashes - MIT License (c) 2022 Paul Miller (paulmillr.com) */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.randomBytes = exports.wrapConstructorWithOpts = exports.wrapConstructor = exports.checkOpts = exports.Hash = exports.assertHash = exports.assertBool = exports.assertNumber = exports.toBytes = exports.asyncLoop = exports.nextTick = exports.bytesToHex = exports.isLE = exports.rotr = exports.createView = exports.u32 = exports.u8 = void 0;
+exports.randomBytes = exports.wrapConstructorWithOpts = exports.wrapConstructor = exports.checkOpts = exports.Hash = exports.assertHash = exports.assertBytes = exports.assertBool = exports.assertNumber = exports.concatBytes = exports.toBytes = exports.utf8ToBytes = exports.asyncLoop = exports.nextTick = exports.hexToBytes = exports.bytesToHex = exports.isLE = exports.rotr = exports.createView = exports.u32 = exports.u8 = void 0;
 // The import here is via the package name. This is to ensure
 // that exports mapping/resolution does fall into place.
-const crypto_1 = __webpack_require__(901);
+const crypto_1 = __webpack_require__(4421);
 // Cast array to different type
 const u8 = (arr) => new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
 exports.u8 = u8;
@@ -521,8 +529,11 @@ exports.isLE = new Uint8Array(new Uint32Array([0x11223344]).buffer)[0] === 0x44;
 if (!exports.isLE)
     throw new Error('Non little-endian hardware is not supported');
 const hexes = Array.from({ length: 256 }, (v, i) => i.toString(16).padStart(2, '0'));
+/**
+ * @example bytesToHex(Uint8Array.from([0xde, 0xad, 0xbe, 0xef]))
+ */
 function bytesToHex(uint8a) {
-    // pre-caching chars could speed this up 6x.
+    // pre-caching improves the speed 6x
     let hex = '';
     for (let i = 0; i < uint8a.length; i++) {
         hex += hexes[uint8a[i]];
@@ -530,6 +541,27 @@ function bytesToHex(uint8a) {
     return hex;
 }
 exports.bytesToHex = bytesToHex;
+/**
+ * @example hexToBytes('deadbeef')
+ */
+function hexToBytes(hex) {
+    if (typeof hex !== 'string') {
+        throw new TypeError('hexToBytes: expected string, got ' + typeof hex);
+    }
+    if (hex.length % 2)
+        throw new Error('hexToBytes: received invalid unpadded hex');
+    const array = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < array.length; i++) {
+        const j = i * 2;
+        const hexByte = hex.slice(j, j + 2);
+        const byte = Number.parseInt(hexByte, 16);
+        if (Number.isNaN(byte))
+            throw new Error('Invalid byte sequence');
+        array[i] = byte;
+    }
+    return array;
+}
+exports.hexToBytes = hexToBytes;
 // Currently avoid insertion of polyfills with packers (browserify/webpack/etc)
 // But setTimeout is pretty slow, maybe worth to investigate howto do minimal polyfill here
 exports.nextTick = (() => {
@@ -559,17 +591,43 @@ async function asyncLoop(iters, tick, cb) {
     }
 }
 exports.asyncLoop = asyncLoop;
+function utf8ToBytes(str) {
+    if (typeof str !== 'string') {
+        throw new TypeError(`utf8ToBytes expected string, got ${typeof str}`);
+    }
+    return new TextEncoder().encode(str);
+}
+exports.utf8ToBytes = utf8ToBytes;
 function toBytes(data) {
     if (typeof data === 'string')
-        data = new TextEncoder().encode(data);
+        data = utf8ToBytes(data);
     if (!(data instanceof Uint8Array))
         throw new TypeError(`Expected input type is Uint8Array (got ${typeof data})`);
     return data;
 }
 exports.toBytes = toBytes;
+/**
+ * Concats Uint8Array-s into one; like `Buffer.concat([buf1, buf2])`
+ * @example concatBytes(buf1, buf2)
+ */
+function concatBytes(...arrays) {
+    if (!arrays.every((a) => a instanceof Uint8Array))
+        throw new Error('Uint8Array list expected');
+    if (arrays.length === 1)
+        return arrays[0];
+    const length = arrays.reduce((a, arr) => a + arr.length, 0);
+    const result = new Uint8Array(length);
+    for (let i = 0, pad = 0; i < arrays.length; i++) {
+        const arr = arrays[i];
+        result.set(arr, pad);
+        pad += arr.length;
+    }
+    return result;
+}
+exports.concatBytes = concatBytes;
 function assertNumber(n) {
-    if (!Number.isSafeInteger(n))
-        throw new Error(`Wrong integer: ${n}`);
+    if (!Number.isSafeInteger(n) || n < 0)
+        throw new Error(`Wrong positive integer: ${n}`);
 }
 exports.assertNumber = assertNumber;
 function assertBool(b) {
@@ -578,8 +636,15 @@ function assertBool(b) {
     }
 }
 exports.assertBool = assertBool;
+function assertBytes(bytes, ...lengths) {
+    if (bytes instanceof Uint8Array && (!lengths.length || lengths.includes(bytes.length))) {
+        return;
+    }
+    throw new TypeError(`Expected ${lengths} bytes, not ${typeof bytes} with length=${bytes.length}`);
+}
+exports.assertBytes = assertBytes;
 function assertHash(hash) {
-    if (typeof hash !== 'function' || typeof hash.init !== 'function')
+    if (typeof hash !== 'function' || typeof hash.create !== 'function')
         throw new Error('Hash should be wrapped by utils.wrapConstructor');
     assertNumber(hash.outputLen);
     assertNumber(hash.blockLen);
@@ -608,7 +673,6 @@ function wrapConstructor(hashConstructor) {
     hashC.outputLen = tmp.outputLen;
     hashC.blockLen = tmp.blockLen;
     hashC.create = () => hashConstructor();
-    hashC.init = hashC.create;
     return hashC;
 }
 exports.wrapConstructor = wrapConstructor;
@@ -618,10 +682,12 @@ function wrapConstructorWithOpts(hashCons) {
     hashC.outputLen = tmp.outputLen;
     hashC.blockLen = tmp.blockLen;
     hashC.create = (opts) => hashCons(opts);
-    hashC.init = hashC.create;
     return hashC;
 }
 exports.wrapConstructorWithOpts = wrapConstructorWithOpts;
+/**
+ * Secure PRNG
+ */
 function randomBytes(bytesLength = 32) {
     if (crypto_1.crypto.web) {
         return crypto_1.crypto.web.getRandomValues(new Uint8Array(bytesLength));
@@ -638,30 +704,42 @@ exports.randomBytes = randomBytes;
 
 /***/ }),
 
-/***/ 1337:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ 9656:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
-/*! noble-secp256k1 - MIT License (c) Paul Miller (paulmillr.com) */
+/*! noble-secp256k1 - MIT License (c) 2019 Paul Miller (paulmillr.com) */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.utils = exports.schnorr = exports.verify = exports.signSync = exports.sign = exports.getSharedSecret = exports.recoverPublicKey = exports.getPublicKey = exports.SignResult = exports.Signature = exports.Point = exports.CURVE = void 0;
+exports.utils = exports.schnorr = exports.verify = exports.signSync = exports.sign = exports.getSharedSecret = exports.recoverPublicKey = exports.getPublicKey = exports.Signature = exports.Point = exports.CURVE = void 0;
+const crypto_1 = __importDefault(__webpack_require__(9159));
+const _0n = BigInt(0);
+const _1n = BigInt(1);
+const _2n = BigInt(2);
+const _3n = BigInt(3);
+const _8n = BigInt(8);
+const POW_2_256 = _2n ** BigInt(256);
 const CURVE = {
-    a: 0n,
-    b: 7n,
-    P: 2n ** 256n - 2n ** 32n - 977n,
-    n: 2n ** 256n - 432420386565659656852420866394968145599n,
-    h: 1n,
-    Gx: 55066263022277343669578718895168534326250603453777594175500187360389116729240n,
-    Gy: 32670510020758816978083085130507043184471273380659243275938904335757337482424n,
-    beta: 0x7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501een,
+    a: _0n,
+    b: BigInt(7),
+    P: POW_2_256 - _2n ** BigInt(32) - BigInt(977),
+    n: POW_2_256 - BigInt('432420386565659656852420866394968145599'),
+    h: _1n,
+    Gx: BigInt('55066263022277343669578718895168534326250603453777594175500187360389116729240'),
+    Gy: BigInt('32670510020758816978083085130507043184471273380659243275938904335757337482424'),
+    beta: BigInt('0x7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee'),
 };
 exports.CURVE = CURVE;
 function weistrass(x) {
     const { a, b } = CURVE;
-    return mod(x ** 3n + a * x + b);
+    const x2 = mod(x * x);
+    const x3 = mod(x2 * x);
+    return mod(x3 + a * x + b);
 }
-const USE_ENDOMORPHISM = CURVE.a === 0n;
+const USE_ENDOMORPHISM = CURVE.a === _0n;
 class JacobianPoint {
     constructor(x, y, z) {
         this.x = x;
@@ -672,7 +750,7 @@ class JacobianPoint {
         if (!(p instanceof Point)) {
             throw new TypeError('JacobianPoint#fromAffine: expected Point');
         }
-        return new JacobianPoint(p.x, p.y, 1n);
+        return new JacobianPoint(p.x, p.y, _1n);
     }
     static toAffineBatch(points) {
         const toInv = invertBatch(points.map((p) => p.z));
@@ -697,15 +775,15 @@ class JacobianPoint {
         const X1 = this.x;
         const Y1 = this.y;
         const Z1 = this.z;
-        const A = mod(X1 ** 2n);
-        const B = mod(Y1 ** 2n);
-        const C = mod(B ** 2n);
-        const D = mod(2n * (mod(mod((X1 + B) ** 2n)) - A - C));
-        const E = mod(3n * A);
-        const F = mod(E ** 2n);
-        const X3 = mod(F - 2n * D);
-        const Y3 = mod(E * (D - X3) - 8n * C);
-        const Z3 = mod(2n * Y1 * Z1);
+        const A = mod(X1 ** _2n);
+        const B = mod(Y1 ** _2n);
+        const C = mod(B ** _2n);
+        const D = mod(_2n * (mod(mod((X1 + B) ** _2n)) - A - C));
+        const E = mod(_3n * A);
+        const F = mod(E ** _2n);
+        const X3 = mod(F - _2n * D);
+        const Y3 = mod(E * (D - X3) - _8n * C);
+        const Z3 = mod(_2n * Y1 * Z1);
         return new JacobianPoint(X3, Y3, Z3);
     }
     add(other) {
@@ -718,30 +796,30 @@ class JacobianPoint {
         const X2 = other.x;
         const Y2 = other.y;
         const Z2 = other.z;
-        if (X2 === 0n || Y2 === 0n)
+        if (X2 === _0n || Y2 === _0n)
             return this;
-        if (X1 === 0n || Y1 === 0n)
+        if (X1 === _0n || Y1 === _0n)
             return other;
-        const Z1Z1 = mod(Z1 ** 2n);
-        const Z2Z2 = mod(Z2 ** 2n);
+        const Z1Z1 = mod(Z1 ** _2n);
+        const Z2Z2 = mod(Z2 ** _2n);
         const U1 = mod(X1 * Z2Z2);
         const U2 = mod(X2 * Z1Z1);
         const S1 = mod(Y1 * Z2 * Z2Z2);
         const S2 = mod(mod(Y2 * Z1) * Z1Z1);
         const H = mod(U2 - U1);
         const r = mod(S2 - S1);
-        if (H === 0n) {
-            if (r === 0n) {
+        if (H === _0n) {
+            if (r === _0n) {
                 return this.double();
             }
             else {
                 return JacobianPoint.ZERO;
             }
         }
-        const HH = mod(H ** 2n);
+        const HH = mod(H ** _2n);
         const HHH = mod(H * HH);
         const V = mod(U1 * HH);
-        const X3 = mod(r ** 2n - HHH - 2n * V);
+        const X3 = mod(r ** _2n - HHH - _2n * V);
         const Y3 = mod(r * (V - X3) - S1 * HHH);
         const Z3 = mod(Z1 * Z2 * H);
         return new JacobianPoint(X3, Y3, Z3);
@@ -750,32 +828,30 @@ class JacobianPoint {
         return this.add(other.negate());
     }
     multiplyUnsafe(scalar) {
-        if (!isValidScalar(scalar))
-            throw new TypeError('Point#multiply: expected valid scalar');
-        let n = mod(BigInt(scalar), CURVE.n);
+        let n = normalizeScalar(scalar);
         if (!USE_ENDOMORPHISM) {
             let p = JacobianPoint.ZERO;
             let d = this;
-            while (n > 0n) {
-                if (n & 1n)
+            while (n > _0n) {
+                if (n & _1n)
                     p = p.add(d);
                 d = d.double();
-                n >>= 1n;
+                n >>= _1n;
             }
             return p;
         }
-        let [k1neg, k1, k2neg, k2] = splitScalarEndo(n);
+        let { k1neg, k1, k2neg, k2 } = splitScalarEndo(n);
         let k1p = JacobianPoint.ZERO;
         let k2p = JacobianPoint.ZERO;
         let d = this;
-        while (k1 > 0n || k2 > 0n) {
-            if (k1 & 1n)
+        while (k1 > _0n || k2 > _0n) {
+            if (k1 & _1n)
                 k1p = k1p.add(d);
-            if (k2 & 1n)
+            if (k2 & _1n)
                 k2p = k2p.add(d);
             d = d.double();
-            k1 >>= 1n;
-            k2 >>= 1n;
+            k1 >>= _1n;
+            k2 >>= _1n;
         }
         if (k1neg)
             k1p = k1p.negate();
@@ -786,7 +862,7 @@ class JacobianPoint {
     }
     precomputeWindow(W) {
         const windows = USE_ENDOMORPHISM ? 128 / W + 1 : 256 / W + 1;
-        let points = [];
+        const points = [];
         let p = this;
         let base = p;
         for (let window = 0; window < windows; window++) {
@@ -828,50 +904,55 @@ class JacobianPoint {
             n >>= shiftBy;
             if (wbits > windowSize) {
                 wbits -= maxNumber;
-                n += 1n;
+                n += _1n;
             }
             if (wbits === 0) {
-                f = f.add(window % 2 ? precomputes[offset].negate() : precomputes[offset]);
+                let pr = precomputes[offset];
+                if (window % 2)
+                    pr = pr.negate();
+                f = f.add(pr);
             }
             else {
-                const cached = precomputes[offset + Math.abs(wbits) - 1];
-                p = p.add(wbits < 0 ? cached.negate() : cached);
+                let cached = precomputes[offset + Math.abs(wbits) - 1];
+                if (wbits < 0)
+                    cached = cached.negate();
+                p = p.add(cached);
             }
         }
-        return [p, f];
+        return { p, f };
     }
     multiply(scalar, affinePoint) {
-        if (!isValidScalar(scalar))
-            throw new TypeError('Point#multiply: expected valid scalar');
-        let n = mod(BigInt(scalar), CURVE.n);
+        let n = normalizeScalar(scalar);
         let point;
         let fake;
         if (USE_ENDOMORPHISM) {
-            const [k1neg, k1, k2neg, k2] = splitScalarEndo(n);
-            let k1p, k2p, f1p, f2p;
-            [k1p, f1p] = this.wNAF(k1, affinePoint);
-            [k2p, f2p] = this.wNAF(k2, affinePoint);
+            let { k1neg, k1, k2neg, k2 } = splitScalarEndo(n);
+            let { p: k1p, f: f1p } = this.wNAF(k1, affinePoint);
+            let { p: k2p, f: f2p } = this.wNAF(k2, affinePoint);
             if (k1neg)
                 k1p = k1p.negate();
             if (k2neg)
                 k2p = k2p.negate();
             k2p = new JacobianPoint(mod(k2p.x * CURVE.beta), k2p.y, k2p.z);
-            [point, fake] = [k1p.add(k2p), f1p.add(f2p)];
+            point = k1p.add(k2p);
+            fake = f1p.add(f2p);
         }
         else {
-            [point, fake] = this.wNAF(n, affinePoint);
+            let { p, f } = this.wNAF(n, affinePoint);
+            point = p;
+            fake = f;
         }
         return JacobianPoint.normalizeZ([point, fake])[0];
     }
     toAffine(invZ = invert(this.z)) {
-        const invZ2 = invZ ** 2n;
+        const invZ2 = invZ ** _2n;
         const x = mod(this.x * invZ2);
         const y = mod(this.y * invZ2 * invZ);
         return new Point(x, y);
     }
 }
-JacobianPoint.BASE = new JacobianPoint(CURVE.Gx, CURVE.Gy, 1n);
-JacobianPoint.ZERO = new JacobianPoint(0n, 1n, 0n);
+JacobianPoint.BASE = new JacobianPoint(CURVE.Gx, CURVE.Gy, _1n);
+JacobianPoint.ZERO = new JacobianPoint(_0n, _1n, _0n);
 const pointPrecomputes = new WeakMap();
 class Point {
     constructor(x, y) {
@@ -887,7 +968,7 @@ class Point {
         const x = bytesToNumber(isShort ? bytes : bytes.slice(1));
         const y2 = weistrass(x);
         let y = sqrtMod(y2);
-        const isYOdd = (y & 1n) === 1n;
+        const isYOdd = (y & _1n) === _1n;
         if (isShort) {
             if (isYOdd)
                 y = mod(-y);
@@ -926,7 +1007,7 @@ class Point {
         const sig = normalizeSignature(signature);
         const { r, s } = sig;
         if (recovery !== 0 && recovery !== 1) {
-            throw new Error('Cannot recover signature: invalid yParity bit');
+            throw new Error('Cannot recover signature: invalid recovery bit');
         }
         const prefix = 2 + (recovery & 1);
         const P_ = Point.fromHex(`0${prefix}${pad64(r)}`);
@@ -944,7 +1025,7 @@ class Point {
     toHex(isCompressed = false) {
         const x = pad64(this.x);
         if (isCompressed) {
-            return `${this.y & 1n ? '03' : '02'}${x}`;
+            return `${this.y & _1n ? '03' : '02'}${x}`;
         }
         else {
             return `04${x}${pad64(this.y)}`;
@@ -958,13 +1039,12 @@ class Point {
     }
     assertValidity() {
         const msg = 'Point is not on elliptic curve';
-        const { P } = CURVE;
         const { x, y } = this;
-        if (x === 0n || y === 0n || x >= P || y >= P)
+        if (!isWithinCurvePrime(x) || !isWithinCurvePrime(y))
             throw new Error(msg);
         const left = mod(y * y);
         const right = weistrass(x);
-        if ((left - right) % P !== 0n)
+        if (mod(left - right) !== _0n)
             throw new Error(msg);
     }
     equals(other) {
@@ -988,64 +1068,60 @@ class Point {
 }
 exports.Point = Point;
 Point.BASE = new Point(CURVE.Gx, CURVE.Gy);
-Point.ZERO = new Point(0n, 0n);
-function sliceDer(s) {
+Point.ZERO = new Point(_0n, _0n);
+function sliceDER(s) {
     return Number.parseInt(s[0], 16) >= 8 ? '00' + s : s;
+}
+function parseDERInt(data) {
+    if (data.length < 2 || data[0] !== 0x02) {
+        throw new Error(`Invalid signature integer tag: ${bytesToHex(data)}`);
+    }
+    const len = data[1];
+    const res = data.subarray(2, len + 2);
+    if (!len || res.length !== len) {
+        throw new Error(`Invalid signature integer: wrong length`);
+    }
+    if (res[0] === 0x00 && res[1] <= 0x7f) {
+        throw new Error('Invalid signature integer: trailing length');
+    }
+    return { data: bytesToNumber(res), left: data.subarray(len + 2) };
+}
+function parseDERSignature(data) {
+    if (data.length < 2 || data[0] != 0x30) {
+        throw new Error(`Invalid signature tag: ${bytesToHex(data)}`);
+    }
+    if (data[1] !== data.length - 2) {
+        throw new Error('Invalid signature: incorrect length');
+    }
+    const { data: r, left: sBytes } = parseDERInt(data.subarray(2));
+    const { data: s, left: rBytesLeft } = parseDERInt(sBytes);
+    if (rBytesLeft.length) {
+        throw new Error(`Invalid signature: left bytes after parsing: ${bytesToHex(rBytesLeft)}`);
+    }
+    return { r, s };
 }
 class Signature {
     constructor(r, s) {
         this.r = r;
         this.s = s;
+        this.assertValidity();
     }
     static fromCompact(hex) {
-        if (typeof hex !== 'string' && !(hex instanceof Uint8Array)) {
-            throw new TypeError(`Signature.fromCompact: Expected string or Uint8Array`);
-        }
-        const str = hex instanceof Uint8Array ? bytesToHex(hex) : hex;
+        const arr = hex instanceof Uint8Array;
+        const name = 'Signature.fromCompact';
+        if (typeof hex !== 'string' && !arr)
+            throw new TypeError(`${name}: Expected string or Uint8Array`);
+        const str = arr ? bytesToHex(hex) : hex;
         if (str.length !== 128)
-            throw new Error('Signature.fromCompact: Expected 64-byte hex');
-        const sig = new Signature(hexToNumber(str.slice(0, 64)), hexToNumber(str.slice(64, 128)));
-        sig.assertValidity();
-        return sig;
+            throw new Error(`${name}: Expected 64-byte hex`);
+        return new Signature(hexToNumber(str.slice(0, 64)), hexToNumber(str.slice(64, 128)));
     }
     static fromDER(hex) {
-        const fn = 'Signature.fromDER';
-        if (typeof hex !== 'string' && !(hex instanceof Uint8Array)) {
-            throw new TypeError(`${fn}: Expected string or Uint8Array`);
-        }
-        const str = hex instanceof Uint8Array ? bytesToHex(hex) : hex;
-        const length = parseByte(str.slice(2, 4));
-        if (str.slice(0, 2) !== '30' || length !== str.length - 4 || str.slice(4, 6) !== '02') {
-            throw new Error(`${fn}: Invalid signature ${str}`);
-        }
-        const rLen = parseByte(str.slice(6, 8));
-        const rEnd = 8 + rLen;
-        const rr = str.slice(8, rEnd);
-        if (rr.startsWith('00') && parseByte(rr.slice(2, 4)) <= 0x7f) {
-            throw new Error(`${fn}: Invalid r with trailing length`);
-        }
-        const r = hexToNumber(rr);
-        const separator = str.slice(rEnd, rEnd + 2);
-        if (separator !== '02') {
-            throw new Error(`${fn}: Invalid r-s separator`);
-        }
-        const sLen = parseByte(str.slice(rEnd + 2, rEnd + 4));
-        const diff = length - sLen - rLen - 10;
-        if (diff > 0 || diff === -4) {
-            throw new Error(`${fn}: Invalid total length`);
-        }
-        if (sLen > length - rLen - 4) {
-            throw new Error(`${fn}: Invalid s`);
-        }
-        const sStart = rEnd + 4;
-        const ss = str.slice(sStart, sStart + sLen);
-        if (ss.startsWith('00') && parseByte(ss.slice(2, 4)) <= 0x7f) {
-            throw new Error(`${fn}: Invalid s with trailing length`);
-        }
-        const s = hexToNumber(ss);
-        const sig = new Signature(r, s);
-        sig.assertValidity();
-        return sig;
+        const arr = hex instanceof Uint8Array;
+        if (typeof hex !== 'string' && !arr)
+            throw new TypeError(`Signature.fromDER: Expected string or Uint8Array`);
+        const { r, s } = parseDERSignature(arr ? hex : hexToBytes(hex));
+        return new Signature(r, s);
     }
     static fromHex(hex) {
         return this.fromDER(hex);
@@ -1057,14 +1133,21 @@ class Signature {
         if (!isWithinCurveOrder(s))
             throw new Error('Invalid Signature: s must be 0 < s < n');
     }
+    hasHighS() {
+        const HALF = CURVE.n >> _1n;
+        return this.s > HALF;
+    }
+    normalizeS() {
+        return this.hasHighS() ? new Signature(this.r, CURVE.n - this.s) : this;
+    }
     toDERRawBytes(isCompressed = false) {
         return hexToBytes(this.toDERHex(isCompressed));
     }
     toDERHex(isCompressed = false) {
-        const sHex = sliceDer(numberToHex(this.s));
+        const sHex = sliceDER(numberToHex(this.s));
         if (isCompressed)
             return sHex;
-        const rHex = sliceDer(numberToHex(this.r));
+        const rHex = sliceDER(numberToHex(this.r));
         const rLen = numberToHex(rHex.length / 2);
         const sLen = numberToHex(sHex.length / 2);
         const length = numberToHex(rHex.length / 2 + sHex.length / 2 + 4);
@@ -1084,8 +1167,9 @@ class Signature {
     }
 }
 exports.Signature = Signature;
-exports.SignResult = Signature;
 function concatBytes(...arrays) {
+    if (!arrays.every((a) => a instanceof Uint8Array))
+        throw new Error('Uint8Array list expected');
     if (arrays.length === 1)
         return arrays[0];
     const length = arrays.reduce((a, arr) => a + arr.length, 0);
@@ -1097,14 +1181,17 @@ function concatBytes(...arrays) {
     }
     return result;
 }
+const hexes = Array.from({ length: 256 }, (v, i) => i.toString(16).padStart(2, '0'));
 function bytesToHex(uint8a) {
     let hex = '';
     for (let i = 0; i < uint8a.length; i++) {
-        hex += uint8a[i].toString(16).padStart(2, '0');
+        hex += hexes[uint8a[i]];
     }
     return hex;
 }
 function pad64(num) {
+    if (num > POW_2_256)
+        throw new Error('pad64: invalid number');
     return num.toString(16).padStart(64, '0');
 }
 function pad32b(num) {
@@ -1125,11 +1212,15 @@ function hexToBytes(hex) {
         throw new TypeError('hexToBytes: expected string, got ' + typeof hex);
     }
     if (hex.length % 2)
-        throw new Error('hexToBytes: received invalid unpadded hex');
+        throw new Error('hexToBytes: received invalid unpadded hex' + hex.length);
     const array = new Uint8Array(hex.length / 2);
     for (let i = 0; i < array.length; i++) {
         const j = i * 2;
-        array[i] = Number.parseInt(hex.slice(j, j + 2), 16);
+        const hexByte = hex.slice(j, j + 2);
+        const byte = Number.parseInt(hexByte, 16);
+        if (Number.isNaN(byte))
+            throw new Error('Invalid byte sequence');
+        array[i] = byte;
     }
     return array;
 }
@@ -1137,17 +1228,16 @@ function ensureBytes(hex) {
     return hex instanceof Uint8Array ? hex : hexToBytes(hex);
 }
 function bytesToNumber(bytes) {
+    if (!(bytes instanceof Uint8Array))
+        throw new Error('Expected Uint8Array');
     return hexToNumber(bytesToHex(bytes));
 }
-function parseByte(str) {
-    return Number.parseInt(str, 16) * 2;
-}
-function isValidScalar(num) {
-    if (typeof num === 'bigint' && num > 0n)
-        return true;
+function normalizeScalar(num) {
     if (typeof num === 'number' && num > 0 && Number.isSafeInteger(num))
-        return true;
-    return false;
+        return BigInt(num);
+    if (typeof num === 'bigint' && isWithinCurveOrder(num))
+        return num;
+    throw new TypeError('Expected valid private scalar: 0 < scalar < curve.n');
 }
 function mod(a, b = CURVE.P) {
     const result = a % b;
@@ -1156,7 +1246,7 @@ function mod(a, b = CURVE.P) {
 function pow2(x, power) {
     const { P } = CURVE;
     let res = x;
-    while (power-- > 0n) {
+    while (power-- > _0n) {
         res *= res;
         res %= P;
     }
@@ -1164,55 +1254,59 @@ function pow2(x, power) {
 }
 function sqrtMod(x) {
     const { P } = CURVE;
+    const _6n = BigInt(6);
+    const _11n = BigInt(11);
+    const _22n = BigInt(22);
+    const _23n = BigInt(23);
+    const _44n = BigInt(44);
+    const _88n = BigInt(88);
     const b2 = (x * x * x) % P;
     const b3 = (b2 * b2 * x) % P;
-    const b6 = (pow2(b3, 3n) * b3) % P;
-    const b9 = (pow2(b6, 3n) * b3) % P;
-    const b11 = (pow2(b9, 2n) * b2) % P;
-    const b22 = (pow2(b11, 11n) * b11) % P;
-    const b44 = (pow2(b22, 22n) * b22) % P;
-    const b88 = (pow2(b44, 44n) * b44) % P;
-    const b176 = (pow2(b88, 88n) * b88) % P;
-    const b220 = (pow2(b176, 44n) * b44) % P;
-    const b223 = (pow2(b220, 3n) * b3) % P;
-    const t1 = (pow2(b223, 23n) * b22) % P;
-    const t2 = (pow2(t1, 6n) * b2) % P;
-    return pow2(t2, 2n);
+    const b6 = (pow2(b3, _3n) * b3) % P;
+    const b9 = (pow2(b6, _3n) * b3) % P;
+    const b11 = (pow2(b9, _2n) * b2) % P;
+    const b22 = (pow2(b11, _11n) * b11) % P;
+    const b44 = (pow2(b22, _22n) * b22) % P;
+    const b88 = (pow2(b44, _44n) * b44) % P;
+    const b176 = (pow2(b88, _88n) * b88) % P;
+    const b220 = (pow2(b176, _44n) * b44) % P;
+    const b223 = (pow2(b220, _3n) * b3) % P;
+    const t1 = (pow2(b223, _23n) * b22) % P;
+    const t2 = (pow2(t1, _6n) * b2) % P;
+    return pow2(t2, _2n);
 }
 function invert(number, modulo = CURVE.P) {
-    if (number === 0n || modulo <= 0n) {
+    if (number === _0n || modulo <= _0n) {
         throw new Error(`invert: expected positive integers, got n=${number} mod=${modulo}`);
     }
     let a = mod(number, modulo);
     let b = modulo;
-    let [x, y, u, v] = [0n, 1n, 1n, 0n];
-    while (a !== 0n) {
+    let x = _0n, y = _1n, u = _1n, v = _0n;
+    while (a !== _0n) {
         const q = b / a;
         const r = b % a;
         const m = x - u * q;
         const n = y - v * q;
-        [b, a] = [a, r];
-        [x, y] = [u, v];
-        [u, v] = [m, n];
+        b = a, a = r, x = u, y = v, u = m, v = n;
     }
     const gcd = b;
-    if (gcd !== 1n)
+    if (gcd !== _1n)
         throw new Error('invert: does not exist');
     return mod(x, modulo);
 }
 function invertBatch(nums, n = CURVE.P) {
     const len = nums.length;
     const scratch = new Array(len);
-    let acc = 1n;
+    let acc = _1n;
     for (let i = 0; i < len; i++) {
-        if (nums[i] === 0n)
+        if (nums[i] === _0n)
             continue;
         scratch[i] = acc;
         acc = mod(acc * nums[i], n);
     }
     acc = invert(acc, n);
     for (let i = len - 1; i >= 0; i--) {
-        if (nums[i] === 0n)
+        if (nums[i] === _0n)
             continue;
         const tmp = mod(acc * nums[i], n);
         nums[i] = mod(acc * scratch[i], n);
@@ -1220,13 +1314,13 @@ function invertBatch(nums, n = CURVE.P) {
     }
     return nums;
 }
-const divNearest = (a, b) => (a + b / 2n) / b;
-const POW_2_128 = 2n ** 128n;
+const divNearest = (a, b) => (a + b / _2n) / b;
+const POW_2_128 = _2n ** BigInt(128);
 function splitScalarEndo(k) {
     const { n } = CURVE;
-    const a1 = 0x3086d221a7d46bcde86c90e49284eb15n;
-    const b1 = -0xe4437ed6010e88286f547fa90abfe4c3n;
-    const a2 = 0x114ca50f7a8e2f3f657c1108d9d44cfd8n;
+    const a1 = BigInt('0x3086d221a7d46bcde86c90e49284eb15');
+    const b1 = -_1n * BigInt('0xe4437ed6010e88286f547fa90abfe4c3');
+    const a2 = BigInt('0x114ca50f7a8e2f3f657c1108d9d44cfd8');
     const b2 = a1;
     const c1 = divNearest(b2 * k, n);
     const c2 = divNearest(-b1 * k, n);
@@ -1240,7 +1334,7 @@ function splitScalarEndo(k) {
         k2 = n - k2;
     if (k1 > POW_2_128 || k2 > POW_2_128)
         throw new Error('splitScalarEndo: Endomorphism failed');
-    return [k1neg, k1, k2neg, k2];
+    return { k1neg, k1, k2neg, k2 };
 }
 function truncateHash(hash) {
     if (typeof hash !== 'string')
@@ -1256,73 +1350,77 @@ function truncateHash(hash) {
     }
     return msg;
 }
-function _abc6979(msgHash, privateKey) {
-    if (msgHash == null)
-        throw new Error(`sign: expected valid msgHash, not "${msgHash}"`);
-    const num = typeof msgHash === 'string' ? hexToNumber(msgHash) : bytesToNumber(msgHash);
-    const h1 = pad32b(num);
-    const h1n = bytesToNumber(h1);
-    const x = pad32b(privateKey);
-    let v = new Uint8Array(32).fill(1);
-    let k = new Uint8Array(32).fill(0);
-    const b0 = Uint8Array.from([0x00]);
-    const b1 = Uint8Array.from([0x01]);
-    return [h1, h1n, x, v, k, b0, b1];
-}
-async function getQRSrfc6979(msgHash, privateKey) {
-    const privKey = normalizePrivateKey(privateKey);
-    let [h1, h1n, x, v, k, b0, b1] = _abc6979(msgHash, privKey);
-    const hmac = exports.utils.hmacSha256;
-    k = await hmac(k, v, b0, x, h1);
-    v = await hmac(k, v);
-    k = await hmac(k, v, b1, x, h1);
-    v = await hmac(k, v);
-    for (let i = 0; i < 1000; i++) {
-        v = await hmac(k, v);
-        let qrs = calcQRSFromK(v, h1n, privKey);
-        if (qrs)
-            return qrs;
-        k = await hmac(k, v, b0);
-        v = await hmac(k, v);
+class HmacDrbg {
+    constructor() {
+        this.v = new Uint8Array(32).fill(1);
+        this.k = new Uint8Array(32).fill(0);
+        this.counter = 0;
     }
-    throw new TypeError('secp256k1: Tried 1,000 k values for sign(), all were invalid');
-}
-function getQRSrfc6979Sync(msgHash, privateKey) {
-    const privKey = normalizePrivateKey(privateKey);
-    let [h1, h1n, x, v, k, b0, b1] = _abc6979(msgHash, privKey);
-    const hmac = exports.utils.hmacSha256Sync;
-    if (!hmac)
-        throw new Error('utils.hmacSha256Sync is undefined, you need to set it');
-    k = hmac(k, v, b0, x, h1);
-    if (k instanceof Promise)
-        throw new Error('To use sync sign(), ensure utils.hmacSha256 is sync');
-    v = hmac(k, v);
-    k = hmac(k, v, b1, x, h1);
-    v = hmac(k, v);
-    for (let i = 0; i < 1000; i++) {
-        v = hmac(k, v);
-        let qrs = calcQRSFromK(v, h1n, privKey);
-        if (qrs)
-            return qrs;
-        k = hmac(k, v, b0);
-        v = hmac(k, v);
+    hmac(...values) {
+        return exports.utils.hmacSha256(this.k, ...values);
     }
-    throw new TypeError('secp256k1: Tried 1,000 k values for sign(), all were invalid');
+    hmacSync(...values) {
+        if (typeof exports.utils.hmacSha256Sync !== 'function')
+            throw new Error('utils.hmacSha256Sync is undefined, you need to set it');
+        const res = exports.utils.hmacSha256Sync(this.k, ...values);
+        if (res instanceof Promise)
+            throw new Error('To use sync sign(), ensure utils.hmacSha256 is sync');
+        return res;
+    }
+    incr() {
+        if (this.counter >= 1000) {
+            throw new Error('Tried 1,000 k values for sign(), all were invalid');
+        }
+        this.counter += 1;
+    }
+    async reseed(seed = new Uint8Array()) {
+        this.k = await this.hmac(this.v, Uint8Array.from([0x00]), seed);
+        this.v = await this.hmac(this.v);
+        if (seed.length === 0)
+            return;
+        this.k = await this.hmac(this.v, Uint8Array.from([0x01]), seed);
+        this.v = await this.hmac(this.v);
+    }
+    reseedSync(seed = new Uint8Array()) {
+        this.k = this.hmacSync(this.v, Uint8Array.from([0x00]), seed);
+        this.v = this.hmacSync(this.v);
+        if (seed.length === 0)
+            return;
+        this.k = this.hmacSync(this.v, Uint8Array.from([0x01]), seed);
+        this.v = this.hmacSync(this.v);
+    }
+    async generate() {
+        this.incr();
+        this.v = await this.hmac(this.v);
+        return this.v;
+    }
+    generateSync() {
+        this.incr();
+        this.v = this.hmacSync(this.v);
+        return this.v;
+    }
 }
 function isWithinCurveOrder(num) {
-    return 0 < num && num < CURVE.n;
+    return _0n < num && num < CURVE.n;
 }
-function calcQRSFromK(v, msg, priv) {
-    const k = bytesToNumber(v);
+function isWithinCurvePrime(num) {
+    return 0n < num && num < CURVE.P;
+}
+function kmdToSig(kBytes, m, d) {
+    const k = bytesToNumber(kBytes);
     if (!isWithinCurveOrder(k))
         return;
-    const max = CURVE.n;
+    const { n } = CURVE;
     const q = Point.BASE.multiply(k);
-    const r = mod(q.x, max);
-    const s = mod(invert(k, max) * (msg + r * priv), max);
-    if (r === 0n || s === 0n)
+    const r = mod(q.x, n);
+    if (r === _0n)
         return;
-    return [q, r, s];
+    const s = mod(invert(k, n) * mod(m + d * r, n), n);
+    if (s === _0n)
+        return;
+    const sig = new Signature(r, s);
+    const recovery = (q.x === sig.r ? 0 : 2) | Number(q.y & _1n);
+    return { sig, recovery };
 }
 function normalizePrivateKey(key) {
     let num;
@@ -1363,21 +1461,19 @@ function normalizeSignature(signature) {
         signature.assertValidity();
         return signature;
     }
-    else {
+    try {
         return Signature.fromDER(signature);
+    }
+    catch (error) {
+        return Signature.fromCompact(signature);
     }
 }
 function getPublicKey(privateKey, isCompressed = false) {
-    const point = Point.fromPrivateKey(privateKey);
-    if (typeof privateKey === 'string') {
-        return point.toHex(isCompressed);
-    }
-    return point.toRawBytes(isCompressed);
+    return Point.fromPrivateKey(privateKey).toRawBytes(isCompressed);
 }
 exports.getPublicKey = getPublicKey;
 function recoverPublicKey(msgHash, signature, recovery) {
-    const point = Point.fromSignature(msgHash, signature, recovery);
-    return typeof msgHash === 'string' ? point.toHex() : point.toRawBytes();
+    return Point.fromSignature(msgHash, signature, recovery).toRawBytes();
 }
 exports.recoverPublicKey = recoverPublicKey;
 function isPub(item) {
@@ -1399,38 +1495,74 @@ function getSharedSecret(privateA, publicB, isCompressed = false) {
         throw new TypeError('getSharedSecret: second arg must be public key');
     const b = normalizePublicKey(publicB);
     b.assertValidity();
-    const shared = b.multiply(normalizePrivateKey(privateA));
-    return typeof privateA === 'string'
-        ? shared.toHex(isCompressed)
-        : shared.toRawBytes(isCompressed);
+    return b.multiply(normalizePrivateKey(privateA)).toRawBytes(isCompressed);
 }
 exports.getSharedSecret = getSharedSecret;
-function QRSToSig(qrs, opts, str = false) {
-    const [q, r, s] = qrs;
-    let { canonical, der, recovered } = opts;
-    let recovery = (q.x === r ? 0 : 2) | Number(q.y & 1n);
-    let adjustedS = s;
-    const HIGH_NUMBER = CURVE.n >> 1n;
-    if (s > HIGH_NUMBER && canonical) {
-        adjustedS = CURVE.n - s;
+function bits2int(bytes) {
+    const slice = bytes.length > 32 ? bytes.slice(0, 32) : bytes;
+    return bytesToNumber(slice);
+}
+function bits2octets(bytes) {
+    const z1 = bits2int(bytes);
+    const z2 = mod(z1, CURVE.n);
+    return int2octets(z2 < _0n ? z1 : z2);
+}
+function int2octets(num) {
+    if (typeof num !== 'bigint')
+        throw new Error('Expected bigint');
+    const hex = pad64(num);
+    return hexToBytes(hex);
+}
+function initSigArgs(msgHash, privateKey, extraEntropy) {
+    if (msgHash == null)
+        throw new Error(`sign: expected valid msgHash, not "${msgHash}"`);
+    const h1 = ensureBytes(msgHash);
+    const d = normalizePrivateKey(privateKey);
+    const seedArgs = [int2octets(d), bits2octets(h1)];
+    if (extraEntropy != null) {
+        if (extraEntropy === true)
+            extraEntropy = exports.utils.randomBytes(32);
+        const e = pad32b(bytesToNumber(ensureBytes(extraEntropy)));
+        if (e.length !== 32)
+            throw new Error('secp256k1: Expected 32 bytes of extra data');
+        seedArgs.push(e);
+    }
+    const seed = concatBytes(...seedArgs);
+    const m = bits2int(h1);
+    return { seed, m, d };
+}
+function finalizeSig(recSig, opts) {
+    let { sig, recovery } = recSig;
+    const { canonical, der, recovered } = Object.assign({ canonical: true, der: true }, opts);
+    if (canonical && sig.hasHighS()) {
+        sig = sig.normalizeS();
         recovery ^= 1;
     }
-    const sig = new Signature(r, adjustedS);
-    sig.assertValidity();
-    const hex = der === false ? sig.toCompactHex() : sig.toDERHex();
-    const hashed = str ? hex : hexToBytes(hex);
+    const hashed = der ? sig.toDERRawBytes() : sig.toCompactRawBytes();
     return recovered ? [hashed, recovery] : hashed;
 }
 async function sign(msgHash, privKey, opts = {}) {
-    return QRSToSig(await getQRSrfc6979(msgHash, privKey), opts, typeof msgHash === 'string');
+    const { seed, m, d } = initSigArgs(msgHash, privKey, opts.extraEntropy);
+    let sig;
+    const drbg = new HmacDrbg();
+    await drbg.reseed(seed);
+    while (!(sig = kmdToSig(await drbg.generate(), m, d)))
+        await drbg.reseed();
+    return finalizeSig(sig, opts);
 }
 exports.sign = sign;
 function signSync(msgHash, privKey, opts = {}) {
-    return QRSToSig(getQRSrfc6979Sync(msgHash, privKey), opts, typeof msgHash === 'string');
+    const { seed, m, d } = initSigArgs(msgHash, privKey, opts.extraEntropy);
+    let sig;
+    const drbg = new HmacDrbg();
+    drbg.reseedSync(seed);
+    while (!(sig = kmdToSig(drbg.generateSync(), m, d)))
+        drbg.reseedSync();
+    return finalizeSig(sig, opts);
 }
 exports.signSync = signSync;
-function verify(signature, msgHash, publicKey) {
-    const { n } = CURVE;
+const vopts = { strict: true };
+function verify(signature, msgHash, publicKey, opts = vopts) {
     let sig;
     try {
         sig = normalizeSignature(signature);
@@ -1439,10 +1571,19 @@ function verify(signature, msgHash, publicKey) {
         return false;
     }
     const { r, s } = sig;
-    const h = truncateHash(msgHash);
-    if (h === 0n)
+    if (opts.strict && sig.hasHighS())
         return false;
-    const pubKey = JacobianPoint.fromAffine(normalizePublicKey(publicKey));
+    const h = truncateHash(msgHash);
+    if (h === _0n)
+        return false;
+    let pubKey;
+    try {
+        pubKey = JacobianPoint.fromAffine(normalizePublicKey(publicKey));
+    }
+    catch (error) {
+        return false;
+    }
+    const { n } = CURVE;
     const s1 = invert(s, n);
     const u1 = mod(h * s1, n);
     const u2 = mod(r * s1, n);
@@ -1465,22 +1606,21 @@ async function createChallenge(x, P, message) {
     return mod(t, CURVE.n);
 }
 function hasEvenY(point) {
-    return mod(point.y, 2n) === 0n;
+    return mod(point.y, _2n) === _0n;
 }
 class SchnorrSignature {
     constructor(r, s) {
         this.r = r;
         this.s = s;
-        if (r <= 0n || s <= 0n || r >= CURVE.P || s >= CURVE.n)
+        if (!isWithinCurvePrime(r) || !isWithinCurveOrder(s))
             throw new Error('Invalid signature');
     }
     static fromHex(hex) {
         const bytes = ensureBytes(hex);
-        if (bytes.length !== 64) {
+        if (bytes.length !== 64)
             throw new TypeError(`SchnorrSignature.fromHex: expected 64 bytes, not ${bytes.length}`);
-        }
         const r = bytesToNumber(bytes.slice(0, 32));
-        const s = bytesToNumber(bytes.slice(32));
+        const s = bytesToNumber(bytes.slice(32, 64));
         return new SchnorrSignature(r, s);
     }
     toHex() {
@@ -1491,16 +1631,13 @@ class SchnorrSignature {
     }
 }
 function schnorrGetPublicKey(privateKey) {
-    const P = Point.fromPrivateKey(privateKey);
-    return typeof privateKey === 'string' ? P.toHexX() : P.toRawX();
+    return Point.fromPrivateKey(privateKey).toRawX();
 }
-async function schnorrSign(msgHash, privateKey, auxRand = exports.utils.randomBytes()) {
-    if (msgHash == null)
-        throw new TypeError(`sign: Expected valid message, not "${msgHash}"`);
-    if (!privateKey)
-        privateKey = 0n;
+async function schnorrSign(message, privateKey, auxRand = exports.utils.randomBytes()) {
+    if (message == null)
+        throw new TypeError(`sign: Expected valid message, not "${message}"`);
     const { n } = CURVE;
-    const m = ensureBytes(msgHash);
+    const m = ensureBytes(message);
     const d0 = normalizePrivateKey(privateKey);
     const rand = ensureBytes(auxRand);
     if (rand.length !== 32)
@@ -1511,7 +1648,7 @@ async function schnorrSign(msgHash, privateKey, auxRand = exports.utils.randomBy
     const t = d ^ t0h;
     const k0h = await taggedHash('BIP0340/nonce', pad32b(t), P.toRawX(), m);
     const k0 = mod(k0h, n);
-    if (k0 === 0n)
+    if (k0 === _0n)
         throw new Error('sign: Creation of signature failed. k is zero');
     const R = Point.fromPrivateKey(k0);
     const k = hasEvenY(R) ? k0 : n - k0;
@@ -1520,11 +1657,11 @@ async function schnorrSign(msgHash, privateKey, auxRand = exports.utils.randomBy
     const isValid = await schnorrVerify(sig.toRawBytes(), m, P.toRawX());
     if (!isValid)
         throw new Error('sign: Invalid signature produced');
-    return typeof msgHash === 'string' ? sig.toHex() : sig.toRawBytes();
+    return sig.toRawBytes();
 }
-async function schnorrVerify(signature, msgHash, publicKey) {
+async function schnorrVerify(signature, message, publicKey) {
     const sig = signature instanceof SchnorrSignature ? signature : SchnorrSignature.fromHex(signature);
-    const m = typeof msgHash === 'string' ? hexToBytes(msgHash) : msgHash;
+    const m = ensureBytes(message);
     const P = normalizePublicKey(publicKey);
     const e = await createChallenge(sig.r, P, m);
     const sG = Point.fromPrivateKey(sig.s);
@@ -1541,14 +1678,10 @@ exports.schnorr = {
     verify: schnorrVerify,
 };
 Point.BASE._setWindowSize(8);
-const crypto = (() => {
-    const webCrypto = typeof self === 'object' && 'crypto' in self ? self.crypto : undefined;
-    const nodeRequire =  true && "function" === 'function';
-    return {
-        node: nodeRequire && !webCrypto ? __webpack_require__(5102) : undefined,
-        web: webCrypto,
-    };
-})();
+const crypto = {
+    node: crypto_1.default,
+    web: typeof self === 'object' && 'crypto' in self ? self.crypto : undefined,
+};
 exports.utils = {
     isValidPrivateKey(privateKey) {
         try {
@@ -1565,7 +1698,7 @@ exports.utils = {
         }
         else if (crypto.node) {
             const { randomBytes } = crypto.node;
-            return new Uint8Array(randomBytes(bytesLength).buffer);
+            return Uint8Array.from(randomBytes(bytesLength));
         }
         else {
             throw new Error("The environment doesn't have randomBytes function");
@@ -1576,11 +1709,12 @@ exports.utils = {
         while (i--) {
             const b32 = exports.utils.randomBytes(32);
             const num = bytesToNumber(b32);
-            if (isWithinCurveOrder(num) && num !== 1n)
+            if (isWithinCurveOrder(num) && num !== _1n)
                 return b32;
         }
         throw new Error('Valid private key was not found in 8 iterations. PRNG is broken');
     },
+    bytesToHex,
     sha256: async (message) => {
         if (crypto.web) {
             const buffer = await crypto.web.subtle.digest('SHA-256', message.buffer);
@@ -1604,9 +1738,7 @@ exports.utils = {
         else if (crypto.node) {
             const { createHmac } = crypto.node;
             const hash = createHmac('sha256', key);
-            for (let message of messages) {
-                hash.update(message);
-            }
+            messages.forEach((m) => hash.update(m));
             return Uint8Array.from(hash.digest());
         }
         else {
@@ -1618,7 +1750,7 @@ exports.utils = {
     precompute(windowSize = 8, point = Point.BASE) {
         const cached = point === Point.BASE ? point : new Point(point.x, point.y);
         cached._setWindowSize(windowSize);
-        cached.multiply(3n);
+        cached.multiply(_3n);
         return cached;
     },
 };
@@ -2757,1753 +2889,563 @@ utf8.write = function utf8_write(string, buffer, offset) {
 
 /***/ }),
 
-/***/ 9669:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ 4098:
+/***/ (function(module, exports) {
 
-module.exports = __webpack_require__(1609);
+var global = typeof self !== 'undefined' ? self : this;
+var __self__ = (function () {
+function F() {
+this.fetch = false;
+this.DOMException = global.DOMException
+}
+F.prototype = global;
+return new F();
+})();
+(function(self) {
 
-/***/ }),
+var irrelevant = (function (exports) {
 
-/***/ 5448:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+  var support = {
+    searchParams: 'URLSearchParams' in self,
+    iterable: 'Symbol' in self && 'iterator' in Symbol,
+    blob:
+      'FileReader' in self &&
+      'Blob' in self &&
+      (function() {
+        try {
+          new Blob();
+          return true
+        } catch (e) {
+          return false
+        }
+      })(),
+    formData: 'FormData' in self,
+    arrayBuffer: 'ArrayBuffer' in self
+  };
 
-"use strict";
+  function isDataView(obj) {
+    return obj && DataView.prototype.isPrototypeOf(obj)
+  }
 
+  if (support.arrayBuffer) {
+    var viewClasses = [
+      '[object Int8Array]',
+      '[object Uint8Array]',
+      '[object Uint8ClampedArray]',
+      '[object Int16Array]',
+      '[object Uint16Array]',
+      '[object Int32Array]',
+      '[object Uint32Array]',
+      '[object Float32Array]',
+      '[object Float64Array]'
+    ];
 
-var utils = __webpack_require__(4867);
-var settle = __webpack_require__(6026);
-var cookies = __webpack_require__(4372);
-var buildURL = __webpack_require__(5327);
-var buildFullPath = __webpack_require__(4097);
-var parseHeaders = __webpack_require__(4109);
-var isURLSameOrigin = __webpack_require__(7985);
-var createError = __webpack_require__(5061);
-
-module.exports = function xhrAdapter(config) {
-  return new Promise(function dispatchXhrRequest(resolve, reject) {
-    var requestData = config.data;
-    var requestHeaders = config.headers;
-
-    if (utils.isFormData(requestData)) {
-      delete requestHeaders['Content-Type']; // Let the browser set it
-    }
-
-    var request = new XMLHttpRequest();
-
-    // HTTP basic authentication
-    if (config.auth) {
-      var username = config.auth.username || '';
-      var password = config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : '';
-      requestHeaders.Authorization = 'Basic ' + btoa(username + ':' + password);
-    }
-
-    var fullPath = buildFullPath(config.baseURL, config.url);
-    request.open(config.method.toUpperCase(), buildURL(fullPath, config.params, config.paramsSerializer), true);
-
-    // Set the request timeout in MS
-    request.timeout = config.timeout;
-
-    // Listen for ready state
-    request.onreadystatechange = function handleLoad() {
-      if (!request || request.readyState !== 4) {
-        return;
-      }
-
-      // The request errored out and we didn't get a response, this will be
-      // handled by onerror instead
-      // With one exception: request that using file: protocol, most browsers
-      // will return status as 0 even though it's a successful request
-      if (request.status === 0 && !(request.responseURL && request.responseURL.indexOf('file:') === 0)) {
-        return;
-      }
-
-      // Prepare the response
-      var responseHeaders = 'getAllResponseHeaders' in request ? parseHeaders(request.getAllResponseHeaders()) : null;
-      var responseData = !config.responseType || config.responseType === 'text' ? request.responseText : request.response;
-      var response = {
-        data: responseData,
-        status: request.status,
-        statusText: request.statusText,
-        headers: responseHeaders,
-        config: config,
-        request: request
+    var isArrayBufferView =
+      ArrayBuffer.isView ||
+      function(obj) {
+        return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1
       };
+  }
 
-      settle(resolve, reject, response);
+  function normalizeName(name) {
+    if (typeof name !== 'string') {
+      name = String(name);
+    }
+    if (/[^a-z0-9\-#$%&'*+.^_`|~]/i.test(name)) {
+      throw new TypeError('Invalid character in header field name')
+    }
+    return name.toLowerCase()
+  }
 
-      // Clean up request
-      request = null;
+  function normalizeValue(value) {
+    if (typeof value !== 'string') {
+      value = String(value);
+    }
+    return value
+  }
+
+  // Build a destructive iterator for the value list
+  function iteratorFor(items) {
+    var iterator = {
+      next: function() {
+        var value = items.shift();
+        return {done: value === undefined, value: value}
+      }
     };
 
-    // Handle browser request cancellation (as opposed to a manual cancellation)
-    request.onabort = function handleAbort() {
-      if (!request) {
-        return;
-      }
-
-      reject(createError('Request aborted', config, 'ECONNABORTED', request));
-
-      // Clean up request
-      request = null;
-    };
-
-    // Handle low level network errors
-    request.onerror = function handleError() {
-      // Real errors are hidden from us by the browser
-      // onerror should only fire if it's a network error
-      reject(createError('Network Error', config, null, request));
-
-      // Clean up request
-      request = null;
-    };
-
-    // Handle timeout
-    request.ontimeout = function handleTimeout() {
-      var timeoutErrorMessage = 'timeout of ' + config.timeout + 'ms exceeded';
-      if (config.timeoutErrorMessage) {
-        timeoutErrorMessage = config.timeoutErrorMessage;
-      }
-      reject(createError(timeoutErrorMessage, config, 'ECONNABORTED',
-        request));
-
-      // Clean up request
-      request = null;
-    };
-
-    // Add xsrf header
-    // This is only done if running in a standard browser environment.
-    // Specifically not if we're in a web worker, or react-native.
-    if (utils.isStandardBrowserEnv()) {
-      // Add xsrf header
-      var xsrfValue = (config.withCredentials || isURLSameOrigin(fullPath)) && config.xsrfCookieName ?
-        cookies.read(config.xsrfCookieName) :
-        undefined;
-
-      if (xsrfValue) {
-        requestHeaders[config.xsrfHeaderName] = xsrfValue;
-      }
+    if (support.iterable) {
+      iterator[Symbol.iterator] = function() {
+        return iterator
+      };
     }
 
-    // Add headers to the request
-    if ('setRequestHeader' in request) {
-      utils.forEach(requestHeaders, function setRequestHeader(val, key) {
-        if (typeof requestData === 'undefined' && key.toLowerCase() === 'content-type') {
-          // Remove Content-Type if data is undefined
-          delete requestHeaders[key];
-        } else {
-          // Otherwise add header to the request
-          request.setRequestHeader(key, val);
-        }
-      });
-    }
+    return iterator
+  }
 
-    // Add withCredentials to request if needed
-    if (!utils.isUndefined(config.withCredentials)) {
-      request.withCredentials = !!config.withCredentials;
-    }
+  function Headers(headers) {
+    this.map = {};
 
-    // Add responseType to request if needed
-    if (config.responseType) {
-      try {
-        request.responseType = config.responseType;
-      } catch (e) {
-        // Expected DOMException thrown by browsers not compatible XMLHttpRequest Level 2.
-        // But, this can be suppressed for 'json' type as it can be parsed by default 'transformResponse' function.
-        if (config.responseType !== 'json') {
-          throw e;
-        }
+    if (headers instanceof Headers) {
+      headers.forEach(function(value, name) {
+        this.append(name, value);
+      }, this);
+    } else if (Array.isArray(headers)) {
+      headers.forEach(function(header) {
+        this.append(header[0], header[1]);
+      }, this);
+    } else if (headers) {
+      Object.getOwnPropertyNames(headers).forEach(function(name) {
+        this.append(name, headers[name]);
+      }, this);
+    }
+  }
+
+  Headers.prototype.append = function(name, value) {
+    name = normalizeName(name);
+    value = normalizeValue(value);
+    var oldValue = this.map[name];
+    this.map[name] = oldValue ? oldValue + ', ' + value : value;
+  };
+
+  Headers.prototype['delete'] = function(name) {
+    delete this.map[normalizeName(name)];
+  };
+
+  Headers.prototype.get = function(name) {
+    name = normalizeName(name);
+    return this.has(name) ? this.map[name] : null
+  };
+
+  Headers.prototype.has = function(name) {
+    return this.map.hasOwnProperty(normalizeName(name))
+  };
+
+  Headers.prototype.set = function(name, value) {
+    this.map[normalizeName(name)] = normalizeValue(value);
+  };
+
+  Headers.prototype.forEach = function(callback, thisArg) {
+    for (var name in this.map) {
+      if (this.map.hasOwnProperty(name)) {
+        callback.call(thisArg, this.map[name], name, this);
       }
     }
-
-    // Handle progress if needed
-    if (typeof config.onDownloadProgress === 'function') {
-      request.addEventListener('progress', config.onDownloadProgress);
-    }
-
-    // Not all browsers support upload events
-    if (typeof config.onUploadProgress === 'function' && request.upload) {
-      request.upload.addEventListener('progress', config.onUploadProgress);
-    }
-
-    if (config.cancelToken) {
-      // Handle cancellation
-      config.cancelToken.promise.then(function onCanceled(cancel) {
-        if (!request) {
-          return;
-        }
-
-        request.abort();
-        reject(cancel);
-        // Clean up request
-        request = null;
-      });
-    }
-
-    if (!requestData) {
-      requestData = null;
-    }
-
-    // Send the request
-    request.send(requestData);
-  });
-};
-
-
-/***/ }),
-
-/***/ 1609:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-var bind = __webpack_require__(1849);
-var Axios = __webpack_require__(321);
-var mergeConfig = __webpack_require__(7185);
-var defaults = __webpack_require__(5655);
-
-/**
- * Create an instance of Axios
- *
- * @param {Object} defaultConfig The default config for the instance
- * @return {Axios} A new instance of Axios
- */
-function createInstance(defaultConfig) {
-  var context = new Axios(defaultConfig);
-  var instance = bind(Axios.prototype.request, context);
-
-  // Copy axios.prototype to instance
-  utils.extend(instance, Axios.prototype, context);
-
-  // Copy context to instance
-  utils.extend(instance, context);
-
-  return instance;
-}
-
-// Create the default instance to be exported
-var axios = createInstance(defaults);
-
-// Expose Axios class to allow class inheritance
-axios.Axios = Axios;
-
-// Factory for creating new instances
-axios.create = function create(instanceConfig) {
-  return createInstance(mergeConfig(axios.defaults, instanceConfig));
-};
-
-// Expose Cancel & CancelToken
-axios.Cancel = __webpack_require__(5263);
-axios.CancelToken = __webpack_require__(4972);
-axios.isCancel = __webpack_require__(6502);
-
-// Expose all/spread
-axios.all = function all(promises) {
-  return Promise.all(promises);
-};
-axios.spread = __webpack_require__(8713);
-
-// Expose isAxiosError
-axios.isAxiosError = __webpack_require__(6268);
-
-module.exports = axios;
-
-// Allow use of default import syntax in TypeScript
-module.exports.default = axios;
-
-
-/***/ }),
-
-/***/ 5263:
-/***/ ((module) => {
-
-"use strict";
-
-
-/**
- * A `Cancel` is an object that is thrown when an operation is canceled.
- *
- * @class
- * @param {string=} message The message.
- */
-function Cancel(message) {
-  this.message = message;
-}
-
-Cancel.prototype.toString = function toString() {
-  return 'Cancel' + (this.message ? ': ' + this.message : '');
-};
-
-Cancel.prototype.__CANCEL__ = true;
-
-module.exports = Cancel;
-
-
-/***/ }),
-
-/***/ 4972:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var Cancel = __webpack_require__(5263);
-
-/**
- * A `CancelToken` is an object that can be used to request cancellation of an operation.
- *
- * @class
- * @param {Function} executor The executor function.
- */
-function CancelToken(executor) {
-  if (typeof executor !== 'function') {
-    throw new TypeError('executor must be a function.');
-  }
-
-  var resolvePromise;
-  this.promise = new Promise(function promiseExecutor(resolve) {
-    resolvePromise = resolve;
-  });
-
-  var token = this;
-  executor(function cancel(message) {
-    if (token.reason) {
-      // Cancellation has already been requested
-      return;
-    }
-
-    token.reason = new Cancel(message);
-    resolvePromise(token.reason);
-  });
-}
-
-/**
- * Throws a `Cancel` if cancellation has been requested.
- */
-CancelToken.prototype.throwIfRequested = function throwIfRequested() {
-  if (this.reason) {
-    throw this.reason;
-  }
-};
-
-/**
- * Returns an object that contains a new `CancelToken` and a function that, when called,
- * cancels the `CancelToken`.
- */
-CancelToken.source = function source() {
-  var cancel;
-  var token = new CancelToken(function executor(c) {
-    cancel = c;
-  });
-  return {
-    token: token,
-    cancel: cancel
   };
-};
 
-module.exports = CancelToken;
-
-
-/***/ }),
-
-/***/ 6502:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = function isCancel(value) {
-  return !!(value && value.__CANCEL__);
-};
-
-
-/***/ }),
-
-/***/ 321:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-var buildURL = __webpack_require__(5327);
-var InterceptorManager = __webpack_require__(782);
-var dispatchRequest = __webpack_require__(3572);
-var mergeConfig = __webpack_require__(7185);
-
-/**
- * Create a new instance of Axios
- *
- * @param {Object} instanceConfig The default config for the instance
- */
-function Axios(instanceConfig) {
-  this.defaults = instanceConfig;
-  this.interceptors = {
-    request: new InterceptorManager(),
-    response: new InterceptorManager()
-  };
-}
-
-/**
- * Dispatch a request
- *
- * @param {Object} config The config specific for this request (merged with this.defaults)
- */
-Axios.prototype.request = function request(config) {
-  /*eslint no-param-reassign:0*/
-  // Allow for axios('example/url'[, config]) a la fetch API
-  if (typeof config === 'string') {
-    config = arguments[1] || {};
-    config.url = arguments[0];
-  } else {
-    config = config || {};
-  }
-
-  config = mergeConfig(this.defaults, config);
-
-  // Set config.method
-  if (config.method) {
-    config.method = config.method.toLowerCase();
-  } else if (this.defaults.method) {
-    config.method = this.defaults.method.toLowerCase();
-  } else {
-    config.method = 'get';
-  }
-
-  // Hook up interceptors middleware
-  var chain = [dispatchRequest, undefined];
-  var promise = Promise.resolve(config);
-
-  this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
-    chain.unshift(interceptor.fulfilled, interceptor.rejected);
-  });
-
-  this.interceptors.response.forEach(function pushResponseInterceptors(interceptor) {
-    chain.push(interceptor.fulfilled, interceptor.rejected);
-  });
-
-  while (chain.length) {
-    promise = promise.then(chain.shift(), chain.shift());
-  }
-
-  return promise;
-};
-
-Axios.prototype.getUri = function getUri(config) {
-  config = mergeConfig(this.defaults, config);
-  return buildURL(config.url, config.params, config.paramsSerializer).replace(/^\?/, '');
-};
-
-// Provide aliases for supported request methods
-utils.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData(method) {
-  /*eslint func-names:0*/
-  Axios.prototype[method] = function(url, config) {
-    return this.request(mergeConfig(config || {}, {
-      method: method,
-      url: url,
-      data: (config || {}).data
-    }));
-  };
-});
-
-utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
-  /*eslint func-names:0*/
-  Axios.prototype[method] = function(url, data, config) {
-    return this.request(mergeConfig(config || {}, {
-      method: method,
-      url: url,
-      data: data
-    }));
-  };
-});
-
-module.exports = Axios;
-
-
-/***/ }),
-
-/***/ 782:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-
-function InterceptorManager() {
-  this.handlers = [];
-}
-
-/**
- * Add a new interceptor to the stack
- *
- * @param {Function} fulfilled The function to handle `then` for a `Promise`
- * @param {Function} rejected The function to handle `reject` for a `Promise`
- *
- * @return {Number} An ID used to remove interceptor later
- */
-InterceptorManager.prototype.use = function use(fulfilled, rejected) {
-  this.handlers.push({
-    fulfilled: fulfilled,
-    rejected: rejected
-  });
-  return this.handlers.length - 1;
-};
-
-/**
- * Remove an interceptor from the stack
- *
- * @param {Number} id The ID that was returned by `use`
- */
-InterceptorManager.prototype.eject = function eject(id) {
-  if (this.handlers[id]) {
-    this.handlers[id] = null;
-  }
-};
-
-/**
- * Iterate over all the registered interceptors
- *
- * This method is particularly useful for skipping over any
- * interceptors that may have become `null` calling `eject`.
- *
- * @param {Function} fn The function to call for each interceptor
- */
-InterceptorManager.prototype.forEach = function forEach(fn) {
-  utils.forEach(this.handlers, function forEachHandler(h) {
-    if (h !== null) {
-      fn(h);
-    }
-  });
-};
-
-module.exports = InterceptorManager;
-
-
-/***/ }),
-
-/***/ 4097:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var isAbsoluteURL = __webpack_require__(1793);
-var combineURLs = __webpack_require__(7303);
-
-/**
- * Creates a new URL by combining the baseURL with the requestedURL,
- * only when the requestedURL is not already an absolute URL.
- * If the requestURL is absolute, this function returns the requestedURL untouched.
- *
- * @param {string} baseURL The base URL
- * @param {string} requestedURL Absolute or relative URL to combine
- * @returns {string} The combined full path
- */
-module.exports = function buildFullPath(baseURL, requestedURL) {
-  if (baseURL && !isAbsoluteURL(requestedURL)) {
-    return combineURLs(baseURL, requestedURL);
-  }
-  return requestedURL;
-};
-
-
-/***/ }),
-
-/***/ 5061:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var enhanceError = __webpack_require__(481);
-
-/**
- * Create an Error with the specified message, config, error code, request and response.
- *
- * @param {string} message The error message.
- * @param {Object} config The config.
- * @param {string} [code] The error code (for example, 'ECONNABORTED').
- * @param {Object} [request] The request.
- * @param {Object} [response] The response.
- * @returns {Error} The created error.
- */
-module.exports = function createError(message, config, code, request, response) {
-  var error = new Error(message);
-  return enhanceError(error, config, code, request, response);
-};
-
-
-/***/ }),
-
-/***/ 3572:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-var transformData = __webpack_require__(8527);
-var isCancel = __webpack_require__(6502);
-var defaults = __webpack_require__(5655);
-
-/**
- * Throws a `Cancel` if cancellation has been requested.
- */
-function throwIfCancellationRequested(config) {
-  if (config.cancelToken) {
-    config.cancelToken.throwIfRequested();
-  }
-}
-
-/**
- * Dispatch a request to the server using the configured adapter.
- *
- * @param {object} config The config that is to be used for the request
- * @returns {Promise} The Promise to be fulfilled
- */
-module.exports = function dispatchRequest(config) {
-  throwIfCancellationRequested(config);
-
-  // Ensure headers exist
-  config.headers = config.headers || {};
-
-  // Transform request data
-  config.data = transformData(
-    config.data,
-    config.headers,
-    config.transformRequest
-  );
-
-  // Flatten headers
-  config.headers = utils.merge(
-    config.headers.common || {},
-    config.headers[config.method] || {},
-    config.headers
-  );
-
-  utils.forEach(
-    ['delete', 'get', 'head', 'post', 'put', 'patch', 'common'],
-    function cleanHeaderConfig(method) {
-      delete config.headers[method];
-    }
-  );
-
-  var adapter = config.adapter || defaults.adapter;
-
-  return adapter(config).then(function onAdapterResolution(response) {
-    throwIfCancellationRequested(config);
-
-    // Transform response data
-    response.data = transformData(
-      response.data,
-      response.headers,
-      config.transformResponse
-    );
-
-    return response;
-  }, function onAdapterRejection(reason) {
-    if (!isCancel(reason)) {
-      throwIfCancellationRequested(config);
-
-      // Transform response data
-      if (reason && reason.response) {
-        reason.response.data = transformData(
-          reason.response.data,
-          reason.response.headers,
-          config.transformResponse
-        );
-      }
-    }
-
-    return Promise.reject(reason);
-  });
-};
-
-
-/***/ }),
-
-/***/ 481:
-/***/ ((module) => {
-
-"use strict";
-
-
-/**
- * Update an Error with the specified config, error code, and response.
- *
- * @param {Error} error The error to update.
- * @param {Object} config The config.
- * @param {string} [code] The error code (for example, 'ECONNABORTED').
- * @param {Object} [request] The request.
- * @param {Object} [response] The response.
- * @returns {Error} The error.
- */
-module.exports = function enhanceError(error, config, code, request, response) {
-  error.config = config;
-  if (code) {
-    error.code = code;
-  }
-
-  error.request = request;
-  error.response = response;
-  error.isAxiosError = true;
-
-  error.toJSON = function toJSON() {
-    return {
-      // Standard
-      message: this.message,
-      name: this.name,
-      // Microsoft
-      description: this.description,
-      number: this.number,
-      // Mozilla
-      fileName: this.fileName,
-      lineNumber: this.lineNumber,
-      columnNumber: this.columnNumber,
-      stack: this.stack,
-      // Axios
-      config: this.config,
-      code: this.code
-    };
-  };
-  return error;
-};
-
-
-/***/ }),
-
-/***/ 7185:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-
-/**
- * Config-specific merge-function which creates a new config-object
- * by merging two configuration objects together.
- *
- * @param {Object} config1
- * @param {Object} config2
- * @returns {Object} New object resulting from merging config2 to config1
- */
-module.exports = function mergeConfig(config1, config2) {
-  // eslint-disable-next-line no-param-reassign
-  config2 = config2 || {};
-  var config = {};
-
-  var valueFromConfig2Keys = ['url', 'method', 'data'];
-  var mergeDeepPropertiesKeys = ['headers', 'auth', 'proxy', 'params'];
-  var defaultToConfig2Keys = [
-    'baseURL', 'transformRequest', 'transformResponse', 'paramsSerializer',
-    'timeout', 'timeoutMessage', 'withCredentials', 'adapter', 'responseType', 'xsrfCookieName',
-    'xsrfHeaderName', 'onUploadProgress', 'onDownloadProgress', 'decompress',
-    'maxContentLength', 'maxBodyLength', 'maxRedirects', 'transport', 'httpAgent',
-    'httpsAgent', 'cancelToken', 'socketPath', 'responseEncoding'
-  ];
-  var directMergeKeys = ['validateStatus'];
-
-  function getMergedValue(target, source) {
-    if (utils.isPlainObject(target) && utils.isPlainObject(source)) {
-      return utils.merge(target, source);
-    } else if (utils.isPlainObject(source)) {
-      return utils.merge({}, source);
-    } else if (utils.isArray(source)) {
-      return source.slice();
-    }
-    return source;
-  }
-
-  function mergeDeepProperties(prop) {
-    if (!utils.isUndefined(config2[prop])) {
-      config[prop] = getMergedValue(config1[prop], config2[prop]);
-    } else if (!utils.isUndefined(config1[prop])) {
-      config[prop] = getMergedValue(undefined, config1[prop]);
-    }
-  }
-
-  utils.forEach(valueFromConfig2Keys, function valueFromConfig2(prop) {
-    if (!utils.isUndefined(config2[prop])) {
-      config[prop] = getMergedValue(undefined, config2[prop]);
-    }
-  });
-
-  utils.forEach(mergeDeepPropertiesKeys, mergeDeepProperties);
-
-  utils.forEach(defaultToConfig2Keys, function defaultToConfig2(prop) {
-    if (!utils.isUndefined(config2[prop])) {
-      config[prop] = getMergedValue(undefined, config2[prop]);
-    } else if (!utils.isUndefined(config1[prop])) {
-      config[prop] = getMergedValue(undefined, config1[prop]);
-    }
-  });
-
-  utils.forEach(directMergeKeys, function merge(prop) {
-    if (prop in config2) {
-      config[prop] = getMergedValue(config1[prop], config2[prop]);
-    } else if (prop in config1) {
-      config[prop] = getMergedValue(undefined, config1[prop]);
-    }
-  });
-
-  var axiosKeys = valueFromConfig2Keys
-    .concat(mergeDeepPropertiesKeys)
-    .concat(defaultToConfig2Keys)
-    .concat(directMergeKeys);
-
-  var otherKeys = Object
-    .keys(config1)
-    .concat(Object.keys(config2))
-    .filter(function filterAxiosKeys(key) {
-      return axiosKeys.indexOf(key) === -1;
+  Headers.prototype.keys = function() {
+    var items = [];
+    this.forEach(function(value, name) {
+      items.push(name);
     });
-
-  utils.forEach(otherKeys, mergeDeepProperties);
-
-  return config;
-};
-
-
-/***/ }),
-
-/***/ 6026:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var createError = __webpack_require__(5061);
-
-/**
- * Resolve or reject a Promise based on response status.
- *
- * @param {Function} resolve A function that resolves the promise.
- * @param {Function} reject A function that rejects the promise.
- * @param {object} response The response.
- */
-module.exports = function settle(resolve, reject, response) {
-  var validateStatus = response.config.validateStatus;
-  if (!response.status || !validateStatus || validateStatus(response.status)) {
-    resolve(response);
-  } else {
-    reject(createError(
-      'Request failed with status code ' + response.status,
-      response.config,
-      null,
-      response.request,
-      response
-    ));
-  }
-};
-
-
-/***/ }),
-
-/***/ 8527:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-
-/**
- * Transform the data for a request or a response
- *
- * @param {Object|String} data The data to be transformed
- * @param {Array} headers The headers for the request or response
- * @param {Array|Function} fns A single function or Array of functions
- * @returns {*} The resulting transformed data
- */
-module.exports = function transformData(data, headers, fns) {
-  /*eslint no-param-reassign:0*/
-  utils.forEach(fns, function transform(fn) {
-    data = fn(data, headers);
-  });
-
-  return data;
-};
-
-
-/***/ }),
-
-/***/ 5655:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-var normalizeHeaderName = __webpack_require__(6016);
-
-var DEFAULT_CONTENT_TYPE = {
-  'Content-Type': 'application/x-www-form-urlencoded'
-};
-
-function setContentTypeIfUnset(headers, value) {
-  if (!utils.isUndefined(headers) && utils.isUndefined(headers['Content-Type'])) {
-    headers['Content-Type'] = value;
-  }
-}
-
-function getDefaultAdapter() {
-  var adapter;
-  if (typeof XMLHttpRequest !== 'undefined') {
-    // For browsers use XHR adapter
-    adapter = __webpack_require__(5448);
-  } else if (typeof process !== 'undefined' && Object.prototype.toString.call(process) === '[object process]') {
-    // For node use HTTP adapter
-    adapter = __webpack_require__(5448);
-  }
-  return adapter;
-}
-
-var defaults = {
-  adapter: getDefaultAdapter(),
-
-  transformRequest: [function transformRequest(data, headers) {
-    normalizeHeaderName(headers, 'Accept');
-    normalizeHeaderName(headers, 'Content-Type');
-    if (utils.isFormData(data) ||
-      utils.isArrayBuffer(data) ||
-      utils.isBuffer(data) ||
-      utils.isStream(data) ||
-      utils.isFile(data) ||
-      utils.isBlob(data)
-    ) {
-      return data;
-    }
-    if (utils.isArrayBufferView(data)) {
-      return data.buffer;
-    }
-    if (utils.isURLSearchParams(data)) {
-      setContentTypeIfUnset(headers, 'application/x-www-form-urlencoded;charset=utf-8');
-      return data.toString();
-    }
-    if (utils.isObject(data)) {
-      setContentTypeIfUnset(headers, 'application/json;charset=utf-8');
-      return JSON.stringify(data);
-    }
-    return data;
-  }],
-
-  transformResponse: [function transformResponse(data) {
-    /*eslint no-param-reassign:0*/
-    if (typeof data === 'string') {
-      try {
-        data = JSON.parse(data);
-      } catch (e) { /* Ignore */ }
-    }
-    return data;
-  }],
-
-  /**
-   * A timeout in milliseconds to abort a request. If set to 0 (default) a
-   * timeout is not created.
-   */
-  timeout: 0,
-
-  xsrfCookieName: 'XSRF-TOKEN',
-  xsrfHeaderName: 'X-XSRF-TOKEN',
-
-  maxContentLength: -1,
-  maxBodyLength: -1,
-
-  validateStatus: function validateStatus(status) {
-    return status >= 200 && status < 300;
-  }
-};
-
-defaults.headers = {
-  common: {
-    'Accept': 'application/json, text/plain, */*'
-  }
-};
-
-utils.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
-  defaults.headers[method] = {};
-});
-
-utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
-  defaults.headers[method] = utils.merge(DEFAULT_CONTENT_TYPE);
-});
-
-module.exports = defaults;
-
-
-/***/ }),
-
-/***/ 1849:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = function bind(fn, thisArg) {
-  return function wrap() {
-    var args = new Array(arguments.length);
-    for (var i = 0; i < args.length; i++) {
-      args[i] = arguments[i];
-    }
-    return fn.apply(thisArg, args);
+    return iteratorFor(items)
   };
-};
 
+  Headers.prototype.values = function() {
+    var items = [];
+    this.forEach(function(value) {
+      items.push(value);
+    });
+    return iteratorFor(items)
+  };
 
-/***/ }),
+  Headers.prototype.entries = function() {
+    var items = [];
+    this.forEach(function(value, name) {
+      items.push([name, value]);
+    });
+    return iteratorFor(items)
+  };
 
-/***/ 5327:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-
-function encode(val) {
-  return encodeURIComponent(val).
-    replace(/%3A/gi, ':').
-    replace(/%24/g, '$').
-    replace(/%2C/gi, ',').
-    replace(/%20/g, '+').
-    replace(/%5B/gi, '[').
-    replace(/%5D/gi, ']');
-}
-
-/**
- * Build a URL by appending params to the end
- *
- * @param {string} url The base of the url (e.g., http://www.google.com)
- * @param {object} [params] The params to be appended
- * @returns {string} The formatted url
- */
-module.exports = function buildURL(url, params, paramsSerializer) {
-  /*eslint no-param-reassign:0*/
-  if (!params) {
-    return url;
+  if (support.iterable) {
+    Headers.prototype[Symbol.iterator] = Headers.prototype.entries;
   }
 
-  var serializedParams;
-  if (paramsSerializer) {
-    serializedParams = paramsSerializer(params);
-  } else if (utils.isURLSearchParams(params)) {
-    serializedParams = params.toString();
-  } else {
-    var parts = [];
+  function consumed(body) {
+    if (body.bodyUsed) {
+      return Promise.reject(new TypeError('Already read'))
+    }
+    body.bodyUsed = true;
+  }
 
-    utils.forEach(params, function serialize(val, key) {
-      if (val === null || typeof val === 'undefined') {
-        return;
-      }
+  function fileReaderReady(reader) {
+    return new Promise(function(resolve, reject) {
+      reader.onload = function() {
+        resolve(reader.result);
+      };
+      reader.onerror = function() {
+        reject(reader.error);
+      };
+    })
+  }
 
-      if (utils.isArray(val)) {
-        key = key + '[]';
+  function readBlobAsArrayBuffer(blob) {
+    var reader = new FileReader();
+    var promise = fileReaderReady(reader);
+    reader.readAsArrayBuffer(blob);
+    return promise
+  }
+
+  function readBlobAsText(blob) {
+    var reader = new FileReader();
+    var promise = fileReaderReady(reader);
+    reader.readAsText(blob);
+    return promise
+  }
+
+  function readArrayBufferAsText(buf) {
+    var view = new Uint8Array(buf);
+    var chars = new Array(view.length);
+
+    for (var i = 0; i < view.length; i++) {
+      chars[i] = String.fromCharCode(view[i]);
+    }
+    return chars.join('')
+  }
+
+  function bufferClone(buf) {
+    if (buf.slice) {
+      return buf.slice(0)
+    } else {
+      var view = new Uint8Array(buf.byteLength);
+      view.set(new Uint8Array(buf));
+      return view.buffer
+    }
+  }
+
+  function Body() {
+    this.bodyUsed = false;
+
+    this._initBody = function(body) {
+      this._bodyInit = body;
+      if (!body) {
+        this._bodyText = '';
+      } else if (typeof body === 'string') {
+        this._bodyText = body;
+      } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
+        this._bodyBlob = body;
+      } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
+        this._bodyFormData = body;
+      } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+        this._bodyText = body.toString();
+      } else if (support.arrayBuffer && support.blob && isDataView(body)) {
+        this._bodyArrayBuffer = bufferClone(body.buffer);
+        // IE 10-11 can't handle a DataView body.
+        this._bodyInit = new Blob([this._bodyArrayBuffer]);
+      } else if (support.arrayBuffer && (ArrayBuffer.prototype.isPrototypeOf(body) || isArrayBufferView(body))) {
+        this._bodyArrayBuffer = bufferClone(body);
       } else {
-        val = [val];
+        this._bodyText = body = Object.prototype.toString.call(body);
       }
 
-      utils.forEach(val, function parseValue(v) {
-        if (utils.isDate(v)) {
-          v = v.toISOString();
-        } else if (utils.isObject(v)) {
-          v = JSON.stringify(v);
+      if (!this.headers.get('content-type')) {
+        if (typeof body === 'string') {
+          this.headers.set('content-type', 'text/plain;charset=UTF-8');
+        } else if (this._bodyBlob && this._bodyBlob.type) {
+          this.headers.set('content-type', this._bodyBlob.type);
+        } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+          this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
         }
-        parts.push(encode(key) + '=' + encode(v));
-      });
-    });
+      }
+    };
 
-    serializedParams = parts.join('&');
-  }
+    if (support.blob) {
+      this.blob = function() {
+        var rejected = consumed(this);
+        if (rejected) {
+          return rejected
+        }
 
-  if (serializedParams) {
-    var hashmarkIndex = url.indexOf('#');
-    if (hashmarkIndex !== -1) {
-      url = url.slice(0, hashmarkIndex);
+        if (this._bodyBlob) {
+          return Promise.resolve(this._bodyBlob)
+        } else if (this._bodyArrayBuffer) {
+          return Promise.resolve(new Blob([this._bodyArrayBuffer]))
+        } else if (this._bodyFormData) {
+          throw new Error('could not read FormData body as blob')
+        } else {
+          return Promise.resolve(new Blob([this._bodyText]))
+        }
+      };
+
+      this.arrayBuffer = function() {
+        if (this._bodyArrayBuffer) {
+          return consumed(this) || Promise.resolve(this._bodyArrayBuffer)
+        } else {
+          return this.blob().then(readBlobAsArrayBuffer)
+        }
+      };
     }
 
-    url += (url.indexOf('?') === -1 ? '?' : '&') + serializedParams;
+    this.text = function() {
+      var rejected = consumed(this);
+      if (rejected) {
+        return rejected
+      }
+
+      if (this._bodyBlob) {
+        return readBlobAsText(this._bodyBlob)
+      } else if (this._bodyArrayBuffer) {
+        return Promise.resolve(readArrayBufferAsText(this._bodyArrayBuffer))
+      } else if (this._bodyFormData) {
+        throw new Error('could not read FormData body as text')
+      } else {
+        return Promise.resolve(this._bodyText)
+      }
+    };
+
+    if (support.formData) {
+      this.formData = function() {
+        return this.text().then(decode)
+      };
+    }
+
+    this.json = function() {
+      return this.text().then(JSON.parse)
+    };
+
+    return this
   }
 
-  return url;
-};
+  // HTTP methods whose capitalization should be normalized
+  var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT'];
 
+  function normalizeMethod(method) {
+    var upcased = method.toUpperCase();
+    return methods.indexOf(upcased) > -1 ? upcased : method
+  }
 
-/***/ }),
+  function Request(input, options) {
+    options = options || {};
+    var body = options.body;
 
-/***/ 7303:
-/***/ ((module) => {
+    if (input instanceof Request) {
+      if (input.bodyUsed) {
+        throw new TypeError('Already read')
+      }
+      this.url = input.url;
+      this.credentials = input.credentials;
+      if (!options.headers) {
+        this.headers = new Headers(input.headers);
+      }
+      this.method = input.method;
+      this.mode = input.mode;
+      this.signal = input.signal;
+      if (!body && input._bodyInit != null) {
+        body = input._bodyInit;
+        input.bodyUsed = true;
+      }
+    } else {
+      this.url = String(input);
+    }
 
-"use strict";
+    this.credentials = options.credentials || this.credentials || 'same-origin';
+    if (options.headers || !this.headers) {
+      this.headers = new Headers(options.headers);
+    }
+    this.method = normalizeMethod(options.method || this.method || 'GET');
+    this.mode = options.mode || this.mode || null;
+    this.signal = options.signal || this.signal;
+    this.referrer = null;
 
+    if ((this.method === 'GET' || this.method === 'HEAD') && body) {
+      throw new TypeError('Body not allowed for GET or HEAD requests')
+    }
+    this._initBody(body);
+  }
 
-/**
- * Creates a new URL by combining the specified URLs
- *
- * @param {string} baseURL The base URL
- * @param {string} relativeURL The relative URL
- * @returns {string} The combined URL
- */
-module.exports = function combineURLs(baseURL, relativeURL) {
-  return relativeURL
-    ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '')
-    : baseURL;
-};
+  Request.prototype.clone = function() {
+    return new Request(this, {body: this._bodyInit})
+  };
 
-
-/***/ }),
-
-/***/ 4372:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-
-module.exports = (
-  utils.isStandardBrowserEnv() ?
-
-  // Standard browser envs support document.cookie
-    (function standardBrowserEnv() {
-      return {
-        write: function write(name, value, expires, path, domain, secure) {
-          var cookie = [];
-          cookie.push(name + '=' + encodeURIComponent(value));
-
-          if (utils.isNumber(expires)) {
-            cookie.push('expires=' + new Date(expires).toGMTString());
-          }
-
-          if (utils.isString(path)) {
-            cookie.push('path=' + path);
-          }
-
-          if (utils.isString(domain)) {
-            cookie.push('domain=' + domain);
-          }
-
-          if (secure === true) {
-            cookie.push('secure');
-          }
-
-          document.cookie = cookie.join('; ');
-        },
-
-        read: function read(name) {
-          var match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
-          return (match ? decodeURIComponent(match[3]) : null);
-        },
-
-        remove: function remove(name) {
-          this.write(name, '', Date.now() - 86400000);
+  function decode(body) {
+    var form = new FormData();
+    body
+      .trim()
+      .split('&')
+      .forEach(function(bytes) {
+        if (bytes) {
+          var split = bytes.split('=');
+          var name = split.shift().replace(/\+/g, ' ');
+          var value = split.join('=').replace(/\+/g, ' ');
+          form.append(decodeURIComponent(name), decodeURIComponent(value));
         }
+      });
+    return form
+  }
+
+  function parseHeaders(rawHeaders) {
+    var headers = new Headers();
+    // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
+    // https://tools.ietf.org/html/rfc7230#section-3.2
+    var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, ' ');
+    preProcessedHeaders.split(/\r?\n/).forEach(function(line) {
+      var parts = line.split(':');
+      var key = parts.shift().trim();
+      if (key) {
+        var value = parts.join(':').trim();
+        headers.append(key, value);
+      }
+    });
+    return headers
+  }
+
+  Body.call(Request.prototype);
+
+  function Response(bodyInit, options) {
+    if (!options) {
+      options = {};
+    }
+
+    this.type = 'default';
+    this.status = options.status === undefined ? 200 : options.status;
+    this.ok = this.status >= 200 && this.status < 300;
+    this.statusText = 'statusText' in options ? options.statusText : 'OK';
+    this.headers = new Headers(options.headers);
+    this.url = options.url || '';
+    this._initBody(bodyInit);
+  }
+
+  Body.call(Response.prototype);
+
+  Response.prototype.clone = function() {
+    return new Response(this._bodyInit, {
+      status: this.status,
+      statusText: this.statusText,
+      headers: new Headers(this.headers),
+      url: this.url
+    })
+  };
+
+  Response.error = function() {
+    var response = new Response(null, {status: 0, statusText: ''});
+    response.type = 'error';
+    return response
+  };
+
+  var redirectStatuses = [301, 302, 303, 307, 308];
+
+  Response.redirect = function(url, status) {
+    if (redirectStatuses.indexOf(status) === -1) {
+      throw new RangeError('Invalid status code')
+    }
+
+    return new Response(null, {status: status, headers: {location: url}})
+  };
+
+  exports.DOMException = self.DOMException;
+  try {
+    new exports.DOMException();
+  } catch (err) {
+    exports.DOMException = function(message, name) {
+      this.message = message;
+      this.name = name;
+      var error = Error(message);
+      this.stack = error.stack;
+    };
+    exports.DOMException.prototype = Object.create(Error.prototype);
+    exports.DOMException.prototype.constructor = exports.DOMException;
+  }
+
+  function fetch(input, init) {
+    return new Promise(function(resolve, reject) {
+      var request = new Request(input, init);
+
+      if (request.signal && request.signal.aborted) {
+        return reject(new exports.DOMException('Aborted', 'AbortError'))
+      }
+
+      var xhr = new XMLHttpRequest();
+
+      function abortXhr() {
+        xhr.abort();
+      }
+
+      xhr.onload = function() {
+        var options = {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          headers: parseHeaders(xhr.getAllResponseHeaders() || '')
+        };
+        options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL');
+        var body = 'response' in xhr ? xhr.response : xhr.responseText;
+        resolve(new Response(body, options));
       };
-    })() :
 
-  // Non standard browser env (web workers, react-native) lack needed support.
-    (function nonStandardBrowserEnv() {
-      return {
-        write: function write() {},
-        read: function read() { return null; },
-        remove: function remove() {}
+      xhr.onerror = function() {
+        reject(new TypeError('Network request failed'));
       };
-    })()
-);
 
+      xhr.ontimeout = function() {
+        reject(new TypeError('Network request failed'));
+      };
 
-/***/ }),
+      xhr.onabort = function() {
+        reject(new exports.DOMException('Aborted', 'AbortError'));
+      };
 
-/***/ 1793:
-/***/ ((module) => {
+      xhr.open(request.method, request.url, true);
 
-"use strict";
+      if (request.credentials === 'include') {
+        xhr.withCredentials = true;
+      } else if (request.credentials === 'omit') {
+        xhr.withCredentials = false;
+      }
 
+      if ('responseType' in xhr && support.blob) {
+        xhr.responseType = 'blob';
+      }
 
-/**
- * Determines whether the specified URL is absolute
- *
- * @param {string} url The URL to test
- * @returns {boolean} True if the specified URL is absolute, otherwise false
- */
-module.exports = function isAbsoluteURL(url) {
-  // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
-  // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
-  // by any combination of letters, digits, plus, period, or hyphen.
-  return /^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(url);
-};
+      request.headers.forEach(function(value, name) {
+        xhr.setRequestHeader(name, value);
+      });
 
+      if (request.signal) {
+        request.signal.addEventListener('abort', abortXhr);
 
-/***/ }),
-
-/***/ 6268:
-/***/ ((module) => {
-
-"use strict";
-
-
-/**
- * Determines whether the payload is an error thrown by Axios
- *
- * @param {*} payload The value to test
- * @returns {boolean} True if the payload is an error thrown by Axios, otherwise false
- */
-module.exports = function isAxiosError(payload) {
-  return (typeof payload === 'object') && (payload.isAxiosError === true);
-};
-
-
-/***/ }),
-
-/***/ 7985:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-
-module.exports = (
-  utils.isStandardBrowserEnv() ?
-
-  // Standard browser envs have full support of the APIs needed to test
-  // whether the request URL is of the same origin as current location.
-    (function standardBrowserEnv() {
-      var msie = /(msie|trident)/i.test(navigator.userAgent);
-      var urlParsingNode = document.createElement('a');
-      var originURL;
-
-      /**
-    * Parse a URL to discover it's components
-    *
-    * @param {String} url The URL to be parsed
-    * @returns {Object}
-    */
-      function resolveURL(url) {
-        var href = url;
-
-        if (msie) {
-        // IE needs attribute set twice to normalize properties
-          urlParsingNode.setAttribute('href', href);
-          href = urlParsingNode.href;
-        }
-
-        urlParsingNode.setAttribute('href', href);
-
-        // urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
-        return {
-          href: urlParsingNode.href,
-          protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, '') : '',
-          host: urlParsingNode.host,
-          search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, '') : '',
-          hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, '') : '',
-          hostname: urlParsingNode.hostname,
-          port: urlParsingNode.port,
-          pathname: (urlParsingNode.pathname.charAt(0) === '/') ?
-            urlParsingNode.pathname :
-            '/' + urlParsingNode.pathname
+        xhr.onreadystatechange = function() {
+          // DONE (success or failure)
+          if (xhr.readyState === 4) {
+            request.signal.removeEventListener('abort', abortXhr);
+          }
         };
       }
 
-      originURL = resolveURL(window.location.href);
-
-      /**
-    * Determine if a URL shares the same origin as the current location
-    *
-    * @param {String} requestURL The URL to test
-    * @returns {boolean} True if URL shares the same origin, otherwise false
-    */
-      return function isURLSameOrigin(requestURL) {
-        var parsed = (utils.isString(requestURL)) ? resolveURL(requestURL) : requestURL;
-        return (parsed.protocol === originURL.protocol &&
-            parsed.host === originURL.host);
-      };
-    })() :
-
-  // Non standard browser envs (web workers, react-native) lack needed support.
-    (function nonStandardBrowserEnv() {
-      return function isURLSameOrigin() {
-        return true;
-      };
-    })()
-);
-
-
-/***/ }),
-
-/***/ 6016:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-
-module.exports = function normalizeHeaderName(headers, normalizedName) {
-  utils.forEach(headers, function processHeader(value, name) {
-    if (name !== normalizedName && name.toUpperCase() === normalizedName.toUpperCase()) {
-      headers[normalizedName] = value;
-      delete headers[name];
-    }
-  });
-};
-
-
-/***/ }),
-
-/***/ 4109:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var utils = __webpack_require__(4867);
-
-// Headers whose duplicates are ignored by node
-// c.f. https://nodejs.org/api/http.html#http_message_headers
-var ignoreDuplicateOf = [
-  'age', 'authorization', 'content-length', 'content-type', 'etag',
-  'expires', 'from', 'host', 'if-modified-since', 'if-unmodified-since',
-  'last-modified', 'location', 'max-forwards', 'proxy-authorization',
-  'referer', 'retry-after', 'user-agent'
-];
-
-/**
- * Parse headers into an object
- *
- * ```
- * Date: Wed, 27 Aug 2014 08:58:49 GMT
- * Content-Type: application/json
- * Connection: keep-alive
- * Transfer-Encoding: chunked
- * ```
- *
- * @param {String} headers Headers needing to be parsed
- * @returns {Object} Headers parsed into an object
- */
-module.exports = function parseHeaders(headers) {
-  var parsed = {};
-  var key;
-  var val;
-  var i;
-
-  if (!headers) { return parsed; }
-
-  utils.forEach(headers.split('\n'), function parser(line) {
-    i = line.indexOf(':');
-    key = utils.trim(line.substr(0, i)).toLowerCase();
-    val = utils.trim(line.substr(i + 1));
-
-    if (key) {
-      if (parsed[key] && ignoreDuplicateOf.indexOf(key) >= 0) {
-        return;
-      }
-      if (key === 'set-cookie') {
-        parsed[key] = (parsed[key] ? parsed[key] : []).concat([val]);
-      } else {
-        parsed[key] = parsed[key] ? parsed[key] + ', ' + val : val;
-      }
-    }
-  });
-
-  return parsed;
-};
-
-
-/***/ }),
-
-/***/ 8713:
-/***/ ((module) => {
-
-"use strict";
-
-
-/**
- * Syntactic sugar for invoking a function and expanding an array for arguments.
- *
- * Common use case would be to use `Function.prototype.apply`.
- *
- *  ```js
- *  function f(x, y, z) {}
- *  var args = [1, 2, 3];
- *  f.apply(null, args);
- *  ```
- *
- * With `spread` this example can be re-written.
- *
- *  ```js
- *  spread(function(x, y, z) {})([1, 2, 3]);
- *  ```
- *
- * @param {Function} callback
- * @returns {Function}
- */
-module.exports = function spread(callback) {
-  return function wrap(arr) {
-    return callback.apply(null, arr);
-  };
-};
-
-
-/***/ }),
-
-/***/ 4867:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var bind = __webpack_require__(1849);
-
-/*global toString:true*/
-
-// utils is a library of generic helper functions non-specific to axios
-
-var toString = Object.prototype.toString;
-
-/**
- * Determine if a value is an Array
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is an Array, otherwise false
- */
-function isArray(val) {
-  return toString.call(val) === '[object Array]';
-}
-
-/**
- * Determine if a value is undefined
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if the value is undefined, otherwise false
- */
-function isUndefined(val) {
-  return typeof val === 'undefined';
-}
-
-/**
- * Determine if a value is a Buffer
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Buffer, otherwise false
- */
-function isBuffer(val) {
-  return val !== null && !isUndefined(val) && val.constructor !== null && !isUndefined(val.constructor)
-    && typeof val.constructor.isBuffer === 'function' && val.constructor.isBuffer(val);
-}
-
-/**
- * Determine if a value is an ArrayBuffer
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is an ArrayBuffer, otherwise false
- */
-function isArrayBuffer(val) {
-  return toString.call(val) === '[object ArrayBuffer]';
-}
-
-/**
- * Determine if a value is a FormData
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is an FormData, otherwise false
- */
-function isFormData(val) {
-  return (typeof FormData !== 'undefined') && (val instanceof FormData);
-}
-
-/**
- * Determine if a value is a view on an ArrayBuffer
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a view on an ArrayBuffer, otherwise false
- */
-function isArrayBufferView(val) {
-  var result;
-  if ((typeof ArrayBuffer !== 'undefined') && (ArrayBuffer.isView)) {
-    result = ArrayBuffer.isView(val);
-  } else {
-    result = (val) && (val.buffer) && (val.buffer instanceof ArrayBuffer);
-  }
-  return result;
-}
-
-/**
- * Determine if a value is a String
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a String, otherwise false
- */
-function isString(val) {
-  return typeof val === 'string';
-}
-
-/**
- * Determine if a value is a Number
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Number, otherwise false
- */
-function isNumber(val) {
-  return typeof val === 'number';
-}
-
-/**
- * Determine if a value is an Object
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is an Object, otherwise false
- */
-function isObject(val) {
-  return val !== null && typeof val === 'object';
-}
-
-/**
- * Determine if a value is a plain Object
- *
- * @param {Object} val The value to test
- * @return {boolean} True if value is a plain Object, otherwise false
- */
-function isPlainObject(val) {
-  if (toString.call(val) !== '[object Object]') {
-    return false;
+      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit);
+    })
   }
 
-  var prototype = Object.getPrototypeOf(val);
-  return prototype === null || prototype === Object.prototype;
-}
+  fetch.polyfill = true;
 
-/**
- * Determine if a value is a Date
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Date, otherwise false
- */
-function isDate(val) {
-  return toString.call(val) === '[object Date]';
-}
-
-/**
- * Determine if a value is a File
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a File, otherwise false
- */
-function isFile(val) {
-  return toString.call(val) === '[object File]';
-}
-
-/**
- * Determine if a value is a Blob
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Blob, otherwise false
- */
-function isBlob(val) {
-  return toString.call(val) === '[object Blob]';
-}
-
-/**
- * Determine if a value is a Function
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Function, otherwise false
- */
-function isFunction(val) {
-  return toString.call(val) === '[object Function]';
-}
-
-/**
- * Determine if a value is a Stream
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Stream, otherwise false
- */
-function isStream(val) {
-  return isObject(val) && isFunction(val.pipe);
-}
-
-/**
- * Determine if a value is a URLSearchParams object
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a URLSearchParams object, otherwise false
- */
-function isURLSearchParams(val) {
-  return typeof URLSearchParams !== 'undefined' && val instanceof URLSearchParams;
-}
-
-/**
- * Trim excess whitespace off the beginning and end of a string
- *
- * @param {String} str The String to trim
- * @returns {String} The String freed of excess whitespace
- */
-function trim(str) {
-  return str.replace(/^\s*/, '').replace(/\s*$/, '');
-}
-
-/**
- * Determine if we're running in a standard browser environment
- *
- * This allows axios to run in a web worker, and react-native.
- * Both environments support XMLHttpRequest, but not fully standard globals.
- *
- * web workers:
- *  typeof window -> undefined
- *  typeof document -> undefined
- *
- * react-native:
- *  navigator.product -> 'ReactNative'
- * nativescript
- *  navigator.product -> 'NativeScript' or 'NS'
- */
-function isStandardBrowserEnv() {
-  if (typeof navigator !== 'undefined' && (navigator.product === 'ReactNative' ||
-                                           navigator.product === 'NativeScript' ||
-                                           navigator.product === 'NS')) {
-    return false;
-  }
-  return (
-    typeof window !== 'undefined' &&
-    typeof document !== 'undefined'
-  );
-}
-
-/**
- * Iterate over an Array or an Object invoking a function for each item.
- *
- * If `obj` is an Array callback will be called passing
- * the value, index, and complete array for each item.
- *
- * If 'obj' is an Object callback will be called passing
- * the value, key, and complete object for each property.
- *
- * @param {Object|Array} obj The object to iterate
- * @param {Function} fn The callback to invoke for each item
- */
-function forEach(obj, fn) {
-  // Don't bother if no value provided
-  if (obj === null || typeof obj === 'undefined') {
-    return;
+  if (!self.fetch) {
+    self.fetch = fetch;
+    self.Headers = Headers;
+    self.Request = Request;
+    self.Response = Response;
   }
 
-  // Force an array if not already something iterable
-  if (typeof obj !== 'object') {
-    /*eslint no-param-reassign:0*/
-    obj = [obj];
-  }
+  exports.Headers = Headers;
+  exports.Request = Request;
+  exports.Response = Response;
+  exports.fetch = fetch;
 
-  if (isArray(obj)) {
-    // Iterate over array values
-    for (var i = 0, l = obj.length; i < l; i++) {
-      fn.call(null, obj[i], i, obj);
-    }
-  } else {
-    // Iterate over object keys
-    for (var key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        fn.call(null, obj[key], key, obj);
-      }
-    }
-  }
-}
+  Object.defineProperty(exports, '__esModule', { value: true });
 
-/**
- * Accepts varargs expecting each argument to be an object, then
- * immutably merges the properties of each object and returns result.
- *
- * When multiple objects contain the same key the later object in
- * the arguments list will take precedence.
- *
- * Example:
- *
- * ```js
- * var result = merge({foo: 123}, {foo: 456});
- * console.log(result.foo); // outputs 456
- * ```
- *
- * @param {Object} obj1 Object to merge
- * @returns {Object} Result of all merge properties
- */
-function merge(/* obj1, obj2, obj3, ... */) {
-  var result = {};
-  function assignValue(val, key) {
-    if (isPlainObject(result[key]) && isPlainObject(val)) {
-      result[key] = merge(result[key], val);
-    } else if (isPlainObject(val)) {
-      result[key] = merge({}, val);
-    } else if (isArray(val)) {
-      result[key] = val.slice();
-    } else {
-      result[key] = val;
-    }
-  }
+  return exports;
 
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    forEach(arguments[i], assignValue);
-  }
-  return result;
-}
-
-/**
- * Extends object a by mutably adding to it the properties of object b.
- *
- * @param {Object} a The object to be extended
- * @param {Object} b The object to copy properties from
- * @param {Object} thisArg The object to bind function to
- * @return {Object} The resulting value of object a
- */
-function extend(a, b, thisArg) {
-  forEach(b, function assignValue(val, key) {
-    if (thisArg && typeof val === 'function') {
-      a[key] = bind(val, thisArg);
-    } else {
-      a[key] = val;
-    }
-  });
-  return a;
-}
-
-/**
- * Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
- *
- * @param {string} content with BOM
- * @return {string} content value without BOM
- */
-function stripBOM(content) {
-  if (content.charCodeAt(0) === 0xFEFF) {
-    content = content.slice(1);
-  }
-  return content;
-}
-
-module.exports = {
-  isArray: isArray,
-  isArrayBuffer: isArrayBuffer,
-  isBuffer: isBuffer,
-  isFormData: isFormData,
-  isArrayBufferView: isArrayBufferView,
-  isString: isString,
-  isNumber: isNumber,
-  isObject: isObject,
-  isPlainObject: isPlainObject,
-  isUndefined: isUndefined,
-  isDate: isDate,
-  isFile: isFile,
-  isBlob: isBlob,
-  isFunction: isFunction,
-  isStream: isStream,
-  isURLSearchParams: isURLSearchParams,
-  isStandardBrowserEnv: isStandardBrowserEnv,
-  forEach: forEach,
-  merge: merge,
-  extend: extend,
-  trim: trim,
-  stripBOM: stripBOM
-};
+}({}));
+})(__self__);
+__self__.fetch.ponyfill = true;
+// Remove "polyfill" property added by whatwg-fetch
+delete __self__.fetch.polyfill;
+// Choose between native implementation (global) or custom implementation (__self__)
+// var ctx = global.fetch ? global : __self__;
+var ctx = __self__; // this line disable service worker support temporarily
+exports = ctx.fetch // To enable: import fetch from 'cross-fetch'
+exports["default"] = ctx.fetch // For TypeScript consumers without esModuleInterop.
+exports.fetch = ctx.fetch // To enable: import {fetch} from 'cross-fetch'
+exports.Headers = ctx.Headers
+exports.Request = ctx.Request
+exports.Response = ctx.Response
+module.exports = exports
 
 
 /***/ }),
@@ -11433,7 +10375,7 @@ class Contract {
     constructor(c) {
         var _a;
         if (c.id)
-            this.id = utils_1.decodeBase58(c.id);
+            this.id = (0, utils_1.decodeBase58)(c.id);
         this.signer = c.signer;
         this.provider = c.provider || ((_a = c.signer) === null || _a === void 0 ? void 0 : _a.provider);
         this.abi = c.abi;
@@ -11482,9 +10424,9 @@ class Contract {
                             throw new Error(`No output defined for ${name}`);
                         // read contract
                         const { result: resultEncoded } = await this.provider.readContract({
-                            contract_id: utils_1.encodeBase58(operation.call_contract.contract_id),
+                            contract_id: (0, utils_1.encodeBase58)(operation.call_contract.contract_id),
                             entry_point: operation.call_contract.entry_point,
-                            args: utils_1.encodeBase64(operation.call_contract.args),
+                            args: (0, utils_1.encodeBase64)(operation.call_contract.args),
                         });
                         let result = defaultOutput;
                         if (resultEncoded) {
@@ -11507,7 +10449,7 @@ class Contract {
                     });
                     const abis = {};
                     if (opts === null || opts === void 0 ? void 0 : opts.sendAbis) {
-                        const contractId = utils_1.encodeBase58(this.id);
+                        const contractId = (0, utils_1.encodeBase58)(this.id);
                         abis[contractId] = this.abi;
                     }
                     const transactionResponse = await this.signer.sendTransaction(transaction, abis);
@@ -11520,7 +10462,7 @@ class Contract {
      * Compute contract Id
      */
     static computeContractId(address) {
-        return utils_1.decodeBase58(address);
+        return (0, utils_1.decodeBase58)(address);
     }
     /**
      * Get contract Id
@@ -11528,7 +10470,7 @@ class Contract {
     getId() {
         if (!this.id)
             throw new Error("id is not defined");
-        return utils_1.encodeBase58(this.id);
+        return (0, utils_1.encodeBase58)(this.id);
     }
     /**
      * Function to deploy a new smart contract.
@@ -11650,8 +10592,8 @@ class Contract {
             throw new Error("Serializer is not defined");
         if (!op.call_contract)
             throw new Error("Operation is not CallContractOperation");
-        if (utils_1.encodeBase58(op.call_contract.contract_id) !== utils_1.encodeBase58(this.id))
-            throw new Error(`Invalid contract id. Expected: ${utils_1.encodeBase58(this.id)}. Received: ${utils_1.encodeBase58(op.call_contract.contract_id)}`);
+        if ((0, utils_1.encodeBase58)(op.call_contract.contract_id) !== (0, utils_1.encodeBase58)(this.id))
+            throw new Error(`Invalid contract id. Expected: ${(0, utils_1.encodeBase58)(this.id)}. Received: ${(0, utils_1.encodeBase58)(op.call_contract.contract_id)}`);
         for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
             const opName = Object.keys(this.abi.methods)[i];
             const method = this.abi.methods[opName];
@@ -11668,7 +10610,7 @@ class Contract {
     }
 }
 exports.Contract = Contract;
-exports.default = Contract;
+exports["default"] = Contract;
 
 
 /***/ }),
@@ -11683,7 +10625,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Provider = void 0;
-const axios_1 = __importDefault(__webpack_require__(9669));
+const cross_fetch_1 = __importDefault(__webpack_require__(4098));
 async function sleep(ms) {
     return new Promise((r) => setTimeout(r, ms));
 }
@@ -11718,16 +10660,9 @@ class Provider {
      * @returns Result of jsonrpc response
      */
     async call(method, params) {
-        let response = {
-            data: {},
-            status: 0,
-            statusText: "",
-            headers: {},
-            config: {},
-        };
-        let success = false;
         /* eslint-disable no-await-in-loop */
-        while (!success) {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
             try {
                 const data = {
                     id: Math.round(Math.random() * 1000),
@@ -11736,16 +10671,20 @@ class Provider {
                     params,
                 };
                 const url = this.rpcNodes[this.currentNodeId];
-                // TODO: search conditional to enable fetch for Browser
-                /* const response = await fetch(url, {
-                  method: "POST",
-                  body: JSON.stringify(data),
+                const response = await (0, cross_fetch_1.default)(url, {
+                    method: "POST",
+                    body: JSON.stringify(data),
                 });
-                const json = await response.json();
-                if (json.error && json.error.message) throw new Error(json.error.message);
-                return json.result; */
-                response = await axios_1.default.post(url, data, { validateStatus: (s) => s < 400 });
-                success = true;
+                const json = (await response.json());
+                if (json.error && json.error.message) {
+                    const error = new Error(json.error.message);
+                    error.request = {
+                        method,
+                        params,
+                    };
+                    throw error;
+                }
+                return json.result;
             }
             catch (e) {
                 const currentNode = this.rpcNodes[this.currentNodeId];
@@ -11756,12 +10695,6 @@ class Provider {
                     throw e;
             }
         }
-        if (response.data.error)
-            throw new Error(JSON.stringify({
-                error: response.data.error,
-                request: { method, params },
-            }));
-        return response.data.result;
     }
     /**
      * Function to call "chain.get_account_nonce" to return the number of
@@ -11886,7 +10819,7 @@ class Provider {
                         if (tx)
                             bNum = Number(block.block_height);
                     });
-                    let lastId = blocks[blocks.length - 1].block_id;
+                    const lastId = blocks[blocks.length - 1].block_id;
                     return [bNum, lastId];
                 };
                 let blockNumber = 0;
@@ -11908,6 +10841,7 @@ class Provider {
                         previousId = lastId;
                         blockNumber = Number(headTopology.height) + 1;
                     }
+                    // eslint-disable-next-line no-continue
                     if (blockNumber > Number(headTopology.height))
                         continue;
                     const [bNum, lastId] = await findTxInBlocks(blockNumber, 1, headTopology.id);
@@ -11931,7 +10865,7 @@ class Provider {
     }
 }
 exports.Provider = Provider;
-exports.default = Provider;
+exports["default"] = Provider;
 
 
 /***/ }),
@@ -12029,7 +10963,7 @@ class Serializer {
                 }
                 // Default byte conversion
                 if (!options || !options[OP_BYTES]) {
-                    object[name] = utils_1.decodeBase64(valueDecoded[name]);
+                    object[name] = (0, utils_1.decodeBase64)(valueDecoded[name]);
                     return;
                 }
                 // Specific byte conversion
@@ -12037,15 +10971,15 @@ class Serializer {
                     case "BASE58":
                     case "CONTRACT_ID":
                     case "ADDRESS":
-                        object[name] = utils_1.decodeBase58(valueDecoded[name]);
+                        object[name] = (0, utils_1.decodeBase58)(valueDecoded[name]);
                         break;
                     case "BASE64":
-                        object[name] = utils_1.decodeBase64(valueDecoded[name]);
+                        object[name] = (0, utils_1.decodeBase64)(valueDecoded[name]);
                         break;
                     case "HEX":
                     case "BLOCK_ID":
                     case "TRANSACTION_ID":
-                        object[name] = utils_1.toUint8Array(valueDecoded[name].replace("0x", ""));
+                        object[name] = (0, utils_1.toUint8Array)(valueDecoded[name].replace("0x", ""));
                         break;
                     default:
                         throw new Error(`unknown koinos_byte_type ${options[OP_BYTES]}`);
@@ -12066,7 +11000,7 @@ class Serializer {
      */
     async deserialize(valueEncoded, typeName) {
         const valueBuffer = typeof valueEncoded === "string"
-            ? utils_1.decodeBase64(valueEncoded)
+            ? (0, utils_1.decodeBase64)(valueEncoded)
             : valueEncoded;
         const protobufType = this.defaultType || this.root.lookupType(typeName);
         const message = protobufType.decode(valueBuffer);
@@ -12081,7 +11015,7 @@ class Serializer {
                 return;
             // Default byte conversion
             if (!options || !options[OP_BYTES]) {
-                object[name] = utils_1.encodeBase64(object[name]);
+                object[name] = (0, utils_1.encodeBase64)(object[name]);
                 return;
             }
             // Specific byte conversion
@@ -12089,15 +11023,15 @@ class Serializer {
                 case "BASE58":
                 case "CONTRACT_ID":
                 case "ADDRESS":
-                    object[name] = utils_1.encodeBase58(object[name]);
+                    object[name] = (0, utils_1.encodeBase58)(object[name]);
                     break;
                 case "BASE64":
-                    object[name] = utils_1.encodeBase64(object[name]);
+                    object[name] = (0, utils_1.encodeBase64)(object[name]);
                     break;
                 case "HEX":
                 case "BLOCK_ID":
                 case "TRANSACTION_ID":
-                    object[name] = `0x${utils_1.toHexString(object[name])}`;
+                    object[name] = `0x${(0, utils_1.toHexString)(object[name])}`;
                     break;
                 default:
                     throw new Error(`unknown koinos_byte_type ${options[OP_BYTES]}`);
@@ -12107,7 +11041,7 @@ class Serializer {
     }
 }
 exports.Serializer = Serializer;
-exports.default = Serializer;
+exports["default"] = Serializer;
 
 
 /***/ }),
@@ -12142,8 +11076,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Signer = void 0;
 /* eslint-disable no-param-reassign */
-const sha256_1 = __webpack_require__(5374);
-const secp = __importStar(__webpack_require__(1337));
+const sha256_1 = __webpack_require__(3061);
+const secp = __importStar(__webpack_require__(9656));
 const protocol_proto_json_1 = __importDefault(__webpack_require__(6139));
 const utils_1 = __webpack_require__(8593);
 const Serializer_1 = __webpack_require__(7187);
@@ -12233,11 +11167,11 @@ class Signer {
         }
         if (typeof c.privateKey === "string") {
             this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
-            this.address = utils_1.bitcoinAddress(utils_1.toUint8Array(this.publicKey));
+            this.address = (0, utils_1.bitcoinAddress)(this.publicKey);
         }
         else {
             this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
-            this.address = utils_1.bitcoinAddress(this.publicKey);
+            this.address = (0, utils_1.bitcoinAddress)(this.publicKey);
         }
     }
     /**
@@ -12253,9 +11187,9 @@ class Signer {
      */
     static fromWif(wif) {
         const compressed = wif[0] !== "5";
-        const privateKey = utils_1.bitcoinDecode(wif);
+        const privateKey = (0, utils_1.bitcoinDecode)(wif);
         return new Signer({
-            privateKey: utils_1.toHexString(privateKey),
+            privateKey: (0, utils_1.toHexString)(privateKey),
             compressed,
         });
     }
@@ -12272,7 +11206,7 @@ class Signer {
      * @returns Signer object
      */
     static fromSeed(seed, compressed) {
-        const privateKey = sha256_1.sha256(seed);
+        const privateKey = (0, sha256_1.sha256)(seed);
         return new Signer({ privateKey, compressed });
     }
     /**
@@ -12283,10 +11217,10 @@ class Signer {
     getAddress(compressed = true) {
         if (typeof this.privateKey === "string") {
             const publicKey = secp.getPublicKey(this.privateKey, compressed);
-            return utils_1.bitcoinAddress(utils_1.toUint8Array(publicKey));
+            return (0, utils_1.bitcoinAddress)(publicKey);
         }
         const publicKey = secp.getPublicKey(this.privateKey, compressed);
-        return utils_1.bitcoinAddress(publicKey);
+        return (0, utils_1.bitcoinAddress)(publicKey);
     }
     /**
      * Function to get the private key in hex format or wif format
@@ -12309,7 +11243,7 @@ class Signer {
     getPrivateKey(format = "hex", compressed) {
         let stringPrivateKey;
         if (this.privateKey instanceof Uint8Array) {
-            stringPrivateKey = utils_1.toHexString(this.privateKey);
+            stringPrivateKey = (0, utils_1.toHexString)(this.privateKey);
         }
         else if (typeof this.privateKey === "string") {
             stringPrivateKey = this.privateKey;
@@ -12322,7 +11256,7 @@ class Signer {
             case "hex":
                 return stringPrivateKey;
             case "wif":
-                return utils_1.bitcoinEncode(utils_1.toUint8Array(stringPrivateKey), "private", comp);
+                return (0, utils_1.bitcoinEncode)((0, utils_1.toUint8Array)(stringPrivateKey), "private", comp);
             default:
                 /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
                 throw new Error(`Invalid format ${format}`);
@@ -12337,7 +11271,7 @@ class Signer {
     async signTransaction(tx) {
         if (!tx.active)
             throw new Error("Active data is not defined");
-        const hash = sha256_1.sha256(utils_1.decodeBase64(tx.active));
+        const hash = (0, sha256_1.sha256)((0, utils_1.decodeBase64)(tx.active));
         const [compSignature, recovery] = await secp.sign(hash, this.privateKey, {
             recovered: true,
             canonical: true,
@@ -12346,8 +11280,8 @@ class Signer {
         const compactSignature = new Uint8Array(65);
         compactSignature.set([recovery + 31], 0);
         compactSignature.set(compSignature, 1);
-        tx.signature_data = utils_1.encodeBase64(compactSignature);
-        const multihash = `0x1220${utils_1.toHexString(hash)}`; // 12: code sha2-256. 20: length (32 bytes)
+        tx.signature_data = (0, utils_1.encodeBase64)(compactSignature);
+        const multihash = `0x1220${(0, utils_1.toHexString)(hash)}`; // 12: code sha2-256. 20: length (32 bytes)
         tx.id = multihash;
         return tx;
     }
@@ -12429,19 +11363,19 @@ class Signer {
         if (opts && typeof opts.compressed !== "undefined") {
             compressed = opts.compressed;
         }
-        const hash = sha256_1.sha256(utils_1.decodeBase64(txOrBlock.active));
-        const compactSignatureHex = utils_1.toHexString(utils_1.decodeBase64(signatureData));
+        const hash = (0, sha256_1.sha256)((0, utils_1.decodeBase64)(txOrBlock.active));
+        const compactSignatureHex = (0, utils_1.toHexString)((0, utils_1.decodeBase64)(signatureData));
         const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
         const rHex = compactSignatureHex.slice(2, 66);
         const sHex = compactSignatureHex.slice(66);
         const r = BigInt(`0x${rHex}`);
         const s = BigInt(`0x${sHex}`);
         const sig = new secp.Signature(r, s);
-        const publicKey = secp.recoverPublicKey(utils_1.toHexString(hash), sig.toHex(), recovery);
+        const publicKey = secp.recoverPublicKey((0, utils_1.toHexString)(hash), sig.toHex(), recovery);
         if (!publicKey)
             throw new Error("Public key cannot be recovered");
         if (!compressed)
-            return publicKey;
+            return (0, utils_1.toHexString)(publicKey);
         return secp.Point.fromHex(publicKey).toHex(true);
     }
     /**
@@ -12494,7 +11428,7 @@ class Signer {
      */
     static async recoverAddress(txOrBlock, opts) {
         const publicKey = await Signer.recoverPublicKey(txOrBlock, opts);
-        return utils_1.bitcoinAddress(utils_1.toUint8Array(publicKey));
+        return (0, utils_1.bitcoinAddress)((0, utils_1.toUint8Array)(publicKey));
     }
     /**
      * Function to encode a transaction
@@ -12522,7 +11456,7 @@ class Signer {
         };
         const buffer = await this.serializer.serialize(activeData2);
         return {
-            active: utils_1.encodeBase64(buffer),
+            active: (0, utils_1.encodeBase64)(buffer),
         };
     }
     /**
@@ -12535,7 +11469,7 @@ class Signer {
     }
 }
 exports.Signer = Signer;
-exports.default = Signer;
+exports["default"] = Signer;
 
 
 /***/ }),
@@ -12610,8 +11544,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ProtocolTypes = exports.Krc20Abi = exports.parseUnits = exports.formatUnits = exports.bitcoinAddress = exports.bitcoinDecode = exports.bitcoinEncode = exports.decodeBase64 = exports.encodeBase64 = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
 const multibase = __importStar(__webpack_require__(6957));
-const sha256_1 = __webpack_require__(5374);
-const ripemd160_1 = __webpack_require__(7050);
+const sha256_1 = __webpack_require__(3061);
+const ripemd160_1 = __webpack_require__(830);
 const krc20_proto_json_1 = __importDefault(__webpack_require__(7177));
 const protocol_proto_json_1 = __importDefault(__webpack_require__(6139));
 /**
@@ -12698,8 +11632,8 @@ function bitcoinEncode(buffer, type, compressed = false) {
         prefixBuffer[0] = 128;
     }
     prefixBuffer.set(buffer, 1);
-    const firstHash = sha256_1.sha256(prefixBuffer);
-    const doubleHash = sha256_1.sha256(firstHash);
+    const firstHash = (0, sha256_1.sha256)(prefixBuffer);
+    const doubleHash = (0, sha256_1.sha256)(firstHash);
     const checksum = new Uint8Array(4);
     checksum.set(doubleHash.slice(0, 4));
     bufferCheck.set(buffer, 1);
@@ -12738,8 +11672,8 @@ exports.bitcoinDecode = bitcoinDecode;
  * address = bitcoinEncode( ripemd160 ( sha256 ( publicKey ) ) )
  */
 function bitcoinAddress(publicKey) {
-    const hash = sha256_1.sha256(publicKey);
-    const hash160 = ripemd160_1.ripemd160(hash);
+    const hash = (0, sha256_1.sha256)(publicKey);
+    const hash160 = (0, ripemd160_1.ripemd160)(hash);
     return bitcoinEncode(hash160, "public");
 }
 exports.bitcoinAddress = bitcoinAddress;
@@ -12839,7 +11773,7 @@ exports.ProtocolTypes = protocol_proto_json_1.default;
 
 /***/ }),
 
-/***/ 5102:
+/***/ 9159:
 /***/ (() => {
 
 /* (ignored) */
