@@ -1,6 +1,6 @@
 import * as multibase from "multibase";
-import { sha256 } from "@noble/hashes/lib/sha256";
-import { ripemd160 } from "@noble/hashes/lib/ripemd160";
+import { sha256 } from "@noble/hashes/sha256";
+import { ripemd160 } from "@noble/hashes/ripemd160";
 import krc20ProtoJson from "./jsonDescriptors/krc20-proto.json";
 import protocolJson from "./jsonDescriptors/protocol-proto.json";
 import { Abi } from "./interface";

@@ -197,7 +197,7 @@ export class Serializer {
 
       // Default byte conversion
       if (!options || !options[OP_BYTES]) {
-        object[name] = encodeBase64(object[name]);
+        object[name] = encodeBase64(object[name] as Uint8Array);
         return;
       }
 
@@ -206,15 +206,15 @@ export class Serializer {
         case "BASE58":
         case "CONTRACT_ID":
         case "ADDRESS":
-          object[name] = encodeBase58(object[name]);
+          object[name] = encodeBase58(object[name] as Uint8Array);
           break;
         case "BASE64":
-          object[name] = encodeBase64(object[name]);
+          object[name] = encodeBase64(object[name] as Uint8Array);
           break;
         case "HEX":
         case "BLOCK_ID":
         case "TRANSACTION_ID":
-          object[name] = `0x${toHexString(object[name])}`;
+          object[name] = `0x${toHexString(object[name] as Uint8Array)}`;
           break;
         default:
           throw new Error(

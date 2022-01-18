@@ -4,7 +4,7 @@ import { Provider } from "../src";
 
 dotenv.config();
 
-jest.setTimeout(300000);
+jest.setTimeout(100000);
 
 if (!process.env.RPC_NODES)
   throw new Error("env variable RPC_NODES not defined");

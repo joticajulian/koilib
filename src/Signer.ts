@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { sha256 } from "@noble/hashes/lib/sha256";
+import { sha256 } from "@noble/hashes/sha256";
 import * as secp from "@noble/secp256k1";
 import { Provider } from "./Provider";
 import {
@@ -159,7 +159,7 @@ export class Signer implements SignerInterface {
     }
     if (typeof c.privateKey === "string") {
       this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
-      this.address = bitcoinAddress(toUint8Array(this.publicKey));
+      this.address = bitcoinAddress(this.publicKey);
     } else {
       this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
       this.address = bitcoinAddress(this.publicKey);
@@ -211,7 +211,7 @@ export class Signer implements SignerInterface {
   getAddress(compressed = true): string {
     if (typeof this.privateKey === "string") {
       const publicKey = secp.getPublicKey(this.privateKey, compressed);
-      return bitcoinAddress(toUint8Array(publicKey));
+      return bitcoinAddress(publicKey);
     }
     const publicKey = secp.getPublicKey(this.privateKey, compressed);
     return bitcoinAddress(publicKey);
@@ -378,7 +378,7 @@ export class Signer implements SignerInterface {
       recovery
     );
     if (!publicKey) throw new Error("Public key cannot be recovered");
-    if (!compressed) return publicKey;
+    if (!compressed) return toHexString(publicKey);
     return secp.Point.fromHex(publicKey).toHex(true);
   }
 

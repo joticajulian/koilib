@@ -7,6 +7,7 @@ module.exports = {
     "plugin:jest/recommended",
     "plugin:jest/style",
     "plugin:prettier/recommended",
+    "plugin:import/recommended",
   ],
   plugins: ["eslint-plugin-tsdoc"],
   parserOptions: {

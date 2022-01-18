@@ -311,8 +311,8 @@ describe("Wallet and Contract", () => {
 
     // As send is false only operation is defined
     expect(operation).toBeDefined();
-    expect(transaction).not.toBeDefined();
-    expect(result).not.toBeDefined();
+    expect(transaction).toBeUndefined();
+    expect(result).toBeUndefined();
   });
 
   it("should get the balance of an account", async () => {
