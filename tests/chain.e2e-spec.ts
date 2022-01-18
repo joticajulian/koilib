@@ -46,7 +46,7 @@ describe("Blockchain", () => {
     expect.assertions(2);
     const blocksResponse = await provider.getBlocks(currentHeight - 9, 10);
     expect(blocksResponse).toStrictEqual(expect.arrayContaining([]));
-    expect(blocksResponse.length).toBe(10);
+    expect(blocksResponse).toHaveLength(10);
 
     const periods = blocksResponse
       .map((b, i) => {

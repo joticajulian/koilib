@@ -1,5 +1,5 @@
-import axios, { AxiosResponse } from "axios";
 import crypto from "crypto";
+import * as crossFetch from "cross-fetch";
 import { Type } from "protobufjs";
 import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
@@ -21,44 +21,19 @@ import {
 } from "../src/interface";
 import { Serializer } from "../src";
 
-const mockAxiosGet = jest.spyOn(axios, "get");
-const mockAxiosPost = jest.spyOn(axios, "post");
+jest.mock("cross-fetch");
+const mockFetch = jest.spyOn(crossFetch, "fetch");
 
-mockAxiosGet.mockImplementation(
-  async (): Promise<unknown> =>
-    Promise.reject(new Error("Forgot to implement mock for axios get?"))
-);
-
-mockAxiosPost.mockImplementation(
-  async (): Promise<unknown> =>
-    Promise.reject(new Error("Forgot to implement mock for axios get?"))
-);
-
-const axiosResponse = <T = unknown>(
-  result: T,
-  status = 200
-): Promise<
-  AxiosResponse<{
-    jsonrpc: string;
-    id: number | string;
-    result?: T;
-    error?: {
-      code: number;
-      messagge: string;
-    };
-  }>
-> => {
+const fetchResponse = <T = unknown>(result: T, status = 200) => {
   return Promise.resolve({
-    data: {
+    json: () => ({
       jsonrpc: "2.0",
       id: 1,
+      ...(status === 200 && { result }),
+      ...(status !== 200 && { error: result }),
       result,
-    },
-    status,
-    statusText: "",
-    config: {},
-    headers: {},
-  });
+    }),
+  } as unknown as Response);
 };
 
 const privateKey =
@@ -266,7 +241,7 @@ describe("Wallet and Contract", () => {
 
   it("should sign a transaction and recover the public key and address", async () => {
     expect.assertions(9);
-    mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
+    mockFetch.mockImplementation(async () => fetchResponse({ nonce: "0" }));
 
     const { transaction, operation, transactionResponse } = await koin.transfer(
       {
@@ -323,7 +298,7 @@ describe("Wallet and Contract", () => {
 
   it("should rewrite the default options when creating transactions", async () => {
     expect.assertions(3);
-    mockAxiosPost.mockImplementation(async () => axiosResponse({ nonce: "0" }));
+    mockFetch.mockImplementation(async () => fetchResponse({ nonce: "0" }));
 
     const { transaction, operation, result } = await koin.transfer(
       {
@@ -346,8 +321,8 @@ describe("Wallet and Contract", () => {
     ) as Type;
     const message = type.create({ value: "123456" });
     const resultEncoded = encodeBase64(type.encode(message).finish());
-    mockAxiosPost.mockImplementation(async () =>
-      axiosResponse({ result: resultEncoded })
+    mockFetch.mockImplementation(async () =>
+      fetchResponse({ result: resultEncoded })
     );
 
     const { result } = await koin.balanceOf({ owner: address });
@@ -361,8 +336,8 @@ describe("Wallet and Contract", () => {
     ) as Type;
     const message = type.create({ value: "123456" });
     const resultEncoded = encodeBase64(type.encode(message).finish());
-    mockAxiosPost.mockImplementation(async () =>
-      axiosResponse({ result: resultEncoded })
+    mockFetch.mockImplementation(async () =>
+      fetchResponse({ result: resultEncoded })
     );
 
     const contractInstance = new Contract({
@@ -396,12 +371,12 @@ describe("Wallet and Contract", () => {
       return false;
     };
 
-    mockAxiosPost.mockImplementation(async (url) => {
-      if (!url.includes("good-server")) {
+    mockFetch.mockImplementation(async (url) => {
+      if (!(url as string).includes("good-server")) {
         // eslint-disable-next-line @typescript-eslint/no-throw-literal
-        throw axiosResponse(undefined, 500);
+        throw fetchResponse({ message: "internal error" }, 500);
       }
-      return axiosResponse({ nonce: "123" });
+      return fetchResponse({ nonce: "123" });
     });
 
     const nonce = await myProvider.getNonce(address);
@@ -415,8 +390,8 @@ describe("Wallet and Contract", () => {
     const bytecode = new Uint8Array(crypto.randomBytes(100));
     koinContract.bytecode = bytecode;
 
-    mockAxiosPost.mockImplementation(async () => {
-      return axiosResponse({ nonce: "0" });
+    mockFetch.mockImplementation(async () => {
+      return fetchResponse({ nonce: "0" });
     });
 
     const { operation, transaction, transactionResponse } =
@@ -440,8 +415,8 @@ describe("Wallet and Contract", () => {
 
   it("should get a a block with federated consensus and get the signer address", async () => {
     expect.assertions(2);
-    mockAxiosPost.mockImplementation(async () => {
-      return axiosResponse({
+    mockFetch.mockImplementation(async () => {
+      return fetchResponse({
         block_items: [
           {
             block: {
@@ -455,15 +430,15 @@ describe("Wallet and Contract", () => {
       });
     });
     const blocks = await provider.getBlocks(1, 1, "randomId");
-    const signer = await Signer.recoverAddress(blocks[0].block);
-    expect(signer).toBeDefined();
-    expect(signer.length).toBe(34);
+    const signer1 = await Signer.recoverAddress(blocks[0].block);
+    expect(signer1).toBeDefined();
+    expect(signer1).toHaveLength(34);
   });
 
   it("should get a a block with pow consensus and get the signer address", async () => {
     expect.assertions(2);
-    mockAxiosPost.mockImplementation(async () => {
-      return axiosResponse({
+    mockFetch.mockImplementation(async () => {
+      return fetchResponse({
         block_items: [
           {
             block: {
@@ -506,7 +481,7 @@ describe("Wallet and Contract", () => {
       nonce: string;
       recoverable_signature: string;
     }
-    const signer = await Signer.recoverAddress(blocks[0].block, {
+    const signer1 = await Signer.recoverAddress(blocks[0].block, {
       transformSignature: async (signatureData) => {
         const powSignatureData: PowSigData = await serializer.deserialize(
           signatureData
@@ -514,7 +489,7 @@ describe("Wallet and Contract", () => {
         return powSignatureData.recoverable_signature;
       },
     });
-    expect(signer).toBeDefined();
-    expect(signer.length).toBe(34);
+    expect(signer1).toBeDefined();
+    expect(signer1).toHaveLength(34);
   });
 });
