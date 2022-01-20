@@ -9,14 +9,13 @@
     "noImplicitThis": true,
     "strictNullChecks": true,
     "noUnusedParameters": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "declaration": true,
+    "declaration": false,
     "skipLibCheck": true,
     "target": "ES2019",
-    "module": "CommonJS",
-    "outDir": "lib"
+    "module": "CommonJS"
   },
   "include": ["src/**/*.ts"]
 }
