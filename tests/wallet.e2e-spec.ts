@@ -129,10 +129,10 @@ describe("Contract", () => {
     expect.assertions(2);
     const bytecode = new Uint8Array(crypto.randomBytes(6));
     const contract = new Contract({ signer, provider, bytecode });
-    const { transactionResponse } = await contract.deploy();
-    expect(transactionResponse).toBeDefined();
-    if (!transactionResponse) throw new Error("Transaction response undefined");
-    const blockNumber = await transactionResponse.wait("byBlock");
+    const { transaction } = await contract.deploy();
+    expect(transaction).toBeDefined();
+    if (!transaction) throw new Error("Transaction response undefined");
+    const blockNumber = await transaction.wait("byBlock");
     expect(typeof blockNumber).toBe("number");
   });
 
@@ -162,36 +162,32 @@ describe("Contract", () => {
 
   it("should transfer and get receipt - wait byBlock", async () => {
     expect.assertions(5);
-    const { operation, transaction, transactionResponse, result } =
-      await koin.transfer({
-        from: signer.getAddress(),
-        to: addressReceiver,
-        value: Number(1e8).toString(),
-      });
+    const { operation, transaction, result } = await koin.transfer({
+      from: signer.getAddress(),
+      to: addressReceiver,
+      value: Number(1e8).toString(),
+    });
     expect(operation).toBeDefined();
     expect(transaction).toBeDefined();
-    expect(transactionResponse).toBeDefined();
     expect(result).toBeUndefined();
-    if (!transactionResponse) throw new Error("Transaction response undefined");
-    const blockNumber = await transactionResponse.wait(); // byBlock by default
+    if (!transaction) throw new Error("Transaction response undefined");
+    const blockNumber = await transaction.wait(); // byBlock by default
     expect(typeof blockNumber).toBe("number");
     console.log(`Tx mined in block ${blockNumber}`);
   });
 
   it("should transfer and get receipt - wait byTransactionId", async () => {
     expect.assertions(6);
-    const { operation, transaction, transactionResponse, result } =
-      await koin.transfer({
-        from: signer.getAddress(),
-        to: addressReceiver,
-        value: Number(1e8).toString(),
-      });
+    const { operation, transaction, result } = await koin.transfer({
+      from: signer.getAddress(),
+      to: addressReceiver,
+      value: Number(1e8).toString(),
+    });
     expect(operation).toBeDefined();
     expect(transaction).toBeDefined();
-    expect(transactionResponse).toBeDefined();
     expect(result).toBeUndefined();
-    if (!transactionResponse) throw new Error("Transaction response undefined");
-    const blockId = (await transactionResponse.wait(
+    if (!transaction) throw new Error("Transaction response undefined");
+    const blockId = (await transaction.wait(
       "byTransactionId",
       30000
     )) as string;

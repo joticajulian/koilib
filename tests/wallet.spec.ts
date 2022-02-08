@@ -18,6 +18,7 @@ import {
   UploadContractOperationNested,
   TransactionJson,
   Abi,
+  WaitFunction,
 } from "../src/interface";
 import { Serializer } from "../src";
 
@@ -240,16 +241,14 @@ describe("Wallet and Contract", () => {
   });
 
   it("should sign a transaction and recover the public key and address", async () => {
-    expect.assertions(9);
+    expect.assertions(8);
     mockFetch.mockImplementation(async () => fetchResponse({ nonce: "0" }));
 
-    const { transaction, operation, transactionResponse } = await koin.transfer(
-      {
-        from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
-        to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
-        value: "1000",
-      }
-    );
+    const { transaction, operation } = await koin.transfer({
+      from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+      to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
+      value: "1000",
+    });
 
     expect(operation).toStrictEqual({
       call_contract: {
@@ -263,9 +262,8 @@ describe("Wallet and Contract", () => {
       id: expect.any(String) as string,
       active: expect.any(String) as string,
       signature_data: expect.any(String) as string,
+      wait: expect.any(Function) as WaitFunction,
     } as TransactionJson);
-
-    expect(transactionResponse).toBeDefined();
 
     // recover public key and address
     if (!transaction) throw new Error("transaction is not defined");
@@ -386,7 +384,7 @@ describe("Wallet and Contract", () => {
   });
 
   it("should upload a contract", async () => {
-    expect.assertions(3);
+    expect.assertions(2);
     const bytecode = new Uint8Array(crypto.randomBytes(100));
     koinContract.bytecode = bytecode;
 
@@ -394,8 +392,7 @@ describe("Wallet and Contract", () => {
       return fetchResponse({ nonce: "0" });
     });
 
-    const { operation, transaction, transactionResponse } =
-      await koinContract.deploy();
+    const { operation, transaction } = await koinContract.deploy();
 
     expect(operation).toStrictEqual({
       upload_contract: {
@@ -408,9 +405,8 @@ describe("Wallet and Contract", () => {
       id: expect.any(String) as string,
       active: expect.any(String) as string,
       signature_data: expect.any(String) as string,
+      wait: expect.any(Function) as WaitFunction,
     } as TransactionJson);
-
-    expect(transactionResponse).toBeDefined();
   });
 
   it("should get a a block with federated consensus and get the signer address", async () => {
