@@ -105,14 +105,14 @@ a transaction, and read contracts.
   });
 
   // Transfer
-  const { transaction, transactionResponse } = await koin.transfer({
+  const { transaction } = await koin.transfer({
     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
     value: "10.0001",
   });
   console.log(`Transaction id ${transaction.id} submitted`);
 
   // wait to be mined
-  const blockNumber = await transactionResponse.wait();
+  const blockNumber = await transaction.wait();
   console.log(`Transaction mined. Block number: ${blockNumber}`);
 
   // read the balance
@@ -133,10 +133,10 @@ It's also possible to upload contracts. First, follow the instructions in [koino
 
   // create contract and deploy
   const contract = new Contract({ signer, provider, bytecode });
-  const { transactionResponse } = await contract.deploy();
+  const { transaction } = await contract.deploy();
   // wait to be mined
-  const blockNumber = await transactionResponse.wait();
-  console.log(`Contract uploaded in block id ${blockNumber}`);
+  const blockNumber = await transaction.wait();
+  console.log(`Contract uploaded in block number ${blockNumber}`);
 })();
 ```
 

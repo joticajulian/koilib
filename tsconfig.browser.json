@@ -3,7 +3,7 @@
   "compilerOptions": {
     "sourceMap": true,
     "declaration": true,
-    "lib": ["ES2019"],
+    "lib": ["ES2019", "DOM"],
     "outDir": "lib/browser"
   }
 }

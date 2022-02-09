@@ -4,9 +4,9 @@ import * as secp from "@noble/secp256k1";
 import { Provider } from "./Provider";
 import {
   TransactionJson,
+  TransactionJsonWait,
   ActiveTransactionData,
   Abi,
-  SendTransactionResponse,
   RecoverPublicKeyOptions,
   BlockJson,
 } from "./interface";
@@ -31,7 +31,7 @@ export interface SignerInterface {
   sendTransaction: (
     tx: TransactionJson,
     abis?: Record<string, Abi>
-  ) => Promise<SendTransactionResponse>;
+  ) => Promise<TransactionJsonWait>;
   encodeTransaction: (
     activeData: ActiveTransactionData
   ) => Promise<TransactionJson>;
@@ -293,10 +293,20 @@ export class Signer implements SignerInterface {
   async sendTransaction(
     tx: TransactionJson,
     _abis?: Record<string, Abi>
-  ): Promise<SendTransactionResponse> {
+  ): Promise<TransactionJsonWait> {
     if (!tx.signature_data || !tx.id) await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
-    return this.provider.sendTransaction(tx);
+    await this.provider.sendTransaction(tx);
+    return {
+      ...tx,
+      wait: async (
+        type: "byTransactionId" | "byBlock" = "byBlock",
+        timeout = 30000
+      ) => {
+        if (!this.provider) throw new Error("provider is undefined");
+        return this.provider.wait(tx.id as string, type, timeout);
+      },
+    };
   }
 
   /**
@@ -442,7 +452,7 @@ export class Signer implements SignerInterface {
    * Function to encode a transaction
    * @param activeData - Active data consists of nonce, rc_limit, and
    * operations. Do not set the nonce to get it from the blockchain
-   * using the provider. The rc_limit is 1000000 by default.
+   * using the provider. The rc_limit is 1e8 by default.
    * @returns A transaction encoded. The active field is encoded in
    * base64url
    */
@@ -460,7 +470,7 @@ export class Signer implements SignerInterface {
       nonce = await this.provider.getNonce(this.getAddress());
     }
     const rcLimit =
-      activeData.rc_limit === undefined ? 1000000 : activeData.rc_limit;
+      activeData.rc_limit === undefined ? 1e8 : activeData.rc_limit;
     const operations = activeData.operations ? activeData.operations : [];
 
     const activeData2: ActiveTransactionData = {

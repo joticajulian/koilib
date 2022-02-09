@@ -9796,15 +9796,15 @@ const utils_1 = __webpack_require__(8593);
  *   console.log(result)
  *
  *   // Transfer
- *   const { transaction, transactionResponse } = await koin.transfer({
+ *   const { transaction } = await koin.transfer({
  *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
  *     value: "10.0001",
  *   });
  *   console.log(`Transaction id ${transaction.id} submitted`);
  *
  *   // wait to be mined
- *   const blockId = await transactionResponse.wait();
- *   console.log(`Transaction mined. Block id: ${blockId}`);
+ *   const blockNumber = await transaction.wait();
+ *   console.log(`Transaction mined. Block number: ${blockNumber}`);
  * }
  *
  * main();
@@ -9882,7 +9882,7 @@ class Contract {
                     // write contract (sign and send)
                     if (!this.signer)
                         throw new Error("signer not found");
-                    const transaction = await this.signer.encodeTransaction({
+                    const tx = await this.signer.encodeTransaction({
                         ...opts,
                         operations: [operation],
                     });
@@ -9891,8 +9891,8 @@ class Contract {
                         const contractId = (0, utils_1.encodeBase58)(this.id);
                         abis[contractId] = this.abi;
                     }
-                    const transactionResponse = await this.signer.sendTransaction(transaction, abis);
-                    return { operation, transaction, transactionResponse };
+                    const transaction = await this.signer.sendTransaction(tx, abis);
+                    return { operation, transaction };
                 };
             });
         }
@@ -9921,10 +9921,10 @@ class Contract {
      * const signer = new Signer({ privateKey, provider });
      * const bytecode = new Uint8Array([1, 2, 3, 4]);
      * const contract = new Contract({ signer, provider, bytecode });
-     * const { transactionResponse } = await contract.deploy();
+     * const { transaction } = await contract.deploy();
      * // wait to be mined
-     * const blockId = await transactionResponse.wait();
-     * console.log(`Contract uploaded in block id ${blockId}`);
+     * const blockNumber = await transaction.wait();
+     * console.log(`Contract uploaded in block number ${blockNumber}`);
      * ```
      */
     async deploy(options) {
@@ -9945,12 +9945,12 @@ class Contract {
         // return operation if send is false
         if (!(opts === null || opts === void 0 ? void 0 : opts.sendTransaction))
             return { operation };
-        const transaction = await this.signer.encodeTransaction({
+        const tx = await this.signer.encodeTransaction({
             ...opts,
             operations: [operation],
         });
-        const transactionResponse = await this.signer.sendTransaction(transaction);
-        return { operation, transaction, transactionResponse };
+        const transaction = await this.signer.sendTransaction(tx);
+        return { operation, transaction };
     }
     /**
      * Encondes a contract operation using Koinos serialization
@@ -10202,93 +10202,95 @@ class Provider {
         return (await this.getBlocks(height, 1))[0];
     }
     /**
-     * Function to call "chain.submit_transaction" to send a signed
-     * transaction to the blockchain. It returns an object with the async
-     * function "wait", which can be called to wait for the
-     * transaction to be mined (see [[SendTransactionResponse]]).
-     * @param transaction - Signed transaction
+     * Function to wait for a transaction to be mined.
+     * @param txId - transaction id
+     * @param type - Type must be "byBlock" (default) or "byTransactionId".
+     * _byBlock_ will query the blockchain to get blocks and search for the
+     * transaction there. _byTransactionId_ will query the "transaction store"
+     * microservice to search the transaction by its id. If non of them is
+     * specified the function will use "byBlock" (as "byTransactionId"
+     * requires the transaction store, which is an optional microservice).
+     *
+     * When _byBlock_ is used it returns the block number.
+     *
+     * When _byTransactionId_ is used it returns the block id.
+     *
+     * @param timeout - Timeout in milliseconds. By default it is 30000
      * @example
      * ```ts
-     * const { transactionResponse } = await provider.sendTransaction({
-     *   id: "1220...",
-     *   active: "...",
-     *   signatureData: "...",
-     * });
-     * console.log("Transaction submitted to the mempool");
-     * // wait to be mined
-     * const blockNumber = await transactionResponse.wait();
-     * // const blockNumber = await transactionResponse.wait("byBlock", 30000);
-     * // const blockId = await transactionResponse.wait("byTransactionId", 30000);
+     * const blockNumber = await provider.wait(txId);
+     * // const blockNumber = await provider.wait(txId, "byBlock", 30000);
+     * // const blockId = await provider.wait(txId, "byTransactionId", 30000);
      * console.log("Transaction mined")
      * ```
      */
-    async sendTransaction(transaction) {
-        await this.call("chain.submit_transaction", { transaction });
-        return {
-            wait: async (type = "byBlock", timeout = 30000) => {
-                const iniTime = Date.now();
-                if (type === "byTransactionId") {
-                    while (Date.now() < iniTime + timeout) {
-                        await sleep(1000);
-                        const { transactions } = await this.getTransactionsById([
-                            transaction.id,
-                        ]);
-                        if (transactions &&
-                            transactions[0] &&
-                            transactions[0].containing_blocks)
-                            return transactions[0].containing_blocks[0];
-                    }
-                    throw new Error(`Transaction not mined after ${timeout} ms`);
-                }
-                // byBlock
-                const findTxInBlocks = async (ini, numBlocks, idRef) => {
-                    const blocks = await this.getBlocks(ini, numBlocks, idRef);
-                    let bNum = 0;
-                    blocks.forEach((block) => {
-                        if (!block ||
-                            !block.block ||
-                            !block.block_id ||
-                            !block.block.transactions)
-                            return;
-                        const tx = block.block.transactions.find((t) => t.id === transaction.id);
-                        if (tx)
-                            bNum = Number(block.block_height);
-                    });
-                    const lastId = blocks[blocks.length - 1].block_id;
-                    return [bNum, lastId];
-                };
-                let blockNumber = 0;
-                let iniBlock = 0;
-                let previousId = "";
-                while (Date.now() < iniTime + timeout) {
-                    await sleep(1000);
-                    const { head_topology: headTopology } = await this.getHeadInfo();
-                    if (blockNumber === 0) {
-                        blockNumber = Number(headTopology.height);
-                        iniBlock = blockNumber;
-                    }
-                    if (Number(headTopology.height) === blockNumber - 1 &&
-                        previousId &&
-                        previousId !== headTopology.id) {
-                        const [bNum, lastId] = await findTxInBlocks(iniBlock, Number(headTopology.height) - iniBlock + 1, headTopology.id);
-                        if (bNum)
-                            return bNum;
-                        previousId = lastId;
-                        blockNumber = Number(headTopology.height) + 1;
-                    }
-                    // eslint-disable-next-line no-continue
-                    if (blockNumber > Number(headTopology.height))
-                        continue;
-                    const [bNum, lastId] = await findTxInBlocks(blockNumber, 1, headTopology.id);
-                    if (bNum)
-                        return bNum;
-                    if (!previousId)
-                        previousId = lastId;
-                    blockNumber += 1;
-                }
-                throw new Error(`Transaction not mined after ${timeout} ms. Blocks checked from ${iniBlock} to ${blockNumber}`);
-            },
+    async wait(txId, type = "byBlock", timeout = 30000) {
+        const iniTime = Date.now();
+        if (type === "byTransactionId") {
+            while (Date.now() < iniTime + timeout) {
+                await sleep(1000);
+                const { transactions } = await this.getTransactionsById([txId]);
+                if (transactions &&
+                    transactions[0] &&
+                    transactions[0].containing_blocks)
+                    return transactions[0].containing_blocks[0];
+            }
+            throw new Error(`Transaction not mined after ${timeout} ms`);
+        }
+        // byBlock
+        const findTxInBlocks = async (ini, numBlocks, idRef) => {
+            const blocks = await this.getBlocks(ini, numBlocks, idRef);
+            let bNum = 0;
+            blocks.forEach((block) => {
+                if (!block ||
+                    !block.block ||
+                    !block.block_id ||
+                    !block.block.transactions)
+                    return;
+                const tx = block.block.transactions.find((t) => t.id === txId);
+                if (tx)
+                    bNum = Number(block.block_height);
+            });
+            const lastId = blocks[blocks.length - 1].block_id;
+            return [bNum, lastId];
         };
+        let blockNumber = 0;
+        let iniBlock = 0;
+        let previousId = "";
+        while (Date.now() < iniTime + timeout) {
+            await sleep(1000);
+            const { head_topology: headTopology } = await this.getHeadInfo();
+            if (blockNumber === 0) {
+                blockNumber = Number(headTopology.height);
+                iniBlock = blockNumber;
+            }
+            if (Number(headTopology.height) === blockNumber - 1 &&
+                previousId &&
+                previousId !== headTopology.id) {
+                const [bNum, lastId] = await findTxInBlocks(iniBlock, Number(headTopology.height) - iniBlock + 1, headTopology.id);
+                if (bNum)
+                    return bNum;
+                previousId = lastId;
+                blockNumber = Number(headTopology.height) + 1;
+            }
+            // eslint-disable-next-line no-continue
+            if (blockNumber > Number(headTopology.height))
+                continue;
+            const [bNum, lastId] = await findTxInBlocks(blockNumber, 1, headTopology.id);
+            if (bNum)
+                return bNum;
+            if (!previousId)
+                previousId = lastId;
+            blockNumber += 1;
+        }
+        throw new Error(`Transaction not mined after ${timeout} ms. Blocks checked from ${iniBlock} to ${blockNumber}`);
+    }
+    /**
+     * Function to call "chain.submit_transaction" to send a signed
+     * transaction to the blockchain.
+     */
+    async sendTransaction(transaction) {
+        return this.call("chain.submit_transaction", { transaction });
     }
     /**
      * Function to call "chain.read_contract" to read a contract.
@@ -10734,7 +10736,15 @@ class Signer {
             await this.signTransaction(tx);
         if (!this.provider)
             throw new Error("provider is undefined");
-        return this.provider.sendTransaction(tx);
+        await this.provider.sendTransaction(tx);
+        return {
+            ...tx,
+            wait: async (type = "byBlock", timeout = 30000) => {
+                if (!this.provider)
+                    throw new Error("provider is undefined");
+                return this.provider.wait(tx.id, type, timeout);
+            },
+        };
     }
     /**
      * Function to recover the public key from a signed
@@ -10869,7 +10879,7 @@ class Signer {
      * Function to encode a transaction
      * @param activeData - Active data consists of nonce, rc_limit, and
      * operations. Do not set the nonce to get it from the blockchain
-     * using the provider. The rc_limit is 1000000 by default.
+     * using the provider. The rc_limit is 1e8 by default.
      * @returns A transaction encoded. The active field is encoded in
      * base64url
      */
@@ -10882,7 +10892,7 @@ class Signer {
             // this depends on the final architecture for names on Koinos
             nonce = await this.provider.getNonce(this.getAddress());
         }
-        const rcLimit = activeData.rc_limit === undefined ? 1000000 : activeData.rc_limit;
+        const rcLimit = activeData.rc_limit === undefined ? 1e8 : activeData.rc_limit;
         const operations = activeData.operations ? activeData.operations : [];
         const activeData2 = {
             rc_limit: rcLimit,

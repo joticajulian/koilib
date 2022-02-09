@@ -5,11 +5,10 @@ import { Serializer } from "./Serializer";
 import {
   CallContractOperationNested,
   UploadContractOperationNested,
-  TransactionJson,
+  TransactionJsonWait,
   Abi,
   TransactionOptions,
   DecodedOperationJson,
-  SendTransactionResponse,
 } from "./interface";
 import { decodeBase58, encodeBase58, encodeBase64 } from "./utils";
 
@@ -51,15 +50,15 @@ import { decodeBase58, encodeBase58, encodeBase64 } from "./utils";
  *   console.log(result)
  *
  *   // Transfer
- *   const { transaction, transactionResponse } = await koin.transfer({
+ *   const { transaction } = await koin.transfer({
  *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
  *     value: "10.0001",
  *   });
  *   console.log(`Transaction id ${transaction.id} submitted`);
  *
  *   // wait to be mined
- *   const blockId = await transactionResponse.wait();
- *   console.log(`Transaction mined. Block id: ${blockId}`);
+ *   const blockNumber = await transaction.wait();
+ *   console.log(`Transaction mined. Block number: ${blockNumber}`);
  * }
  *
  * main();
@@ -88,8 +87,7 @@ export class Contract {
       opts?: TransactionOptions
     ) => Promise<{
       operation: CallContractOperationNested;
-      transaction?: TransactionJson;
-      transactionResponse?: SendTransactionResponse;
+      transaction?: TransactionJsonWait;
       result?: T;
     }>;
   };
@@ -172,8 +170,7 @@ export class Contract {
           options?: TransactionOptions
         ): Promise<{
           operation: CallContractOperationNested;
-          transaction?: TransactionJson;
-          transactionResponse?: SendTransactionResponse;
+          transaction?: TransactionJsonWait;
           result?: T;
         }> => {
           if (!this.provider) throw new Error("provider not found");
@@ -228,7 +225,7 @@ export class Contract {
 
           // write contract (sign and send)
           if (!this.signer) throw new Error("signer not found");
-          const transaction = await this.signer.encodeTransaction({
+          const tx = await this.signer.encodeTransaction({
             ...opts,
             operations: [operation],
           });
@@ -238,11 +235,8 @@ export class Contract {
             const contractId = encodeBase58(this.id as Uint8Array);
             abis[contractId] = this.abi;
           }
-          const transactionResponse = await this.signer.sendTransaction(
-            transaction,
-            abis
-          );
-          return { operation, transaction, transactionResponse };
+          const transaction = await this.signer.sendTransaction(tx, abis);
+          return { operation, transaction };
         };
       });
     }
@@ -273,16 +267,15 @@ export class Contract {
    * const signer = new Signer({ privateKey, provider });
    * const bytecode = new Uint8Array([1, 2, 3, 4]);
    * const contract = new Contract({ signer, provider, bytecode });
-   * const { transactionResponse } = await contract.deploy();
+   * const { transaction } = await contract.deploy();
    * // wait to be mined
-   * const blockId = await transactionResponse.wait();
-   * console.log(`Contract uploaded in block id ${blockId}`);
+   * const blockNumber = await transaction.wait();
+   * console.log(`Contract uploaded in block number ${blockNumber}`);
    * ```
    */
   async deploy(options?: TransactionOptions): Promise<{
     operation: UploadContractOperationNested;
-    transaction?: TransactionJson;
-    transactionResponse?: SendTransactionResponse;
+    transaction?: TransactionJsonWait;
   }> {
     if (!this.signer) throw new Error("signer not found");
     if (!this.bytecode) throw new Error("bytecode not found");
@@ -300,12 +293,12 @@ export class Contract {
     // return operation if send is false
     if (!opts?.sendTransaction) return { operation };
 
-    const transaction = await this.signer.encodeTransaction({
+    const tx = await this.signer.encodeTransaction({
       ...opts,
       operations: [operation],
     });
-    const transactionResponse = await this.signer.sendTransaction(transaction);
-    return { operation, transaction, transactionResponse };
+    const transaction = await this.signer.sendTransaction(tx);
+    return { operation, transaction };
   }
 
   /**
