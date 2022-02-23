@@ -153,7 +153,6 @@ export class Signer implements SignerInterface {
       this.serializer = c.serializer;
     } else {
       this.serializer = new Serializer(protocolJson, {
-        defaultTypeName: "active_transaction_data",
         bytesConversion: false,
       });
     }
@@ -350,7 +349,7 @@ export class Signer implements SignerInterface {
    *   defaultTypeName: "pow_signature_data",
    *  });
    *
-   *  const signer = await Signer.recoverPublicKey(block, {
+   *  const signer = await signer.recoverPublicKey(block, {
    *    transformSignature: async (signatureData) => {
    *      const powSignatureData = await serializer.deserialize(signatureData);
    *      return powSignatureData.recoverable_signature;
@@ -358,7 +357,7 @@ export class Signer implements SignerInterface {
    *  });
    * ```
    */
-  static async recoverPublicKey(
+  async recoverPublicKey(
     txOrBlock: TransactionJson | BlockJson,
     opts?: RecoverPublicKeyOptions
   ): Promise<string> {
@@ -374,7 +373,25 @@ export class Signer implements SignerInterface {
       compressed = opts.compressed;
     }
 
-    const hash = sha256(decodeBase64(txOrBlock.active));
+    const block = txOrBlock as BlockJson;
+    let hash: Uint8Array;
+    const activeBytes = decodeBase64(block.active!);
+    if (block.header) {
+      const headerBytes = await this.serializer!.serialize(
+        block.header,
+        "block_header",
+        { bytesConversion: true }
+      );
+      const headerActiveBytes = new Uint8Array(
+        headerBytes.length + activeBytes.length
+      );
+      headerActiveBytes.set(headerBytes, 0);
+      headerActiveBytes.set(activeBytes, headerBytes.length);
+      hash = sha256(headerActiveBytes);
+    } else {
+      // transaction
+      hash = sha256(activeBytes);
+    }
     const compactSignatureHex = toHexString(decodeBase64(signatureData));
     const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
     const rHex = compactSignatureHex.slice(2, 66);
@@ -398,7 +415,7 @@ export class Signer implements SignerInterface {
    * The output format can be compressed (default) or uncompressed.
    * @example
    * ```ts
-   * const publicKey = await Signer.recoverAddress(tx);
+   * const publicKey = await signer.recoverAddress(tx);
    * ```
    *
    * If the signature data contains more data, like in the
@@ -432,7 +449,7 @@ export class Signer implements SignerInterface {
    *   defaultTypeName: "pow_signature_data",
    *  });
    *
-   *  const signer = await Signer.recoverAddress(block, {
+   *  const signer = await signer.recoverAddress(block, {
    *    transformSignature: async (signatureData) => {
    *      const powSignatureData = await serializer.deserialize(signatureData);
    *      return powSignatureData.recoverable_signature;
@@ -440,11 +457,11 @@ export class Signer implements SignerInterface {
    *  });
    * ```
    */
-  static async recoverAddress(
+  async recoverAddress(
     txOrBlock: TransactionJson | BlockJson,
     opts?: RecoverPublicKeyOptions
   ): Promise<string> {
-    const publicKey = await Signer.recoverPublicKey(txOrBlock, opts);
+    const publicKey = await this.recoverPublicKey(txOrBlock, opts);
     return bitcoinAddress(toUint8Array(publicKey));
   }
 
@@ -479,7 +496,10 @@ export class Signer implements SignerInterface {
       operations,
     };
 
-    const buffer = await this.serializer!.serialize(activeData2);
+    const buffer = await this.serializer!.serialize(
+      activeData2,
+      "active_transaction_data"
+    );
 
     return {
       active: encodeBase64(buffer),
@@ -491,7 +511,7 @@ export class Signer implements SignerInterface {
    */
   async decodeTransaction(tx: TransactionJson): Promise<ActiveTransactionData> {
     if (!tx.active) throw new Error("Active data is not defined");
-    return this.serializer!.deserialize(tx.active);
+    return this.serializer!.deserialize(tx.active, "active_transaction_data");
   }
 }
 

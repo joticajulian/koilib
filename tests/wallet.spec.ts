@@ -268,30 +268,30 @@ describe("Wallet and Contract", () => {
     // recover public key and address
     if (!transaction) throw new Error("transaction is not defined");
 
-    const recoveredPublicKey = await Signer.recoverPublicKey(transaction, {
+    const recoveredPublicKey = await signer.recoverPublicKey(transaction, {
       compressed: false,
     });
     expect(recoveredPublicKey).toBe(publicKey);
 
-    const recoveredPublicKeyComp = await Signer.recoverPublicKey(transaction, {
+    const recoveredPublicKeyComp = await signer.recoverPublicKey(transaction, {
       compressed: true,
     });
     expect(recoveredPublicKeyComp).toBe(publicKeyCompressed);
 
-    const recoveredAddress = await Signer.recoverAddress(transaction, {
+    const recoveredAddress = await signer.recoverAddress(transaction, {
       compressed: false,
     });
     expect(recoveredAddress).toBe(address);
 
-    const recoveredAddressComp = await Signer.recoverAddress(transaction, {
+    const recoveredAddressComp = await signer.recoverAddress(transaction, {
       compressed: true,
     });
     expect(recoveredAddressComp).toBe(addressCompressed);
 
-    expect(await Signer.recoverPublicKey(transaction)).toBe(
+    expect(await signer.recoverPublicKey(transaction)).toBe(
       publicKeyCompressed
     );
-    expect(await Signer.recoverAddress(transaction)).toBe(addressCompressed);
+    expect(await signer.recoverAddress(transaction)).toBe(addressCompressed);
   });
 
   it("should rewrite the default options when creating transactions", async () => {
@@ -426,7 +426,7 @@ describe("Wallet and Contract", () => {
       });
     });
     const blocks = await provider.getBlocks(1, 1, "randomId");
-    const signer1 = await Signer.recoverAddress(blocks[0].block);
+    const signer1 = await signer.recoverAddress(blocks[0].block);
     expect(signer1).toBeDefined();
     expect(signer1).toHaveLength(34);
   });
@@ -477,7 +477,7 @@ describe("Wallet and Contract", () => {
       nonce: string;
       recoverable_signature: string;
     }
-    const signer1 = await Signer.recoverAddress(blocks[0].block, {
+    const signer1 = await signer.recoverAddress(blocks[0].block, {
       transformSignature: async (signatureData) => {
         const powSignatureData: PowSigData = await serializer.deserialize(
           signatureData

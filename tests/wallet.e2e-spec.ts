@@ -90,7 +90,7 @@ describe("Provider", () => {
   it("should get a a block with federated consensus and get the signer address", async () => {
     expect.assertions(2);
     const block = await provider.getBlock(1);
-    const signer1 = await Signer.recoverAddress(block.block);
+    const signer1 = await signer.recoverAddress(block.block);
     expect(signer1).toBeDefined();
     expect(signer1).toHaveLength(34);
   });
@@ -105,7 +105,7 @@ describe("Provider", () => {
       nonce: string;
       recoverable_signature: string;
     }
-    const signer1 = await Signer.recoverAddress(block.block, {
+    const signer1 = await signer.recoverAddress(block.block, {
       transformSignature: async (signatureData) => {
         const powSigData: PowSigData = await serializer.deserialize(
           signatureData
