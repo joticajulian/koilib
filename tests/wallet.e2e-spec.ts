@@ -90,13 +90,13 @@ describe("Provider", () => {
   it("should get a a block with federated consensus and get the signer address", async () => {
     expect.assertions(2);
     const block = await provider.getBlock(1);
-    const signer1 = await Signer.recoverAddress(block.block);
+    const signer1 = await signer.recoverAddress(block.block);
     expect(signer1).toBeDefined();
     expect(signer1).toHaveLength(34);
   });
 
   it("should get a a block with pow consensus and get the signer address", async () => {
-    expect.assertions(2);
+    expect.assertions(1);
     const block = await provider.getBlock(1000);
     const serializer = new Serializer(powJson, {
       defaultTypeName: "pow_signature_data",
@@ -105,7 +105,7 @@ describe("Provider", () => {
       nonce: string;
       recoverable_signature: string;
     }
-    const signer1 = await Signer.recoverAddress(block.block, {
+    const signer1 = await signer.recoverAddress(block.block, {
       transformSignature: async (signatureData) => {
         const powSigData: PowSigData = await serializer.deserialize(
           signatureData
@@ -113,8 +113,15 @@ describe("Provider", () => {
         return powSigData.recoverable_signature;
       },
     });
-    expect(signer1).toBeDefined();
-    expect(signer1).toHaveLength(34);
+
+    const serializer2 = new Serializer(utils.ProtocolTypes, {
+      defaultTypeName: "active_block_data",
+    });
+    const activeBlock = await serializer2.deserialize(block.block.active!);
+    const blockSigner = utils.encodeBase58(
+      utils.decodeBase64(activeBlock.signer as string)
+    );
+    expect(signer1).toBe(blockSigner);
   });
 
   it("should get account rc", async () => {

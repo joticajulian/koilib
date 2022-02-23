@@ -11,6 +11,8 @@ import {
   Krc20Abi,
   formatUnits,
   parseUnits,
+  ProtocolTypes,
+  decodeBase58,
 } from "../src/utils";
 import {
   CallContractOperationNested,
@@ -19,6 +21,7 @@ import {
   TransactionJson,
   Abi,
   WaitFunction,
+  BlockJson,
 } from "../src/interface";
 import { Serializer } from "../src";
 
@@ -76,6 +79,7 @@ describe("utils", () => {
     ["0", 8, "0"],
     ["1200000000", 8, "12"],
     ["1230000000", 8, "12.3"],
+    //["123", 0, "123"], //todo
     // negative numbers
     ["-1", 8, "-0.00000001"],
     ["-123456", 8, "-0.00123456"],
@@ -86,6 +90,7 @@ describe("utils", () => {
     ["-0", 8, "-0"],
     ["-1200000000", 8, "-12"],
     ["-1230000000", 8, "-12.3"],
+    //["-123", 0, "-123"], //todo
   ])(
     "should format numbers from integer to decimal point",
     (v, d, expected) => {
@@ -104,6 +109,7 @@ describe("utils", () => {
     ["0", 8, "0"],
     ["12", 8, "1200000000"],
     ["12.3", 8, "1230000000"],
+    ["123", 0, "123"],
     // negative numbers
     ["-0.00000001", 8, "-1"],
     ["-0.00123456", 8, "-123456"],
@@ -114,6 +120,7 @@ describe("utils", () => {
     ["-0", 8, "-0"],
     ["-12", 8, "-1200000000"],
     ["-12.3", 8, "-1230000000"],
+    ["-123", 0, "-123"],
   ])(
     "should format numbers from decimal point to integer",
     (v, d, expected) => {
@@ -154,6 +161,39 @@ describe("Signer", () => {
     expect(signer6.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer6.getPrivateKey("wif")).toBe(wif);
     expect(signer6.getPrivateKey("hex")).toBe(privateKey);
+  });
+
+  it("should sign a block and recover its signature", async () => {
+    expect.assertions(2);
+
+    const serializer = new Serializer(ProtocolTypes, {
+      defaultTypeName: "active_block_data",
+    });
+    const activeBlockData = await serializer.serialize({
+      transaction_merkle_root: encodeBase64(crypto.randomBytes(32)),
+      passive_data_merkle_root: encodeBase64(crypto.randomBytes(32)),
+      signer: encodeBase64(decodeBase58(signer.getAddress())),
+    });
+
+    const block: BlockJson = {
+      header: {
+        previous: `0x1220${crypto.randomBytes(32).toString("hex")}`,
+        height: "123",
+        timestamp: String(Date.now()),
+      },
+      active: encodeBase64(activeBlockData),
+    };
+    const unsignedBlock = JSON.parse(JSON.stringify(block));
+    await signer.signBlock(block);
+
+    expect(block).toStrictEqual({
+      ...unsignedBlock,
+      id: expect.any(String) as string,
+      signature_data: expect.any(String) as string,
+    });
+
+    const blockSigner = await signer.recoverAddress(block);
+    expect(blockSigner).toBe(signer.getAddress());
   });
 });
 
@@ -268,30 +308,30 @@ describe("Wallet and Contract", () => {
     // recover public key and address
     if (!transaction) throw new Error("transaction is not defined");
 
-    const recoveredPublicKey = await Signer.recoverPublicKey(transaction, {
+    const recoveredPublicKey = await signer.recoverPublicKey(transaction, {
       compressed: false,
     });
     expect(recoveredPublicKey).toBe(publicKey);
 
-    const recoveredPublicKeyComp = await Signer.recoverPublicKey(transaction, {
+    const recoveredPublicKeyComp = await signer.recoverPublicKey(transaction, {
       compressed: true,
     });
     expect(recoveredPublicKeyComp).toBe(publicKeyCompressed);
 
-    const recoveredAddress = await Signer.recoverAddress(transaction, {
+    const recoveredAddress = await signer.recoverAddress(transaction, {
       compressed: false,
     });
     expect(recoveredAddress).toBe(address);
 
-    const recoveredAddressComp = await Signer.recoverAddress(transaction, {
+    const recoveredAddressComp = await signer.recoverAddress(transaction, {
       compressed: true,
     });
     expect(recoveredAddressComp).toBe(addressCompressed);
 
-    expect(await Signer.recoverPublicKey(transaction)).toBe(
+    expect(await signer.recoverPublicKey(transaction)).toBe(
       publicKeyCompressed
     );
-    expect(await Signer.recoverAddress(transaction)).toBe(addressCompressed);
+    expect(await signer.recoverAddress(transaction)).toBe(addressCompressed);
   });
 
   it("should rewrite the default options when creating transactions", async () => {
@@ -426,7 +466,7 @@ describe("Wallet and Contract", () => {
       });
     });
     const blocks = await provider.getBlocks(1, 1, "randomId");
-    const signer1 = await Signer.recoverAddress(blocks[0].block);
+    const signer1 = await signer.recoverAddress(blocks[0].block);
     expect(signer1).toBeDefined();
     expect(signer1).toHaveLength(34);
   });
@@ -477,7 +517,7 @@ describe("Wallet and Contract", () => {
       nonce: string;
       recoverable_signature: string;
     }
-    const signer1 = await Signer.recoverAddress(blocks[0].block, {
+    const signer1 = await signer.recoverAddress(blocks[0].block, {
       transformSignature: async (signatureData) => {
         const powSignatureData: PowSigData = await serializer.deserialize(
           signatureData

@@ -116,12 +116,17 @@ export class Serializer {
    */
   async serialize(
     valueDecoded: Record<string, unknown>,
-    typeName?: string
+    typeName?: string,
+    opts?: { bytesConversion?: boolean }
   ): Promise<Uint8Array> {
     const protobufType =
       this.defaultType || this.root.lookupType(typeName as string);
     let object: Record<string, unknown> = {};
-    if (this.bytesConversion) {
+    const bytesConversion =
+      opts?.bytesConversion === undefined
+        ? this.bytesConversion
+        : opts.bytesConversion;
+    if (bytesConversion) {
       // TODO: format from Buffer to base58/base64 for nested fields
       Object.keys(protobufType.fields).forEach((fieldName) => {
         const { options, name, type } = protobufType.fields[fieldName];
@@ -176,7 +181,8 @@ export class Serializer {
    */
   async deserialize<T = Record<string, unknown>>(
     valueEncoded: string | Uint8Array,
-    typeName?: string
+    typeName?: string,
+    opts?: { bytesConversion?: boolean }
   ): Promise<T> {
     const valueBuffer =
       typeof valueEncoded === "string"
@@ -186,7 +192,11 @@ export class Serializer {
       this.defaultType || this.root.lookupType(typeName as string);
     const message = protobufType.decode(valueBuffer);
     const object = protobufType.toObject(message, { longs: String });
-    if (!this.bytesConversion) return object as T;
+    const bytesConversion =
+      opts?.bytesConversion === undefined
+        ? this.bytesConversion
+        : opts.bytesConversion;
+    if (!bytesConversion) return object as T;
 
     // TODO: format from Buffer to base58/base64 for nested fields
     Object.keys(protobufType.fields).forEach((fieldName) => {
