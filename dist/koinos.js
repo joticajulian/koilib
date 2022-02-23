@@ -10386,10 +10386,13 @@ class Serializer {
      * It also prepares the bytes for special cases (base58, hex string)
      * when bytesConversion param is true.
      */
-    async serialize(valueDecoded, typeName) {
+    async serialize(valueDecoded, typeName, opts) {
         const protobufType = this.defaultType || this.root.lookupType(typeName);
         let object = {};
-        if (this.bytesConversion) {
+        const bytesConversion = (opts === null || opts === void 0 ? void 0 : opts.bytesConversion) === undefined
+            ? this.bytesConversion
+            : opts.bytesConversion;
+        if (bytesConversion) {
             // TODO: format from Buffer to base58/base64 for nested fields
             Object.keys(protobufType.fields).forEach((fieldName) => {
                 const { options, name, type } = protobufType.fields[fieldName];
@@ -10435,14 +10438,17 @@ class Serializer {
      * It also encodes the bytes for special cases (base58, hex string)
      * when bytesConversion param is true.
      */
-    async deserialize(valueEncoded, typeName) {
+    async deserialize(valueEncoded, typeName, opts) {
         const valueBuffer = typeof valueEncoded === "string"
             ? (0, utils_1.decodeBase64)(valueEncoded)
             : valueEncoded;
         const protobufType = this.defaultType || this.root.lookupType(typeName);
         const message = protobufType.decode(valueBuffer);
         const object = protobufType.toObject(message, { longs: String });
-        if (!this.bytesConversion)
+        const bytesConversion = (opts === null || opts === void 0 ? void 0 : opts.bytesConversion) === undefined
+            ? this.bytesConversion
+            : opts.bytesConversion;
+        if (!bytesConversion)
             return object;
         // TODO: format from Buffer to base58/base64 for nested fields
         Object.keys(protobufType.fields).forEach((fieldName) => {
@@ -10598,7 +10604,6 @@ class Signer {
         }
         else {
             this.serializer = new Serializer_1.Serializer(protocol_proto_json_1.default, {
-                defaultTypeName: "active_transaction_data",
                 bytesConversion: false,
             });
         }
@@ -10700,15 +10705,12 @@ class Signer {
         }
     }
     /**
-     * Function to sign a transaction. It's important to remark that
-     * the transaction parameter is modified inside this function.
-     * @param tx - Unsigned transaction
-     * @returns
+     * Function to sign a hash value. It returns the signature encoded
+     * in base64. The signature is in compact format with the
+     * recovery byte
+     * @param hash Hash value. Also known as digest
      */
-    async signTransaction(tx) {
-        if (!tx.active)
-            throw new Error("Active data is not defined");
-        const hash = (0, sha256_1.sha256)((0, utils_1.decodeBase64)(tx.active));
+    async signHash(hash) {
         const [compSignature, recovery] = await secp.sign(hash, this.privateKey, {
             recovered: true,
             canonical: true,
@@ -10717,10 +10719,40 @@ class Signer {
         const compactSignature = new Uint8Array(65);
         compactSignature.set([recovery + 31], 0);
         compactSignature.set(compSignature, 1);
-        tx.signature_data = (0, utils_1.encodeBase64)(compactSignature);
-        const multihash = `0x1220${(0, utils_1.toHexString)(hash)}`; // 12: code sha2-256. 20: length (32 bytes)
-        tx.id = multihash;
+        return (0, utils_1.encodeBase64)(compactSignature);
+    }
+    /**
+     * Function to sign a transaction. It's important to remark that
+     * the transaction parameter is modified inside this function.
+     * @param tx - Unsigned transaction
+     */
+    async signTransaction(tx) {
+        if (!tx.active)
+            throw new Error("Active data is not defined");
+        const hash = (0, sha256_1.sha256)((0, utils_1.decodeBase64)(tx.active));
+        tx.signature_data = await this.signHash(hash);
+        // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
+        tx.id = `0x1220${(0, utils_1.toHexString)(hash)}`;
         return tx;
+    }
+    /**
+     * Function to sign a block for federated consensus. That is,
+     * just the ecdsa signature. For other algorithms, like PoW,
+     * you have to sign the block and then process the signature
+     * to add the extra data (nonce in the case of PoW).
+     * @param block - Unsigned block
+     */
+    async signBlock(block) {
+        const activeBytes = (0, utils_1.decodeBase64)(block.active);
+        const headerBytes = await this.serializer.serialize(block.header, "block_header", { bytesConversion: true });
+        const headerActiveBytes = new Uint8Array(headerBytes.length + activeBytes.length);
+        headerActiveBytes.set(headerBytes, 0);
+        headerActiveBytes.set(activeBytes, headerBytes.length);
+        const hash = (0, sha256_1.sha256)(headerActiveBytes);
+        block.signature_data = await this.signHash(hash);
+        // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
+        block.id = `0x1220${(0, utils_1.toHexString)(hash)}`;
+        return block;
     }
     /**
      * Function to sign and send a transaction. It internally uses
@@ -10787,7 +10819,7 @@ class Signer {
      *   defaultTypeName: "pow_signature_data",
      *  });
      *
-     *  const signer = await Signer.recoverPublicKey(block, {
+     *  const signer = await signer.recoverPublicKey(block, {
      *    transformSignature: async (signatureData) => {
      *      const powSignatureData = await serializer.deserialize(signatureData);
      *      return powSignatureData.recoverable_signature;
@@ -10795,7 +10827,7 @@ class Signer {
      *  });
      * ```
      */
-    static async recoverPublicKey(txOrBlock, opts) {
+    async recoverPublicKey(txOrBlock, opts) {
         if (!txOrBlock.active)
             throw new Error("active is not defined");
         if (!txOrBlock.signature_data)
@@ -10808,7 +10840,20 @@ class Signer {
         if (opts && typeof opts.compressed !== "undefined") {
             compressed = opts.compressed;
         }
-        const hash = (0, sha256_1.sha256)((0, utils_1.decodeBase64)(txOrBlock.active));
+        const block = txOrBlock;
+        let hash;
+        const activeBytes = (0, utils_1.decodeBase64)(block.active);
+        if (block.header) {
+            const headerBytes = await this.serializer.serialize(block.header, "block_header", { bytesConversion: true });
+            const headerActiveBytes = new Uint8Array(headerBytes.length + activeBytes.length);
+            headerActiveBytes.set(headerBytes, 0);
+            headerActiveBytes.set(activeBytes, headerBytes.length);
+            hash = (0, sha256_1.sha256)(headerActiveBytes);
+        }
+        else {
+            // transaction
+            hash = (0, sha256_1.sha256)(activeBytes);
+        }
         const compactSignatureHex = (0, utils_1.toHexString)((0, utils_1.decodeBase64)(signatureData));
         const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
         const rHex = compactSignatureHex.slice(2, 66);
@@ -10829,7 +10874,7 @@ class Signer {
      * The output format can be compressed (default) or uncompressed.
      * @example
      * ```ts
-     * const publicKey = await Signer.recoverAddress(tx);
+     * const publicKey = await signer.recoverAddress(tx);
      * ```
      *
      * If the signature data contains more data, like in the
@@ -10863,7 +10908,7 @@ class Signer {
      *   defaultTypeName: "pow_signature_data",
      *  });
      *
-     *  const signer = await Signer.recoverAddress(block, {
+     *  const signer = await signer.recoverAddress(block, {
      *    transformSignature: async (signatureData) => {
      *      const powSignatureData = await serializer.deserialize(signatureData);
      *      return powSignatureData.recoverable_signature;
@@ -10871,8 +10916,8 @@ class Signer {
      *  });
      * ```
      */
-    static async recoverAddress(txOrBlock, opts) {
-        const publicKey = await Signer.recoverPublicKey(txOrBlock, opts);
+    async recoverAddress(txOrBlock, opts) {
+        const publicKey = await this.recoverPublicKey(txOrBlock, opts);
         return (0, utils_1.bitcoinAddress)((0, utils_1.toUint8Array)(publicKey));
     }
     /**
@@ -10899,7 +10944,7 @@ class Signer {
             nonce,
             operations,
         };
-        const buffer = await this.serializer.serialize(activeData2);
+        const buffer = await this.serializer.serialize(activeData2, "active_transaction_data");
         return {
             active: (0, utils_1.encodeBase64)(buffer),
         };
@@ -10910,7 +10955,7 @@ class Signer {
     async decodeTransaction(tx) {
         if (!tx.active)
             throw new Error("Active data is not defined");
-        return this.serializer.deserialize(tx.active);
+        return this.serializer.deserialize(tx.active, "active_transaction_data");
     }
 }
 exports.Signer = Signer;
