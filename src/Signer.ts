@@ -258,14 +258,12 @@ export class Signer implements SignerInterface {
   }
 
   /**
-   * Function to sign a transaction. It's important to remark that
-   * the transaction parameter is modified inside this function.
-   * @param tx - Unsigned transaction
-   * @returns
+   * Function to sign a hash value. It returns the signature encoded
+   * in base64. The signature is in compact format with the
+   * recovery byte
+   * @param hash Hash value. Also known as digest
    */
-  async signTransaction(tx: TransactionJson): Promise<TransactionJson> {
-    if (!tx.active) throw new Error("Active data is not defined");
-    const hash = sha256(decodeBase64(tx.active));
+  async signHash(hash: Uint8Array): Promise<string> {
     const [compSignature, recovery] = await secp.sign(hash, this.privateKey, {
       recovered: true,
       canonical: true,
@@ -274,10 +272,47 @@ export class Signer implements SignerInterface {
     const compactSignature = new Uint8Array(65);
     compactSignature.set([recovery + 31], 0);
     compactSignature.set(compSignature, 1);
-    tx.signature_data = encodeBase64(compactSignature);
-    const multihash = `0x1220${toHexString(hash)}`; // 12: code sha2-256. 20: length (32 bytes)
-    tx.id = multihash;
+    return encodeBase64(compactSignature);
+  }
+
+  /**
+   * Function to sign a transaction. It's important to remark that
+   * the transaction parameter is modified inside this function.
+   * @param tx - Unsigned transaction
+   */
+  async signTransaction(tx: TransactionJson): Promise<TransactionJson> {
+    if (!tx.active) throw new Error("Active data is not defined");
+    const hash = sha256(decodeBase64(tx.active));
+    tx.signature_data = await this.signHash(hash);
+    // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
+    tx.id = `0x1220${toHexString(hash)}`;
     return tx;
+  }
+
+  /**
+   * Function to sign a block for federated consensus. That is,
+   * just the ecdsa signature. For other algorithms, like PoW,
+   * you have to sign the block and then process the signature
+   * to add the extra data (nonce in the case of PoW).
+   * @param block - Unsigned block
+   */
+  async signBlock(block: BlockJson): Promise<BlockJson> {
+    const activeBytes = decodeBase64(block.active!);
+    const headerBytes = await this.serializer!.serialize(
+      block.header!,
+      "block_header",
+      { bytesConversion: true }
+    );
+    const headerActiveBytes = new Uint8Array(
+      headerBytes.length + activeBytes.length
+    );
+    headerActiveBytes.set(headerBytes, 0);
+    headerActiveBytes.set(activeBytes, headerBytes.length);
+    const hash = sha256(headerActiveBytes);
+    block.signature_data = await this.signHash(hash);
+    // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
+    block.id = `0x1220${toHexString(hash)}`;
+    return block;
   }
 
   /**
