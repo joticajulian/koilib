@@ -54,6 +54,30 @@ export function decodeBase64(bs64: string): Uint8Array {
 }
 
 /**
+ * Calculates the merkle root of sha256 hashes
+ */
+export function calculateMerkleRoot(hashes: Uint8Array[]): Uint8Array {
+  while (hashes.length > 1) {
+    for (let i = 0; i < hashes.length; i += 2) {
+      if (i + 1 < hashes.length) {
+        const leftHash = hashes[i];
+        const rightHash = hashes[i + 1];
+
+        const sumHash = sha256(new Uint8Array([...leftHash, ...rightHash]));
+
+        hashes[i / 2] = new Uint8Array(sumHash);
+      } else {
+        hashes[i / 2] = hashes[i];
+      }
+    }
+
+    hashes = hashes.slice(0, Math.ceil(hashes.length / 2));
+  }
+
+  return hashes[0];
+}
+
+/**
  * Encodes a public or private key in base58 using
  * the bitcoin format (see [Bitcoin Base58Check encoding](https://en.bitcoin.it/wiki/Base58Check_encoding)
  * and [Bitcoin WIF](https://en.bitcoin.it/wiki/Wallet_import_format)).

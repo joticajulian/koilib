@@ -13,6 +13,8 @@ import {
   parseUnits,
   ProtocolTypes,
   decodeBase58,
+  calculateMerkleRoot,
+  toUint8Array,
 } from "../src/utils";
 import {
   CallContractOperationNested,
@@ -24,6 +26,7 @@ import {
   BlockJson,
 } from "../src/interface";
 import { Serializer } from "../src";
+import { sha256 } from "@noble/hashes/sha256";
 
 jest.mock("cross-fetch");
 const mockFetch = jest.spyOn(crossFetch, "fetch");
@@ -127,6 +130,73 @@ describe("utils", () => {
       expect(parseUnits(v, d)).toBe(expected);
     }
   );
+
+  it("should calculate a merkle root", () => {
+    const words = [
+      "the",
+      "quick",
+      "brown",
+      "fox",
+      "jumps",
+      "over",
+      "a",
+      "lazy",
+      "dog",
+    ];
+
+    const hashes: Uint8Array[] = [];
+
+    words.forEach((word) => {
+      hashes.push(sha256(word));
+    });
+
+    const n01leaves: Uint8Array[] = [hashes[0], hashes[1]];
+    const n23leaves: Uint8Array[] = [hashes[2], hashes[3]];
+    const n0123leaves: Uint8Array[] = [...n01leaves, ...n23leaves];
+    const n45leaves: Uint8Array[] = [hashes[4], hashes[5]];
+    const n67leaves: Uint8Array[] = [hashes[6], hashes[7]];
+    const n4567leaves: Uint8Array[] = [...n45leaves, ...n67leaves];
+    const n01234567leaves: Uint8Array[] = [...n0123leaves, ...n4567leaves];
+    const n8leaves: Uint8Array[] = [hashes[8]];
+
+    const n01 = toUint8Array(
+      "0020397085ab4494829e691c49353a04d3201fda20c6a8a6866cf0f84bb8ce47"
+    );
+    const n23 = toUint8Array(
+      "78d4e37706320c82b2dd092eeb04b1f271523f86f910bf680ff9afcb2f8a33e1"
+    );
+    const n0123 = toUint8Array(
+      "e07aa684d91ffcbb89952f5e99b6181f7ee7bd88bd97be1345fc508f1062c050"
+    );
+    const n45 = toUint8Array(
+      "4185f41c5d7980ae7d14ce248f50e2854826c383671cf1ee3825ea957315c627"
+    );
+    const n67 = toUint8Array(
+      "b2a6704395c45ad8c99247103b580f7e7a37f06c3d38075ce4b02bc34c6a6754"
+    );
+    const n4567 = toUint8Array(
+      "2f24a249901ee8392ba0bb3b90c8efd6e2fee6530f45769199ef82d0b091d8ba"
+    );
+    const n01234567 = toUint8Array(
+      "913b7dce068efc8db6fab0173481f137ce91352b341855a1719aaff926169987"
+    );
+    const n8 = toUint8Array(
+      "cd6357efdd966de8c0cb2f876cc89ec74ce35f0968e11743987084bd42fb8944"
+    );
+    const merkleRoot = toUint8Array(
+      "e24e552e0b6cf8835af179a14a766fb58c23e4ee1f7c6317d57ce39cc578cfac"
+    );
+
+    expect(n01).toEqual(calculateMerkleRoot(n01leaves));
+    expect(n23).toEqual(calculateMerkleRoot(n23leaves));
+    expect(n0123).toEqual(calculateMerkleRoot(n0123leaves));
+    expect(n45).toEqual(calculateMerkleRoot(n45leaves));
+    expect(n67).toEqual(calculateMerkleRoot(n67leaves));
+    expect(n4567).toEqual(calculateMerkleRoot(n4567leaves));
+    expect(n01234567).toEqual(calculateMerkleRoot(n01234567leaves));
+    expect(n8).toEqual(calculateMerkleRoot(n8leaves));
+    expect(merkleRoot).toEqual(calculateMerkleRoot(hashes));
+  });
 });
 
 describe("Signer", () => {
