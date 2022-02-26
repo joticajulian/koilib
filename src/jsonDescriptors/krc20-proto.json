@@ -62,7 +62,7 @@
                       "type": "bytes",
                       "id": 1,
                       "options": {
-                        "(btype)": "ADDRESS"
+                        "(koinos_bytes_type)": "ADDRESS"
                       }
                     }
                   }
@@ -84,14 +84,14 @@
                       "type": "bytes",
                       "id": 1,
                       "options": {
-                        "(btype)": "ADDRESS"
+                        "(koinos_bytes_type)": "ADDRESS"
                       }
                     },
                     "to": {
                       "type": "bytes",
                       "id": 2,
                       "options": {
-                        "(btype)": "ADDRESS"
+                        "(koinos_bytes_type)": "ADDRESS"
                       }
                     },
                     "value": {
@@ -117,7 +117,7 @@
                       "type": "bytes",
                       "id": 1,
                       "options": {
-                        "(btype)": "ADDRESS"
+                        "(koinos_bytes_type)": "ADDRESS"
                       }
                     },
                     "value": {
@@ -165,49 +165,6 @@
                       }
                     },
                     "last_mana_update": {
-                      "type": "uint64",
-                      "id": 3,
-                      "options": {
-                        "jstype": "JS_STRING"
-                      }
-                    }
-                  }
-                },
-                "mint_event": {
-                  "fields": {
-                    "to": {
-                      "type": "bytes",
-                      "id": 1,
-                      "options": {
-                        "(btype)": "ADDRESS"
-                      }
-                    },
-                    "value": {
-                      "type": "uint64",
-                      "id": 2,
-                      "options": {
-                        "jstype": "JS_STRING"
-                      }
-                    }
-                  }
-                },
-                "transfer_event": {
-                  "fields": {
-                    "from": {
-                      "type": "bytes",
-                      "id": 1,
-                      "options": {
-                        "(btype)": "ADDRESS"
-                      }
-                    },
-                    "to": {
-                      "type": "bytes",
-                      "id": 2,
-                      "options": {
-                        "(btype)": "ADDRESS"
-                      }
-                    },
-                    "value": {
                       "type": "uint64",
                       "id": 3,
                       "options": {

@@ -7,44 +7,13 @@
             "go_package": "github.com/koinos/koinos-proto-golang/koinos/protocol"
           },
           "nested": {
-            "event_data": {
-              "fields": {
-                "sequence": {
-                  "type": "uint32",
-                  "id": 1
-                },
-                "source": {
-                  "type": "bytes",
-                  "id": 2,
-                  "options": {
-                    "(btype)": "CONTRACT_ID"
-                  }
-                },
-                "name": {
-                  "type": "string",
-                  "id": 3
-                },
-                "data": {
-                  "type": "bytes",
-                  "id": 4
-                },
-                "impacted": {
-                  "rule": "repeated",
-                  "type": "bytes",
-                  "id": 5,
-                  "options": {
-                    "(btype)": "ADDRESS"
-                  }
-                }
-              }
-            },
             "contract_call_bundle": {
               "fields": {
                 "contract_id": {
                   "type": "bytes",
                   "id": 1,
                   "options": {
-                    "(btype)": "CONTRACT_ID"
+                    "(koinos_bytes_type)": "CONTRACT_ID"
                   }
                 },
                 "entry_point": {
@@ -56,10 +25,7 @@
             "system_call_target": {
               "oneofs": {
                 "target": {
-                  "oneof": [
-                    "thunk_id",
-                    "system_call_bundle"
-                  ]
+                  "oneof": ["thunk_id", "system_call_bundle"]
                 }
               },
               "fields": {
@@ -79,28 +45,12 @@
                   "type": "bytes",
                   "id": 1,
                   "options": {
-                    "(btype)": "CONTRACT_ID"
+                    "(koinos_bytes_type)": "CONTRACT_ID"
                   }
                 },
                 "bytecode": {
                   "type": "bytes",
                   "id": 2
-                },
-                "abi": {
-                  "type": "string",
-                  "id": 3
-                },
-                "authorizes_call_contract": {
-                  "type": "bool",
-                  "id": 4
-                },
-                "authorizes_transaction_application": {
-                  "type": "bool",
-                  "id": 5
-                },
-                "authorizes_upload_contract": {
-                  "type": "bool",
-                  "id": 6
                 }
               }
             },
@@ -110,7 +60,7 @@
                   "type": "bytes",
                   "id": 1,
                   "options": {
-                    "(btype)": "CONTRACT_ID"
+                    "(koinos_bytes_type)": "CONTRACT_ID"
                   }
                 },
                 "entry_point": {
@@ -135,29 +85,13 @@
                 }
               }
             },
-            "set_system_contract_operation": {
-              "fields": {
-                "contract_id": {
-                  "type": "bytes",
-                  "id": 1,
-                  "options": {
-                    "(btype)": "CONTRACT_ID"
-                  }
-                },
-                "system_contract": {
-                  "type": "bool",
-                  "id": 2
-                }
-              }
-            },
             "operation": {
               "oneofs": {
                 "op": {
                   "oneof": [
                     "upload_contract",
                     "call_contract",
-                    "set_system_call",
-                    "set_system_contract"
+                    "set_system_call"
                   ]
                 }
               },
@@ -173,49 +107,34 @@
                 "set_system_call": {
                   "type": "set_system_call_operation",
                   "id": 3
-                },
-                "set_system_contract": {
-                  "type": "set_system_contract_operation",
-                  "id": 4
                 }
               }
             },
-            "transaction_header": {
+            "active_transaction_data": {
               "fields": {
-                "chain_id": {
-                  "type": "bytes",
-                  "id": 1
-                },
                 "rc_limit": {
+                  "type": "uint64",
+                  "id": 1,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "nonce": {
                   "type": "uint64",
                   "id": 2,
                   "options": {
                     "jstype": "JS_STRING"
                   }
                 },
-                "nonce": {
-                  "type": "bytes",
+                "operations": {
+                  "rule": "repeated",
+                  "type": "operation",
                   "id": 3
-                },
-                "operation_merkle_root": {
-                  "type": "bytes",
-                  "id": 4
-                },
-                "payer": {
-                  "type": "bytes",
-                  "id": 5,
-                  "options": {
-                    "(btype)": "ADDRESS"
-                  }
-                },
-                "payee": {
-                  "type": "bytes",
-                  "id": 6,
-                  "options": {
-                    "(btype)": "ADDRESS"
-                  }
                 }
               }
+            },
+            "passive_transaction_data": {
+              "fields": {}
             },
             "transaction": {
               "fields": {
@@ -223,98 +142,41 @@
                   "type": "bytes",
                   "id": 1,
                   "options": {
-                    "(btype)": "TRANSACTION_ID"
+                    "(koinos_bytes_type)": "TRANSACTION_ID"
                   }
                 },
-                "header": {
-                  "type": "transaction_header",
+                "active": {
+                  "type": "bytes",
                   "id": 2
                 },
-                "operations": {
-                  "rule": "repeated",
-                  "type": "operation",
+                "passive": {
+                  "type": "bytes",
                   "id": 3
                 },
-                "signatures": {
-                  "rule": "repeated",
+                "signature_data": {
                   "type": "bytes",
                   "id": 4
                 }
               }
             },
-            "transaction_receipt": {
+            "active_block_data": {
               "fields": {
-                "id": {
+                "transaction_merkle_root": {
                   "type": "bytes",
-                  "id": 1,
-                  "options": {
-                    "(btype)": "TRANSACTION_ID"
-                  }
+                  "id": 1
                 },
-                "payer": {
+                "passive_data_merkle_root": {
                   "type": "bytes",
-                  "id": 2,
-                  "options": {
-                    "(btype)": "ADDRESS"
-                  }
+                  "id": 2
                 },
-                "max_payer_rc": {
-                  "type": "uint64",
-                  "id": 3,
-                  "options": {
-                    "jstype": "JS_STRING"
-                  }
-                },
-                "rc_limit": {
-                  "type": "uint64",
-                  "id": 4,
-                  "options": {
-                    "jstype": "JS_STRING"
-                  }
-                },
-                "rc_used": {
-                  "type": "uint64",
-                  "id": 5,
-                  "options": {
-                    "jstype": "JS_STRING"
-                  }
-                },
-                "disk_storage_used": {
-                  "type": "uint64",
-                  "id": 6,
-                  "options": {
-                    "jstype": "JS_STRING"
-                  }
-                },
-                "network_bandwidth_used": {
-                  "type": "uint64",
-                  "id": 7,
-                  "options": {
-                    "jstype": "JS_STRING"
-                  }
-                },
-                "compute_bandwidth_used": {
-                  "type": "uint64",
-                  "id": 8,
-                  "options": {
-                    "jstype": "JS_STRING"
-                  }
-                },
-                "reverted": {
-                  "type": "bool",
-                  "id": 9
-                },
-                "events": {
-                  "rule": "repeated",
-                  "type": "event_data",
-                  "id": 10
-                },
-                "logs": {
-                  "rule": "repeated",
-                  "type": "string",
-                  "id": 11
+                "signer": {
+                  "type": "bytes",
+                  "id": 3
                 }
               }
+            },
+            "passive_block_data": {
+              "fields": {}
             },
             "block_header": {
               "fields": {
@@ -322,7 +184,7 @@
                   "type": "bytes",
                   "id": 1,
                   "options": {
-                    "(btype)": "BLOCK_ID"
+                    "(koinos_bytes_type)": "BLOCK_ID"
                   }
                 },
                 "height": {
@@ -338,18 +200,6 @@
                   "options": {
                     "jstype": "JS_STRING"
                   }
-                },
-                "previous_state_merkle_root": {
-                  "type": "bytes",
-                  "id": 4
-                },
-                "transaction_merkle_root": {
-                  "type": "bytes",
-                  "id": 5
-                },
-                "signer": {
-                  "type": "bytes",
-                  "id": 6
                 }
               }
             },
@@ -359,81 +209,34 @@
                   "type": "bytes",
                   "id": 1,
                   "options": {
-                    "(btype)": "BLOCK_ID"
+                    "(koinos_bytes_type)": "BLOCK_ID"
                   }
                 },
                 "header": {
                   "type": "block_header",
                   "id": 2
                 },
+                "active": {
+                  "type": "bytes",
+                  "id": 3
+                },
+                "passive": {
+                  "type": "bytes",
+                  "id": 4
+                },
+                "signature_data": {
+                  "type": "bytes",
+                  "id": 5
+                },
                 "transactions": {
                   "rule": "repeated",
                   "type": "transaction",
-                  "id": 3
-                },
-                "signature": {
-                  "type": "bytes",
-                  "id": 4
+                  "id": 6
                 }
               }
             },
             "block_receipt": {
-              "fields": {
-                "id": {
-                  "type": "bytes",
-                  "id": 1,
-                  "options": {
-                    "(btype)": "BLOCK_ID"
-                  }
-                },
-                "height": {
-                  "type": "uint64",
-                  "id": 2,
-                  "options": {
-                    "jstype": "JS_STRING"
-                  }
-                },
-                "disk_storage_used": {
-                  "type": "uint64",
-                  "id": 3,
-                  "options": {
-                    "jstype": "JS_STRING"
-                  }
-                },
-                "network_bandwidth_used": {
-                  "type": "uint64",
-                  "id": 4,
-                  "options": {
-                    "jstype": "JS_STRING"
-                  }
-                },
-                "compute_bandwidth_used": {
-                  "type": "uint64",
-                  "id": 5,
-                  "options": {
-                    "jstype": "JS_STRING"
-                  }
-                },
-                "state_merkle_root": {
-                  "type": "bytes",
-                  "id": 6
-                },
-                "events": {
-                  "rule": "repeated",
-                  "type": "event_data",
-                  "id": 7
-                },
-                "transaction_receipts": {
-                  "rule": "repeated",
-                  "type": "transaction_receipt",
-                  "id": 8
-                },
-                "logs": {
-                  "rule": "repeated",
-                  "type": "string",
-                  "id": 9
-                }
-              }
+              "fields": {}
             }
           }
         }
