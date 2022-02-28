@@ -9,6 +9,7 @@ import {
   Abi,
   TransactionOptions,
   DecodedOperationJson,
+  OperationJson,
 } from "./interface";
 import { decodeBase58, encodeBase58, encodeBase64 } from "./utils";
 
@@ -225,17 +226,21 @@ export class Contract {
 
           // write contract (sign and send)
           if (!this.signer) throw new Error("signer not found");
-          const tx = await this.signer.encodeTransaction({
-            ...opts,
-            operations: [operation],
+          const tx = await this.signer.prepareTransaction({
+            operations: [
+              {
+                call_contract: {
+                  contract_id: encodeBase58(
+                    operation.call_contract.contract_id
+                  ),
+                  entry_point: operation.call_contract.entry_point,
+                  args: encodeBase64(operation.call_contract.args),
+                },
+              } as OperationJson,
+            ],
           });
 
-          const abis: Record<string, Abi> = {};
-          if (opts?.sendAbis) {
-            const contractId = encodeBase58(this.id as Uint8Array);
-            abis[contractId] = this.abi;
-          }
-          const transaction = await this.signer.sendTransaction(tx, abis);
+          const transaction = await this.signer.sendTransaction(tx);
           return { operation, transaction };
         };
       });
@@ -293,9 +298,17 @@ export class Contract {
     // return operation if send is false
     if (!opts?.sendTransaction) return { operation };
 
-    const tx = await this.signer.encodeTransaction({
-      ...opts,
-      operations: [operation],
+    const tx = await this.signer.prepareTransaction({
+      operations: [
+        {
+          upload_contract: {
+            contract_id: encodeBase58(
+              Contract.computeContractId(this.signer.getAddress())
+            ),
+            bytecode: encodeBase64(this.bytecode),
+          },
+        } as OperationJson,
+      ],
     });
     const transaction = await this.signer.sendTransaction(tx);
     return { operation, transaction };

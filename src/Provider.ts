@@ -4,6 +4,7 @@ import {
   TransactionJson,
   CallContractOperationJson,
 } from "./interface";
+import { NonceBytesToUInt64 } from "./utils";
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -133,7 +134,12 @@ export class Provider {
       { account }
     );
     if (!nonce) return 0;
-    return Number(nonce);
+
+    const deserializedNonce = await NonceBytesToUInt64(nonce);
+
+    if (!deserializedNonce) return 0;
+
+    return Number(deserializedNonce);
   }
 
   async getAccountRc(account: string): Promise<string> {
@@ -196,6 +202,15 @@ export class Provider {
       };
       last_irreversible_block: string;
     }>("chain.get_head_info", {});
+  }
+
+  /**
+   * Function to get the chain
+   */
+  async getChainId(): Promise<string> {
+    const res = await this.call<{ chain_id: string }>("chain.get_chain_id", {});
+
+    return res.chain_id;
   }
 
   /**
@@ -370,7 +385,9 @@ export class Provider {
    * Function to call "chain.submit_transaction" to send a signed
    * transaction to the blockchain.
    */
-  async sendTransaction(transaction: TransactionJson): Promise<{}> {
+  async sendTransaction(
+    transaction: TransactionJson
+  ): Promise<Record<string, never>> {
     return this.call("chain.submit_transaction", { transaction });
   }
 

@@ -3,7 +3,10 @@ import { sha256 } from "@noble/hashes/sha256";
 import { ripemd160 } from "@noble/hashes/ripemd160";
 import krc20ProtoJson from "./jsonDescriptors/krc20-proto.json";
 import protocolJson from "./jsonDescriptors/protocol-proto.json";
-import { Abi } from "./interface";
+import valueJson from "./jsonDescriptors/value.json";
+
+import { Abi, ValueType } from "./interface";
+import Serializer from "./Serializer";
 
 /**
  * Converts an hex string to Uint8Array
@@ -51,6 +54,36 @@ export function encodeBase64(buffer: Uint8Array): string {
  */
 export function decodeBase64(bs64: string): Uint8Array {
   return multibase.decode(`U${bs64}`);
+}
+
+/**
+ * Serializes a stringified UInt64 into a ValueType bytes
+ */
+export async function UInt64ToNonceBytes(value: string): Promise<Uint8Array> {
+  const serializer = new Serializer(valueJson);
+
+  const vt: ValueType = {
+    uint64_value: value,
+  };
+
+  return serializer.serialize(vt, "value_type", {
+    bytesConversion: false,
+  });
+}
+
+/**
+ * Deserialize ValueType bytes into a stringified UInt64
+ */
+export async function NonceBytesToUInt64(
+  value: string
+): Promise<string | undefined> {
+  const serializer = new Serializer(valueJson);
+
+  const vt: ValueType = await serializer.deserialize(value, "value_type", {
+    bytesConversion: false,
+  });
+
+  return vt.uint64_value;
 }
 
 /**

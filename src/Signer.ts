@@ -5,20 +5,20 @@ import { Provider } from "./Provider";
 import {
   TransactionJson,
   TransactionJsonWait,
-  ActiveTransactionData,
-  Abi,
-  RecoverPublicKeyOptions,
   BlockJson,
+  RecoverPublicKeyArguments,
 } from "./interface";
 import protocolJson from "./jsonDescriptors/protocol-proto.json";
 import {
   bitcoinAddress,
   bitcoinDecode,
   bitcoinEncode,
+  calculateMerkleRoot,
   decodeBase64,
   encodeBase64,
   toHexString,
   toUint8Array,
+  UInt64ToNonceBytes,
 } from "./utils";
 import { Serializer } from "./Serializer";
 
@@ -28,14 +28,8 @@ export interface SignerInterface {
   getAddress: (compressed?: boolean) => string;
   getPrivateKey: (format: "wif" | "hex", compressed?: boolean) => string;
   signTransaction: (tx: TransactionJson) => Promise<TransactionJson>;
-  sendTransaction: (
-    tx: TransactionJson,
-    abis?: Record<string, Abi>
-  ) => Promise<TransactionJsonWait>;
-  encodeTransaction: (
-    activeData: ActiveTransactionData
-  ) => Promise<TransactionJson>;
-  decodeTransaction: (tx: TransactionJson) => Promise<ActiveTransactionData>;
+  sendTransaction: (tx: TransactionJson) => Promise<TransactionJsonWait>;
+  prepareTransaction: (tx: TransactionJson) => Promise<TransactionJson>;
 }
 
 /**
@@ -258,21 +252,21 @@ export class Signer implements SignerInterface {
   }
 
   /**
-   * Function to sign a hash value. It returns the signature encoded
-   * in base64. The signature is in compact format with the
-   * recovery byte
+   * Function to sign a hash value. It returns the bytes sugnature.
+   * The signature is in compact format with the recovery byte
    * @param hash Hash value. Also known as digest
    */
-  async signHash(hash: Uint8Array): Promise<string> {
+  async signHash(hash: Uint8Array): Promise<Uint8Array> {
     const [compSignature, recovery] = await secp.sign(hash, this.privateKey, {
       recovered: true,
       canonical: true,
       der: false, // compact signature
     });
+
     const compactSignature = new Uint8Array(65);
     compactSignature.set([recovery + 31], 0);
     compactSignature.set(compSignature, 1);
-    return encodeBase64(compactSignature);
+    return compactSignature;
   }
 
   /**
@@ -281,11 +275,19 @@ export class Signer implements SignerInterface {
    * @param tx - Unsigned transaction
    */
   async signTransaction(tx: TransactionJson): Promise<TransactionJson> {
-    if (!tx.active) throw new Error("Active data is not defined");
-    const hash = sha256(decodeBase64(tx.active));
-    tx.signature_data = await this.signHash(hash);
+    if (!tx.id) throw new Error("Missing transaction id");
+
     // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
-    tx.id = `0x1220${toHexString(hash)}`;
+    // tx id is a stringified multihash, need to extract the hash digest only
+    const hash = toUint8Array(tx.id.slice(6));
+
+    const signature = await this.signHash(hash);
+    if (!tx.signatures) {
+      tx.signatures = [];
+    }
+
+    tx.signatures.push(encodeBase64(signature));
+
     return tx;
   }
 
@@ -297,7 +299,7 @@ export class Signer implements SignerInterface {
    * @param block - Unsigned block
    */
   async signBlock(block: BlockJson): Promise<BlockJson> {
-    const activeBytes = decodeBase64(block.active!);
+    const activeBytes = decodeBase64(block.signature!);
     const headerBytes = await this.serializer!.serialize(
       block.header!,
       "block_header",
@@ -309,7 +311,7 @@ export class Signer implements SignerInterface {
     headerActiveBytes.set(headerBytes, 0);
     headerActiveBytes.set(activeBytes, headerBytes.length);
     const hash = sha256(headerActiveBytes);
-    block.signature_data = await this.signHash(hash);
+    block.signature_data = (await this.signHash(hash)).toString();
     // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
     block.id = `0x1220${toHexString(hash)}`;
     return block;
@@ -324,11 +326,9 @@ export class Signer implements SignerInterface {
    * transaction. This parameter is optional.
    * @returns
    */
-  async sendTransaction(
-    tx: TransactionJson,
-    _abis?: Record<string, Abi>
-  ): Promise<TransactionJsonWait> {
-    if (!tx.signature_data || !tx.id) await this.signTransaction(tx);
+  async sendTransaction(tx: TransactionJson): Promise<TransactionJsonWait> {
+    if (!tx.signatures || !tx.signatures?.length)
+      tx = await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
     await this.provider.sendTransaction(tx);
     return {
@@ -392,56 +392,77 @@ export class Signer implements SignerInterface {
    *  });
    * ```
    */
-  async recoverPublicKey(
-    txOrBlock: TransactionJson | BlockJson,
-    opts?: RecoverPublicKeyOptions
-  ): Promise<string> {
-    if (!txOrBlock.active) throw new Error("active is not defined");
-    if (!txOrBlock.signature_data)
-      throw new Error("signature_data is not defined");
-    let signatureData = txOrBlock.signature_data;
-    if (opts && typeof opts.transformSignature === "function") {
-      signatureData = await opts.transformSignature(txOrBlock.signature_data);
-    }
+  async recoverPublicKey(args: RecoverPublicKeyArguments): Promise<string[]> {
+    const { tx, block } = args;
     let compressed = true;
-    if (opts && typeof opts.compressed !== "undefined") {
-      compressed = opts.compressed;
+
+    if (typeof args.compressed !== "undefined") {
+      compressed = args.compressed;
     }
 
-    const block = txOrBlock as BlockJson;
-    let hash: Uint8Array;
-    const activeBytes = decodeBase64(block.active!);
-    if (block.header) {
-      const headerBytes = await this.serializer!.serialize(
+    let signatures: string[] = [];
+    let headerBytes: Uint8Array = new Uint8Array();
+
+    if (tx) {
+      if (!tx.header) throw new Error("Missing transaction header");
+      if (!tx.signatures) throw new Error("Missing transaction signatures");
+
+      signatures = tx.signatures;
+      headerBytes = await this.serializer!.serialize(
+        tx.header,
+        "transaction_header",
+        {
+          bytesConversion: true,
+        }
+      );
+    } else if (block) {
+      if (!block.header) throw new Error("Missing block header");
+      if (!block.signature) throw new Error("Missing block signature");
+      signatures = [block.signature];
+      headerBytes = await this.serializer!.serialize(
         block.header,
         "block_header",
-        { bytesConversion: true }
+        {
+          bytesConversion: true,
+        }
       );
-      const headerActiveBytes = new Uint8Array(
-        headerBytes.length + activeBytes.length
-      );
-      headerActiveBytes.set(headerBytes, 0);
-      headerActiveBytes.set(activeBytes, headerBytes.length);
-      hash = sha256(headerActiveBytes);
-    } else {
-      // transaction
-      hash = sha256(activeBytes);
     }
-    const compactSignatureHex = toHexString(decodeBase64(signatureData));
-    const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
-    const rHex = compactSignatureHex.slice(2, 66);
-    const sHex = compactSignatureHex.slice(66);
-    const r = BigInt(`0x${rHex}`);
-    const s = BigInt(`0x${sHex}`);
-    const sig = new secp.Signature(r, s);
-    const publicKey = secp.recoverPublicKey(
-      toHexString(hash),
-      sig.toHex(),
-      recovery
-    );
-    if (!publicKey) throw new Error("Public key cannot be recovered");
-    if (!compressed) return toHexString(publicKey);
-    return secp.Point.fromHex(publicKey).toHex(true);
+
+    const hash = sha256(headerBytes);
+
+    const publicKeys: string[] = [];
+
+    for (let i = 0; i < signatures.length; i++) {
+      let signature = signatures[i];
+
+      if (typeof args.transformSignature === "function") {
+        signature = await args.transformSignature(signature);
+      }
+
+      const compactSignatureHex = toHexString(decodeBase64(signature));
+
+      const recovery = Number(`0x${compactSignatureHex.slice(0, 2)}`) - 31;
+
+      const rHex = compactSignatureHex.slice(2, 66);
+      const sHex = compactSignatureHex.slice(66);
+      const r = BigInt(`0x${rHex}`);
+      const s = BigInt(`0x${sHex}`);
+      const sig = new secp.Signature(r, s);
+      const publicKey = secp.recoverPublicKey(
+        toHexString(hash),
+        sig.toHex(),
+        recovery
+      );
+
+      if (!publicKey) throw new Error("Public key cannot be recovered");
+      if (!compressed) {
+        publicKeys.push(toHexString(publicKey));
+      } else {
+        publicKeys.push(secp.Point.fromHex(publicKey).toHex(true));
+      }
+    }
+
+    return publicKeys;
   }
 
   /**
@@ -492,61 +513,107 @@ export class Signer implements SignerInterface {
    *  });
    * ```
    */
-  async recoverAddress(
-    txOrBlock: TransactionJson | BlockJson,
-    opts?: RecoverPublicKeyOptions
-  ): Promise<string> {
-    const publicKey = await this.recoverPublicKey(txOrBlock, opts);
-    return bitcoinAddress(toUint8Array(publicKey));
+  async recoverAddress(args: RecoverPublicKeyArguments): Promise<string[]> {
+    const publicKeys = await this.recoverPublicKey(args);
+
+    const addresses: string[] = [];
+
+    publicKeys.forEach((publicKey) => {
+      addresses.push(bitcoinAddress(toUint8Array(publicKey)));
+    });
+
+    return addresses;
   }
 
   /**
-   * Function to encode a transaction
-   * @param activeData - Active data consists of nonce, rc_limit, and
-   * operations. Do not set the nonce to get it from the blockchain
+   * Function to prepare a transaction
+   * @param tx - Do not set the nonce to get it from the blockchain
    * using the provider. The rc_limit is 1e8 by default.
-   * @returns A transaction encoded. The active field is encoded in
-   * base64url
+   * @returns A prepared transaction. ()
    */
-  async encodeTransaction(
-    activeData: ActiveTransactionData
-  ): Promise<TransactionJson> {
-    let { nonce } = activeData;
-    if (activeData.nonce === undefined) {
+  async prepareTransaction(tx: TransactionJson): Promise<TransactionJson> {
+    if (!tx.header) {
+      tx.header = {};
+    }
+
+    const getNonce = !tx.header || !tx.header.nonce;
+    let nonce;
+    if (getNonce) {
       if (!this.provider)
         throw new Error(
-          "Cannot get the nonce because provider is undefined. To skip this call set a nonce in the parameters"
+          "Cannot get the nonce because provider is undefined. To skip this call set a nonce in the transaction header"
         );
       // TODO: Option to resolve names
       // this depends on the final architecture for names on Koinos
-      nonce = await this.provider.getNonce(this.getAddress());
+      const oldNonce = await this.provider.getNonce(this.getAddress());
+      nonce = encodeBase64(await UInt64ToNonceBytes(`${oldNonce + 1}`));
+    } else {
+      nonce = tx.header.nonce;
     }
-    const rcLimit =
-      activeData.rc_limit === undefined ? 1e8 : activeData.rc_limit;
-    const operations = activeData.operations ? activeData.operations : [];
 
-    const activeData2: ActiveTransactionData = {
+    const getRCLimit = !tx.header || !tx.header.rc_limit;
+    let rcLimit;
+    if (getRCLimit) {
+      if (!this.provider)
+        throw new Error(
+          "Cannot get the rc_limit because provider is undefined. To skip this call set a rc_limit in the transaction header"
+        );
+      // TODO: Option to resolve names
+      // this depends on the final architecture for names on Koinos
+      rcLimit = await this.provider.getAccountRc(this.getAddress());
+    } else {
+      rcLimit = tx.header.rc_limit;
+    }
+
+    const getChainId = !tx.header || !tx.header.chain_id;
+    let chainId;
+    if (getChainId) {
+      if (!this.provider)
+        throw new Error(
+          "Cannot get the chain_id because provider is undefined. To skip this call set a chain_id in the transaction header"
+        );
+
+      chainId = await this.provider.getChainId();
+    } else {
+      chainId = tx.header.chain_id;
+    }
+
+    const operationsHashes: Uint8Array[] = [];
+
+    if (tx.operations) {
+      for (let index = 0; index < tx.operations?.length; index++) {
+        const encodedOp = await this.serializer!.serialize(
+          tx.operations[index],
+          "operation",
+          { bytesConversion: true }
+        );
+        operationsHashes.push(sha256(encodedOp));
+      }
+    }
+
+    tx.header = {
+      chain_id: chainId,
       rc_limit: rcLimit,
       nonce,
-      operations,
+      operation_merkle_root: encodeBase64(
+        toUint8Array(
+          `0x1220${toHexString(calculateMerkleRoot(operationsHashes))}`
+        )
+      ),
+      payer: this.address,
     };
 
-    const buffer = await this.serializer!.serialize(
-      activeData2,
-      "active_transaction_data"
+    const headerBytes = await this.serializer!.serialize(
+      tx.header,
+      "transaction_header",
+      { bytesConversion: true }
     );
 
-    return {
-      active: encodeBase64(buffer),
-    } as TransactionJson;
-  }
+    const hash = sha256(headerBytes);
 
-  /**
-   * Function to decode a transaction
-   */
-  async decodeTransaction(tx: TransactionJson): Promise<ActiveTransactionData> {
-    if (!tx.active) throw new Error("Active data is not defined");
-    return this.serializer!.deserialize(tx.active, "active_transaction_data");
+    // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
+    tx.id = `0x1220${toHexString(hash)}`;
+    return tx;
   }
 }
 

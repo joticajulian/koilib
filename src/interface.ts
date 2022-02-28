@@ -121,7 +121,17 @@ export interface TransactionOptions {
   sendAbis?: boolean;
 }
 
-export interface RecoverPublicKeyOptions {
+export interface RecoverPublicKeyArguments {
+  /**
+   * Transaction to recover public key from
+   */
+  tx?: TransactionJson;
+
+  /**
+   * Block to recover public key from
+   */
+  block?: BlockJson;
+
   /**
    * Boolean to define if the public key should
    * be compressed or not. It is true by default
@@ -223,6 +233,18 @@ export interface SetSystemCallOperationJson {
   target: number | ContractCallBundleJson;
 }
 
+export interface SetSystemContractOperation {
+  contract_id: Uint8Array;
+
+  system_contract: boolean;
+}
+
+export interface SetSystemContractOperationJson {
+  contract_id: string; // base58
+
+  system_contract: boolean;
+}
+
 export interface UploadContractOperationNested {
   upload_contract: UploadContractOperation;
 }
@@ -235,18 +257,29 @@ export interface SetSystemCallOperationNested {
   set_system_call: SetSystemCallOperation;
 }
 
+export interface SetSystemContractOperationNested {
+  set_system_contract: SetSystemContractOperation;
+}
+
 export type Operation =
   | UploadContractOperationNested
   | CallContractOperationNested
-  | SetSystemCallOperationNested;
+  | SetSystemCallOperationNested
+  | SetSystemContractOperationNested;
 
 export type OperationJson = {
   upload_contract?: UploadContractOperationJson;
   call_contract?: CallContractOperationJson;
   set_system_call?: SetSystemCallOperationJson;
+  set_system_contract?: SetSystemContractOperationJson;
 };
 
-export interface ActiveTransactionData {
+export interface TransactionHeaderJson {
+  /**
+   * ID of the chain
+   */
+  chain_id?: string;
+
   /**
    * Resource credits limit
    */
@@ -255,31 +288,22 @@ export interface ActiveTransactionData {
   /**
    * Account nonce
    */
-  nonce?: string | number | bigint;
+  nonce?: string;
 
   /**
-   * Array of operations
+   * Merkle root of the serialized operations's SHA2-256 hashes
    */
-  operations?: Operation[];
-
-  [x: string]: unknown;
-}
-
-export interface ActiveTransactionDataJson {
-  /**
-   * Resource credits limit
-   */
-  rc_limit?: string | number | bigint;
+  operation_merkle_root?: string;
 
   /**
-   * Account nonce
+   * Transaction's payer
    */
-  nonce?: string | number | bigint;
+  payer?: string;
 
   /**
-   * Array of operations
+   * Transaction's payee
    */
-  operations?: OperationJson[];
+  payee?: string;
 
   [x: string]: unknown;
 }
@@ -290,24 +314,24 @@ export interface ActiveTransactionDataJson {
 export interface TransactionJson {
   /**
    * Transaction ID. It must be the sha2-256 of the
-   * serialized data of active data, and encoded in multi base58
+   * serialized header of the transaction
    */
   id?: string;
 
   /**
-   * Consensus data
+   * Header of the transaction
    */
-  active?: string;
+  header?: TransactionHeaderJson;
 
   /**
-   * Non-consensus data
+   * Array of operations
    */
-  passive?: string;
+  operations?: OperationJson[];
 
   /**
-   * Signature in compact format enconded in multi base64
+   * Signatures in compact format
    */
-  signature_data?: string;
+  signatures?: string[];
 }
 
 export interface TransactionJsonWait extends TransactionJson {
@@ -324,9 +348,11 @@ export interface BlockHeaderJson {
 export interface BlockJson {
   id?: string;
   header?: BlockHeaderJson;
-  active?: string;
-  passive?: string;
-  signature_data?: string;
+  signature?: string;
   transactions?: TransactionJson[];
+  [x: string]: unknown;
+}
+export interface ValueType {
+  uint64_value?: string;
   [x: string]: unknown;
 }

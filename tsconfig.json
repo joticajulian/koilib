@@ -9,7 +9,7 @@
     "noImplicitThis": true,
     "strictNullChecks": true,
     "noUnusedParameters": true,
-    "sourceMap": false,
+    "sourceMap": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "declaration": false,
