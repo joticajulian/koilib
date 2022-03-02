@@ -13,8 +13,6 @@ import {
   calculateMerkleRoot,
   toUint8Array,
   encodeBase58,
-  UInt64ToNonceBytes,
-  NonceBytesToUInt64,
   decodeBase64,
 } from "../src/utils";
 import {
@@ -65,7 +63,7 @@ const rpcNodes = [
   "http://example2.koinos.io:8080",
 ];
 
-const provider = new Provider(rpcNodes);
+const provider = new Provider({ rpcNodes });
 const signer = new Signer({ privateKey, provider });
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
@@ -192,27 +190,15 @@ describe("utils", () => {
       "e24e552e0b6cf8835af179a14a766fb58c23e4ee1f7c6317d57ce39cc578cfac"
     );
 
-    expect(n01).toEqual(calculateMerkleRoot(n01leaves));
-    expect(n23).toEqual(calculateMerkleRoot(n23leaves));
-    expect(n0123).toEqual(calculateMerkleRoot(n0123leaves));
-    expect(n45).toEqual(calculateMerkleRoot(n45leaves));
-    expect(n67).toEqual(calculateMerkleRoot(n67leaves));
-    expect(n4567).toEqual(calculateMerkleRoot(n4567leaves));
-    expect(n01234567).toEqual(calculateMerkleRoot(n01234567leaves));
-    expect(n8).toEqual(calculateMerkleRoot(n8leaves));
-    expect(merkleRoot).toEqual(calculateMerkleRoot(hashes));
-  });
-
-  it("should serialize and deserialize a ValueType", async () => {
-    expect.assertions(2);
-
-    const nonce = "123";
-    const serializedNonce = await UInt64ToNonceBytes(nonce);
-    const b64Nonce = encodeBase64(serializedNonce);
-    expect(b64Nonce).toBe("OHs=");
-
-    const deserializedNonce = await NonceBytesToUInt64(b64Nonce);
-    expect(deserializedNonce).toBe("123");
+    expect(calculateMerkleRoot(n01leaves)).toEqual(n01);
+    expect(calculateMerkleRoot(n23leaves)).toEqual(n23);
+    expect(calculateMerkleRoot(n0123leaves)).toEqual(n0123);
+    expect(calculateMerkleRoot(n45leaves)).toEqual(n45);
+    expect(calculateMerkleRoot(n67leaves)).toEqual(n67);
+    expect(calculateMerkleRoot(n4567leaves)).toEqual(n4567);
+    expect(calculateMerkleRoot(n01234567leaves)).toEqual(n01234567);
+    expect(calculateMerkleRoot(n8leaves)).toEqual(n8);
+    expect(calculateMerkleRoot(hashes)).toEqual(merkleRoot);
   });
 });
 
@@ -333,7 +319,7 @@ describe("Wallet and Contract", () => {
 
     const transaction: TransactionJson = {
       header: {
-        nonce: encodeBase64(await UInt64ToNonceBytes("8")),
+        nonce: "OAg=", //encodeBase64(await UInt64ToNonceBytes("8")),
         rc_limit: "10",
         chain_id: encodeBase64(Buffer.from("chain_id")),
       },
@@ -375,7 +361,7 @@ describe("Wallet and Contract", () => {
         nonce: "OAg=",
         operation_merkle_root:
           "EiA8yzzbLCjuJ4D8v5HJ-Un_umc5dntIZ01Qsxoq40CLmg==",
-        payer: "1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs",
+        payer: addressCompressed,
       },
       operations: [
         {
@@ -448,7 +434,7 @@ describe("Wallet and Contract", () => {
         nonce: "OAI=",
         operation_merkle_root:
           "EiDu9lBzwpT6G70XnIhT1AYlqVOG7eZ1CQ9aJRohfR_06A==",
-        payer: "1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs",
+        payer: addressCompressed,
       },
       operations: [
         {
@@ -468,35 +454,31 @@ describe("Wallet and Contract", () => {
     // recover public key and address
     if (!transaction) throw new Error("transaction is not defined");
 
-    const recoveredPublicKey = await signer.recoverPublicKey({
-      tx: transaction,
+    const recoveredPublicKeys = await signer.recoverPublicKeys(transaction, {
       compressed: false,
     });
-    expect(recoveredPublicKey[0]).toBe(publicKey);
+    expect(recoveredPublicKeys).toStrictEqual([publicKey]);
 
-    let recoveredPublicKeyComp = await signer.recoverPublicKey({
-      tx: transaction,
+    let recoveredPublicKeysComp = await signer.recoverPublicKeys(transaction, {
       compressed: true,
     });
-    expect(recoveredPublicKeyComp[0]).toBe(publicKeyCompressed);
+    expect(recoveredPublicKeysComp).toStrictEqual([publicKeyCompressed]);
 
-    const recoveredAddress = await signer.recoverAddress({
-      tx: transaction,
+    const recoveredAddresses = await signer.recoverAddresses(transaction, {
       compressed: false,
     });
-    expect(recoveredAddress[0]).toBe(address);
+    expect(recoveredAddresses).toStrictEqual([address]);
 
-    let recoveredAddressComp = await signer.recoverAddress({
-      tx: transaction,
+    let recoveredAddressesComp = await signer.recoverAddresses(transaction, {
       compressed: true,
     });
-    expect(recoveredAddressComp[0]).toBe(addressCompressed);
+    expect(recoveredAddressesComp).toStrictEqual([addressCompressed]);
 
-    recoveredPublicKeyComp = await signer.recoverPublicKey({ tx: transaction });
-    expect(recoveredPublicKeyComp[0]).toBe(publicKeyCompressed);
+    recoveredPublicKeysComp = await signer.recoverPublicKeys(transaction);
+    expect(recoveredPublicKeysComp).toStrictEqual([publicKeyCompressed]);
 
-    recoveredAddressComp = await signer.recoverAddress({ tx: transaction });
-    expect(recoveredAddressComp[0]).toBe(addressCompressed);
+    recoveredAddressesComp = await signer.recoverAddresses(transaction);
+    expect(recoveredAddressesComp).toStrictEqual([addressCompressed]);
   });
 
   it("should rewrite the default options when creating transactions", async () => {
@@ -563,11 +545,13 @@ describe("Wallet and Contract", () => {
 
   it("should change node", async () => {
     expect.assertions(2);
-    const myProvider = new Provider([
-      "http://bad-server1",
-      "http://bad-server2",
-      "http://good-server",
-    ]);
+    const myProvider = new Provider({
+      rpcNodes: [
+        "http://bad-server1",
+        "http://bad-server2",
+        "http://good-server",
+      ],
+    });
     let numErrors = 0;
     myProvider.onError = () => {
       numErrors += 1;
@@ -627,7 +611,7 @@ describe("Wallet and Contract", () => {
       operations: [
         {
           upload_contract: {
-            contract_id: "1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs",
+            contract_id: addressCompressed,
             bytecode: "my_contract_bytecode",
           },
         },
@@ -638,7 +622,7 @@ describe("Wallet and Contract", () => {
         nonce: "OAE=",
         operation_merkle_root:
           "EiC6RyWcgU-Wjx-koQicaeZlJoWStdV12e_0fv-QEx2DqA==",
-        payer: "1GE2JqXw5LMQaU1sj82Dy8ZEe2BRXQS1cs",
+        payer: addressCompressed,
       },
       id: "0x1220ae807b6d8ac19011adc2f6af13b2f2ec1e708a18864d222a460b161d857f2091",
       signatures: [

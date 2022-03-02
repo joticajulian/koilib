@@ -4,7 +4,8 @@ import {
   TransactionJson,
   CallContractOperationJson,
 } from "./interface";
-import { NonceBytesToUInt64 } from "./utils";
+import { Serializer } from "./Serializer";
+import valueJson from "./jsonDescriptors/value-proto.json";
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -18,6 +19,11 @@ export class Provider {
    * Array of URLs of RPC nodes
    */
   public rpcNodes: string[];
+
+  /**
+   * Serializer to serialize/deserialize data types
+   */
+  public valueSerializer?: Serializer;
 
   /**
    * Function triggered when a node is down. Returns a
@@ -65,11 +71,28 @@ export class Provider {
    * ]);
    * ```
    */
-  constructor(rpcNodes: string | string[]) {
-    if (Array.isArray(rpcNodes)) this.rpcNodes = rpcNodes;
-    else this.rpcNodes = [rpcNodes];
+  constructor(c: {
+    rpcNodes: string | string[];
+    /**
+     * Set this option if you can not use _eval_ functions
+     * in the current environment. In such cases, the
+     * serializer must come from an environment where it
+     * is able to use those functions.
+     */
+    valueSerializer?: Serializer;
+  }) {
+    if (Array.isArray(c.rpcNodes)) this.rpcNodes = c.rpcNodes;
+    else this.rpcNodes = [c.rpcNodes];
     this.currentNodeId = 0;
     this.onError = () => false;
+    if (c.valueSerializer) {
+      this.valueSerializer = c.valueSerializer;
+    } else {
+      this.valueSerializer = new Serializer(valueJson, {
+        bytesConversion: false,
+        defaultTypeName: "value_type",
+      });
+    }
   }
 
   /**
@@ -126,20 +149,28 @@ export class Provider {
    * transactions for a particular account. This call is used
    * when creating new transactions.
    * @param account - account address
+   * @param deserialize - If set true it will deserialize the nonce
+   * and return it as number (default). If set false it will return
+   * the nonce encoded as received from the RPC.
    * @returns Nonce
    */
-  async getNonce(account: string): Promise<number> {
+  async getNonce(
+    account: string,
+    deserialize = true
+  ): Promise<number | string> {
     const { nonce } = await this.call<{ nonce: string }>(
       "chain.get_account_nonce",
       { account }
     );
-    if (!nonce) return 0;
 
-    const deserializedNonce = await NonceBytesToUInt64(nonce);
+    if (!deserialize) {
+      return nonce;
+    }
 
-    if (!deserializedNonce) return 0;
-
-    return Number(deserializedNonce);
+    const { uint64_value: numberString } =
+      await this.valueSerializer!.deserialize(nonce);
+    if (!numberString) return 0;
+    return Number(numberString);
   }
 
   async getAccountRc(account: string): Promise<string> {
@@ -208,9 +239,11 @@ export class Provider {
    * Function to get the chain
    */
   async getChainId(): Promise<string> {
-    const res = await this.call<{ chain_id: string }>("chain.get_chain_id", {});
-
-    return res.chain_id;
+    const { chain_id: chainId } = await this.call<{ chain_id: string }>(
+      "chain.get_chain_id",
+      {}
+    );
+    return chainId;
   }
 
   /**

@@ -49,7 +49,10 @@
                 },
                 "int64_value": {
                   "type": "int64",
-                  "id": 5
+                  "id": 5,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
                 },
                 "uint32_value": {
                   "type": "uint32",
@@ -57,7 +60,10 @@
                 },
                 "uint64_value": {
                   "type": "uint64",
-                  "id": 7
+                  "id": 7,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
                 },
                 "sint32_value": {
                   "type": "sint32",
@@ -65,7 +71,10 @@
                 },
                 "sint64_value": {
                   "type": "sint64",
-                  "id": 9
+                  "id": 9,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
                 },
                 "fixed32_value": {
                   "type": "fixed32",
@@ -73,7 +82,10 @@
                 },
                 "fixed64_value": {
                   "type": "fixed64",
-                  "id": 11
+                  "id": 11,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
                 },
                 "sfixed32_value": {
                   "type": "sfixed32",
@@ -81,7 +93,10 @@
                 },
                 "sfixed64_value": {
                   "type": "sfixed64",
-                  "id": 13
+                  "id": 13,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
                 },
                 "bool_value": {
                   "type": "bool",

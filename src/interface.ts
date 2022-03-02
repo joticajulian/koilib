@@ -121,17 +121,7 @@ export interface TransactionOptions {
   sendAbis?: boolean;
 }
 
-export interface RecoverPublicKeyArguments {
-  /**
-   * Transaction to recover public key from
-   */
-  tx?: TransactionJson;
-
-  /**
-   * Block to recover public key from
-   */
-  block?: BlockJson;
-
+export interface RecoverPublicKeyOptions {
   /**
    * Boolean to define if the public key should
    * be compressed or not. It is true by default

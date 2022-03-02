@@ -24,7 +24,7 @@ pbjs.main(
   ],
   (err, output) => {
     if (err) throw err;
-    fs.writeFileSync("./src/jsonDescriptors/value.json", output);
+    fs.writeFileSync("./src/jsonDescriptors/value-proto.json", output);
   }
 );
 

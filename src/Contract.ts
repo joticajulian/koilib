@@ -248,13 +248,6 @@ export class Contract {
   }
 
   /**
-   * Compute contract Id
-   */
-  static computeContractId(address: string): Uint8Array {
-    return decodeBase58(address);
-  }
-
-  /**
    * Get contract Id
    */
   getId(): string {
@@ -290,7 +283,7 @@ export class Contract {
     };
     const operation: UploadContractOperationNested = {
       upload_contract: {
-        contract_id: Contract.computeContractId(this.signer.getAddress()),
+        contract_id: decodeBase58(this.signer.getAddress()),
         bytecode: this.bytecode,
       },
     };
@@ -302,9 +295,7 @@ export class Contract {
       operations: [
         {
           upload_contract: {
-            contract_id: encodeBase58(
-              Contract.computeContractId(this.signer.getAddress())
-            ),
+            contract_id: encodeBase58(operation.upload_contract.contract_id!),
             bytecode: encodeBase64(this.bytecode),
           },
         } as OperationJson,

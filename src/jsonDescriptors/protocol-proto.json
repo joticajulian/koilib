@@ -56,10 +56,7 @@
             "system_call_target": {
               "oneofs": {
                 "target": {
-                  "oneof": [
-                    "thunk_id",
-                    "system_call_bundle"
-                  ]
+                  "oneof": ["thunk_id", "system_call_bundle"]
                 }
               },
               "fields": {
