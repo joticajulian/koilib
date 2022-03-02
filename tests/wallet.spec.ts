@@ -187,15 +187,15 @@ describe("utils", () => {
       "e24e552e0b6cf8835af179a14a766fb58c23e4ee1f7c6317d57ce39cc578cfac"
     );
 
-    expect(n01).toEqual(calculateMerkleRoot(n01leaves));
-    expect(n23).toEqual(calculateMerkleRoot(n23leaves));
-    expect(n0123).toEqual(calculateMerkleRoot(n0123leaves));
-    expect(n45).toEqual(calculateMerkleRoot(n45leaves));
-    expect(n67).toEqual(calculateMerkleRoot(n67leaves));
-    expect(n4567).toEqual(calculateMerkleRoot(n4567leaves));
-    expect(n01234567).toEqual(calculateMerkleRoot(n01234567leaves));
-    expect(n8).toEqual(calculateMerkleRoot(n8leaves));
-    expect(merkleRoot).toEqual(calculateMerkleRoot(hashes));
+    expect(calculateMerkleRoot(n01leaves)).toEqual(n01);
+    expect(calculateMerkleRoot(n23leaves)).toEqual(n23);
+    expect(calculateMerkleRoot(n0123leaves)).toEqual(n0123);
+    expect(calculateMerkleRoot(n45leaves)).toEqual(n45);
+    expect(calculateMerkleRoot(n67leaves)).toEqual(n67);
+    expect(calculateMerkleRoot(n4567leaves)).toEqual(n4567);
+    expect(calculateMerkleRoot(n01234567leaves)).toEqual(n01234567);
+    expect(calculateMerkleRoot(n8leaves)).toEqual(n8);
+    expect(calculateMerkleRoot(hashes)).toEqual(merkleRoot);
   });
 });
 
