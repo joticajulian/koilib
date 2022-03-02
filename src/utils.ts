@@ -57,6 +57,8 @@ export function decodeBase64(bs64: string): Uint8Array {
  * Calculates the merkle root of sha256 hashes
  */
 export function calculateMerkleRoot(hashes: Uint8Array[]): Uint8Array {
+  if (!hashes.length) return sha256(new Uint8Array());
+
   while (hashes.length > 1) {
     for (let i = 0; i < hashes.length; i += 2) {
       if (i + 1 < hashes.length) {

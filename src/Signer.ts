@@ -15,6 +15,7 @@ import {
   bitcoinDecode,
   bitcoinEncode,
   calculateMerkleRoot,
+  decodeBase58,
   decodeBase64,
   encodeBase64,
   toHexString,
@@ -34,6 +35,8 @@ export interface SignerInterface {
     abis?: Record<string, Abi>
   ) => Promise<TransactionJsonWait>;
   prepareTransaction: (tx: TransactionJson) => Promise<TransactionJson>;
+  prepareBlock: (block: BlockJson) => Promise<BlockJson>;
+  signBlock: (block: BlockJson) => Promise<BlockJson>;
 }
 
 /**
@@ -321,20 +324,16 @@ export class Signer implements SignerInterface {
    * @param block - Unsigned block
    */
   async signBlock(block: BlockJson): Promise<BlockJson> {
-    const activeBytes = decodeBase64(block.signature!);
-    const headerBytes = await this.serializer!.serialize(
-      block.header!,
-      "block_header"
-    );
-    const headerActiveBytes = new Uint8Array(
-      headerBytes.length + activeBytes.length
-    );
-    headerActiveBytes.set(headerBytes, 0);
-    headerActiveBytes.set(activeBytes, headerBytes.length);
-    const hash = sha256(headerActiveBytes);
-    block.signature_data = (await this.signHash(hash)).toString();
+    if (!block.id) throw new Error("Missing block id");
+
     // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
-    block.id = `0x1220${toHexString(hash)}`;
+    // block id is a stringified multihash, need to extract the hash digest only
+    const hash = toUint8Array(block.id.slice(6));
+
+    const signature = await this.signHash(hash);
+
+    block.signature = encodeBase64(signature);
+
     return block;
   }
 
@@ -594,14 +593,14 @@ export class Signer implements SignerInterface {
       rcLimit = tx.header.rc_limit;
     }
 
-    const chainId = tx.header.chain_id || this.chainId;
-    //if (!this.chainId) {
-    //  if (!this.provider)
-    //    throw new Error(
-    //      "Cannot get the chain_id because provider is undefined. To skip this call set a chain_id in the Signer"
-    //    );
-    //  this.chainId = await this.provider.getChainId();
-    //}
+    let chainId = tx.header.chain_id || this.chainId;
+    if (!chainId) {
+      if (!this.provider)
+        throw new Error(
+          "Cannot get the chain_id because provider is undefined. To skip this call set a chain_id in the Signer"
+        );
+      chainId = await this.provider.getChainId();
+    }
 
     const operationsHashes: Uint8Array[] = [];
 
@@ -643,6 +642,84 @@ export class Signer implements SignerInterface {
     // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
     tx.id = `0x1220${toHexString(hash)}`;
     return tx;
+  }
+
+  /**
+   * Function to prepare a block
+   * @param block -
+   * @returns A prepared block. ()
+   */
+  async prepareBlock(block: BlockJson): Promise<BlockJson> {
+    if (!block.header) {
+      block.header = {};
+    }
+
+    if (!this.provider) {
+      throw new Error(
+        "Cannot get the head info because provider is undefined."
+      );
+    }
+
+    const hashes: Uint8Array[] = [];
+
+    if (block.transactions) {
+      for (let index = 0; index < block.transactions.length; index++) {
+        const tx = block.transactions[index];
+        const encodedHeader = await this.serializer!.serialize(
+          tx.header!,
+          "transaction_header",
+          { bytesConversion: true }
+        );
+
+        hashes.push(sha256(encodedHeader));
+
+        let signaturesBytes = new Uint8Array();
+        tx.signatures?.forEach((sig) => {
+          signaturesBytes = new Uint8Array([
+            ...signaturesBytes,
+            ...decodeBase64(sig),
+          ]);
+        });
+
+        hashes.push(sha256(signaturesBytes));
+      }
+    }
+
+    // retrieve head info if not provided
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    let { height, previous, previous_state_merkle_root } = block.header;
+
+    if (!height || !previous || !previous_state_merkle_root) {
+      const headInfo = await this.provider.getHeadInfo();
+
+      height = height || `${Number(headInfo.head_topology.height) + 1}`;
+      previous = previous || headInfo.head_topology.id;
+      previous_state_merkle_root =
+        previous_state_merkle_root || headInfo.head_state_merkle_root;
+    }
+
+    block.header = {
+      height,
+      previous,
+      previous_state_merkle_root,
+      timestamp: block.header.timestamp || `${Date.now()}`,
+      transaction_merkle_root: encodeBase64(
+        toUint8Array(`0x1220${toHexString(calculateMerkleRoot(hashes))}`)
+      ),
+      signer: encodeBase64(decodeBase58(this.address)),
+    };
+
+    const headerBytes = await this.serializer!.serialize(
+      block.header,
+      "block_header",
+      { bytesConversion: true }
+    );
+
+    const hash = sha256(headerBytes);
+
+    // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
+    block.id = `0x1220${toHexString(hash)}`;
+    return block;
   }
 }
 
