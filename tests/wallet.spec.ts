@@ -21,6 +21,7 @@ import {
   TransactionJson,
   Abi,
   WaitFunction,
+  BlockJson,
   // BlockJson,
 } from "../src/interface";
 // import { Serializer } from "../src";
@@ -236,38 +237,60 @@ describe("Signer", () => {
     expect(signer6.getPrivateKey("hex")).toBe(privateKey);
   });
 
-  // it("should sign a block and recover its signature", async () => {
-  // expect.assertions(2);
+  it("should prepare, sign a block and recover its signature", async () => {
+    expect.assertions(3);
 
-  // const serializer = new Serializer(ProtocolTypes, {
-  // defaultTypeName: "active_block_data",
-  // });
-  // const activeBlockData = await serializer.serialize({
-  // transaction_merkle_root: encodeBase64(crypto.randomBytes(32)),
-  // passive_data_merkle_root: encodeBase64(crypto.randomBytes(32)),
-  // signer: encodeBase64(decodeBase58(signer.getAddress())),
-  // });
+    const block: BlockJson = {
+      header: {
+        previous:
+          "0x12203c7c767900e472ada19b5acd4e46af8a33911b282eb29003048c83061673c5b4",
+        height: "123",
+        timestamp: "1646252907250",
+        previous_state_merkle_root:
+          "EiBBZoKzt9IK39bRSFl1AGroqsP0vxG67jQifTEpYbjrdQ==",
+      },
+    };
 
-  // const block: BlockJson = {
-  // header: {
-  // previous: `0x1220${crypto.randomBytes(32).toString("hex")}`,
-  // height: "123",
-  // timestamp: String(Date.now()),
-  // },
-  // active: encodeBase64(activeBlockData),
-  // };
-  // const unsignedBlock = JSON.parse(JSON.stringify(block));
-  // await signer.signBlock(block);
+    const preparedBlock = await signer.prepareBlock(block);
 
-  // expect(block).toStrictEqual({
-  // ...unsignedBlock,
-  // id: expect.any(String) as string,
-  // signature_data: expect.any(String) as string,
-  // });
+    expect(preparedBlock).toStrictEqual({
+      header: {
+        height: "123",
+        previous:
+          "0x12203c7c767900e472ada19b5acd4e46af8a33911b282eb29003048c83061673c5b4",
+        previous_state_merkle_root:
+          "EiBBZoKzt9IK39bRSFl1AGroqsP0vxG67jQifTEpYbjrdQ==",
+        timestamp: "1646252907250",
+        transaction_merkle_root:
+          "EiDjsMRCmPwcFJr79MiZb7kkJ65B5GSbk0yklZkbeFK4VQ==",
+        signer: "AKcAYr9OUxZp3tNwN_otN33vuZiIPFoROA==",
+      },
+      id: "0x1220b86711a6ecd9c4fff1488a9a1df1db6047425f5de80b396a40f1c29cfb6d0790",
+    });
 
-  // const blockSigner = await signer.recoverAddress(block);
-  // expect(blockSigner).toBe(signer.getAddress());
-  // });
+    const signedBlock = await signer.signBlock(preparedBlock);
+
+    expect(signedBlock).toStrictEqual({
+      header: {
+        height: "123",
+        previous:
+          "0x12203c7c767900e472ada19b5acd4e46af8a33911b282eb29003048c83061673c5b4",
+        previous_state_merkle_root:
+          "EiBBZoKzt9IK39bRSFl1AGroqsP0vxG67jQifTEpYbjrdQ==",
+        timestamp: "1646252907250",
+        transaction_merkle_root:
+          "EiDjsMRCmPwcFJr79MiZb7kkJ65B5GSbk0yklZkbeFK4VQ==",
+        signer: "AKcAYr9OUxZp3tNwN_otN33vuZiIPFoROA==",
+      },
+      id: "0x1220b86711a6ecd9c4fff1488a9a1df1db6047425f5de80b396a40f1c29cfb6d0790",
+      signature:
+        "II4-lbqNFR7re6fv-9zN0F3Z9d1DZZ67TJZrnYGJwZN1fPwxuurBKPS7ndVG8GyKIWxKTXyC4jLBVgwZvSHc1_U=",
+    });
+
+    const blockSigner = await signer.recoverAddresses(signedBlock);
+
+    expect(blockSigner).toStrictEqual([signer.getAddress()]);
+  });
 });
 
 describe("Wallet and Contract", () => {

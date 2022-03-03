@@ -223,6 +223,7 @@ export class Provider {
       height: string;
       previous: string;
     };
+    head_state_merkle_root: string;
     last_irreversible_block: string;
   }> {
     return this.call<{
@@ -231,6 +232,7 @@ export class Provider {
         height: string;
         previous: string;
       };
+      head_state_merkle_root: string;
       last_irreversible_block: string;
     }>("chain.get_head_info", {});
   }
@@ -422,6 +424,14 @@ export class Provider {
     transaction: TransactionJson
   ): Promise<Record<string, never>> {
     return this.call("chain.submit_transaction", { transaction });
+  }
+
+  /**
+   * Function to call "chain.submit_block" to send a signed
+   * block to the blockchain.
+   */
+  async submitBlock(block: BlockJson): Promise<Record<string, never>> {
+    return this.call("chain.submit_block", { block });
   }
 
   /**
