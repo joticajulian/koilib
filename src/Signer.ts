@@ -600,6 +600,7 @@ export class Signer implements SignerInterface {
           "Cannot get the chain_id because provider is undefined. To skip this call set a chain_id in the Signer"
         );
       chainId = await this.provider.getChainId();
+      this.chainId = chainId;
     }
 
     const operationsHashes: Uint8Array[] = [];
@@ -654,12 +655,6 @@ export class Signer implements SignerInterface {
       block.header = {};
     }
 
-    if (!this.provider) {
-      throw new Error(
-        "Cannot get the head info because provider is undefined."
-      );
-    }
-
     const hashes: Uint8Array[] = [];
 
     if (block.transactions) {
@@ -667,8 +662,7 @@ export class Signer implements SignerInterface {
         const tx = block.transactions[index];
         const encodedHeader = await this.serializer!.serialize(
           tx.header!,
-          "transaction_header",
-          { bytesConversion: true }
+          "transaction_header"
         );
 
         hashes.push(sha256(encodedHeader));
@@ -690,6 +684,12 @@ export class Signer implements SignerInterface {
     let { height, previous, previous_state_merkle_root } = block.header;
 
     if (!height || !previous || !previous_state_merkle_root) {
+      if (!this.provider) {
+        throw new Error(
+          "Cannot get the head info because provider is undefined."
+        );
+      }
+
       const headInfo = await this.provider.getHeadInfo();
 
       height = height || `${Number(headInfo.head_topology.height) + 1}`;
@@ -704,15 +704,19 @@ export class Signer implements SignerInterface {
       previous_state_merkle_root,
       timestamp: block.header.timestamp || `${Date.now()}`,
       transaction_merkle_root: encodeBase64(
-        toUint8Array(`0x1220${toHexString(calculateMerkleRoot(hashes))}`)
+        new Uint8Array([
+          // multihash sha256: 18, 32
+          18,
+          32,
+          ...calculateMerkleRoot(hashes),
+        ])
       ),
       signer: encodeBase64(decodeBase58(this.address)),
     };
 
     const headerBytes = await this.serializer!.serialize(
       block.header,
-      "block_header",
-      { bytesConversion: true }
+      "block_header"
     );
 
     const hash = sha256(headerBytes);
