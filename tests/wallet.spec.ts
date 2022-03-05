@@ -5,7 +5,7 @@ import { Contract } from "../src/Contract";
 import { Provider } from "../src/Provider";
 import {
   bitcoinDecode,
-  encodeBase64,
+  encodeBase64url,
   toHexString,
   Krc20Abi,
   formatUnits,
@@ -13,7 +13,7 @@ import {
   calculateMerkleRoot,
   toUint8Array,
   encodeBase58,
-  decodeBase64,
+  decodeBase64url,
 } from "../src/utils";
 import {
   CallContractOperationNested,
@@ -342,16 +342,16 @@ describe("Wallet and Contract", () => {
 
     const transaction: TransactionJson = {
       header: {
-        nonce: "OAg=", //encodeBase64(await UInt64ToNonceBytes("8")),
+        nonce: "OAg=", //encodeBase64url(await UInt64ToNonceBytes("8")),
         rc_limit: "10",
-        chain_id: encodeBase64(Buffer.from("chain_id")),
+        chain_id: encodeBase64url(Buffer.from("chain_id")),
       },
       operations: [
         {
           call_contract: {
             contract_id: encodeBase58(Buffer.from("contract_id")),
             entry_point: 12,
-            args: encodeBase64(Buffer.from("args")),
+            args: encodeBase64url(Buffer.from("args")),
           },
         },
         {
@@ -363,7 +363,7 @@ describe("Wallet and Contract", () => {
         {
           upload_contract: {
             contract_id: encodeBase58(Buffer.from("contract_id")),
-            bytecode: encodeBase64(Buffer.from("bytecode")),
+            bytecode: encodeBase64url(Buffer.from("bytecode")),
           },
         },
         {
@@ -528,7 +528,7 @@ describe("Wallet and Contract", () => {
       "balance_of_result"
     ) as Type;
     const message = type.create({ value: "123456" });
-    const resultEncoded = encodeBase64(type.encode(message).finish());
+    const resultEncoded = encodeBase64url(type.encode(message).finish());
     mockFetch.mockImplementation(async () =>
       fetchResponse({ result: resultEncoded })
     );
@@ -543,7 +543,7 @@ describe("Wallet and Contract", () => {
       "balance_of_result"
     ) as Type;
     const message = type.create({ value: "123456" });
-    const resultEncoded = encodeBase64(type.encode(message).finish());
+    const resultEncoded = encodeBase64url(type.encode(message).finish());
     mockFetch.mockImplementation(async () =>
       fetchResponse({ result: resultEncoded })
     );
@@ -597,7 +597,7 @@ describe("Wallet and Contract", () => {
 
   it("should upload a contract", async () => {
     expect.assertions(2);
-    const bytecode = decodeBase64("my_contract_bytecode");
+    const bytecode = decodeBase64url("my_contract_bytecode");
     koinContract.bytecode = bytecode;
 
     mockFetch.mockImplementation(async (_url, params) => {

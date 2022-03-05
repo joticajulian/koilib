@@ -2,9 +2,9 @@
 import { Root, Type, INamespace } from "protobufjs/light";
 import {
   decodeBase58,
-  decodeBase64,
+  decodeBase64url,
   encodeBase58,
-  encodeBase64,
+  encodeBase64url,
   toHexString,
   toUint8Array,
 } from "./utils";
@@ -140,7 +140,7 @@ export class Serializer {
     }
     // Default byte conversion
     if (!options || !options[OP_BYTES]) {
-      object[name] = decodeBase64(valueDecoded[name] as string);
+      object[name] = decodeBase64url(valueDecoded[name] as string);
       return;
     }
 
@@ -152,7 +152,7 @@ export class Serializer {
         object[name] = decodeBase58(valueDecoded[name] as string);
         break;
       case "BASE64":
-        object[name] = decodeBase64(valueDecoded[name] as string);
+        object[name] = decodeBase64url(valueDecoded[name] as string);
         break;
       case "HEX":
       case "BLOCK_ID":
@@ -211,7 +211,7 @@ export class Serializer {
   ): Promise<T> {
     const valueBuffer =
       typeof valueEncoded === "string"
-        ? decodeBase64(valueEncoded)
+        ? decodeBase64url(valueEncoded)
         : valueEncoded;
     const protobufType =
       this.defaultType || this.root.lookupType(typeName as string);
@@ -232,7 +232,7 @@ export class Serializer {
 
       // Default byte conversion
       if (!options || !options[OP_BYTES]) {
-        object[name] = encodeBase64(object[name] as Uint8Array);
+        object[name] = encodeBase64url(object[name] as Uint8Array);
         return;
       }
 
@@ -244,7 +244,7 @@ export class Serializer {
           object[name] = encodeBase58(object[name] as Uint8Array);
           break;
         case "BASE64":
-          object[name] = encodeBase64(object[name] as Uint8Array);
+          object[name] = encodeBase64url(object[name] as Uint8Array);
           break;
         case "HEX":
         case "BLOCK_ID":

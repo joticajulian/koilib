@@ -119,7 +119,7 @@ describe("Provider", () => {
     });
     const activeBlock = await serializer2.deserialize(block.block.active!);
     const blockSigner = utils.encodeBase58(
-      utils.decodeBase64(activeBlock.signer as string)
+      utils.decodeBase64url(activeBlock.signer as string)
     );
     expect(signer1).toBe(blockSigner);
   });

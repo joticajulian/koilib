@@ -1,9 +1,11 @@
 import * as multibase from "multibase";
 import { sha256 } from "@noble/hashes/sha256";
 import { ripemd160 } from "@noble/hashes/ripemd160";
-import { Abi } from "./interface";
+import { Abi, GenesisDataDecoded, GenesisDataEncoded } from "./interface";
+import { Serializer } from "./Serializer";
 import krc20ProtoJson from "./jsonDescriptors/krc20-proto.json";
 import protocolJson from "./jsonDescriptors/protocol-proto.json";
+import chainJson from "./jsonDescriptors/chain-proto.json";
 
 /**
  * Converts an hex string to Uint8Array
@@ -40,17 +42,41 @@ export function decodeBase58(bs58: string): Uint8Array {
 }
 
 /**
+ * Encodes an Uint8Array in base64url
+ */
+export function encodeBase64url(buffer: Uint8Array): string {
+  return new TextDecoder().decode(multibase.encode("U", buffer)).slice(1);
+}
+
+/**
+ * Decodes a buffer formatted in base64url
+ */
+export function decodeBase64url(bs64url: string): Uint8Array {
+  return multibase.decode(`U${bs64url}`);
+}
+
+/**
  * Encodes an Uint8Array in base64
  */
 export function encodeBase64(buffer: Uint8Array): string {
-  return new TextDecoder().decode(multibase.encode("U", buffer)).slice(1);
+  return new TextDecoder().decode(multibase.encode("M", buffer)).slice(1);
+}
+
+export function multihash(buffer: Uint8Array, code = "sha2-256"): Uint8Array {
+  switch (code) {
+    case "sha2-256": {
+      return new Uint8Array([18, buffer.length, ...buffer]);
+    }
+    default:
+      throw new Error(`multihash code ${code} not supported`);
+  }
 }
 
 /**
  * Decodes a buffer formatted in base64
  */
 export function decodeBase64(bs64: string): Uint8Array {
-  return multibase.decode(`U${bs64}`);
+  return multibase.decode(`M${bs64}`);
 }
 
 /**
@@ -256,3 +282,91 @@ export const Krc20Abi: Abi = {
 };
 
 export const ProtocolTypes = protocolJson;
+
+export async function decodeGenesisData(genesisData: GenesisDataEncoded) {
+  const dictionary = [
+    {
+      keyDecoded: "object_key::head_block",
+      keyEncoded: encodeBase64(multihash(sha256("object_key::head_block"))),
+      // chainTypeName: "block",
+    },
+    {
+      keyDecoded: "object_key::chain_id",
+      keyEncoded: encodeBase64(multihash(sha256("object_key::chain_id"))),
+    },
+    {
+      keyDecoded: "object_key::genesis_key",
+      keyEncoded: encodeBase64(multihash(sha256("object_key::genesis_key"))),
+      address: true,
+    },
+    {
+      keyDecoded: "object_key::resource_limit_data",
+      keyEncoded: encodeBase64(
+        multihash(sha256("object_key::resource_limit_data"))
+      ),
+      chainTypeName: "resource_limit_data",
+    },
+    {
+      keyDecoded: "object_key::max_account_resources",
+      keyEncoded: encodeBase64(
+        multihash(sha256("object_key::max_account_resources"))
+      ),
+      chainTypeName: "max_account_resources",
+    },
+    {
+      keyDecoded: "object_key::protocol_descriptor",
+      keyEncoded: encodeBase64(
+        multihash(sha256("object_key::protocol_descriptor"))
+      ),
+    },
+    {
+      keyDecoded: "object_key::compute_bandwidth_registry",
+      keyEncoded: encodeBase64(
+        multihash(sha256("object_key::compute_bandwidth_registry"))
+      ),
+      chainTypeName: "compute_bandwidth_registry",
+    },
+    {
+      keyDecoded: "object_key::block_hash_code",
+      keyEncoded: encodeBase64(
+        multihash(sha256("object_key::block_hash_code"))
+      ),
+      // chainTypeName: "block_hash_code",
+    },
+  ];
+
+  const genesisDataDecoded: GenesisDataDecoded = {};
+  if (!genesisData || !genesisData.entries) return genesisDataDecoded;
+
+  const serializer = new Serializer(chainJson, {
+    bytesConversion: true,
+  });
+
+  genesisDataDecoded.entries = await Promise.all(
+    genesisData.entries.map(async (entry) => {
+      const keyGroup = dictionary.find((d) => d.keyEncoded === entry.key);
+      if (!keyGroup) return entry;
+
+      const valueBase64url = encodeBase64url(decodeBase64(entry.value));
+      let value: unknown;
+      if (keyGroup.chainTypeName) {
+        value = await serializer.deserialize(
+          valueBase64url,
+          keyGroup.chainTypeName
+        );
+      } else if (keyGroup.address) {
+        value = encodeBase58(decodeBase64url(valueBase64url));
+      } else {
+        value = valueBase64url;
+      }
+
+      return {
+        space: entry.space,
+        key: keyGroup.keyDecoded,
+        value,
+      };
+    })
+  );
+
+  return genesisDataDecoded;
+}

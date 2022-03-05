@@ -11,7 +11,7 @@ import {
   DecodedOperationJson,
   OperationJson,
 } from "./interface";
-import { decodeBase58, encodeBase58, encodeBase64 } from "./utils";
+import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
 
 /**
  * The contract class contains the contract ID and contract entries
@@ -206,7 +206,7 @@ export class Contract {
             const { result: resultEncoded } = await this.provider.readContract({
               contract_id: encodeBase58(operation.call_contract.contract_id),
               entry_point: operation.call_contract.entry_point,
-              args: encodeBase64(operation.call_contract.args),
+              args: encodeBase64url(operation.call_contract.args),
             });
             let result = defaultOutput as T;
             if (resultEncoded) {
@@ -234,7 +234,7 @@ export class Contract {
                     operation.call_contract.contract_id
                   ),
                   entry_point: operation.call_contract.entry_point,
-                  args: encodeBase64(operation.call_contract.args),
+                  args: encodeBase64url(operation.call_contract.args),
                 },
               } as OperationJson,
             ],
@@ -296,7 +296,7 @@ export class Contract {
         {
           upload_contract: {
             contract_id: encodeBase58(operation.upload_contract.contract_id!),
-            bytecode: encodeBase64(this.bytecode),
+            bytecode: encodeBase64url(this.bytecode),
           },
         } as OperationJson,
       ],

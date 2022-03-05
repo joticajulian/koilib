@@ -16,8 +16,8 @@ import {
   bitcoinEncode,
   calculateMerkleRoot,
   decodeBase58,
-  decodeBase64,
-  encodeBase64,
+  decodeBase64url,
+  encodeBase64url,
   toHexString,
   toUint8Array,
 } from "./utils";
@@ -311,7 +311,7 @@ export class Signer implements SignerInterface {
 
     const signature = await this.signHash(hash);
     if (!tx.signatures) tx.signatures = [];
-    tx.signatures.push(encodeBase64(signature));
+    tx.signatures.push(encodeBase64url(signature));
 
     return tx;
   }
@@ -332,7 +332,7 @@ export class Signer implements SignerInterface {
 
     const signature = await this.signHash(hash);
 
-    block.signature = encodeBase64(signature);
+    block.signature = encodeBase64url(signature);
 
     return block;
   }
@@ -490,7 +490,7 @@ export class Signer implements SignerInterface {
         }
         return Signer.recoverPublicKey(
           hash,
-          decodeBase64(signature),
+          decodeBase64url(signature),
           compressed
         );
       })
@@ -573,7 +573,7 @@ export class Signer implements SignerInterface {
           "Cannot get the nonce because provider is undefined. To skip this call set a nonce in the transaction header"
         );
       const oldNonce = (await this.provider.getNonce(this.address)) as number;
-      nonce = encodeBase64(
+      nonce = encodeBase64url(
         await this.valueSerializer!.serialize({
           uint64_value: String(oldNonce + 1),
         })
@@ -614,7 +614,7 @@ export class Signer implements SignerInterface {
         operationsHashes.push(sha256(encodedOp));
       }
     }
-    const operationMerkleRoot = encodeBase64(
+    const operationMerkleRoot = encodeBase64url(
       new Uint8Array([
         // multihash sha256: 18, 32
         18,
@@ -671,7 +671,7 @@ export class Signer implements SignerInterface {
         tx.signatures?.forEach((sig) => {
           signaturesBytes = new Uint8Array([
             ...signaturesBytes,
-            ...decodeBase64(sig),
+            ...decodeBase64url(sig),
           ]);
         });
 
@@ -703,7 +703,7 @@ export class Signer implements SignerInterface {
       previous,
       previous_state_merkle_root,
       timestamp: block.header.timestamp || `${Date.now()}`,
-      transaction_merkle_root: encodeBase64(
+      transaction_merkle_root: encodeBase64url(
         new Uint8Array([
           // multihash sha256: 18, 32
           18,
@@ -711,7 +711,7 @@ export class Signer implements SignerInterface {
           ...calculateMerkleRoot(hashes),
         ])
       ),
-      signer: encodeBase64(decodeBase58(this.address)),
+      signer: encodeBase64url(decodeBase58(this.address)),
     };
 
     const headerBytes = await this.serializer!.serialize(

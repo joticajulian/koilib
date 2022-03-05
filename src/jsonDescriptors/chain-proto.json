@@ -1,7 +1,35 @@
 {
   "nested": {
     "koinos": {
+      "options": {
+        "go_package": "github.com/koinos/koinos-proto-golang/koinos"
+      },
       "nested": {
+        "block_topology": {
+          "fields": {
+            "id": {
+              "type": "bytes",
+              "id": 1,
+              "options": {
+                "(btype)": "BLOCK_ID"
+              }
+            },
+            "height": {
+              "type": "uint64",
+              "id": 2,
+              "options": {
+                "jstype": "JS_STRING"
+              }
+            },
+            "previous": {
+              "type": "bytes",
+              "id": 3,
+              "options": {
+                "(btype)": "BLOCK_ID"
+              }
+            }
+          }
+        },
         "protocol": {
           "options": {
             "go_package": "github.com/koinos/koinos-proto-golang/koinos/protocol"
@@ -432,6 +460,211 @@
                   "rule": "repeated",
                   "type": "string",
                   "id": 9
+                }
+              }
+            }
+          }
+        },
+        "chain": {
+          "options": {
+            "go_package": "github.com/koinos/koinos-proto-golang/koinos/chain"
+          },
+          "nested": {
+            "object_space": {
+              "fields": {
+                "system": {
+                  "type": "bool",
+                  "id": 1
+                },
+                "zone": {
+                  "type": "bytes",
+                  "id": 2
+                },
+                "id": {
+                  "type": "uint32",
+                  "id": 3
+                }
+              }
+            },
+            "database_key": {
+              "fields": {
+                "space": {
+                  "type": "object_space",
+                  "id": 1
+                },
+                "key": {
+                  "type": "bytes",
+                  "id": 2
+                }
+              }
+            },
+            "max_account_resources": {
+              "fields": {
+                "value": {
+                  "type": "uint64",
+                  "id": 1,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                }
+              }
+            },
+            "privilege": {
+              "values": {
+                "kernel_mode": 0,
+                "user_mode": 1
+              }
+            },
+            "head_info": {
+              "fields": {
+                "head_topology": {
+                  "type": "block_topology",
+                  "id": 1
+                },
+                "head_block_time": {
+                  "type": "uint64",
+                  "id": 2,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "last_irreversible_block": {
+                  "type": "uint64",
+                  "id": 3,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                }
+              }
+            },
+            "caller_data": {
+              "fields": {
+                "caller": {
+                  "type": "bytes",
+                  "id": 1,
+                  "options": {
+                    "(btype)": "ADDRESS"
+                  }
+                },
+                "caller_privilege": {
+                  "type": "privilege",
+                  "id": 2
+                }
+              }
+            },
+            "resource_limit_data": {
+              "fields": {
+                "disk_storage_limit": {
+                  "type": "uint64",
+                  "id": 1,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "disk_storage_cost": {
+                  "type": "uint64",
+                  "id": 2,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "network_bandwidth_limit": {
+                  "type": "uint64",
+                  "id": 3,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "network_bandwidth_cost": {
+                  "type": "uint64",
+                  "id": 4,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "compute_bandwidth_limit": {
+                  "type": "uint64",
+                  "id": 5,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "compute_bandwidth_cost": {
+                  "type": "uint64",
+                  "id": 6,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                }
+              }
+            },
+            "contract_metadata_object": {
+              "fields": {
+                "hash": {
+                  "type": "bytes",
+                  "id": 1
+                },
+                "system": {
+                  "type": "bool",
+                  "id": 2
+                },
+                "authorizes_call_contract": {
+                  "type": "bool",
+                  "id": 3
+                },
+                "authorizes_transaction_application": {
+                  "type": "bool",
+                  "id": 4
+                },
+                "authorizes_upload_contract": {
+                  "type": "bool",
+                  "id": 5
+                }
+              }
+            },
+            "compute_bandwidth_entry": {
+              "fields": {
+                "name": {
+                  "type": "string",
+                  "id": 1
+                },
+                "compute": {
+                  "type": "uint64",
+                  "id": 2
+                }
+              }
+            },
+            "compute_bandwidth_registry": {
+              "fields": {
+                "entries": {
+                  "rule": "repeated",
+                  "type": "compute_bandwidth_entry",
+                  "id": 1
+                }
+              }
+            },
+            "genesis_entry": {
+              "fields": {
+                "space": {
+                  "type": "object_space",
+                  "id": 1
+                },
+                "key": {
+                  "type": "bytes",
+                  "id": 2
+                },
+                "value": {
+                  "type": "bytes",
+                  "id": 3
+                }
+              }
+            },
+            "genesis_data": {
+              "fields": {
+                "entries": {
+                  "rule": "repeated",
+                  "type": "genesis_entry",
+                  "id": 1
                 }
               }
             }

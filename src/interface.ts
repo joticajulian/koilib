@@ -162,6 +162,26 @@ export type WaitFunction = (
   timeout?: number
 ) => Promise<string | number>;
 
+export interface GenesisDataEncoded {
+  entries?: {
+    space: {
+      system: boolean;
+    };
+    key: string;
+    value: string;
+  }[];
+}
+
+export interface GenesisDataDecoded {
+  entries?: {
+    space: {
+      system: boolean;
+    };
+    key: string;
+    value: unknown;
+  }[];
+}
+
 export interface UploadContractOperation {
   contract_id?: Uint8Array;
 
