@@ -80,7 +80,7 @@ export class Serializer {
   defaultType?: Type;
 
   /**
-   * Preformat bytes for base64, base58 or hex string
+   * Preformat bytes for base64url, base58 or hex string
    */
   bytesConversion = true;
 

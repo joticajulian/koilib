@@ -1,11 +1,9 @@
 import * as multibase from "multibase";
 import { sha256 } from "@noble/hashes/sha256";
 import { ripemd160 } from "@noble/hashes/ripemd160";
-import { Abi, GenesisDataDecoded, GenesisDataEncoded } from "./interface";
-import { Serializer } from "./Serializer";
+import { Abi } from "./interface";
 import krc20ProtoJson from "./jsonDescriptors/krc20-proto.json";
 import protocolJson from "./jsonDescriptors/protocol-proto.json";
-import chainJson from "./jsonDescriptors/chain-proto.json";
 
 /**
  * Converts an hex string to Uint8Array
@@ -282,91 +280,3 @@ export const Krc20Abi: Abi = {
 };
 
 export const ProtocolTypes = protocolJson;
-
-export async function decodeGenesisData(genesisData: GenesisDataEncoded) {
-  const dictionary = [
-    {
-      keyDecoded: "object_key::head_block",
-      keyEncoded: encodeBase64(multihash(sha256("object_key::head_block"))),
-      // chainTypeName: "block",
-    },
-    {
-      keyDecoded: "object_key::chain_id",
-      keyEncoded: encodeBase64(multihash(sha256("object_key::chain_id"))),
-    },
-    {
-      keyDecoded: "object_key::genesis_key",
-      keyEncoded: encodeBase64(multihash(sha256("object_key::genesis_key"))),
-      address: true,
-    },
-    {
-      keyDecoded: "object_key::resource_limit_data",
-      keyEncoded: encodeBase64(
-        multihash(sha256("object_key::resource_limit_data"))
-      ),
-      chainTypeName: "resource_limit_data",
-    },
-    {
-      keyDecoded: "object_key::max_account_resources",
-      keyEncoded: encodeBase64(
-        multihash(sha256("object_key::max_account_resources"))
-      ),
-      chainTypeName: "max_account_resources",
-    },
-    {
-      keyDecoded: "object_key::protocol_descriptor",
-      keyEncoded: encodeBase64(
-        multihash(sha256("object_key::protocol_descriptor"))
-      ),
-    },
-    {
-      keyDecoded: "object_key::compute_bandwidth_registry",
-      keyEncoded: encodeBase64(
-        multihash(sha256("object_key::compute_bandwidth_registry"))
-      ),
-      chainTypeName: "compute_bandwidth_registry",
-    },
-    {
-      keyDecoded: "object_key::block_hash_code",
-      keyEncoded: encodeBase64(
-        multihash(sha256("object_key::block_hash_code"))
-      ),
-      // chainTypeName: "block_hash_code",
-    },
-  ];
-
-  const genesisDataDecoded: GenesisDataDecoded = {};
-  if (!genesisData || !genesisData.entries) return genesisDataDecoded;
-
-  const serializer = new Serializer(chainJson, {
-    bytesConversion: true,
-  });
-
-  genesisDataDecoded.entries = await Promise.all(
-    genesisData.entries.map(async (entry) => {
-      const keyGroup = dictionary.find((d) => d.keyEncoded === entry.key);
-      if (!keyGroup) return entry;
-
-      const valueBase64url = encodeBase64url(decodeBase64(entry.value));
-      let value: unknown;
-      if (keyGroup.chainTypeName) {
-        value = await serializer.deserialize(
-          valueBase64url,
-          keyGroup.chainTypeName
-        );
-      } else if (keyGroup.address) {
-        value = encodeBase58(decodeBase64url(valueBase64url));
-      } else {
-        value = valueBase64url;
-      }
-
-      return {
-        space: entry.space,
-        key: keyGroup.keyDecoded,
-        value,
-      };
-    })
-  );
-
-  return genesisDataDecoded;
-}

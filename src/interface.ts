@@ -1,4 +1,5 @@
 import { INamespace } from "protobufjs/light";
+import { Serializer } from "./Serializer";
 
 /**
  * Application Binary Interface (ABI)
@@ -180,6 +181,26 @@ export interface GenesisDataDecoded {
     key: string;
     value: unknown;
   }[];
+}
+
+export interface DictionaryGenesisData {
+  /** Human readable key name */
+  [x: string]: {
+    /** sha256 of keyDecoded encoded with multhash and base64 */
+    keyEncoded?: string;
+
+    /** boolean defining if it's an address */
+    isAddress?: boolean;
+
+    /** custom serializer */
+    serializer?: Serializer;
+
+    /** type name for serialization */
+    typeName?: string;
+
+    /** preformat bytes for base64url, base58 or hex string */
+    bytesConversion?: boolean;
+  };
 }
 
 export interface UploadContractOperation {
