@@ -170,6 +170,7 @@ export interface GenesisDataEncoded {
     };
     key: string;
     value: string;
+    error?: string;
   }[];
 }
 
@@ -179,7 +180,8 @@ export interface GenesisDataDecoded {
       system: boolean;
     };
     key: string;
-    value: unknown;
+    value: string | Record<string, unknown>;
+    error?: string;
   }[];
 }
 

@@ -12,6 +12,7 @@ import {
   encodeBase64url,
   decodeBase64url,
   encodeBase58,
+  decodeBase58,
 } from "./utils";
 import chainJson from "./jsonDescriptors/chain-proto.json";
 
@@ -28,16 +29,10 @@ export const defaultDictionaryGenesisData: DictionaryGenesisData = {
   "object_key::block_hash_code": {},
 };
 
-export async function decodeGenesisData(
-  genesisData: GenesisDataEncoded,
-  dictionary: DictionaryGenesisData = {}
-) {
-  const genesisDataDecoded: GenesisDataDecoded = {};
-  if (!genesisData || !genesisData.entries) return genesisDataDecoded;
-
-  const serializerChain = new Serializer(chainJson, {
-    bytesConversion: true,
-  });
+function prepareDictionary(
+  dictionary: DictionaryGenesisData
+): DictionaryGenesisData {
+  const serializerChain = new Serializer(chainJson, { bytesConversion: true });
 
   const defaultDictionary = JSON.parse(
     JSON.stringify(defaultDictionaryGenesisData)
@@ -56,6 +51,63 @@ export async function decodeGenesisData(
     dic[key].keyEncoded = encodeBase64(multihash(sha256(key)));
   });
 
+  return dic;
+}
+
+export async function encodeGenesisData(
+  genesisDataDecoded: GenesisDataDecoded,
+  dictionary: DictionaryGenesisData = {}
+): Promise<GenesisDataEncoded> {
+  const genesisData: GenesisDataEncoded = {};
+  if (!genesisDataDecoded || !genesisDataDecoded.entries) return genesisData;
+  const dic = prepareDictionary(dictionary);
+
+  genesisData.entries = await Promise.all(
+    genesisDataDecoded.entries.map(async (entry) => {
+      const key = Object.keys(dic).find((key) => key === entry.key);
+      if (!key)
+        return {
+          error: `decoded key ${entry.key} not found in the dictionary`,
+          space: entry.space,
+          key: entry.key,
+          value: encodeBase64(new Uint8Array()),
+        };
+
+      const { isAddress, serializer, typeName, keyEncoded } = dic[key];
+      let valueBytes: Uint8Array;
+      let error = "";
+      if (isAddress) {
+        valueBytes = decodeBase58(entry.value as string);
+      } else if (serializer && typeName) {
+        valueBytes = await serializer.serialize(
+          entry.value as Record<string, unknown>,
+          typeName
+        );
+      } else {
+        valueBytes = new Uint8Array();
+        error = "no serializer or typeName defined in the dictionary";
+      }
+
+      return {
+        ...(error && { error }),
+        space: entry.space,
+        key: keyEncoded as string,
+        value: encodeBase64(valueBytes),
+      };
+    })
+  );
+
+  return genesisData;
+}
+
+export async function decodeGenesisData(
+  genesisData: GenesisDataEncoded,
+  dictionary: DictionaryGenesisData = {}
+): Promise<GenesisDataDecoded> {
+  const genesisDataDecoded: GenesisDataDecoded = {};
+  if (!genesisData || !genesisData.entries) return genesisDataDecoded;
+  const dic = prepareDictionary(dictionary);
+
   genesisDataDecoded.entries = await Promise.all(
     genesisData.entries.map(async (entry) => {
       const key = Object.keys(dic).find(
@@ -70,7 +122,7 @@ export async function decodeGenesisData(
       const { isAddress, serializer, typeName } = dic[key];
 
       const valueBase64url = encodeBase64url(decodeBase64(entry.value));
-      let value: unknown;
+      let value: string | Record<string, unknown>;
       let error = "";
       if (isAddress) {
         value = encodeBase58(decodeBase64url(valueBase64url));
@@ -82,10 +134,10 @@ export async function decodeGenesisData(
       }
 
       return {
+        ...(error && { error }),
         space: entry.space,
         key,
         value,
-        ...(error && { error }),
       };
     })
   );
