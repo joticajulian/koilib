@@ -15,7 +15,6 @@ import {
   bitcoinDecode,
   bitcoinEncode,
   calculateMerkleRoot,
-  decodeBase58,
   decodeBase64url,
   encodeBase64url,
   toHexString,
@@ -711,7 +710,7 @@ export class Signer implements SignerInterface {
           ...calculateMerkleRoot(hashes),
         ])
       ),
-      signer: encodeBase64url(decodeBase58(this.address)),
+      signer: this.address,
     };
 
     const headerBytes = await this.serializer!.serialize(

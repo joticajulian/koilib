@@ -216,7 +216,10 @@ export class Serializer {
     const protobufType =
       this.defaultType || this.root.lookupType(typeName as string);
     const message = protobufType.decode(valueBuffer);
-    const object = protobufType.toObject(message, { longs: String });
+    const object = protobufType.toObject(message, {
+      longs: String,
+      defaults: true,
+    });
     const bytesConversion =
       opts?.bytesConversion === undefined
         ? this.bytesConversion

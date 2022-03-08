@@ -166,9 +166,11 @@ export type WaitFunction = (
 export interface GenesisDataEncoded {
   entries?: {
     space: {
-      system: boolean;
+      system?: boolean;
+      zone?: string;
+      id?: number;
     };
-    key: string;
+    key?: string;
     value: string;
     error?: string;
   }[];
@@ -177,19 +179,22 @@ export interface GenesisDataEncoded {
 export interface GenesisDataDecoded {
   entries?: {
     space: {
-      system: boolean;
+      system?: boolean;
+      zone?: string;
+      id?: number;
     };
-    key: string;
+    key?: string;
+    alias?: string;
     value: string | Record<string, unknown>;
     error?: string;
   }[];
 }
 
 export interface DictionaryGenesisData {
-  /** Human readable key name */
+  /** key name */
   [x: string]: {
-    /** sha256 of keyDecoded encoded with multhash and base64 */
-    keyEncoded?: string;
+    /** alternative name for the key name */
+    alias?: string;
 
     /** boolean defining if it's an address */
     isAddress?: boolean;

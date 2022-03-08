@@ -16,7 +16,7 @@ import {
 } from "./utils";
 import chainJson from "./jsonDescriptors/chain-proto.json";
 
-export const defaultDictionaryGenesisData: DictionaryGenesisData = {
+const defaultAlias: DictionaryGenesisData = {
   "object_key::head_block": { typeName: "block" },
   "object_key::chain_id": {},
   "object_key::genesis_key": { isAddress: true },
@@ -34,22 +34,20 @@ function prepareDictionary(
 ): DictionaryGenesisData {
   const serializerChain = new Serializer(chainJson, { bytesConversion: true });
 
-  const defaultDictionary = JSON.parse(
-    JSON.stringify(defaultDictionaryGenesisData)
-  ) as DictionaryGenesisData;
-  Object.keys(defaultDictionary).forEach((key) => {
-    defaultDictionary[key].serializer = serializerChain;
+  const defaultDictionary: DictionaryGenesisData = {};
+  Object.keys(defaultAlias).forEach((alias) => {
+    const key = encodeBase64(multihash(sha256(alias)));
+    defaultDictionary[key] = {
+      serializer: serializerChain,
+      alias,
+      ...defaultAlias[alias],
+    };
   });
 
   const dic = {
     ...defaultDictionary,
     ...dictionary,
   };
-
-  Object.keys(dic).forEach((key) => {
-    if (dic[key].keyEncoded) return;
-    dic[key].keyEncoded = encodeBase64(multihash(sha256(key)));
-  });
 
   return dic;
 }
@@ -64,16 +62,19 @@ export async function encodeGenesisData(
 
   genesisData.entries = await Promise.all(
     genesisDataDecoded.entries.map(async (entry) => {
-      const key = Object.keys(dic).find((key) => key === entry.key);
+      const key = Object.keys(dic).find(
+        (k) =>
+          k === entry.key || (entry.alias && dic[k].alias === entry.alias)
+      );
       if (!key)
         return {
-          error: `decoded key ${entry.key} not found in the dictionary`,
+          error: `key ${entry.key!} not found in the dictionary`,
           space: entry.space,
           key: entry.key,
           value: encodeBase64(new Uint8Array()),
         };
 
-      const { isAddress, serializer, typeName, keyEncoded } = dic[key];
+      const { isAddress, serializer, typeName } = dic[key];
       let valueBytes: Uint8Array;
       let error = "";
       if (isAddress) {
@@ -91,7 +92,7 @@ export async function encodeGenesisData(
       return {
         ...(error && { error }),
         space: entry.space,
-        key: keyEncoded as string,
+        key,
         value: encodeBase64(valueBytes),
       };
     })
@@ -110,16 +111,14 @@ export async function decodeGenesisData(
 
   genesisDataDecoded.entries = await Promise.all(
     genesisData.entries.map(async (entry) => {
-      const key = Object.keys(dic).find(
-        (key) => dic[key].keyEncoded === entry.key
-      );
+      const key = Object.keys(dic).find((k) => k === entry.key);
       if (!key)
         return {
-          error: `encoded key ${entry.key} not found in the dictionary`,
+          error: `key ${entry.key!} not found in the dictionary`,
           ...entry,
         };
 
-      const { isAddress, serializer, typeName } = dic[key];
+      const { isAddress, serializer, typeName, alias } = dic[key];
 
       const valueBase64url = encodeBase64url(decodeBase64(entry.value));
       let value: string | Record<string, unknown>;
@@ -138,6 +137,7 @@ export async function decodeGenesisData(
         space: entry.space,
         key,
         value,
+        ...(alias && { alias }),
       };
     })
   );
