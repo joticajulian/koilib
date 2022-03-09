@@ -63,8 +63,7 @@ export async function encodeGenesisData(
   genesisData.entries = await Promise.all(
     genesisDataDecoded.entries.map(async (entry) => {
       const key = Object.keys(dic).find(
-        (k) =>
-          k === entry.key || (entry.alias && dic[k].alias === entry.alias)
+        (k) => k === entry.key || (entry.alias && dic[k].alias === entry.alias)
       );
       if (!key)
         return {

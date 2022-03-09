@@ -235,43 +235,43 @@ export function parseUnits(value: string, decimals: number): string {
 export const Krc20Abi: Abi = {
   methods: {
     name: {
-      entryPoint: 0x76ea4297,
+      entryPoint: 0x82a3537f,
       input: "name_arguments",
       output: "name_result",
       readOnly: true,
     },
     symbol: {
-      entryPoint: 0x7e794b24,
+      entryPoint: 0xb76a7ca1,
       input: "symbol_arguments",
       output: "symbol_result",
       readOnly: true,
     },
     decimals: {
-      entryPoint: 0x59dc15ce,
+      entryPoint: 0xee80fd2f,
       input: "decimals_arguments",
       output: "decimals_result",
       readOnly: true,
     },
     totalSupply: {
-      entryPoint: 0xcf2e8212,
+      entryPoint: 0xb0da3934,
       input: "total_supply_arguments",
       output: "total_supply_result",
       readOnly: true,
     },
     balanceOf: {
-      entryPoint: 0x15619248,
+      entryPoint: 0x5c721497,
       input: "balance_of_arguments",
       output: "balance_of_result",
       readOnly: true,
       defaultOutput: { value: "0" },
     },
     transfer: {
-      entryPoint: 0x62efa292,
+      entryPoint: 0x27f576ca,
       input: "transfer_arguments",
       output: "transfer_result",
     },
     mint: {
-      entryPoint: 0xc2f82bdc,
+      entryPoint: 0xdc6f17bb,
       input: "mint_arguments",
       output: "mint_result",
     },

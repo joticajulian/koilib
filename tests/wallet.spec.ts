@@ -251,45 +251,27 @@ describe("Signer", () => {
       },
     };
 
-    const preparedBlock = await signer.prepareBlock(block);
-
+    const copyBlock = JSON.parse(JSON.stringify(block)) as BlockJson;
+    const preparedBlock = await signer.prepareBlock(copyBlock);
     expect(preparedBlock).toStrictEqual({
       header: {
-        height: "123",
-        previous:
-          "0x12203c7c767900e472ada19b5acd4e46af8a33911b282eb29003048c83061673c5b4",
-        previous_state_merkle_root:
-          "EiBBZoKzt9IK39bRSFl1AGroqsP0vxG67jQifTEpYbjrdQ==",
-        timestamp: "1646252907250",
+        ...block.header,
         transaction_merkle_root:
           "EiDjsMRCmPwcFJr79MiZb7kkJ65B5GSbk0yklZkbeFK4VQ==",
-        signer: "AKcAYr9OUxZp3tNwN_otN33vuZiIPFoROA==",
+        signer: addressCompressed,
       },
       id: "0x1220b86711a6ecd9c4fff1488a9a1df1db6047425f5de80b396a40f1c29cfb6d0790",
     });
 
     const signedBlock = await signer.signBlock(preparedBlock);
-
     expect(signedBlock).toStrictEqual({
-      header: {
-        height: "123",
-        previous:
-          "0x12203c7c767900e472ada19b5acd4e46af8a33911b282eb29003048c83061673c5b4",
-        previous_state_merkle_root:
-          "EiBBZoKzt9IK39bRSFl1AGroqsP0vxG67jQifTEpYbjrdQ==",
-        timestamp: "1646252907250",
-        transaction_merkle_root:
-          "EiDjsMRCmPwcFJr79MiZb7kkJ65B5GSbk0yklZkbeFK4VQ==",
-        signer: "AKcAYr9OUxZp3tNwN_otN33vuZiIPFoROA==",
-      },
-      id: "0x1220b86711a6ecd9c4fff1488a9a1df1db6047425f5de80b396a40f1c29cfb6d0790",
+      ...preparedBlock,
       signature:
         "II4-lbqNFR7re6fv-9zN0F3Z9d1DZZ67TJZrnYGJwZN1fPwxuurBKPS7ndVG8GyKIWxKTXyC4jLBVgwZvSHc1_U=",
     });
 
     const blockSigner = await signer.recoverAddresses(signedBlock);
-
-    expect(blockSigner).toStrictEqual([signer.getAddress()]);
+    expect(blockSigner).toStrictEqual([addressCompressed]);
   });
 });
 

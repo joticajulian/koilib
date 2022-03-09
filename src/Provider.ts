@@ -208,7 +208,7 @@ export class Provider {
     }[];
   }> {
     return this.call("block_store.get_blocks_by_id", {
-      block_id: blockIds,
+      block_ids: blockIds,
       return_block: true,
       return_receipt: false,
     });

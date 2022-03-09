@@ -197,12 +197,12 @@ export class Signer implements SignerInterface {
    * ```
    * @returns Signer object
    */
-  static fromWif(wif: string): Signer {
-    const compressed = wif[0] !== "5";
+  static fromWif(wif: string, compressed?: boolean): Signer {
+    const comp = compressed === undefined ? wif[0] !== "5" : compressed;
     const privateKey = bitcoinDecode(wif);
     return new Signer({
       privateKey: toHexString(privateKey),
-      compressed,
+      compressed: comp,
     });
   }
 

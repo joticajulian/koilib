@@ -19,10 +19,14 @@ if (!process.env.ADDRESS_RECEIVER)
 const privateKeyHex = process.env.PRIVATE_KEY_WIF;
 const rpcNodes = process.env.RPC_NODES.split(",");
 const addressReceiver = process.env.ADDRESS_RECEIVER;
-const provider = new Provider(rpcNodes);
+const provider = new Provider({ rpcNodes });
+let numError = 0;
+provider.onError = (error) => {
+  numError += 1;
+  return numError > 5;
+};
 // signer with history and balance
-const signer = Signer.fromWif(privateKeyHex);
-signer.compressed = true;
+const signer = Signer.fromWif(privateKeyHex, true);
 signer.provider = provider;
 // random signer. No balance or history
 const signer2 = new Signer({
@@ -61,6 +65,7 @@ describe("Provider", () => {
         previous: expect.stringContaining("0x1220") as string,
       },
       last_irreversible_block: expect.any(String) as string,
+      head_state_merkle_root: expect.any(String) as string,
     });
   });
 
@@ -72,16 +77,18 @@ describe("Provider", () => {
         expect.objectContaining({
           block_id: expect.any(String) as string,
           block_height: expect.any(String) as string,
-          block: {
+          block: expect.objectContaining({
             id: expect.any(String) as string,
             header: {
               previous: expect.any(String) as string,
               height: expect.any(String) as string,
               timestamp: expect.any(String) as string,
+              previous_state_merkle_root: expect.any(String) as string,
+              transaction_merkle_root: expect.any(String) as string,
+              signer: expect.any(String) as string,
             },
-            active: expect.any(String) as string,
-            signature_data: expect.any(String) as string,
-          },
+            signature: expect.any(String) as string,
+          }),
         }),
       ])
     );
@@ -90,14 +97,46 @@ describe("Provider", () => {
   it("should get a a block with federated consensus and get the signer address", async () => {
     expect.assertions(2);
     const block = await provider.getBlock(1);
-    const signer1 = await signer.recoverAddress(block.block);
-    expect(signer1).toBeDefined();
-    expect(signer1).toHaveLength(34);
+    expect(block).toStrictEqual({
+      block_id: expect.any(String) as string,
+      block_height: "1",
+      block: expect.objectContaining({
+        id: expect.any(String) as string,
+        header: {
+          previous: expect.any(String) as string,
+          height: "1",
+          timestamp: expect.any(String) as string,
+          previous_state_merkle_root: expect.any(String) as string,
+          transaction_merkle_root: expect.any(String) as string,
+          signer: expect.any(String) as string,
+        },
+        signature: expect.any(String) as string,
+      }) as BlockJson,
+    });
+    const [signer1] = await signer.recoverAddresses(block.block);
+    expect(signer1).toBe(block.block.header!.signer);
   });
 
   it("should get a a block with pow consensus and get the signer address", async () => {
-    expect.assertions(1);
+    expect.assertions(2);
     const block = await provider.getBlock(1000);
+    expect(block).toStrictEqual({
+      block_id: expect.any(String) as string,
+      block_height: "1000",
+      block: expect.objectContaining({
+        id: expect.any(String) as string,
+        header: {
+          previous: expect.any(String) as string,
+          height: "1000",
+          timestamp: expect.any(String) as string,
+          previous_state_merkle_root: expect.any(String) as string,
+          transaction_merkle_root: expect.any(String) as string,
+          signer: expect.any(String) as string,
+        },
+        signature: expect.any(String) as string,
+      }) as BlockJson,
+    });
+
     const serializer = new Serializer(powJson, {
       defaultTypeName: "pow_signature_data",
     });
@@ -105,7 +144,7 @@ describe("Provider", () => {
       nonce: string;
       recoverable_signature: string;
     }
-    const signer1 = await signer.recoverAddress(block.block, {
+    const [signer1] = await signer.recoverAddresses(block.block, {
       transformSignature: async (signatureData) => {
         const powSigData: PowSigData = await serializer.deserialize(
           signatureData
@@ -114,14 +153,7 @@ describe("Provider", () => {
       },
     });
 
-    const serializer2 = new Serializer(utils.ProtocolTypes, {
-      defaultTypeName: "active_block_data",
-    });
-    const activeBlock = await serializer2.deserialize(block.block.active!);
-    const blockSigner = utils.encodeBase58(
-      utils.decodeBase64url(activeBlock.signer as string)
-    );
-    expect(signer1).toBe(blockSigner);
+    expect(signer1).toBe(block.block.header!.signer);
   });
 
   it("should get account rc", async () => {
@@ -168,7 +200,7 @@ describe("Contract", () => {
   });
 
   it("should transfer and get receipt - wait byBlock", async () => {
-    expect.assertions(5);
+    expect.assertions(4);
     const { operation, transaction, result } = await koin.transfer({
       from: signer.getAddress(),
       to: addressReceiver,
@@ -184,7 +216,7 @@ describe("Contract", () => {
   });
 
   it("should transfer and get receipt - wait byTransactionId", async () => {
-    expect.assertions(6);
+    expect.assertions(5);
     const { operation, transaction, result } = await koin.transfer({
       from: signer.getAddress(),
       to: addressReceiver,

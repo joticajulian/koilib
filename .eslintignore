@@ -1,4 +1,5 @@
 dist
 lib
 docs
+local
 tests/assets-index/prism*

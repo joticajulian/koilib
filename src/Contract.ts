@@ -239,7 +239,6 @@ export class Contract {
               } as OperationJson,
             ],
           });
-
           const transaction = await this.signer.sendTransaction(tx);
           return { operation, transaction };
         };
