@@ -96,15 +96,15 @@ describe("Provider", () => {
 
   it("should get a a block with federated consensus and get the signer address", async () => {
     expect.assertions(2);
-    const block = await provider.getBlock(1);
+    const block = await provider.getBlock(12);
     expect(block).toStrictEqual({
       block_id: expect.any(String) as string,
-      block_height: "1",
+      block_height: "12",
       block: expect.objectContaining({
         id: expect.any(String) as string,
         header: {
           previous: expect.any(String) as string,
-          height: "1",
+          height: "12",
           timestamp: expect.any(String) as string,
           previous_state_merkle_root: expect.any(String) as string,
           transaction_merkle_root: expect.any(String) as string,

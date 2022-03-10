@@ -643,23 +643,64 @@ describe("Wallet and Contract", () => {
         block_items: [
           {
             block_id:
-              "0x122037846cda8233e6293ccdca64d07a4940e95be8357bdbd46d83b5880d7047b9d3",
-            block_height: "1",
+              "0x1220ce5b2f87d759879b98f80fdf2cd68607e2587a9dd716219a6a205e44bdde60f8",
+            block_height: "12",
             block: {
-              id: "0x122037846cda8233e6293ccdca64d07a4940e95be8357bdbd46d83b5880d7047b9d3",
+              id: "0x1220ce5b2f87d759879b98f80fdf2cd68607e2587a9dd716219a6a205e44bdde60f8",
               header: {
                 previous:
-                  "0x12200000000000000000000000000000000000000000000000000000000000000000",
-                height: "1",
-                timestamp: "1646757780958",
+                  "0x1220da1c1295672fb49737511c89be2c54d1b9fb837e5b6d3d50878790821f4c7340",
+                height: "12",
+                timestamp: "1646757858375",
                 previous_state_merkle_root:
-                  "EiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+                  "EiDPbld98ROIgrxw5ceBoKhwoGjAJ_GX7lHACLKhGW_mYA==",
                 transaction_merkle_root:
-                  "EiDjsMRCmPwcFJr79MiZb7kkJ65B5GSbk0yklZkbeFK4VQ==",
+                  "EiBKinARNI21rZdlxhJR1533x-0GyCitFZTacmE0UURgJw==",
                 signer: "1AeXf4DF1DNPmrdcKp8jVPCbSspb9FrCtT",
               },
+              transactions: [
+                {
+                  id: "0x122080616cc3a2c070084d86866535d39942ceb77cc3db889fada9420aaaa664e89e",
+                  header: {
+                    chain_id:
+                      "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+                    rc_limit: "10000000",
+                    nonce: "OAE=",
+                    operation_merkle_root:
+                      "EiCVjlPWCZjF-hpfHZZG6XFVPnOBGcenqkIWc3XgS4_nhA==",
+                    payer: "1AeXf4DF1DNPmrdcKp8jVPCbSspb9FrCtT",
+                  },
+                  operations: [
+                    {
+                      set_system_contract: {
+                        contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+                        system_contract: true,
+                      },
+                    },
+                    {
+                      set_system_contract: {
+                        contract_id: "15im92XgZiV39tcKMhMGtDYhJjXPMjUu8r",
+                        system_contract: true,
+                      },
+                    },
+                    {
+                      set_system_call: {
+                        call_id: 101,
+                        target: {
+                          system_call_bundle: {
+                            contract_id: "15im92XgZiV39tcKMhMGtDYhJjXPMjUu8r",
+                          },
+                        },
+                      },
+                    },
+                  ],
+                  signatures: [
+                    "H-vQnAwBMYOUVFiJ9d6Pz5mddBNoXgcsBVxGSCc9taJVXi5M0CJ_KNQFAT4XxnoI_lRQ6HpGInmtHz8OEJQl9pM=",
+                  ],
+                },
+              ],
               signature:
-                "HyOVkOaK3KSIjrAGczq7Hq_0MVPUAi5Tl53FvTfzCf1SB7_fhKLGqKpW7bBkS7oatBkRl9KQRpLRTX3_t66s9Nk=",
+                "IBTpgG8n1kyvuNDEgNmReTJF4hjYqztJRbW1-Eri84hEC32ohapHeO9QIaxIQnU68vSqHh0XuE6ZmbRCSwxss80=",
             },
           },
         ],
