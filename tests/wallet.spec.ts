@@ -26,6 +26,7 @@ import {
 } from "../src/interface";
 // import { Serializer } from "../src";
 import { sha256 } from "@noble/hashes/sha256";
+import { Serializer } from "../src";
 
 jest.mock("cross-fetch");
 const mockFetch = jest.spyOn(crossFetch, "fetch");
@@ -432,27 +433,25 @@ describe("Wallet and Contract", () => {
     } as CallContractOperationNested);
 
     expect(transaction).toStrictEqual({
-      id: "0x122017a12e189f459f5c6cffdd66c3865c2dea8512648636013ab31cb7be92311284",
+      id: "0x1220da3476bafa228cd753bd0def659ae743cbec2135b46e6aff06f67b0c2f16fc93",
       header: {
         chain_id: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
         rc_limit: "50000000",
         nonce: "OAI=",
         operation_merkle_root:
-          "EiDu9lBzwpT6G70XnIhT1AYlqVOG7eZ1CQ9aJRohfR_06A==",
+          "EiANCoU4oibgL8tpnbuXZ_0aT5M0yKNLu6Fw9FLeD9oOhA==",
         payer: addressCompressed,
       },
       operations: [
         {
           call_contract: {
             contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-            entry_point: 1659871890,
+            entry_point: Krc20Abi.methods.transfer.entryPoint,
             args: "ChkAEjl6vrl55V2Oym_rzsnMxIqBoie9PHmMEhkAQgjT1UACatdFY3e5QRkyG7OAzwcCCIylGOgH",
           },
         },
       ],
-      signatures: [
-        "HwbLzTXk9_QNULGzllDeO42A_3CVI9E33vSp0X4zkgwBXxCNz1rZ1CAp3lo1r4_9zrfL8OI2URw6pFwU9aUin_k=",
-      ],
+      signatures: expect.arrayContaining([]) as string[],
       wait: expect.any(Function) as WaitFunction,
     } as TransactionJson);
 
@@ -637,83 +636,107 @@ describe("Wallet and Contract", () => {
     } as TransactionJson);
   });
 
-  // it("should get a a block with federated consensus and get the signer address", async () => {
-  //   expect.assertions(2);
-  //   mockFetch.mockImplementation(async () => {
-  //     return fetchResponse({
-  //       block_items: [
-  //         {
-  //           block: {
-  //             active:
-  //               "CiISIOOwxEKY_BwUmvv0yJlvuSQnrkHkZJuTTKSVmRt4UrhVEiISIC26XbwznnMWrqJoP6-DnBt7HuIxPbeSESWIEY3wZqo1GhkAadIc8ziAPySyhmNk00yjM3dIdxatR7-8",
-  //             signature_data:
-  //               "HxhGjxdnrpNMhiKgi03AT9B2r7hWGOMnM47SbhtWWgDjTrZGQSOVt1ZG2N5L9JmbIXegzbtggHaBi3o0DTpYhB4=",
-  //           },
-  //         },
-  //       ],
-  //     });
-  //   });
-  //   const blocks = await provider.getBlocks(1, 1, "randomId");
-  //   const signer1 = await signer.recoverAddress(blocks[0].block);
-  //   expect(signer1).toBeDefined();
-  //   expect(signer1).toHaveLength(34);
-  // });
+  it("should get a a block with federated consensus and get the signer address", async () => {
+    expect.assertions(1);
+    mockFetch.mockImplementation(async () => {
+      return fetchResponse({
+        block_items: [
+          {
+            block_id:
+              "0x122037846cda8233e6293ccdca64d07a4940e95be8357bdbd46d83b5880d7047b9d3",
+            block_height: "1",
+            block: {
+              id: "0x122037846cda8233e6293ccdca64d07a4940e95be8357bdbd46d83b5880d7047b9d3",
+              header: {
+                previous:
+                  "0x12200000000000000000000000000000000000000000000000000000000000000000",
+                height: "1",
+                timestamp: "1646757780958",
+                previous_state_merkle_root:
+                  "EiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+                transaction_merkle_root:
+                  "EiDjsMRCmPwcFJr79MiZb7kkJ65B5GSbk0yklZkbeFK4VQ==",
+                signer: "1AeXf4DF1DNPmrdcKp8jVPCbSspb9FrCtT",
+              },
+              signature:
+                "HyOVkOaK3KSIjrAGczq7Hq_0MVPUAi5Tl53FvTfzCf1SB7_fhKLGqKpW7bBkS7oatBkRl9KQRpLRTX3_t66s9Nk=",
+            },
+          },
+        ],
+      });
+    });
+    const blocks = await provider.getBlocks(1, 1, "randomId");
+    const [signer1] = await signer.recoverAddresses(blocks[0].block);
+    expect(signer1).toBe("1AeXf4DF1DNPmrdcKp8jVPCbSspb9FrCtT");
+  });
 
-  // it("should get a a block with pow consensus and get the signer address", async () => {
-  //   expect.assertions(2);
-  //   mockFetch.mockImplementation(async () => {
-  //     return fetchResponse({
-  //       block_items: [
-  //         {
-  //           block: {
-  //             active:
-  //               "CiISIOOwxEKY_BwUmvv0yJlvuSQnrkHkZJuTTKSVmRt4UrhVEiISIC26XbwznnMWrqJoP6-DnBt7HuIxPbeSESWIEY3wZqo1GhkAadIc8ziAPySyhmNk00yjM3dIdxatR7-8",
-  //             signature_data:
-  //               "CiDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB2bvRJBH8FKri7J2bR6sWa-mRgRFrqolnnxMl48HtSsl_8y-YaIcm7RzsevuEZP8b5g1TiPfGZK1QBkH7mrPD4UlEl2iN4=",
-  //           },
-  //         },
-  //       ],
-  //     });
-  //   });
-  //   const blocks = await provider.getBlocks(1, 1, "randomId");
-  //   const serializer = new Serializer(
-  //     {
-  //       nested: {
-  //         mypackage: {
-  //           nested: {
-  //             pow_signature_data: {
-  //               fields: {
-  //                 nonce: {
-  //                   type: "bytes",
-  //                   id: 1,
-  //                 },
-  //                 recoverable_signature: {
-  //                   type: "bytes",
-  //                   id: 2,
-  //                 },
-  //               },
-  //             },
-  //           },
-  //         },
-  //       },
-  //     },
-  //     {
-  //       defaultTypeName: "pow_signature_data",
-  //     }
-  //   );
-  //   interface PowSigData {
-  //     nonce: string;
-  //     recoverable_signature: string;
-  //   }
-  //   const signer1 = await signer.recoverAddress(blocks[0].block, {
-  //     transformSignature: async (signatureData) => {
-  //       const powSignatureData: PowSigData = await serializer.deserialize(
-  //         signatureData
-  //       );
-  //       return powSignatureData.recoverable_signature;
-  //     },
-  //   });
-  //   expect(signer1).toBeDefined();
-  //   expect(signer1).toHaveLength(34);
-  // });
+  it("should get a a block with pow consensus and get the signer address", async () => {
+    expect.assertions(1);
+    mockFetch.mockImplementation(async () => {
+      return fetchResponse({
+        block_items: [
+          {
+            block_id:
+              "0x12209eff0e1f4c4457f60e8310d8ffbe27eec5a885640af4090ddc598e9aa01292c9",
+            block_height: "1000",
+            block: {
+              id: "0x12209eff0e1f4c4457f60e8310d8ffbe27eec5a885640af4090ddc598e9aa01292c9",
+              header: {
+                previous:
+                  "0x122081764a9247876bcfc1b7776607d66f88f6f14de87ae31e2adf14bbe63b52a952",
+                height: "1000",
+                timestamp: "1646770928062",
+                previous_state_merkle_root:
+                  "EiD0IaXv8BaZPvSscT4fVSNqdB7taCrrosApv_c92PQPSw==",
+                transaction_merkle_root:
+                  "EiDjsMRCmPwcFJr79MiZb7kkJ65B5GSbk0yklZkbeFK4VQ==",
+                signer: "1AeXf4DF1DNPmrdcKp8jVPCbSspb9FrCtT",
+              },
+              signature:
+                "CiCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA99mBJBIIzH5EKN7uqjUb4u2h7HxNr9_w-oC8TdL-ojenyeUSkPZzJodOw6qwaJ3GpFSdH5mIsgC9mJTJjaZDh4m4mY4ZA=",
+            },
+          },
+        ],
+      });
+    });
+    const blocks = await provider.getBlocks(1, 1, "randomId");
+    const serializer = new Serializer(
+      {
+        nested: {
+          mypackage: {
+            nested: {
+              pow_signature_data: {
+                fields: {
+                  nonce: {
+                    type: "bytes",
+                    id: 1,
+                  },
+                  recoverable_signature: {
+                    type: "bytes",
+                    id: 2,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        defaultTypeName: "pow_signature_data",
+      }
+    );
+    interface PowSigData {
+      nonce: string;
+      recoverable_signature: string;
+    }
+    const [signer1] = await signer.recoverAddresses(blocks[0].block, {
+      transformSignature: async (signatureData) => {
+        const powSignatureData: PowSigData = await serializer.deserialize(
+          signatureData
+        );
+        return powSignatureData.recoverable_signature;
+      },
+    });
+    expect(signer1).toBe("1AeXf4DF1DNPmrdcKp8jVPCbSspb9FrCtT");
+  });
 });

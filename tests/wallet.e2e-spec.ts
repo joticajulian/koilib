@@ -21,7 +21,7 @@ const rpcNodes = process.env.RPC_NODES.split(",");
 const addressReceiver = process.env.ADDRESS_RECEIVER;
 const provider = new Provider({ rpcNodes });
 let numError = 0;
-provider.onError = (error) => {
+provider.onError = () => {
   numError += 1;
   return numError > 5;
 };

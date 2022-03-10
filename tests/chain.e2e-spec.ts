@@ -10,7 +10,7 @@ if (!process.env.RPC_NODES)
   throw new Error("env variable RPC_NODES not defined");
 
 const rpcNodes = process.env.RPC_NODES.split(",");
-const provider = new Provider(rpcNodes);
+const provider = new Provider({ rpcNodes });
 
 const formatDelay = (delay: number): string => {
   const absDelay = Math.abs(delay);
@@ -37,6 +37,7 @@ describe("Blockchain", () => {
         previous: expect.stringContaining("0x1220") as string,
       },
       last_irreversible_block: expect.any(String) as string,
+      head_state_merkle_root: expect.any(String) as string,
     });
     currentHeight = Number(headInfo.head_topology.height);
     console.log(`current height ${currentHeight}`);
