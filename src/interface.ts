@@ -116,8 +116,13 @@ export interface DecodedOperationJson {
 }
 
 export interface TransactionOptions {
-  rc_limit?: number | bigint | string;
-  nonce?: number;
+  header?: {
+    chain_id?: string;
+    rc_limit?: number | bigint | string;
+    nonce?: string;
+    payer?: string;
+    payee?: string;
+  };
   sendTransaction?: boolean;
   sendAbis?: boolean;
 }
@@ -163,31 +168,35 @@ export type WaitFunction = (
   timeout?: number
 ) => Promise<string | number>;
 
+export interface GenesisDataEntryEncoded {
+  space: {
+    system?: boolean;
+    zone?: string;
+    id?: number;
+  };
+  key?: string;
+  value: string;
+  error?: string;
+}
+
 export interface GenesisDataEncoded {
-  entries?: {
-    space: {
-      system?: boolean;
-      zone?: string;
-      id?: number;
-    };
-    key?: string;
-    value: string;
-    error?: string;
-  }[];
+  entries?: GenesisDataEntryEncoded[];
+}
+
+export interface GenesisDataEntryDecoded {
+  space: {
+    system?: boolean;
+    zone?: string;
+    id?: number;
+  };
+  key?: string;
+  alias?: string;
+  value: string | Record<string, unknown>;
+  error?: string;
 }
 
 export interface GenesisDataDecoded {
-  entries?: {
-    space: {
-      system?: boolean;
-      zone?: string;
-      id?: number;
-    };
-    key?: string;
-    alias?: string;
-    value: string | Record<string, unknown>;
-    error?: string;
-  }[];
+  entries?: GenesisDataEntryDecoded[];
 }
 
 export interface DictionaryGenesisData {

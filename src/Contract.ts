@@ -151,9 +151,9 @@ export class Contract {
       this.serializer = new Serializer(c.abi.types);
     }
     this.options = {
-      rc_limit: 1e8,
       sendTransaction: true,
       sendAbis: true,
+      header: {},
       ...c.options,
     };
     this.functions = {};
@@ -179,9 +179,13 @@ export class Contract {
             throw new Error("Methods are not defined");
           if (!this.abi.methods[name])
             throw new Error(`Method ${name} not defined in the ABI`);
-          const opts = {
+          const opts: TransactionOptions = {
             ...this.options,
             ...options,
+            header: {
+              ...this.options.header,
+              ...options?.header,
+            },
           };
 
           const {
@@ -227,6 +231,7 @@ export class Contract {
           // write contract (sign and send)
           if (!this.signer) throw new Error("signer not found");
           const tx = await this.signer.prepareTransaction({
+            header: opts?.header,
             operations: [
               {
                 call_contract: {
@@ -239,7 +244,13 @@ export class Contract {
               } as OperationJson,
             ],
           });
-          const transaction = await this.signer.sendTransaction(tx);
+
+          const abis: Record<string, Abi> = {};
+          if (opts?.sendAbis) {
+            const contractId = encodeBase58(this.id as Uint8Array);
+            abis[contractId] = this.abi;
+          }
+          const transaction = await this.signer.sendTransaction(tx, abis);
           return { operation, transaction };
         };
       });
