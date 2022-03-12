@@ -268,6 +268,11 @@ export interface ContractCallBundleNested {
 
 export type SystemCallTarget = ThunkIdNested | ContractCallBundleNested;
 
+export interface SystemCallTargetJson {
+  thunk_id?: number;
+  system_call_bundle?: ContractCallBundleJson;
+}
+
 export interface SetSystemCallOperation {
   call_id: number;
 
@@ -277,7 +282,7 @@ export interface SetSystemCallOperation {
 export interface SetSystemCallOperationJson {
   call_id: number;
 
-  target: number | ContractCallBundleJson;
+  target: SystemCallTargetJson;
 }
 
 export interface SetSystemContractOperation {

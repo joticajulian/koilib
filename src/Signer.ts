@@ -14,13 +14,15 @@ import {
   bitcoinAddress,
   bitcoinDecode,
   bitcoinEncode,
+  btypeDecode,
   calculateMerkleRoot,
   decodeBase64url,
   encodeBase64url,
   toHexString,
   toUint8Array,
 } from "./utils";
-import protocolJson from "./jsonDescriptors/protocol-proto.json";
+// @ts-ignore
+import { koinos } from "./protoModules/protocol-proto.js";
 import valueJson from "./jsonDescriptors/value-proto.json";
 
 export interface SignerInterface {
@@ -119,11 +121,6 @@ export class Signer implements SignerInterface {
   provider?: Provider;
 
   /**
-   * Serializer to serialize/deserialize data types
-   */
-  serializer?: Serializer;
-
-  /**
    * Serializer to serialize/deserialize nonces
    */
   valueSerializer?: Serializer;
@@ -149,25 +146,11 @@ export class Signer implements SignerInterface {
     compressed?: boolean;
     chainId?: string;
     provider?: Provider;
-    /**
-     * Set this option if you can not use _eval_ functions
-     * in the current environment. In such cases, the
-     * serializer must come from an environment where it
-     * is able to use those functions.
-     */
-    serializer?: Serializer;
     valueSerializer?: Serializer;
   }) {
     this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;
     this.privateKey = c.privateKey;
     this.provider = c.provider;
-    if (c.serializer) {
-      this.serializer = c.serializer;
-    } else {
-      this.serializer = new Serializer(protocolJson, {
-        bytesConversion: true,
-      });
-    }
     if (c.valueSerializer) {
       this.valueSerializer = c.valueSerializer;
     } else {
@@ -464,20 +447,32 @@ export class Signer implements SignerInterface {
       if (!block.header) throw new Error("Missing block header");
       if (!block.signature) throw new Error("Missing block signature");
       signatures = [block.signature];
-      headerBytes = await this.serializer!.serialize(
-        block.header,
-        "block_header"
-      );
+      const headerDecoded = btypeDecode(block.header!, {
+        previous: { type: "bytes", btype: "BLOCK_ID" },
+        height: { type: "uint64" },
+        timestamp: { type: "uint64" },
+        previous_state_merkle_root: { type: "bytes" },
+        transaction_merkle_root: { type: "bytes" },
+        signer: { type: "bytes", btype: "ADDRESS" },
+      });
+      const message = koinos.protocol.block_header.create(headerDecoded);
+      headerBytes = koinos.protocol.block_header.encode(message).finish();
     } else {
       const transaction = txOrBlock as TransactionJson;
       if (!transaction.header) throw new Error("Missing transaction header");
       if (!transaction.signatures)
         throw new Error("Missing transaction signatures");
       signatures = transaction.signatures;
-      headerBytes = await this.serializer!.serialize(
-        transaction.header,
-        "transaction_header"
-      );
+      const headerDecoded = btypeDecode(transaction.header!, {
+        chain_id: { type: "bytes" },
+        rc_limit: { type: "uint64" },
+        nonce: { type: "bytes" },
+        operation_merkle_root: { type: "bytes" },
+        payer: { type: "bytes", btype: "ADDRESS" },
+        payee: { type: "bytes", btype: "ADDRESS" },
+      });
+      const message = koinos.protocol.transaction_header.create(headerDecoded);
+      headerBytes = koinos.protocol.transaction_header.encode(message).finish();
     }
 
     const hash = sha256(headerBytes);
@@ -606,11 +601,51 @@ export class Signer implements SignerInterface {
 
     if (tx.operations) {
       for (let index = 0; index < tx.operations?.length; index += 1) {
-        const encodedOp = await this.serializer!.serialize(
-          tx.operations[index],
-          "operation"
-        );
-        operationsHashes.push(sha256(encodedOp));
+        const operationDecoded = btypeDecode(tx.operations[index], {
+          upload_contract: {
+            type: "object",
+            subtypes: {
+              contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+              bytecode: { type: "bytes" },
+              abi: { type: "string" },
+              authorizes_call_contract: { type: "bool" },
+              authorizes_transaction_application: { type: "bool" },
+              authorizes_upload_contract: { type: "bool" },
+            },
+          },
+          call_contract: {
+            type: "object",
+            subtypes: {
+              contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+              entry_point: { type: "uint32" },
+              args: { type: "bytes" },
+            },
+          },
+          set_system_call: {
+            type: "object",
+            subtypes: {
+              call_id: { type: "uint32" },
+              target: {
+                type: "object",
+                subtypes: {
+                  thunk_id: { type: "uint32" },
+                  system_call_bundle: {
+                    type: "object",
+                    subtypes: {
+                      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+                      entry_point: { type: "uint32" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+        const message = koinos.protocol.operation.create(operationDecoded);
+        const operationEncoded = koinos.protocol.operation
+          .encode(message)
+          .finish();
+        operationsHashes.push(sha256(operationEncoded));
       }
     }
     const operationMerkleRoot = encodeBase64url(
@@ -632,10 +667,18 @@ export class Signer implements SignerInterface {
       // TODO: Option to resolve names (payer, payee)
     };
 
-    const headerBytes = await this.serializer!.serialize(
-      tx.header,
-      "transaction_header"
-    );
+    const headerDecoded = btypeDecode(tx.header!, {
+      chain_id: { type: "bytes" },
+      rc_limit: { type: "uint64" },
+      nonce: { type: "bytes" },
+      operation_merkle_root: { type: "bytes" },
+      payer: { type: "bytes", btype: "ADDRESS" },
+      payee: { type: "bytes", btype: "ADDRESS" },
+    });
+    const message = koinos.protocol.transaction_header.create(headerDecoded);
+    const headerBytes = koinos.protocol.transaction_header
+      .encode(message)
+      .finish();
 
     const hash = sha256(headerBytes);
 
@@ -659,12 +702,21 @@ export class Signer implements SignerInterface {
     if (block.transactions) {
       for (let index = 0; index < block.transactions.length; index++) {
         const tx = block.transactions[index];
-        const encodedHeader = await this.serializer!.serialize(
-          tx.header!,
-          "transaction_header"
-        );
+        const headerDecoded = btypeDecode(tx.header!, {
+          chain_id: { type: "bytes" },
+          rc_limit: { type: "uint64" },
+          nonce: { type: "bytes" },
+          operation_merkle_root: { type: "bytes" },
+          payer: { type: "bytes", btype: "ADDRESS" },
+          payee: { type: "bytes", btype: "ADDRESS" },
+        });
+        const message =
+          koinos.protocol.transaction_header.create(headerDecoded);
+        const headerBytes = koinos.protocol.transaction_header
+          .encode(message)
+          .finish();
 
-        hashes.push(sha256(encodedHeader));
+        hashes.push(sha256(headerBytes));
 
         let signaturesBytes = new Uint8Array();
         tx.signatures?.forEach((sig) => {
@@ -713,10 +765,16 @@ export class Signer implements SignerInterface {
       signer: this.address,
     };
 
-    const headerBytes = await this.serializer!.serialize(
-      block.header,
-      "block_header"
-    );
+    const headerDecoded = btypeDecode(block.header!, {
+      previous: { type: "bytes", btype: "BLOCK_ID" },
+      height: { type: "uint64" },
+      timestamp: { type: "uint64" },
+      previous_state_merkle_root: { type: "bytes" },
+      transaction_merkle_root: { type: "bytes" },
+      signer: { type: "bytes", btype: "ADDRESS" },
+    });
+    const message = koinos.protocol.block_header.create(headerDecoded);
+    const headerBytes = koinos.protocol.block_header.encode(message).finish();
 
     const hash = sha256(headerBytes);
 

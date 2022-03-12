@@ -3,7 +3,7 @@ import { sha256 } from "@noble/hashes/sha256";
 import { ripemd160 } from "@noble/hashes/ripemd160";
 import { Abi } from "./interface";
 import krc20ProtoJson from "./jsonDescriptors/krc20-proto.json";
-import protocolJson from "./jsonDescriptors/protocol-proto.json";
+//import protocolJson from "./jsonDescriptors/protocol-proto.json";
 
 /**
  * Converts an hex string to Uint8Array
@@ -229,6 +229,111 @@ export function parseUnits(value: string, decimals: number): string {
   return `${sign}${`${integerPart}${decimalPart}`.replace(/^0+(?=\d)/, "")}`;
 }
 
+interface TypeField {
+  type: string;
+  btype?: string;
+  subtypes?: Record<string, TypeField>;
+}
+
+export function btypeDecodeValue(
+  valueEncoded: unknown,
+  typeField: TypeField
+): unknown {
+  // No byte conversion
+  if (typeField.type !== "bytes") return valueEncoded;
+
+  const value = valueEncoded as string;
+
+  // Default byte conversion
+  if (!typeField.btype) {
+    return decodeBase64url(value);
+  }
+
+  // Specific byte conversion
+  switch (typeField.btype) {
+    case "BASE58":
+    case "CONTRACT_ID":
+    case "ADDRESS":
+      return decodeBase58(value);
+    case "BASE64":
+      return decodeBase64url(value);
+    case "HEX":
+    case "BLOCK_ID":
+    case "TRANSACTION_ID":
+      return toUint8Array(value.slice(2));
+    default:
+      throw new Error(`unknown btype ${typeField.btype}`);
+  }
+}
+
+export function btypeEncodeValue(
+  valueDecoded: unknown,
+  typeField: TypeField
+): unknown {
+  // No byte conversion
+  if (typeField.type !== "bytes") return valueDecoded;
+
+  const value = valueDecoded as Uint8Array;
+
+  // Default byte conversion
+  if (!typeField.btype) {
+    return encodeBase64url(value);
+  }
+
+  // Specific byte conversion
+  switch (typeField.btype) {
+    case "BASE58":
+    case "CONTRACT_ID":
+    case "ADDRESS":
+      return encodeBase58(value);
+    case "BASE64":
+      return encodeBase64url(value);
+    case "HEX":
+    case "BLOCK_ID":
+    case "TRANSACTION_ID":
+      return `0x${toHexString(value)}`;
+    default:
+      throw new Error(`unknown btype ${typeField.btype}`);
+  }
+}
+
+export function btypeDecode(
+  valueEncoded: Record<string, unknown>,
+  fields: Record<string, TypeField>
+) {
+  if (typeof valueEncoded !== "object") return valueEncoded;
+  const valueDecoded = {} as Record<string, unknown>;
+  Object.keys(fields).forEach((name) => {
+    if (!valueEncoded[name]) return;
+    if (fields[name].subtypes)
+      valueDecoded[name] = btypeDecode(
+        valueEncoded[name] as Record<string, unknown>,
+        fields[name].subtypes!
+      );
+    else
+      valueDecoded[name] = btypeDecodeValue(valueEncoded[name], fields[name]);
+  });
+  return valueDecoded;
+}
+
+export function btypeEncode(
+  valueDecoded: Record<string, unknown>,
+  fields: Record<string, TypeField>
+) {
+  if (typeof valueDecoded !== "object") return valueDecoded;
+  const valueEncoded = {} as Record<string, unknown>;
+  Object.keys(fields).forEach((name) => {
+    if (!valueDecoded[name]) return;
+    if (fields[name].subtypes)
+      valueEncoded[name] = btypeEncode(
+        valueDecoded[name] as Record<string, unknown>,
+        fields[name].subtypes!
+      );
+    valueEncoded[name] = btypeEncodeValue(valueDecoded[name], fields[name]);
+  });
+  return valueEncoded;
+}
+
 /**
  * ABI for tokens
  */
@@ -279,4 +384,4 @@ export const Krc20Abi: Abi = {
   types: krc20ProtoJson,
 };
 
-export const ProtocolTypes = protocolJson;
+//export const ProtocolTypes = protocolJson;

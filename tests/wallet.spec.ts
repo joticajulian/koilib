@@ -340,7 +340,9 @@ describe("Wallet and Contract", () => {
         {
           set_system_call: {
             call_id: 23,
-            target: 234,
+            target: {
+              thunk_id: 234,
+            },
           },
         },
         {
@@ -366,7 +368,7 @@ describe("Wallet and Contract", () => {
         rc_limit: "10",
         nonce: "OAg=",
         operation_merkle_root:
-          "EiA8yzzbLCjuJ4D8v5HJ-Un_umc5dntIZ01Qsxoq40CLmg==",
+          "EiDeXZzhjmhRCShrMjANTJ_ntno06KLstXBZrLsGqZBwwg==",
         payer: addressCompressed,
       },
       operations: [
@@ -377,7 +379,7 @@ describe("Wallet and Contract", () => {
             args: "YXJncw==",
           },
         },
-        { set_system_call: { call_id: 23, target: 234 } },
+        { set_system_call: { call_id: 23, target: { thunk_id: 234 } } },
         {
           upload_contract: {
             contract_id: "Rf8gGKq42QBxS3M",
@@ -391,7 +393,7 @@ describe("Wallet and Contract", () => {
           },
         },
       ],
-      id: "0x122009b27ae146fb965aa86ab81c8649406e164c804dec595748247eb55c523c4955",
+      id: "0x12209cef35988b17ff5594af827b9da55529a2663dcf3b6dbf15ec734744ada4d475",
     });
   });
 
@@ -636,7 +638,7 @@ describe("Wallet and Contract", () => {
     } as TransactionJson);
   });
 
-  it("should get a a block with federated consensus and get the signer address", async () => {
+  it("should get a block with federated consensus and get the signer address", async () => {
     expect.assertions(1);
     mockFetch.mockImplementation(async () => {
       return fetchResponse({
