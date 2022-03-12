@@ -219,6 +219,12 @@ export interface DictionaryGenesisData {
   };
 }
 
+export interface TypeField {
+  type: string;
+  btype?: string;
+  subtypes?: Record<string, TypeField>;
+}
+
 export interface UploadContractOperation {
   contract_id?: Uint8Array;
 

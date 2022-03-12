@@ -1,7 +1,7 @@
 import * as multibase from "multibase";
 import { sha256 } from "@noble/hashes/sha256";
 import { ripemd160 } from "@noble/hashes/ripemd160";
-import { Abi } from "./interface";
+import { Abi, TypeField } from "./interface";
 import krc20ProtoJson from "./jsonDescriptors/krc20-proto.json";
 //import protocolJson from "./jsonDescriptors/protocol-proto.json";
 
@@ -227,12 +227,6 @@ export function parseUnits(value: string, decimals: number): string {
   if (!decimalPart) decimalPart = "";
   decimalPart = decimalPart.padEnd(decimals, "0");
   return `${sign}${`${integerPart}${decimalPart}`.replace(/^0+(?=\d)/, "")}`;
-}
-
-interface TypeField {
-  type: string;
-  btype?: string;
-  subtypes?: Record<string, TypeField>;
 }
 
 export function btypeDecodeValue(

@@ -9,6 +9,7 @@ import {
   BlockJson,
   RecoverPublicKeyOptions,
   Abi,
+  TypeField,
 } from "./interface";
 import {
   bitcoinAddress,
@@ -23,7 +24,6 @@ import {
 } from "./utils";
 // @ts-ignore
 import { koinos } from "./protoModules/protocol-proto.js";
-import valueJson from "./jsonDescriptors/value-proto.json";
 
 export interface SignerInterface {
   provider?: Provider;
@@ -39,6 +39,65 @@ export interface SignerInterface {
   prepareBlock: (block: BlockJson) => Promise<BlockJson>;
   signBlock: (block: BlockJson) => Promise<BlockJson>;
 }
+
+const btypeBlockHeader: TypeField["subtypes"] = {
+  previous: { type: "bytes", btype: "BLOCK_ID" },
+  height: { type: "uint64" },
+  timestamp: { type: "uint64" },
+  previous_state_merkle_root: { type: "bytes" },
+  transaction_merkle_root: { type: "bytes" },
+  signer: { type: "bytes", btype: "ADDRESS" },
+};
+
+const btypeTransactionHeader: TypeField["subtypes"] = {
+  chain_id: { type: "bytes" },
+  rc_limit: { type: "uint64" },
+  nonce: { type: "bytes" },
+  operation_merkle_root: { type: "bytes" },
+  payer: { type: "bytes", btype: "ADDRESS" },
+  payee: { type: "bytes", btype: "ADDRESS" },
+};
+
+const btypesOperation: TypeField["subtypes"] = {
+  upload_contract: {
+    type: "object",
+    subtypes: {
+      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+      bytecode: { type: "bytes" },
+      abi: { type: "string" },
+      authorizes_call_contract: { type: "bool" },
+      authorizes_transaction_application: { type: "bool" },
+      authorizes_upload_contract: { type: "bool" },
+    },
+  },
+  call_contract: {
+    type: "object",
+    subtypes: {
+      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+      entry_point: { type: "uint32" },
+      args: { type: "bytes" },
+    },
+  },
+  set_system_call: {
+    type: "object",
+    subtypes: {
+      call_id: { type: "uint32" },
+      target: {
+        type: "object",
+        subtypes: {
+          thunk_id: { type: "uint32" },
+          system_call_bundle: {
+            type: "object",
+            subtypes: {
+              contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+              entry_point: { type: "uint32" },
+            },
+          },
+        },
+      },
+    },
+  },
+};
 
 /**
  * The Signer Class contains the private key needed to sign transactions.
@@ -121,11 +180,6 @@ export class Signer implements SignerInterface {
   provider?: Provider;
 
   /**
-   * Serializer to serialize/deserialize nonces
-   */
-  valueSerializer?: Serializer;
-
-  /**
    * The constructor receives de private key as hexstring, bigint or Uint8Array.
    * See also the functions [[Signer.fromWif]] and [[Signer.fromSeed]]
    * to create the signer from the WIF or Seed respectively.
@@ -151,14 +205,6 @@ export class Signer implements SignerInterface {
     this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;
     this.privateKey = c.privateKey;
     this.provider = c.provider;
-    if (c.valueSerializer) {
-      this.valueSerializer = c.valueSerializer;
-    } else {
-      this.valueSerializer = new Serializer(valueJson, {
-        bytesConversion: false,
-        defaultTypeName: "value_type",
-      });
-    }
     if (typeof c.privateKey === "string") {
       this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
       this.address = bitcoinAddress(this.publicKey);
@@ -447,14 +493,7 @@ export class Signer implements SignerInterface {
       if (!block.header) throw new Error("Missing block header");
       if (!block.signature) throw new Error("Missing block signature");
       signatures = [block.signature];
-      const headerDecoded = btypeDecode(block.header!, {
-        previous: { type: "bytes", btype: "BLOCK_ID" },
-        height: { type: "uint64" },
-        timestamp: { type: "uint64" },
-        previous_state_merkle_root: { type: "bytes" },
-        transaction_merkle_root: { type: "bytes" },
-        signer: { type: "bytes", btype: "ADDRESS" },
-      });
+      const headerDecoded = btypeDecode(block.header!, btypeBlockHeader!);
       const message = koinos.protocol.block_header.create(headerDecoded);
       headerBytes = koinos.protocol.block_header.encode(message).finish();
     } else {
@@ -463,14 +502,10 @@ export class Signer implements SignerInterface {
       if (!transaction.signatures)
         throw new Error("Missing transaction signatures");
       signatures = transaction.signatures;
-      const headerDecoded = btypeDecode(transaction.header!, {
-        chain_id: { type: "bytes" },
-        rc_limit: { type: "uint64" },
-        nonce: { type: "bytes" },
-        operation_merkle_root: { type: "bytes" },
-        payer: { type: "bytes", btype: "ADDRESS" },
-        payee: { type: "bytes", btype: "ADDRESS" },
-      });
+      const headerDecoded = btypeDecode(
+        transaction.header!,
+        btypeTransactionHeader!
+      );
       const message = koinos.protocol.transaction_header.create(headerDecoded);
       headerBytes = koinos.protocol.transaction_header.encode(message).finish();
     }
@@ -567,11 +602,13 @@ export class Signer implements SignerInterface {
           "Cannot get the nonce because provider is undefined. To skip this call set a nonce in the transaction header"
         );
       const oldNonce = (await this.provider.getNonce(this.address)) as number;
-      nonce = encodeBase64url(
-        await this.valueSerializer!.serialize({
-          uint64_value: String(oldNonce + 1),
-        })
-      );
+      const message = koinos.chain.value_type.create({
+        // todo: consider using bigint for big nonces
+        uint64_value: String(oldNonce + 1),
+      });
+      const nonceEncoded = koinos.chain.value_type.encode(message).finish();
+
+      nonce = encodeBase64url(nonceEncoded);
     } else {
       nonce = tx.header.nonce;
     }
@@ -601,46 +638,10 @@ export class Signer implements SignerInterface {
 
     if (tx.operations) {
       for (let index = 0; index < tx.operations?.length; index += 1) {
-        const operationDecoded = btypeDecode(tx.operations[index], {
-          upload_contract: {
-            type: "object",
-            subtypes: {
-              contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-              bytecode: { type: "bytes" },
-              abi: { type: "string" },
-              authorizes_call_contract: { type: "bool" },
-              authorizes_transaction_application: { type: "bool" },
-              authorizes_upload_contract: { type: "bool" },
-            },
-          },
-          call_contract: {
-            type: "object",
-            subtypes: {
-              contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-              entry_point: { type: "uint32" },
-              args: { type: "bytes" },
-            },
-          },
-          set_system_call: {
-            type: "object",
-            subtypes: {
-              call_id: { type: "uint32" },
-              target: {
-                type: "object",
-                subtypes: {
-                  thunk_id: { type: "uint32" },
-                  system_call_bundle: {
-                    type: "object",
-                    subtypes: {
-                      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-                      entry_point: { type: "uint32" },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        });
+        const operationDecoded = btypeDecode(
+          tx.operations[index],
+          btypesOperation!
+        );
         const message = koinos.protocol.operation.create(operationDecoded);
         const operationEncoded = koinos.protocol.operation
           .encode(message)
@@ -667,14 +668,7 @@ export class Signer implements SignerInterface {
       // TODO: Option to resolve names (payer, payee)
     };
 
-    const headerDecoded = btypeDecode(tx.header!, {
-      chain_id: { type: "bytes" },
-      rc_limit: { type: "uint64" },
-      nonce: { type: "bytes" },
-      operation_merkle_root: { type: "bytes" },
-      payer: { type: "bytes", btype: "ADDRESS" },
-      payee: { type: "bytes", btype: "ADDRESS" },
-    });
+    const headerDecoded = btypeDecode(tx.header!, btypeTransactionHeader!);
     const message = koinos.protocol.transaction_header.create(headerDecoded);
     const headerBytes = koinos.protocol.transaction_header
       .encode(message)
@@ -702,14 +696,7 @@ export class Signer implements SignerInterface {
     if (block.transactions) {
       for (let index = 0; index < block.transactions.length; index++) {
         const tx = block.transactions[index];
-        const headerDecoded = btypeDecode(tx.header!, {
-          chain_id: { type: "bytes" },
-          rc_limit: { type: "uint64" },
-          nonce: { type: "bytes" },
-          operation_merkle_root: { type: "bytes" },
-          payer: { type: "bytes", btype: "ADDRESS" },
-          payee: { type: "bytes", btype: "ADDRESS" },
-        });
+        const headerDecoded = btypeDecode(tx.header!, btypeTransactionHeader!);
         const message =
           koinos.protocol.transaction_header.create(headerDecoded);
         const headerBytes = koinos.protocol.transaction_header
@@ -765,14 +752,7 @@ export class Signer implements SignerInterface {
       signer: this.address,
     };
 
-    const headerDecoded = btypeDecode(block.header!, {
-      previous: { type: "bytes", btype: "BLOCK_ID" },
-      height: { type: "uint64" },
-      timestamp: { type: "uint64" },
-      previous_state_merkle_root: { type: "bytes" },
-      transaction_merkle_root: { type: "bytes" },
-      signer: { type: "bytes", btype: "ADDRESS" },
-    });
+    const headerDecoded = btypeDecode(block.header!, btypeBlockHeader!);
     const message = koinos.protocol.block_header.create(headerDecoded);
     const headerBytes = koinos.protocol.block_header.encode(message).finish();
 
