@@ -65,7 +65,7 @@ const rpcNodes = [
   "http://example2.koinos.io:8080",
 ];
 
-const provider = new Provider({ rpcNodes });
+const provider = new Provider(rpcNodes);
 const signer = new Signer({ privateKey, provider });
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
@@ -551,13 +551,11 @@ describe("Wallet and Contract", () => {
 
   it("should change node", async () => {
     expect.assertions(2);
-    const myProvider = new Provider({
-      rpcNodes: [
-        "http://bad-server1",
-        "http://bad-server2",
-        "http://good-server",
-      ],
-    });
+    const myProvider = new Provider([
+      "http://bad-server1",
+      "http://bad-server2",
+      "http://good-server",
+    ]);
     let numErrors = 0;
     myProvider.onError = () => {
       numErrors += 1;

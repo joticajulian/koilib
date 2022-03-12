@@ -58,3 +58,16 @@ pbjs.main(
     fs.writeFileSync("./src/protoModules/protocol-proto.js", output);
   }
 );
+
+pbjs.main(
+  [
+    "--keep-case",
+    "--target",
+    "static-module",
+    "./koinos-proto/koinos/chain/value.proto",
+  ],
+  (err, output) => {
+    if (err) throw err;
+    fs.writeFileSync("./src/protoModules/value-proto.js", output);
+  }
+);

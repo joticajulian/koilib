@@ -4,8 +4,9 @@ import {
   TransactionJson,
   CallContractOperationJson,
 } from "./interface";
-import { Serializer } from "./Serializer";
-import valueJson from "./jsonDescriptors/value-proto.json";
+// @ts-ignore
+import { koinos } from "./protoModules/protocol-proto.js";
+import { decodeBase64url } from "./utils";
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -19,11 +20,6 @@ export class Provider {
    * Array of URLs of RPC nodes
    */
   public rpcNodes: string[];
-
-  /**
-   * Serializer to serialize/deserialize data types
-   */
-  public valueSerializer?: Serializer;
 
   /**
    * Function triggered when a node is down. Returns a
@@ -71,28 +67,11 @@ export class Provider {
    * ]);
    * ```
    */
-  constructor(c: {
-    rpcNodes: string | string[];
-    /**
-     * Set this option if you can not use _eval_ functions
-     * in the current environment. In such cases, the
-     * serializer must come from an environment where it
-     * is able to use those functions.
-     */
-    valueSerializer?: Serializer;
-  }) {
-    if (Array.isArray(c.rpcNodes)) this.rpcNodes = c.rpcNodes;
-    else this.rpcNodes = [c.rpcNodes];
+  constructor(rpcNodes: string | string[]) {
+    if (Array.isArray(rpcNodes)) this.rpcNodes = rpcNodes;
+    else this.rpcNodes = [rpcNodes];
     this.currentNodeId = 0;
     this.onError = () => false;
-    if (c.valueSerializer) {
-      this.valueSerializer = c.valueSerializer;
-    } else {
-      this.valueSerializer = new Serializer(valueJson, {
-        bytesConversion: false,
-        defaultTypeName: "value_type",
-      });
-    }
   }
 
   /**
@@ -158,19 +137,23 @@ export class Provider {
     account: string,
     deserialize = true
   ): Promise<number | string> {
-    const { nonce } = await this.call<{ nonce: string }>(
+    const { nonce: nonceBase64url } = await this.call<{ nonce: string }>(
       "chain.get_account_nonce",
       { account }
     );
 
     if (!deserialize) {
-      return nonce;
+      return nonceBase64url;
     }
 
-    const { uint64_value: numberString } =
-      await this.valueSerializer!.deserialize(nonce);
-    if (!numberString) return 0;
-    return Number(numberString);
+    const valueBuffer = decodeBase64url(nonceBase64url);
+    const message = koinos.chain.value_type.decode(valueBuffer);
+    const object = koinos.chain.value_type.toObject(message, {
+      longs: String,
+      defaults: true,
+    });
+    // todo: consider the case where nonce is greater than max safe integer
+    return Number(object.uint64_value);
   }
 
   async getAccountRc(account: string): Promise<string> {

@@ -19,7 +19,7 @@ if (!process.env.ADDRESS_RECEIVER)
 const privateKeyHex = process.env.PRIVATE_KEY_WIF;
 const rpcNodes = process.env.RPC_NODES.split(",");
 const addressReceiver = process.env.ADDRESS_RECEIVER;
-const provider = new Provider({ rpcNodes });
+const provider = new Provider(rpcNodes);
 let numError = 0;
 provider.onError = () => {
   numError += 1;

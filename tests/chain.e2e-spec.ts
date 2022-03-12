@@ -10,7 +10,7 @@ if (!process.env.RPC_NODES)
   throw new Error("env variable RPC_NODES not defined");
 
 const rpcNodes = process.env.RPC_NODES.split(",");
-const provider = new Provider({ rpcNodes });
+const provider = new Provider(rpcNodes);
 
 const formatDelay = (delay: number): string => {
   const absDelay = Math.abs(delay);
