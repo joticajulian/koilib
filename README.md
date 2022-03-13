@@ -121,7 +121,7 @@ a transaction, and read contracts.
 
   // read the balance
   const { result } = await koin.balanceOf(signer.getAddress());
-  console.log(balance.result);
+  console.log(result);
 })();
 ```
 
@@ -244,8 +244,9 @@ such cases.
 
 1. Can this library be used to create smart contracts?
 
-   No. You need to install [koinos-cdt](https://github.com/koinos/koinos-cdt) for
-   this purpose.
+   No. You need to install [koinos-sdk](https://github.com/koinos/koinos-sdk-cpp)
+   (for C++ developers) or [koinos-as-sdk-examples](https://github.com/roaminroe/koinos-as-sdk-examples)
+   (for TypeScript developers) for this purpose.
 
 2. Can this library be used to deploy smart contracts?
 
