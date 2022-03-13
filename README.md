@@ -77,6 +77,10 @@ There are 4 principal classes:
 - **Serializer**: Class with the protocol buffers definitions to
   serialize/deserialize data types.
 
+### Examples
+
+#### Send tokens, get balance
+
 The following code shows how to sign a transaction, broadcast
 a transaction, and read contracts.
 
@@ -121,7 +125,9 @@ a transaction, and read contracts.
 })();
 ```
 
-It's also possible to upload contracts. First, follow the instructions in [koinos-cdt](https://github.com/koinos/koinos-cdt) to compile the contracts as wasm files. Then you can use koilib to deploy them.
+#### Upload contract
+
+It's also possible to upload contracts. First, follow the instructions in [koinos-sdk](https://github.com/koinos/koinos-sdk-cpp) (for C++ developers) or [koinos-as-sdk-examples](https://github.com/roaminroe/koinos-as-sdk-examples) (for TypeScript developers) to compile the contracts as wasm files. Then you can use koilib to deploy them.
 
 ```typescript
 (async () => {
@@ -135,6 +141,47 @@ It's also possible to upload contracts. First, follow the instructions in [koino
   const contract = new Contract({ signer, provider, bytecode });
   const { transaction } = await contract.deploy();
   // wait to be mined
+  const blockNumber = await transaction.wait();
+  console.log(`Contract uploaded in block number ${blockNumber}`);
+})();
+```
+
+You can also upload a contract in a new address. It is not required that this new address has funds, you just have to set your principal wallet as payer.
+
+```typescript
+(async () => {
+  // define signer, provider and bytecode
+  const provider = new Provider(["http://api.koinos.io:8080"]);
+  const accountWithFunds = Signer.fromSeed("this account has funds");
+  const newAccount = Signer.fromSeed("new account without funds");
+  accountWithFunds.provider = provider;
+  newAccount.provider = provider;
+
+  const bytecode = fs.readFileSync("my_contract.wasm");
+
+  // create contract. Set newAccount as signer
+  const contract = new Contract({
+    signer: newAccount.address,
+    provider,
+    bytecode,
+  });
+
+  // call deploy but do not broadcast the transaction.
+  // Also set the payer
+  const { transaction } = await contract.deploy({
+    payer: accountWithFunds.address,
+    sendTransaction: false,
+  });
+
+  // sign the transaction with the payer
+  await accountWithFunds.signTransaction(transaction);
+
+  // at this point the transaction will have 2 signatures:
+  // - signature of newAccount
+  // - signature of accountWithFunds
+
+  // now broadcast the transaction to deploy
+  transaction = await newAccount.sendTransaction(transaction);
   const blockNumber = await transaction.wait();
   console.log(`Contract uploaded in block number ${blockNumber}`);
 })();
@@ -166,19 +213,19 @@ const tokenJson = require("./token-proto.json");
 const abiToken = {
   methods: {
     balanceOf: {
-      entryPoint: 0x15619248,
+      entryPoint: 0x5c721497,
       inputs: "balance_of_arguments",
       outputs: "balance_of_result",
       readOnly: true,
       defaultOutput: { value: "0" },
     },
     transfer: {
-      entryPoint: 0x62efa292,
+      entryPoint: 0x27f576ca,
       inputs: "transfer_arguments",
       outputs: "transfer_result",
     },
     mint: {
-      entryPoint: 0xc2f82bdc,
+      entryPoint: 0xdc6f17bb,
       inputs: "mint_argumnets",
       outputs: "mint_result",
     },
