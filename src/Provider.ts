@@ -169,13 +169,13 @@ export class Provider {
    */
   async getTransactionsById(transactionIds: string[]): Promise<{
     transactions: {
-      transaction: TransactionJson[];
+      transaction: TransactionJson;
       containing_blocks: string[];
     }[];
   }> {
     return this.call<{
       transactions: {
-        transaction: TransactionJson[];
+        transaction: TransactionJson;
         containing_blocks: string[];
       }[];
     }>("transaction_store.get_transactions_by_id", {

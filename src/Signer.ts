@@ -2,7 +2,6 @@
 import { sha256 } from "@noble/hashes/sha256";
 import * as secp from "@noble/secp256k1";
 import { Provider } from "./Provider";
-import { Serializer } from "./Serializer";
 import {
   TransactionJson,
   TransactionJsonWait,
@@ -27,12 +26,15 @@ import { koinos } from "./protoModules/protocol-proto.js";
 
 export interface SignerInterface {
   provider?: Provider;
-  serializer?: Serializer;
   getAddress: (compressed?: boolean) => string;
   getPrivateKey: (format: "wif" | "hex", compressed?: boolean) => string;
-  signTransaction: (tx: TransactionJson) => Promise<TransactionJson>;
+  signHash(hash: Uint8Array): Promise<Uint8Array>;
+  signTransaction: (
+    tx: TransactionJson | TransactionJsonWait,
+    abis?: Record<string, Abi>
+  ) => Promise<TransactionJson>;
   sendTransaction: (
-    tx: TransactionJson,
+    tx: TransactionJson | TransactionJsonWait,
     abis?: Record<string, Abi>
   ) => Promise<TransactionJsonWait>;
   prepareTransaction: (tx: TransactionJson) => Promise<TransactionJson>;
@@ -200,7 +202,6 @@ export class Signer implements SignerInterface {
     compressed?: boolean;
     chainId?: string;
     provider?: Provider;
-    valueSerializer?: Serializer;
   }) {
     this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;
     this.privateKey = c.privateKey;
@@ -330,7 +331,10 @@ export class Signer implements SignerInterface {
    * the transaction parameter is modified inside this function.
    * @param tx - Unsigned transaction
    */
-  async signTransaction(tx: TransactionJson): Promise<TransactionJson> {
+  async signTransaction(
+    tx: TransactionJson | TransactionJsonWait,
+    _abis?: Record<string, Abi>
+  ): Promise<TransactionJson> {
     if (!tx.id) throw new Error("Missing transaction id");
 
     // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
@@ -375,23 +379,21 @@ export class Signer implements SignerInterface {
    * @returns
    */
   async sendTransaction(
-    tx: TransactionJson,
+    tx: TransactionJson | TransactionJsonWait,
     _abis?: Record<string, Abi>
   ): Promise<TransactionJsonWait> {
     if (!tx.signatures || !tx.signatures?.length)
       tx = await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
     await this.provider.sendTransaction(tx);
-    return {
-      ...tx,
-      wait: async (
-        type: "byTransactionId" | "byBlock" = "byBlock",
-        timeout = 30000
-      ) => {
-        if (!this.provider) throw new Error("provider is undefined");
-        return this.provider.wait(tx.id as string, type, timeout);
-      },
+    (tx as TransactionJsonWait).wait = async (
+      type: "byTransactionId" | "byBlock" = "byBlock",
+      timeout = 30000
+    ) => {
+      if (!this.provider) throw new Error("provider is undefined");
+      return this.provider.wait(tx.id as string, type, timeout);
     };
+    return tx as TransactionJsonWait;
   }
 
   /**
@@ -595,13 +597,16 @@ export class Signer implements SignerInterface {
       tx.header = {};
     }
 
+    const payer = tx.header.payer ?? this.address;
+    const { payee } = tx.header;
+
     let nonce;
     if (tx.header.nonce === undefined) {
       if (!this.provider)
         throw new Error(
           "Cannot get the nonce because provider is undefined. To skip this call set a nonce in the transaction header"
         );
-      const oldNonce = (await this.provider.getNonce(this.address)) as number;
+      const oldNonce = (await this.provider.getNonce(payee || payer)) as number;
       const message = koinos.chain.value_type.create({
         // todo: consider using bigint for big nonces
         uint64_value: String(oldNonce + 1),
@@ -619,7 +624,7 @@ export class Signer implements SignerInterface {
         throw new Error(
           "Cannot get the rc_limit because provider is undefined. To skip this call set a rc_limit in the transaction header"
         );
-      rcLimit = await this.provider.getAccountRc(this.address);
+      rcLimit = await this.provider.getAccountRc(payer);
     } else {
       rcLimit = tx.header.rc_limit;
     }
@@ -663,8 +668,8 @@ export class Signer implements SignerInterface {
       rc_limit: rcLimit,
       nonce,
       operation_merkle_root: operationMerkleRoot,
-      payer: tx.header.payer ?? this.address,
-      ...(tx.header.payee && { payee: tx.header.payee }),
+      payer,
+      ...(payee && { payee }),
       // TODO: Option to resolve names (payer, payee)
     };
 

@@ -151,9 +151,9 @@ export class Contract {
       this.serializer = new Serializer(c.abi.types);
     }
     this.options = {
+      signTransaction: true,
       sendTransaction: true,
       sendAbis: true,
-      header: {},
       ...c.options,
     };
     this.functions = {};
@@ -182,10 +182,6 @@ export class Contract {
           const opts: TransactionOptions = {
             ...this.options,
             ...options,
-            header: {
-              ...this.options.header,
-              ...options?.header,
-            },
           };
 
           const {
@@ -225,13 +221,16 @@ export class Contract {
             return { operation, result };
           }
 
-          // return operation if send is false
-          if (!opts?.sendTransaction) return { operation };
-
           // write contract (sign and send)
           if (!this.signer) throw new Error("signer not found");
           const tx = await this.signer.prepareTransaction({
-            header: opts?.header,
+            header: {
+              ...(opts?.chainId && { chain_id: opts?.chainId }),
+              ...(opts?.rcLimit && { rc_limit: opts?.rcLimit }),
+              ...(opts?.nonce && { nonce: opts?.nonce }),
+              ...(opts?.payer && { payer: opts?.payer }),
+              ...(opts?.payee && { payee: opts?.payee }),
+            },
             operations: [
               {
                 call_contract: {
@@ -250,6 +249,17 @@ export class Contract {
             const contractId = encodeBase58(this.id as Uint8Array);
             abis[contractId] = this.abi;
           }
+
+          // return result if the transaction will not be broadcasted
+          if (!opts?.sendTransaction) {
+            const noWait = () => {
+              throw new Error("This transaction was not broadcasted");
+            };
+            if (opts.signTransaction)
+              await this.signer.signTransaction(tx, abis);
+            return { operation, transaction: { ...tx, wait: noWait } };
+          }
+
           const transaction = await this.signer.sendTransaction(tx, abis);
           return { operation, transaction };
         };
@@ -283,11 +293,11 @@ export class Contract {
    */
   async deploy(options?: TransactionOptions): Promise<{
     operation: UploadContractOperationNested;
-    transaction?: TransactionJsonWait;
+    transaction: TransactionJsonWait;
   }> {
     if (!this.signer) throw new Error("signer not found");
     if (!this.bytecode) throw new Error("bytecode not found");
-    const opts = {
+    const opts: TransactionOptions = {
       ...this.options,
       ...options,
     };
@@ -298,10 +308,14 @@ export class Contract {
       },
     };
 
-    // return operation if send is false
-    if (!opts?.sendTransaction) return { operation };
-
     const tx = await this.signer.prepareTransaction({
+      header: {
+        ...(opts?.chainId && { chain_id: opts?.chainId }),
+        ...(opts?.rcLimit && { rc_limit: opts?.rcLimit }),
+        ...(opts?.nonce && { nonce: opts?.nonce }),
+        ...(opts?.payer && { payer: opts?.payer }),
+        ...(opts?.payee && { payee: opts?.payee }),
+      },
       operations: [
         {
           upload_contract: {
@@ -311,6 +325,16 @@ export class Contract {
         } as OperationJson,
       ],
     });
+
+    // return result if the transaction will not be broadcasted
+    if (!opts?.sendTransaction) {
+      const noWait = () => {
+        throw new Error("This transaction was not broadcasted");
+      };
+      if (opts.signTransaction) await this.signer.signTransaction(tx);
+      return { operation, transaction: { ...tx, wait: noWait } };
+    }
+
     const transaction = await this.signer.sendTransaction(tx);
     return { operation, transaction };
   }

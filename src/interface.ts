@@ -116,14 +116,83 @@ export interface DecodedOperationJson {
 }
 
 export interface TransactionOptions {
-  header?: {
-    chain_id?: string;
-    rc_limit?: number | bigint | string;
-    nonce?: string;
-    payer?: string;
-    payee?: string;
-  };
+  /**
+   * Chain ID
+   *
+   * If this option is not set it will be taken
+   * by querying the blockchain
+   */
+  chainId?: string;
+
+  /**
+   * Resource Credits limit
+   *
+   * Max amount of mana to be spent. If this option
+   * is not set it will be taken by querying the
+   * actual mana of the payer
+   */
+  rcLimit?: string;
+
+  /**
+   * Transaction nonce
+   *
+   * It can be the nonce of the payee or the nonce of the
+   * payer. Use the payee's nonce when the payer's nonce changes
+   * continuosly without your control, for instance, when the
+   * payer is a dApp.
+   *
+   * The nonce is not required to be consecutive,
+   * only greater than the previous one.
+   *
+   * If this option is not set it will be taken
+   * from the blockchain depending on the payer/payee
+   * configuration.
+   */
+  nonce?: string;
+
+  /**
+   * Payer
+   *
+   * Address that will pay the resource credits (aka mana)
+   * consumed in the transaction.
+   *
+   * If this option is not set it will take the address
+   * of the signer as payer.
+   */
+  payer?: string;
+
+  /**
+   * Payee
+   *
+   * Address that increases the nonce. When this option is
+   * not set the blockchain will increase the payer's nonce.
+   */
+  payee?: string;
+
+  /**
+   * Sign transaction
+   *
+   * Boolean to define if the transaction should be signed.
+   * By default it is true.
+   */
+  signTransaction?: boolean;
+
+  /**
+   * Send transaction
+   *
+   * Boolean to define if the transaction should be signed
+   * ans broadcasted to the blockchain. By default it is
+   * true.
+   */
   sendTransaction?: boolean;
+
+  /**
+   * Send abis
+   *
+   * Boolean to define if the abis should be shared with
+   * the signer so it will be able to decode the operations.
+   * By default it is true.
+   */
   sendAbis?: boolean;
 }
 
