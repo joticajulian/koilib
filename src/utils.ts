@@ -116,9 +116,9 @@ export function bitcoinEncode(
   type: "public" | "private",
   compressed = false
 ): string {
-  let bufferCheck;
-  let prefixBuffer;
-  let offsetChecksum;
+  let bufferCheck: Uint8Array;
+  let prefixBuffer: Uint8Array;
+  let offsetChecksum: number;
   if (type === "public") {
     bufferCheck = new Uint8Array(25);
     prefixBuffer = new Uint8Array(21);

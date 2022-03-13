@@ -69,9 +69,9 @@ function prepareDictionary(
  * - "object_key::compute_bandwidth_registry"
  * - "object_key::block_hash_code"
  *
- * @param genesisDataDecoded Genesis data where the values are
+ * @param genesisDataDecoded - Genesis data where the values are
  * objects.
- * @param dictionary Set of keys which contains the relevant
+ * @param dictionary - Set of keys which contains the relevant
  * information to perform the serialization
  *
  * @example
@@ -234,8 +234,8 @@ export async function encodeGenesisData(
  * - "object_key::compute_bandwidth_registry"
  * - "object_key::block_hash_code"
  *
- * @param genesisData Genesis data
- * @param dictionary Set of keys which contains the relevant
+ * @param genesisData - Genesis data
+ * @param dictionary - Set of keys which contains the relevant
  * information to perform the deserialization
  *
  * @example

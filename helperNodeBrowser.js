@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const fs = require("fs");
 
 const [type] = process.argv.slice(2);

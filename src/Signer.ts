@@ -1,4 +1,4 @@
-/* eslint-disable no-param-reassign */
+/* eslint-disable no-param-reassign, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 import { sha256 } from "@noble/hashes/sha256";
 import * as secp from "@noble/secp256k1";
 import { Provider } from "./Provider";
@@ -21,6 +21,7 @@ import {
   toHexString,
   toUint8Array,
 } from "./utils";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { koinos } from "./protoModules/protocol-proto.js";
 
@@ -495,7 +496,7 @@ export class Signer implements SignerInterface {
       if (!block.header) throw new Error("Missing block header");
       if (!block.signature) throw new Error("Missing block signature");
       signatures = [block.signature];
-      const headerDecoded = btypeDecode(block.header!, btypeBlockHeader!);
+      const headerDecoded = btypeDecode(block.header, btypeBlockHeader!);
       const message = koinos.protocol.block_header.create(headerDecoded);
       headerBytes = koinos.protocol.block_header.encode(message).finish();
     } else {
@@ -505,7 +506,7 @@ export class Signer implements SignerInterface {
         throw new Error("Missing transaction signatures");
       signatures = transaction.signatures;
       const headerDecoded = btypeDecode(
-        transaction.header!,
+        transaction.header,
         btypeTransactionHeader!
       );
       const message = koinos.protocol.transaction_header.create(headerDecoded);
@@ -611,7 +612,9 @@ export class Signer implements SignerInterface {
         // todo: consider using bigint for big nonces
         uint64_value: String(oldNonce + 1),
       });
-      const nonceEncoded = koinos.chain.value_type.encode(message).finish();
+      const nonceEncoded = koinos.chain.value_type
+        .encode(message)
+        .finish() as Uint8Array;
 
       nonce = encodeBase64url(nonceEncoded);
     } else {
@@ -650,7 +653,7 @@ export class Signer implements SignerInterface {
         const message = koinos.protocol.operation.create(operationDecoded);
         const operationEncoded = koinos.protocol.operation
           .encode(message)
-          .finish();
+          .finish() as Uint8Array;
         operationsHashes.push(sha256(operationEncoded));
       }
     }
@@ -673,11 +676,11 @@ export class Signer implements SignerInterface {
       // TODO: Option to resolve names (payer, payee)
     };
 
-    const headerDecoded = btypeDecode(tx.header!, btypeTransactionHeader!);
+    const headerDecoded = btypeDecode(tx.header, btypeTransactionHeader!);
     const message = koinos.protocol.transaction_header.create(headerDecoded);
     const headerBytes = koinos.protocol.transaction_header
       .encode(message)
-      .finish();
+      .finish() as Uint8Array;
 
     const hash = sha256(headerBytes);
 
@@ -706,7 +709,7 @@ export class Signer implements SignerInterface {
           koinos.protocol.transaction_header.create(headerDecoded);
         const headerBytes = koinos.protocol.transaction_header
           .encode(message)
-          .finish();
+          .finish() as Uint8Array;
 
         hashes.push(sha256(headerBytes));
 
@@ -757,9 +760,11 @@ export class Signer implements SignerInterface {
       signer: this.address,
     };
 
-    const headerDecoded = btypeDecode(block.header!, btypeBlockHeader!);
+    const headerDecoded = btypeDecode(block.header, btypeBlockHeader!);
     const message = koinos.protocol.block_header.create(headerDecoded);
-    const headerBytes = koinos.protocol.block_header.encode(message).finish();
+    const headerBytes = koinos.protocol.block_header
+      .encode(message)
+      .finish() as Uint8Array;
 
     const hash = sha256(headerBytes);
 

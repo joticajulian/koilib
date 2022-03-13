@@ -88,7 +88,7 @@ describe("Provider", () => {
               signer: expect.any(String) as string,
             },
             signature: expect.any(String) as string,
-          }),
+          }) as unknown,
         }),
       ])
     );
@@ -186,7 +186,7 @@ describe("Contract", () => {
       payer: signer.address,
       sendTransaction: false,
     });
-    await signer.signTransaction(transaction!);
+    await signer.signTransaction(transaction);
     expect(transaction.signatures).toHaveLength(2);
     transaction = await signer.sendTransaction(transaction);
     const blockNumber = await transaction.wait();

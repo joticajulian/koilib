@@ -1,5 +1,5 @@
-import Serializer from "../src/Serializer";
-import Signer from "../src/Signer";
+import { Serializer } from "../src/Serializer";
+import { Signer } from "../src/Signer";
 import {
   decodeBase58,
   encodeBase64,

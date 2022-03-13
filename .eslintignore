@@ -2,4 +2,5 @@ dist
 lib
 docs
 local
+src/protoModules
 tests/assets-index/prism*

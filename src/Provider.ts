@@ -4,9 +4,12 @@ import {
   TransactionJson,
   CallContractOperationJson,
 } from "./interface";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { koinos } from "./protoModules/protocol-proto.js";
 import { decodeBase64url } from "./utils";
+
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -151,7 +154,7 @@ export class Provider {
     const object = koinos.chain.value_type.toObject(message, {
       longs: String,
       defaults: true,
-    });
+    }) as { uint64_value: string };
     // todo: consider the case where nonce is greater than max safe integer
     return Number(object.uint64_value);
   }
