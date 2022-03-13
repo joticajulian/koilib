@@ -489,7 +489,7 @@ describe("Wallet and Contract", () => {
 
   it("should rewrite the default options when creating transactions", async () => {
     expect.assertions(3);
-    mockFetch.mockImplementation(async () => fetchResponse({ nonce: "0" }));
+    mockFetch.mockImplementation(async () => fetchResponse({ nonce: "OHs=" }));
 
     const { transaction, operation, result } = await koin.transfer(
       {
@@ -502,7 +502,7 @@ describe("Wallet and Contract", () => {
 
     // As send is false only operation is defined
     expect(operation).toBeDefined();
-    expect(transaction).toBeUndefined();
+    expect(transaction).toBeDefined();
     expect(result).toBeUndefined();
   });
 

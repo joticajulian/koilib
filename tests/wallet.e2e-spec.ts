@@ -175,6 +175,24 @@ describe("Contract", () => {
     expect(typeof blockNumber).toBe("number");
   });
 
+  it("should pay a transaction to upload a contract", async () => {
+    const bytecode = new Uint8Array(crypto.randomBytes(2));
+    const newSigner = new Signer({
+      privateKey: crypto.randomBytes(32).toString("hex"),
+      provider,
+    });
+    const contract = new Contract({ signer: newSigner, provider, bytecode });
+    let { transaction } = await contract.deploy({
+      payer: signer.address,
+      sendTransaction: false,
+    });
+    await signer.signTransaction(transaction!);
+    expect(transaction.signatures).toHaveLength(2);
+    transaction = await signer.sendTransaction(transaction);
+    const blockNumber = await transaction.wait();
+    expect(typeof blockNumber).toBe("number");
+  });
+
   it("connect with koin smart contract", async () => {
     expect.assertions(3);
 
