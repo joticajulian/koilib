@@ -1,0 +1,161 @@
+{
+  "nested": {
+    "koinos": {
+      "nested": {
+        "chain": {
+          "options": {
+            "go_package": "github.com/koinos/koinos-proto-golang/koinos/protocol"
+          },
+          "nested": {
+            "value_type": {
+              "oneofs": {
+                "kind": {
+                  "oneof": [
+                    "message_value",
+                    "double_value",
+                    "float_value",
+                    "int32_value",
+                    "int64_value",
+                    "uint32_value",
+                    "uint64_value",
+                    "sint32_value",
+                    "sint64_value",
+                    "fixed32_value",
+                    "fixed64_value",
+                    "sfixed32_value",
+                    "sfixed64_value",
+                    "bool_value",
+                    "string_value",
+                    "bytes_value"
+                  ]
+                }
+              },
+              "fields": {
+                "message_value": {
+                  "type": "google.protobuf.Any",
+                  "id": 1
+                },
+                "double_value": {
+                  "type": "double",
+                  "id": 2
+                },
+                "float_value": {
+                  "type": "float",
+                  "id": 3
+                },
+                "int32_value": {
+                  "type": "int32",
+                  "id": 4
+                },
+                "int64_value": {
+                  "type": "int64",
+                  "id": 5,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "uint32_value": {
+                  "type": "uint32",
+                  "id": 6
+                },
+                "uint64_value": {
+                  "type": "uint64",
+                  "id": 7,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "sint32_value": {
+                  "type": "sint32",
+                  "id": 8
+                },
+                "sint64_value": {
+                  "type": "sint64",
+                  "id": 9,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "fixed32_value": {
+                  "type": "fixed32",
+                  "id": 10
+                },
+                "fixed64_value": {
+                  "type": "fixed64",
+                  "id": 11,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "sfixed32_value": {
+                  "type": "sfixed32",
+                  "id": 12
+                },
+                "sfixed64_value": {
+                  "type": "sfixed64",
+                  "id": 13,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "bool_value": {
+                  "type": "bool",
+                  "id": 14
+                },
+                "string_value": {
+                  "type": "string",
+                  "id": 15
+                },
+                "bytes_value": {
+                  "type": "bytes",
+                  "id": 16
+                }
+              }
+            },
+            "enum_type": {
+              "fields": {
+                "name": {
+                  "type": "string",
+                  "id": 1
+                },
+                "number": {
+                  "type": "int32",
+                  "id": 2
+                }
+              }
+            },
+            "list_type": {
+              "fields": {
+                "values": {
+                  "rule": "repeated",
+                  "type": "value_type",
+                  "id": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "google": {
+      "nested": {
+        "protobuf": {
+          "nested": {
+            "Any": {
+              "fields": {
+                "type_url": {
+                  "type": "string",
+                  "id": 1
+                },
+                "value": {
+                  "type": "bytes",
+                  "id": 2
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

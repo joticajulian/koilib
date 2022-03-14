@@ -2,14 +2,14 @@
 import { Root, Type, INamespace } from "protobufjs/light";
 import {
   decodeBase58,
-  decodeBase64,
+  decodeBase64url,
   encodeBase58,
-  encodeBase64,
+  encodeBase64url,
   toHexString,
   toUint8Array,
 } from "./utils";
 
-const OP_BYTES = "(koinos_bytes_type)";
+const OP_BYTES = "(btype)";
 
 /**
  * Makes a copy of a value. The returned value can be modified
@@ -80,7 +80,7 @@ export class Serializer {
   defaultType?: Type;
 
   /**
-   * Preformat bytes for base64, base58 or hex string
+   * Preformat bytes for base64url, base58 or hex string
    */
   bytesConversion = true;
 
@@ -109,6 +109,63 @@ export class Serializer {
       this.bytesConversion = opts.bytesConversion;
   }
 
+  converter(
+    valueDecoded: Record<string, unknown>,
+    object: Record<string, unknown>,
+    protobufType: Type,
+    fieldName: string
+  ) {
+    const { options, name, type } = protobufType.fields[fieldName];
+    if (!valueDecoded[name]) return;
+
+    // if operation
+    if (type.endsWith("_operation")) {
+      const protoBuf = this.root.lookupType(type);
+      object[name] = {};
+      Object.keys(protoBuf.fields).forEach((fdName) =>
+        this.converter(
+          valueDecoded[name] as Record<string, unknown>,
+          object[name] as Record<string, unknown>,
+          protoBuf,
+          fdName
+        )
+      );
+      return;
+    }
+
+    // No byte conversion
+    if (type !== "bytes") {
+      object[name] = copyValue(valueDecoded[name]);
+      return;
+    }
+    // Default byte conversion
+    if (!options || !options[OP_BYTES]) {
+      object[name] = decodeBase64url(valueDecoded[name] as string);
+      return;
+    }
+
+    // Specific byte conversion
+    switch (options[OP_BYTES]) {
+      case "BASE58":
+      case "CONTRACT_ID":
+      case "ADDRESS":
+        object[name] = decodeBase58(valueDecoded[name] as string);
+        break;
+      case "BASE64":
+        object[name] = decodeBase64url(valueDecoded[name] as string);
+        break;
+      case "HEX":
+      case "BLOCK_ID":
+      case "TRANSACTION_ID":
+        object[name] = toUint8Array(
+          (valueDecoded[name] as string).replace("0x", "")
+        );
+        break;
+      default:
+        throw new Error(`unknown btype ${options[OP_BYTES] as string}`);
+    }
+  }
+
   /**
    * Function to encode a type using the protobuffer definitions
    * It also prepares the bytes for special cases (base58, hex string)
@@ -128,48 +185,16 @@ export class Serializer {
         : opts.bytesConversion;
     if (bytesConversion) {
       // TODO: format from Buffer to base58/base64 for nested fields
-      Object.keys(protobufType.fields).forEach((fieldName) => {
-        const { options, name, type } = protobufType.fields[fieldName];
 
-        // No byte conversion
-        if (type !== "bytes") {
-          object[name] = copyValue(valueDecoded[name]);
-          return;
-        }
-
-        // Default byte conversion
-        if (!options || !options[OP_BYTES]) {
-          object[name] = decodeBase64(valueDecoded[name] as string);
-          return;
-        }
-
-        // Specific byte conversion
-        switch (options[OP_BYTES]) {
-          case "BASE58":
-          case "CONTRACT_ID":
-          case "ADDRESS":
-            object[name] = decodeBase58(valueDecoded[name] as string);
-            break;
-          case "BASE64":
-            object[name] = decodeBase64(valueDecoded[name] as string);
-            break;
-          case "HEX":
-          case "BLOCK_ID":
-          case "TRANSACTION_ID":
-            object[name] = toUint8Array(
-              (valueDecoded[name] as string).replace("0x", "")
-            );
-            break;
-          default:
-            throw new Error(
-              `unknown koinos_byte_type ${options[OP_BYTES] as string}`
-            );
-        }
-      });
+      Object.keys(protobufType.fields).forEach((fieldName) =>
+        this.converter(valueDecoded, object, protobufType, fieldName)
+      );
     } else {
       object = valueDecoded;
     }
+
     const message = protobufType.create(object);
+
     const buffer = protobufType.encode(message).finish();
     return buffer;
   }
@@ -186,12 +211,15 @@ export class Serializer {
   ): Promise<T> {
     const valueBuffer =
       typeof valueEncoded === "string"
-        ? decodeBase64(valueEncoded)
+        ? decodeBase64url(valueEncoded)
         : valueEncoded;
     const protobufType =
       this.defaultType || this.root.lookupType(typeName as string);
     const message = protobufType.decode(valueBuffer);
-    const object = protobufType.toObject(message, { longs: String });
+    const object = protobufType.toObject(message, {
+      longs: String,
+      defaults: true,
+    });
     const bytesConversion =
       opts?.bytesConversion === undefined
         ? this.bytesConversion
@@ -207,7 +235,7 @@ export class Serializer {
 
       // Default byte conversion
       if (!options || !options[OP_BYTES]) {
-        object[name] = encodeBase64(object[name] as Uint8Array);
+        object[name] = encodeBase64url(object[name] as Uint8Array);
         return;
       }
 
@@ -219,7 +247,7 @@ export class Serializer {
           object[name] = encodeBase58(object[name] as Uint8Array);
           break;
         case "BASE64":
-          object[name] = encodeBase64(object[name] as Uint8Array);
+          object[name] = encodeBase64url(object[name] as Uint8Array);
           break;
         case "HEX":
         case "BLOCK_ID":

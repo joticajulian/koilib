@@ -9,8 +9,10 @@ import {
   Abi,
   TransactionOptions,
   DecodedOperationJson,
+  OperationJson,
+  DeployOptions,
 } from "./interface";
-import { decodeBase58, encodeBase58, encodeBase64 } from "./utils";
+import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
 
 /**
  * The contract class contains the contract ID and contract entries
@@ -79,6 +81,24 @@ export class Contract {
    * ```ts
    * const owner = "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb";
    * await koinContract.functions.balanceOf({ owner });
+   * ```
+   *
+   * @example using options
+   * ```ts
+   * await koinContract.functions.transfer({
+   *   from: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+   *   to: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   value: "1",
+   * },{
+   *   chainId: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
+   *   rcLimit: "100000000",
+   *   nonce: "OAI=",
+   *   payer: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   payee: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+   *   signTransaction: true,
+   *   sendTransaction: true,
+   *   sendAbis: true,
+   * });
    * ```
    */
   functions: {
@@ -150,7 +170,7 @@ export class Contract {
       this.serializer = new Serializer(c.abi.types);
     }
     this.options = {
-      rc_limit: 1e8,
+      signTransaction: true,
       sendTransaction: true,
       sendAbis: true,
       ...c.options,
@@ -178,7 +198,7 @@ export class Contract {
             throw new Error("Methods are not defined");
           if (!this.abi.methods[name])
             throw new Error(`Method ${name} not defined in the ABI`);
-          const opts = {
+          const opts: TransactionOptions = {
             ...this.options,
             ...options,
           };
@@ -205,7 +225,7 @@ export class Contract {
             const { result: resultEncoded } = await this.provider.readContract({
               contract_id: encodeBase58(operation.call_contract.contract_id),
               entry_point: operation.call_contract.entry_point,
-              args: encodeBase64(operation.call_contract.args),
+              args: encodeBase64url(operation.call_contract.args),
             });
             let result = defaultOutput as T;
             if (resultEncoded) {
@@ -220,14 +240,27 @@ export class Contract {
             return { operation, result };
           }
 
-          // return operation if send is false
-          if (!opts?.sendTransaction) return { operation };
-
           // write contract (sign and send)
           if (!this.signer) throw new Error("signer not found");
-          const tx = await this.signer.encodeTransaction({
-            ...opts,
-            operations: [operation],
+          const tx = await this.signer.prepareTransaction({
+            header: {
+              ...(opts?.chainId && { chain_id: opts?.chainId }),
+              ...(opts?.rcLimit && { rc_limit: opts?.rcLimit }),
+              ...(opts?.nonce && { nonce: opts?.nonce }),
+              ...(opts?.payer && { payer: opts?.payer }),
+              ...(opts?.payee && { payee: opts?.payee }),
+            },
+            operations: [
+              {
+                call_contract: {
+                  contract_id: encodeBase58(
+                    operation.call_contract.contract_id
+                  ),
+                  entry_point: operation.call_contract.entry_point,
+                  args: encodeBase64url(operation.call_contract.args),
+                },
+              } as OperationJson,
+            ],
           });
 
           const abis: Record<string, Abi> = {};
@@ -235,18 +268,22 @@ export class Contract {
             const contractId = encodeBase58(this.id as Uint8Array);
             abis[contractId] = this.abi;
           }
+
+          // return result if the transaction will not be broadcasted
+          if (!opts?.sendTransaction) {
+            const noWait = () => {
+              throw new Error("This transaction was not broadcasted");
+            };
+            if (opts.signTransaction)
+              await this.signer.signTransaction(tx, abis);
+            return { operation, transaction: { ...tx, wait: noWait } };
+          }
+
           const transaction = await this.signer.sendTransaction(tx, abis);
           return { operation, transaction };
         };
       });
     }
-  }
-
-  /**
-   * Compute contract Id
-   */
-  static computeContractId(address: string): Uint8Array {
-    return decodeBase58(address);
   }
 
   /**
@@ -272,31 +309,87 @@ export class Contract {
    * const blockNumber = await transaction.wait();
    * console.log(`Contract uploaded in block number ${blockNumber}`);
    * ```
+   *
+   * @example using options
+   * ```ts
+   * const { transaction } = await contract.deploy({
+   *   // contract options
+   *   abi: "CssCChRrb2lub3Mvb3B0aW9ucy5wc...",
+   *   authorizesCallContract: true,
+   *   authorizesTransactionApplication: true,
+   *   authorizesUploadContract: true,
+   *
+   *   // transaction options
+   *   chainId: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
+   *   rcLimit: "100000000",
+   *   nonce: "OAI=",
+   *   payer: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   payee: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+   *
+   *   // sign and broadcast
+   *   signTransaction: true,
+   *   sendTransaction: true,
+   * });
+   * // wait to be mined
+   * const blockNumber = await transaction.wait();
+   * console.log(`Contract uploaded in block number ${blockNumber}`);
+   * ```
    */
-  async deploy(options?: TransactionOptions): Promise<{
+  async deploy(options?: DeployOptions): Promise<{
     operation: UploadContractOperationNested;
-    transaction?: TransactionJsonWait;
+    transaction: TransactionJsonWait;
   }> {
     if (!this.signer) throw new Error("signer not found");
     if (!this.bytecode) throw new Error("bytecode not found");
-    const opts = {
+    const opts: DeployOptions = {
       ...this.options,
       ...options,
     };
     const operation: UploadContractOperationNested = {
       upload_contract: {
-        contract_id: Contract.computeContractId(this.signer.getAddress()),
+        contract_id: decodeBase58(this.signer.getAddress()),
         bytecode: this.bytecode,
       },
     };
 
-    // return operation if send is false
-    if (!opts?.sendTransaction) return { operation };
-
-    const tx = await this.signer.encodeTransaction({
-      ...opts,
-      operations: [operation],
+    const tx = await this.signer.prepareTransaction({
+      header: {
+        ...(opts?.chainId && { chain_id: opts?.chainId }),
+        ...(opts?.rcLimit && { rc_limit: opts?.rcLimit }),
+        ...(opts?.nonce && { nonce: opts?.nonce }),
+        ...(opts?.payer && { payer: opts?.payer }),
+        ...(opts?.payee && { payee: opts?.payee }),
+      },
+      operations: [
+        {
+          upload_contract: {
+            contract_id: encodeBase58(operation.upload_contract.contract_id!),
+            bytecode: encodeBase64url(this.bytecode),
+            ...(opts?.abi && { abi: opts?.abi }),
+            ...(opts?.authorizesCallContract && {
+              authorizes_call_contract: opts?.authorizesCallContract,
+            }),
+            ...(opts?.authorizesTransactionApplication && {
+              authorizes_transaction_application:
+                opts?.authorizesTransactionApplication,
+            }),
+            ...(opts?.authorizesUploadContract && {
+              authorizes_upload_contract: opts?.authorizesUploadContract,
+            }),
+          },
+        } as OperationJson,
+      ],
     });
+
+    // return result if the transaction will not be broadcasted
+    if (!opts?.sendTransaction) {
+      const noWait = () => {
+        throw new Error("This transaction was not broadcasted");
+      };
+      if (opts.signTransaction) await this.signer.signTransaction(tx);
+      return { operation, transaction: { ...tx, wait: noWait } };
+    }
+
     const transaction = await this.signer.sendTransaction(tx);
     return { operation, transaction };
   }

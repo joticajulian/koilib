@@ -1,0 +1,676 @@
+{
+  "nested": {
+    "koinos": {
+      "options": {
+        "go_package": "github.com/koinos/koinos-proto-golang/koinos"
+      },
+      "nested": {
+        "block_topology": {
+          "fields": {
+            "id": {
+              "type": "bytes",
+              "id": 1,
+              "options": {
+                "(btype)": "BLOCK_ID"
+              }
+            },
+            "height": {
+              "type": "uint64",
+              "id": 2,
+              "options": {
+                "jstype": "JS_STRING"
+              }
+            },
+            "previous": {
+              "type": "bytes",
+              "id": 3,
+              "options": {
+                "(btype)": "BLOCK_ID"
+              }
+            }
+          }
+        },
+        "protocol": {
+          "options": {
+            "go_package": "github.com/koinos/koinos-proto-golang/koinos/protocol"
+          },
+          "nested": {
+            "event_data": {
+              "fields": {
+                "sequence": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "source": {
+                  "type": "bytes",
+                  "id": 2,
+                  "options": {
+                    "(btype)": "CONTRACT_ID"
+                  }
+                },
+                "name": {
+                  "type": "string",
+                  "id": 3
+                },
+                "data": {
+                  "type": "bytes",
+                  "id": 4
+                },
+                "impacted": {
+                  "rule": "repeated",
+                  "type": "bytes",
+                  "id": 5,
+                  "options": {
+                    "(btype)": "ADDRESS"
+                  }
+                }
+              }
+            },
+            "contract_call_bundle": {
+              "fields": {
+                "contract_id": {
+                  "type": "bytes",
+                  "id": 1,
+                  "options": {
+                    "(btype)": "CONTRACT_ID"
+                  }
+                },
+                "entry_point": {
+                  "type": "uint32",
+                  "id": 2
+                }
+              }
+            },
+            "system_call_target": {
+              "oneofs": {
+                "target": {
+                  "oneof": ["thunk_id", "system_call_bundle"]
+                }
+              },
+              "fields": {
+                "thunk_id": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "system_call_bundle": {
+                  "type": "contract_call_bundle",
+                  "id": 2
+                }
+              }
+            },
+            "upload_contract_operation": {
+              "fields": {
+                "contract_id": {
+                  "type": "bytes",
+                  "id": 1,
+                  "options": {
+                    "(btype)": "CONTRACT_ID"
+                  }
+                },
+                "bytecode": {
+                  "type": "bytes",
+                  "id": 2
+                },
+                "abi": {
+                  "type": "string",
+                  "id": 3
+                },
+                "authorizes_call_contract": {
+                  "type": "bool",
+                  "id": 4
+                },
+                "authorizes_transaction_application": {
+                  "type": "bool",
+                  "id": 5
+                },
+                "authorizes_upload_contract": {
+                  "type": "bool",
+                  "id": 6
+                }
+              }
+            },
+            "call_contract_operation": {
+              "fields": {
+                "contract_id": {
+                  "type": "bytes",
+                  "id": 1,
+                  "options": {
+                    "(btype)": "CONTRACT_ID"
+                  }
+                },
+                "entry_point": {
+                  "type": "uint32",
+                  "id": 2
+                },
+                "args": {
+                  "type": "bytes",
+                  "id": 3
+                }
+              }
+            },
+            "set_system_call_operation": {
+              "fields": {
+                "call_id": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "target": {
+                  "type": "system_call_target",
+                  "id": 2
+                }
+              }
+            },
+            "set_system_contract_operation": {
+              "fields": {
+                "contract_id": {
+                  "type": "bytes",
+                  "id": 1,
+                  "options": {
+                    "(btype)": "CONTRACT_ID"
+                  }
+                },
+                "system_contract": {
+                  "type": "bool",
+                  "id": 2
+                }
+              }
+            },
+            "operation": {
+              "oneofs": {
+                "op": {
+                  "oneof": [
+                    "upload_contract",
+                    "call_contract",
+                    "set_system_call",
+                    "set_system_contract"
+                  ]
+                }
+              },
+              "fields": {
+                "upload_contract": {
+                  "type": "upload_contract_operation",
+                  "id": 1
+                },
+                "call_contract": {
+                  "type": "call_contract_operation",
+                  "id": 2
+                },
+                "set_system_call": {
+                  "type": "set_system_call_operation",
+                  "id": 3
+                },
+                "set_system_contract": {
+                  "type": "set_system_contract_operation",
+                  "id": 4
+                }
+              }
+            },
+            "transaction_header": {
+              "fields": {
+                "chain_id": {
+                  "type": "bytes",
+                  "id": 1
+                },
+                "rc_limit": {
+                  "type": "uint64",
+                  "id": 2,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "nonce": {
+                  "type": "bytes",
+                  "id": 3
+                },
+                "operation_merkle_root": {
+                  "type": "bytes",
+                  "id": 4
+                },
+                "payer": {
+                  "type": "bytes",
+                  "id": 5,
+                  "options": {
+                    "(btype)": "ADDRESS"
+                  }
+                },
+                "payee": {
+                  "type": "bytes",
+                  "id": 6,
+                  "options": {
+                    "(btype)": "ADDRESS"
+                  }
+                }
+              }
+            },
+            "transaction": {
+              "fields": {
+                "id": {
+                  "type": "bytes",
+                  "id": 1,
+                  "options": {
+                    "(btype)": "TRANSACTION_ID"
+                  }
+                },
+                "header": {
+                  "type": "transaction_header",
+                  "id": 2
+                },
+                "operations": {
+                  "rule": "repeated",
+                  "type": "operation",
+                  "id": 3
+                },
+                "signatures": {
+                  "rule": "repeated",
+                  "type": "bytes",
+                  "id": 4
+                }
+              }
+            },
+            "transaction_receipt": {
+              "fields": {
+                "id": {
+                  "type": "bytes",
+                  "id": 1,
+                  "options": {
+                    "(btype)": "TRANSACTION_ID"
+                  }
+                },
+                "payer": {
+                  "type": "bytes",
+                  "id": 2,
+                  "options": {
+                    "(btype)": "ADDRESS"
+                  }
+                },
+                "max_payer_rc": {
+                  "type": "uint64",
+                  "id": 3,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "rc_limit": {
+                  "type": "uint64",
+                  "id": 4,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "rc_used": {
+                  "type": "uint64",
+                  "id": 5,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "disk_storage_used": {
+                  "type": "uint64",
+                  "id": 6,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "network_bandwidth_used": {
+                  "type": "uint64",
+                  "id": 7,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "compute_bandwidth_used": {
+                  "type": "uint64",
+                  "id": 8,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "reverted": {
+                  "type": "bool",
+                  "id": 9
+                },
+                "events": {
+                  "rule": "repeated",
+                  "type": "event_data",
+                  "id": 10
+                },
+                "logs": {
+                  "rule": "repeated",
+                  "type": "string",
+                  "id": 11
+                }
+              }
+            },
+            "block_header": {
+              "fields": {
+                "previous": {
+                  "type": "bytes",
+                  "id": 1,
+                  "options": {
+                    "(btype)": "BLOCK_ID"
+                  }
+                },
+                "height": {
+                  "type": "uint64",
+                  "id": 2,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "timestamp": {
+                  "type": "uint64",
+                  "id": 3,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "previous_state_merkle_root": {
+                  "type": "bytes",
+                  "id": 4
+                },
+                "transaction_merkle_root": {
+                  "type": "bytes",
+                  "id": 5
+                },
+                "signer": {
+                  "type": "bytes",
+                  "id": 6,
+                  "options": {
+                    "(btype)": "ADDRESS"
+                  }
+                }
+              }
+            },
+            "block": {
+              "fields": {
+                "id": {
+                  "type": "bytes",
+                  "id": 1,
+                  "options": {
+                    "(btype)": "BLOCK_ID"
+                  }
+                },
+                "header": {
+                  "type": "block_header",
+                  "id": 2
+                },
+                "transactions": {
+                  "rule": "repeated",
+                  "type": "transaction",
+                  "id": 3
+                },
+                "signature": {
+                  "type": "bytes",
+                  "id": 4
+                }
+              }
+            },
+            "block_receipt": {
+              "fields": {
+                "id": {
+                  "type": "bytes",
+                  "id": 1,
+                  "options": {
+                    "(btype)": "BLOCK_ID"
+                  }
+                },
+                "height": {
+                  "type": "uint64",
+                  "id": 2,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "disk_storage_used": {
+                  "type": "uint64",
+                  "id": 3,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "network_bandwidth_used": {
+                  "type": "uint64",
+                  "id": 4,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "compute_bandwidth_used": {
+                  "type": "uint64",
+                  "id": 5,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "state_merkle_root": {
+                  "type": "bytes",
+                  "id": 6
+                },
+                "events": {
+                  "rule": "repeated",
+                  "type": "event_data",
+                  "id": 7
+                },
+                "transaction_receipts": {
+                  "rule": "repeated",
+                  "type": "transaction_receipt",
+                  "id": 8
+                },
+                "logs": {
+                  "rule": "repeated",
+                  "type": "string",
+                  "id": 9
+                }
+              }
+            }
+          }
+        },
+        "chain": {
+          "options": {
+            "go_package": "github.com/koinos/koinos-proto-golang/koinos/chain"
+          },
+          "nested": {
+            "object_space": {
+              "fields": {
+                "system": {
+                  "type": "bool",
+                  "id": 1
+                },
+                "zone": {
+                  "type": "bytes",
+                  "id": 2
+                },
+                "id": {
+                  "type": "uint32",
+                  "id": 3
+                }
+              }
+            },
+            "database_key": {
+              "fields": {
+                "space": {
+                  "type": "object_space",
+                  "id": 1
+                },
+                "key": {
+                  "type": "bytes",
+                  "id": 2
+                }
+              }
+            },
+            "max_account_resources": {
+              "fields": {
+                "value": {
+                  "type": "uint64",
+                  "id": 1,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                }
+              }
+            },
+            "privilege": {
+              "values": {
+                "kernel_mode": 0,
+                "user_mode": 1
+              }
+            },
+            "head_info": {
+              "fields": {
+                "head_topology": {
+                  "type": "block_topology",
+                  "id": 1
+                },
+                "head_block_time": {
+                  "type": "uint64",
+                  "id": 2,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "last_irreversible_block": {
+                  "type": "uint64",
+                  "id": 3,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                }
+              }
+            },
+            "caller_data": {
+              "fields": {
+                "caller": {
+                  "type": "bytes",
+                  "id": 1,
+                  "options": {
+                    "(btype)": "ADDRESS"
+                  }
+                },
+                "caller_privilege": {
+                  "type": "privilege",
+                  "id": 2
+                }
+              }
+            },
+            "resource_limit_data": {
+              "fields": {
+                "disk_storage_limit": {
+                  "type": "uint64",
+                  "id": 1,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "disk_storage_cost": {
+                  "type": "uint64",
+                  "id": 2,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "network_bandwidth_limit": {
+                  "type": "uint64",
+                  "id": 3,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "network_bandwidth_cost": {
+                  "type": "uint64",
+                  "id": 4,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "compute_bandwidth_limit": {
+                  "type": "uint64",
+                  "id": 5,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "compute_bandwidth_cost": {
+                  "type": "uint64",
+                  "id": 6,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                }
+              }
+            },
+            "contract_metadata_object": {
+              "fields": {
+                "hash": {
+                  "type": "bytes",
+                  "id": 1
+                },
+                "system": {
+                  "type": "bool",
+                  "id": 2
+                },
+                "authorizes_call_contract": {
+                  "type": "bool",
+                  "id": 3
+                },
+                "authorizes_transaction_application": {
+                  "type": "bool",
+                  "id": 4
+                },
+                "authorizes_upload_contract": {
+                  "type": "bool",
+                  "id": 5
+                }
+              }
+            },
+            "compute_bandwidth_entry": {
+              "fields": {
+                "name": {
+                  "type": "string",
+                  "id": 1
+                },
+                "compute": {
+                  "type": "uint64",
+                  "id": 2
+                }
+              }
+            },
+            "compute_bandwidth_registry": {
+              "fields": {
+                "entries": {
+                  "rule": "repeated",
+                  "type": "compute_bandwidth_entry",
+                  "id": 1
+                }
+              }
+            },
+            "genesis_entry": {
+              "fields": {
+                "space": {
+                  "type": "object_space",
+                  "id": 1
+                },
+                "key": {
+                  "type": "bytes",
+                  "id": 2
+                },
+                "value": {
+                  "type": "bytes",
+                  "id": 3
+                }
+              }
+            },
+            "genesis_data": {
+              "fields": {
+                "entries": {
+                  "rule": "repeated",
+                  "type": "genesis_entry",
+                  "id": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

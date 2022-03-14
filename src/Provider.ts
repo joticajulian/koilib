@@ -4,6 +4,12 @@ import {
   TransactionJson,
   CallContractOperationJson,
 } from "./interface";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { koinos } from "./protoModules/protocol-proto.js";
+import { decodeBase64url } from "./utils";
+
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -125,15 +131,32 @@ export class Provider {
    * transactions for a particular account. This call is used
    * when creating new transactions.
    * @param account - account address
+   * @param deserialize - If set true it will deserialize the nonce
+   * and return it as number (default). If set false it will return
+   * the nonce encoded as received from the RPC.
    * @returns Nonce
    */
-  async getNonce(account: string): Promise<number> {
-    const { nonce } = await this.call<{ nonce: string }>(
+  async getNonce(
+    account: string,
+    deserialize = true
+  ): Promise<number | string> {
+    const { nonce: nonceBase64url } = await this.call<{ nonce: string }>(
       "chain.get_account_nonce",
       { account }
     );
-    if (!nonce) return 0;
-    return Number(nonce);
+
+    if (!deserialize) {
+      return nonceBase64url;
+    }
+
+    const valueBuffer = decodeBase64url(nonceBase64url);
+    const message = koinos.chain.value_type.decode(valueBuffer);
+    const object = koinos.chain.value_type.toObject(message, {
+      longs: String,
+      defaults: true,
+    }) as { uint64_value: string };
+    // todo: consider the case where nonce is greater than max safe integer
+    return Number(object.uint64_value);
   }
 
   async getAccountRc(account: string): Promise<string> {
@@ -149,13 +172,13 @@ export class Provider {
    */
   async getTransactionsById(transactionIds: string[]): Promise<{
     transactions: {
-      transaction: TransactionJson[];
+      transaction: TransactionJson;
       containing_blocks: string[];
     }[];
   }> {
     return this.call<{
       transactions: {
-        transaction: TransactionJson[];
+        transaction: TransactionJson;
         containing_blocks: string[];
       }[];
     }>("transaction_store.get_transactions_by_id", {
@@ -171,7 +194,7 @@ export class Provider {
     }[];
   }> {
     return this.call("block_store.get_blocks_by_id", {
-      block_id: blockIds,
+      block_ids: blockIds,
       return_block: true,
       return_receipt: false,
     });
@@ -186,6 +209,7 @@ export class Provider {
       height: string;
       previous: string;
     };
+    head_state_merkle_root: string;
     last_irreversible_block: string;
   }> {
     return this.call<{
@@ -194,8 +218,20 @@ export class Provider {
         height: string;
         previous: string;
       };
+      head_state_merkle_root: string;
       last_irreversible_block: string;
     }>("chain.get_head_info", {});
+  }
+
+  /**
+   * Function to get the chain
+   */
+  async getChainId(): Promise<string> {
+    const { chain_id: chainId } = await this.call<{ chain_id: string }>(
+      "chain.get_chain_id",
+      {}
+    );
+    return chainId;
   }
 
   /**
@@ -370,8 +406,18 @@ export class Provider {
    * Function to call "chain.submit_transaction" to send a signed
    * transaction to the blockchain.
    */
-  async sendTransaction(transaction: TransactionJson): Promise<{}> {
+  async sendTransaction(
+    transaction: TransactionJson
+  ): Promise<Record<string, never>> {
     return this.call("chain.submit_transaction", { transaction });
+  }
+
+  /**
+   * Function to call "chain.submit_block" to send a signed
+   * block to the blockchain.
+   */
+  async submitBlock(block: BlockJson): Promise<Record<string, never>> {
+    return this.call("chain.submit_block", { block });
   }
 
   /**

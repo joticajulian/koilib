@@ -1,4 +1,5 @@
 import { INamespace } from "protobufjs/light";
+import { Serializer } from "./Serializer";
 
 /**
  * Application Binary Interface (ABI)
@@ -114,11 +115,124 @@ export interface DecodedOperationJson {
   args?: Record<string, unknown>;
 }
 
-export interface TransactionOptions {
-  rc_limit?: number | bigint | string;
-  nonce?: number;
+export interface BaseTransactionOptions {
+  /**
+   * Chain ID
+   *
+   * If this option is not set it will be taken
+   * by querying the blockchain
+   */
+  chainId?: string;
+
+  /**
+   * Resource Credits limit
+   *
+   * Max amount of mana to be spent. If this option
+   * is not set it will be taken by querying the
+   * actual mana of the payer
+   */
+  rcLimit?: string;
+
+  /**
+   * Transaction nonce
+   *
+   * It can be the nonce of the payee or the nonce of the
+   * payer. Use the payee's nonce when the payer's nonce changes
+   * continuosly without your control, for instance, when the
+   * payer is a dApp.
+   *
+   * The nonce is not required to be consecutive,
+   * only greater than the previous one.
+   *
+   * If this option is not set it will be taken
+   * from the blockchain depending on the payer/payee
+   * configuration.
+   */
+  nonce?: string;
+
+  /**
+   * Payer
+   *
+   * Address that will pay the resource credits (aka mana)
+   * consumed in the transaction.
+   *
+   * If this option is not set it will take the address
+   * of the signer as payer.
+   */
+  payer?: string;
+
+  /**
+   * Payee
+   *
+   * Address that increases the nonce. When this option is
+   * not set the blockchain will increase the payer's nonce.
+   */
+  payee?: string;
+
+  /**
+   * Sign transaction
+   *
+   * Boolean to define if the transaction should be signed.
+   * By default it is true.
+   */
+  signTransaction?: boolean;
+
+  /**
+   * Send transaction
+   *
+   * Boolean to define if the transaction should be signed
+   * ans broadcasted to the blockchain. By default it is
+   * true.
+   */
   sendTransaction?: boolean;
+}
+
+export interface TransactionOptions extends BaseTransactionOptions {
+  /**
+   * Send abis
+   *
+   * Boolean to define if the abis should be shared with
+   * the signer so it will be able to decode the operations.
+   * By default it is true.
+   */
   sendAbis?: boolean;
+}
+
+export interface DeployOptions extends BaseTransactionOptions {
+  /**
+   * ABI
+   *
+   * ABI to be stored in the koinos-contract-meta-store.
+   * This option is optional.
+   */
+  abi?: string;
+
+  /**
+   * Authorizes call contract
+   *
+   * Set it true if the contract implements the "authorize"
+   * function and can authorize calling other contracts in
+   * its name.
+   */
+  authorizesCallContract?: boolean;
+
+  /**
+   * Authorizes transaction application
+   *
+   * Set it true if the contract implements the "authorize"
+   * function and can authorize paying the mana to apply
+   * transactions, or can authorize the use of its nonce
+   * to apply transactions.
+   */
+  authorizesTransactionApplication?: boolean;
+
+  /**
+   * Authorizes upload contract
+   *
+   * Set it true if the contract implements the "authorize"
+   * function and can authorize upgrades of the actual contract
+   */
+  authorizesUploadContract?: boolean;
 }
 
 export interface RecoverPublicKeyOptions {
@@ -162,32 +276,61 @@ export type WaitFunction = (
   timeout?: number
 ) => Promise<string | number>;
 
-export interface UploadContractOperation {
-  contract_id?: Uint8Array;
-
-  bytecode?: Uint8Array;
+export interface GenesisDataEntryEncoded {
+  space: {
+    system?: boolean;
+    zone?: string;
+    id?: number;
+  };
+  key?: string;
+  value: string;
+  error?: string;
 }
 
-export interface UploadContractOperationJson {
-  contract_id?: string; // base58
-
-  bytecode?: string; // base64
+export interface GenesisDataEncoded {
+  entries?: GenesisDataEntryEncoded[];
 }
 
-export interface CallContractOperation {
-  contract_id: Uint8Array;
-
-  entry_point: number;
-
-  args: Uint8Array;
+export interface GenesisDataEntryDecoded {
+  space: {
+    system?: boolean;
+    zone?: string;
+    id?: number;
+  };
+  key?: string;
+  alias?: string;
+  value: string | Record<string, unknown>;
+  error?: string;
 }
 
-export interface CallContractOperationJson {
-  contract_id: string; // base58
+export interface GenesisDataDecoded {
+  entries?: GenesisDataEntryDecoded[];
+}
 
-  entry_point: number;
+export interface DictionaryGenesisData {
+  /** key name */
+  [x: string]: {
+    /** alternative name for the key name */
+    alias?: string;
 
-  args: string; // base64
+    /** boolean defining if it's an address */
+    isAddress?: boolean;
+
+    /** custom serializer */
+    serializer?: Serializer;
+
+    /** type name for serialization */
+    typeName?: string;
+
+    /** preformat bytes for base64url, base58 or hex string */
+    bytesConversion?: boolean;
+  };
+}
+
+export interface TypeField {
+  type: string;
+  btype?: string;
+  subtypes?: Record<string, TypeField>;
 }
 
 export interface ContractCallBundle {
@@ -211,6 +354,55 @@ export interface ContractCallBundleNested {
 
 export type SystemCallTarget = ThunkIdNested | ContractCallBundleNested;
 
+export interface SystemCallTargetJson {
+  thunk_id?: number;
+  system_call_bundle?: ContractCallBundleJson;
+}
+
+export interface UploadContractOperation {
+  contract_id?: Uint8Array;
+
+  bytecode?: Uint8Array;
+
+  abi?: string;
+
+  authorizes_call_contract?: boolean;
+
+  authorizes_transaction_application?: boolean;
+
+  authorizes_upload_contract?: boolean;
+}
+
+export interface UploadContractOperationJson {
+  contract_id?: string; // base58
+
+  bytecode?: string; // base64
+
+  abi?: string;
+
+  authorizes_call_contract?: boolean;
+
+  authorizes_transaction_application?: boolean;
+
+  authorizes_upload_contract?: boolean;
+}
+
+export interface CallContractOperation {
+  contract_id: Uint8Array;
+
+  entry_point: number;
+
+  args: Uint8Array;
+}
+
+export interface CallContractOperationJson {
+  contract_id: string; // base58
+
+  entry_point: number;
+
+  args: string; // base64
+}
+
 export interface SetSystemCallOperation {
   call_id: number;
 
@@ -220,7 +412,19 @@ export interface SetSystemCallOperation {
 export interface SetSystemCallOperationJson {
   call_id: number;
 
-  target: number | ContractCallBundleJson;
+  target: SystemCallTargetJson;
+}
+
+export interface SetSystemContractOperation {
+  contract_id: Uint8Array;
+
+  system_contract: boolean;
+}
+
+export interface SetSystemContractOperationJson {
+  contract_id: string; // base58
+
+  system_contract: boolean;
 }
 
 export interface UploadContractOperationNested {
@@ -235,51 +439,53 @@ export interface SetSystemCallOperationNested {
   set_system_call: SetSystemCallOperation;
 }
 
+export interface SetSystemContractOperationNested {
+  set_system_contract: SetSystemContractOperation;
+}
+
 export type Operation =
   | UploadContractOperationNested
   | CallContractOperationNested
-  | SetSystemCallOperationNested;
+  | SetSystemCallOperationNested
+  | SetSystemContractOperationNested;
 
 export type OperationJson = {
   upload_contract?: UploadContractOperationJson;
   call_contract?: CallContractOperationJson;
   set_system_call?: SetSystemCallOperationJson;
+  set_system_contract?: SetSystemContractOperationJson;
 };
 
-export interface ActiveTransactionData {
+export interface TransactionHeaderJson {
+  /**
+   * ID of the chain
+   */
+  chain_id?: string;
+
   /**
    * Resource credits limit
    */
-  rc_limit?: string | number | bigint;
+  rc_limit?: string;
 
   /**
    * Account nonce
    */
-  nonce?: string | number | bigint;
+  nonce?: string;
 
   /**
-   * Array of operations
+   * Merkle root of the serialized operations's SHA2-256 hashes
    */
-  operations?: Operation[];
-
-  [x: string]: unknown;
-}
-
-export interface ActiveTransactionDataJson {
-  /**
-   * Resource credits limit
-   */
-  rc_limit?: string | number | bigint;
+  operation_merkle_root?: string;
 
   /**
-   * Account nonce
+   * Transaction's payer
    */
-  nonce?: string | number | bigint;
+  payer?: string;
 
   /**
-   * Array of operations
+   * Transaction's payee
    */
-  operations?: OperationJson[];
+  payee?: string;
 
   [x: string]: unknown;
 }
@@ -290,24 +496,24 @@ export interface ActiveTransactionDataJson {
 export interface TransactionJson {
   /**
    * Transaction ID. It must be the sha2-256 of the
-   * serialized data of active data, and encoded in multi base58
+   * serialized header of the transaction
    */
   id?: string;
 
   /**
-   * Consensus data
+   * Header of the transaction
    */
-  active?: string;
+  header?: TransactionHeaderJson;
 
   /**
-   * Non-consensus data
+   * Array of operations
    */
-  passive?: string;
+  operations?: OperationJson[];
 
   /**
-   * Signature in compact format enconded in multi base64
+   * Signatures in compact format
    */
-  signature_data?: string;
+  signatures?: string[];
 }
 
 export interface TransactionJsonWait extends TransactionJson {
@@ -318,15 +524,21 @@ export interface BlockHeaderJson {
   previous?: string;
   height?: string;
   timestamp?: string;
+  previous_state_merkle_root?: string;
+  transaction_merkle_root?: string;
+  signer?: string;
   [x: string]: unknown;
 }
 
 export interface BlockJson {
   id?: string;
   header?: BlockHeaderJson;
-  active?: string;
-  passive?: string;
-  signature_data?: string;
   transactions?: TransactionJson[];
+  signature?: string;
+  [x: string]: unknown;
+}
+
+export interface ValueType {
+  uint64_value?: string;
   [x: string]: unknown;
 }
