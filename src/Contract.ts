@@ -10,6 +10,7 @@ import {
   TransactionOptions,
   DecodedOperationJson,
   OperationJson,
+  DeployOptions,
 } from "./interface";
 import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
 
@@ -80,6 +81,24 @@ export class Contract {
    * ```ts
    * const owner = "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb";
    * await koinContract.functions.balanceOf({ owner });
+   * ```
+   *
+   * @example using options
+   * ```ts
+   * await koinContract.functions.transfer({
+   *   from: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+   *   to: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   value: "1",
+   * },{
+   *   chainId: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
+   *   rcLimit: "100000000",
+   *   nonce: "OAI=",
+   *   payer: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   payee: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+   *   signTransaction: true,
+   *   sendTransaction: true,
+   *   sendAbis: true,
+   * });
    * ```
    */
   functions: {
@@ -290,14 +309,39 @@ export class Contract {
    * const blockNumber = await transaction.wait();
    * console.log(`Contract uploaded in block number ${blockNumber}`);
    * ```
+   *
+   * @example using options
+   * ```ts
+   * const { transaction } = await contract.deploy({
+   *   // contract options
+   *   abi: "CssCChRrb2lub3Mvb3B0aW9ucy5wc...",
+   *   authorizesCallContract: true,
+   *   authorizesTransactionApplication: true,
+   *   authorizesUploadContract: true,
+   *
+   *   // transaction options
+   *   chainId: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
+   *   rcLimit: "100000000",
+   *   nonce: "OAI=",
+   *   payer: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   payee: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+   *
+   *   // sign and broadcast
+   *   signTransaction: true,
+   *   sendTransaction: true,
+   * });
+   * // wait to be mined
+   * const blockNumber = await transaction.wait();
+   * console.log(`Contract uploaded in block number ${blockNumber}`);
+   * ```
    */
-  async deploy(options?: TransactionOptions): Promise<{
+  async deploy(options?: DeployOptions): Promise<{
     operation: UploadContractOperationNested;
     transaction: TransactionJsonWait;
   }> {
     if (!this.signer) throw new Error("signer not found");
     if (!this.bytecode) throw new Error("bytecode not found");
-    const opts: TransactionOptions = {
+    const opts: DeployOptions = {
       ...this.options,
       ...options,
     };
@@ -321,6 +365,17 @@ export class Contract {
           upload_contract: {
             contract_id: encodeBase58(operation.upload_contract.contract_id!),
             bytecode: encodeBase64url(this.bytecode),
+            ...(opts?.abi && { abi: opts?.abi }),
+            ...(opts?.authorizesCallContract && {
+              authorizes_call_contract: opts?.authorizesCallContract,
+            }),
+            ...(opts?.authorizesTransactionApplication && {
+              authorizes_transaction_application:
+                opts?.authorizesTransactionApplication,
+            }),
+            ...(opts?.authorizesUploadContract && {
+              authorizes_upload_contract: opts?.authorizesUploadContract,
+            }),
           },
         } as OperationJson,
       ],

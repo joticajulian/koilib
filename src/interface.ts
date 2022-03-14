@@ -115,7 +115,7 @@ export interface DecodedOperationJson {
   args?: Record<string, unknown>;
 }
 
-export interface TransactionOptions {
+export interface BaseTransactionOptions {
   /**
    * Chain ID
    *
@@ -185,7 +185,9 @@ export interface TransactionOptions {
    * true.
    */
   sendTransaction?: boolean;
+}
 
+export interface TransactionOptions extends BaseTransactionOptions {
   /**
    * Send abis
    *
@@ -194,6 +196,43 @@ export interface TransactionOptions {
    * By default it is true.
    */
   sendAbis?: boolean;
+}
+
+export interface DeployOptions extends BaseTransactionOptions {
+  /**
+   * ABI
+   *
+   * ABI to be stored in the koinos-contract-meta-store.
+   * This option is optional.
+   */
+  abi?: string;
+
+  /**
+   * Authorizes call contract
+   *
+   * Set it true if the contract implements the "authorize"
+   * function and can authorize calling other contracts in
+   * its name.
+   */
+  authorizesCallContract?: boolean;
+
+  /**
+   * Authorizes transaction application
+   *
+   * Set it true if the contract implements the "authorize"
+   * function and can authorize paying the mana to apply
+   * transactions, or can authorize the use of its nonce
+   * to apply transactions.
+   */
+  authorizesTransactionApplication?: boolean;
+
+  /**
+   * Authorizes upload contract
+   *
+   * Set it true if the contract implements the "authorize"
+   * function and can authorize upgrades of the actual contract
+   */
+  authorizesUploadContract?: boolean;
 }
 
 export interface RecoverPublicKeyOptions {
@@ -294,34 +333,6 @@ export interface TypeField {
   subtypes?: Record<string, TypeField>;
 }
 
-export interface UploadContractOperation {
-  contract_id?: Uint8Array;
-
-  bytecode?: Uint8Array;
-}
-
-export interface UploadContractOperationJson {
-  contract_id?: string; // base58
-
-  bytecode?: string; // base64
-}
-
-export interface CallContractOperation {
-  contract_id: Uint8Array;
-
-  entry_point: number;
-
-  args: Uint8Array;
-}
-
-export interface CallContractOperationJson {
-  contract_id: string; // base58
-
-  entry_point: number;
-
-  args: string; // base64
-}
-
 export interface ContractCallBundle {
   contract_id: Uint8Array;
   entry_point: number;
@@ -346,6 +357,50 @@ export type SystemCallTarget = ThunkIdNested | ContractCallBundleNested;
 export interface SystemCallTargetJson {
   thunk_id?: number;
   system_call_bundle?: ContractCallBundleJson;
+}
+
+export interface UploadContractOperation {
+  contract_id?: Uint8Array;
+
+  bytecode?: Uint8Array;
+
+  abi?: string;
+
+  authorizes_call_contract?: boolean;
+
+  authorizes_transaction_application?: boolean;
+
+  authorizes_upload_contract?: boolean;
+}
+
+export interface UploadContractOperationJson {
+  contract_id?: string; // base58
+
+  bytecode?: string; // base64
+
+  abi?: string;
+
+  authorizes_call_contract?: boolean;
+
+  authorizes_transaction_application?: boolean;
+
+  authorizes_upload_contract?: boolean;
+}
+
+export interface CallContractOperation {
+  contract_id: Uint8Array;
+
+  entry_point: number;
+
+  args: Uint8Array;
+}
+
+export interface CallContractOperationJson {
+  contract_id: string; // base58
+
+  entry_point: number;
+
+  args: string; // base64
 }
 
 export interface SetSystemCallOperation {
@@ -410,7 +465,7 @@ export interface TransactionHeaderJson {
   /**
    * Resource credits limit
    */
-  rc_limit?: string | number | bigint;
+  rc_limit?: string;
 
   /**
    * Account nonce
@@ -478,10 +533,11 @@ export interface BlockHeaderJson {
 export interface BlockJson {
   id?: string;
   header?: BlockHeaderJson;
-  signature?: string;
   transactions?: TransactionJson[];
+  signature?: string;
   [x: string]: unknown;
 }
+
 export interface ValueType {
   uint64_value?: string;
   [x: string]: unknown;

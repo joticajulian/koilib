@@ -175,6 +175,22 @@ describe("Contract", () => {
     expect(typeof blockNumber).toBe("number");
   });
 
+  it("upload a contract overriding authorize functions", async () => {
+    expect.assertions(2);
+    const bytecode = new Uint8Array(crypto.randomBytes(6));
+    const contract = new Contract({ signer, provider, bytecode });
+    const { transaction } = await contract.deploy({
+      abi: "test",
+      authorizesCallContract: true,
+      authorizesTransactionApplication: true,
+      authorizesUploadContract: true,
+    });
+    expect(transaction).toBeDefined();
+    if (!transaction) throw new Error("Transaction response undefined");
+    const blockNumber = await transaction.wait("byBlock");
+    expect(typeof blockNumber).toBe("number");
+  });
+
   it("should pay a transaction to upload a contract", async () => {
     const bytecode = new Uint8Array(crypto.randomBytes(2));
     const newSigner = new Signer({

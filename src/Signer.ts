@@ -312,7 +312,7 @@ export class Signer implements SignerInterface {
   /**
    * Function to sign a hash value. It returns the bytes signature.
    * The signature is in compact format with the recovery byte
-   * @param hash Hash value. Also known as digest
+   * @param hash - Hash value. Also known as digest
    */
   async signHash(hash: Uint8Array): Promise<Uint8Array> {
     const [compSignature, recovery] = await secp.sign(hash, this.privateKey, {
