@@ -271,6 +271,12 @@ such cases.
 
 The complete documentation can be found at https://joticajulian.github.io/koilib/
 
+## Acknowledgments
+
+Many thanks to the sponsors of this library: @levineam, @Amikob, @motoeng, @isaacdozier, @imjwalker, and the private sponsors.
+
+If you would like to contribute to the development of this library consider becoming a sponsor in https://github.com/sponsors/joticajulian.
+
 ## License
 
 MIT License
