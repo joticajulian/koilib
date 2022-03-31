@@ -9,7 +9,8 @@ import {
   toUint8Array,
 } from "./utils";
 
-const OP_BYTES = "(btype)";
+const OP_BYTES_1 = "(btype)";
+const OP_BYTES_2 = "(koinos.btype)";
 
 /**
  * Makes a copy of a value. The returned value can be modified
@@ -139,13 +140,16 @@ export class Serializer {
       return;
     }
     // Default byte conversion
-    if (!options || !options[OP_BYTES]) {
+    if (!options || (!options[OP_BYTES_1] && !options[OP_BYTES_2])) {
       object[name] = decodeBase64url(valueDecoded[name] as string);
       return;
     }
 
     // Specific byte conversion
-    switch (options[OP_BYTES]) {
+    const btype = options[OP_BYTES_1]
+      ? (options[OP_BYTES_1] as string)
+      : (options[OP_BYTES_2] as string);
+    switch (btype) {
       case "BASE58":
       case "CONTRACT_ID":
       case "ADDRESS":
@@ -162,7 +166,7 @@ export class Serializer {
         );
         break;
       default:
-        throw new Error(`unknown btype ${options[OP_BYTES] as string}`);
+        throw new Error(`unknown btype ${btype}`);
     }
   }
 
@@ -234,13 +238,16 @@ export class Serializer {
       if (type !== "bytes") return;
 
       // Default byte conversion
-      if (!options || !options[OP_BYTES]) {
+      if (!options || (!options[OP_BYTES_1] && !options[OP_BYTES_2])) {
         object[name] = encodeBase64url(object[name] as Uint8Array);
         return;
       }
 
       // Specific byte conversion
-      switch (options[OP_BYTES]) {
+      const btype = options[OP_BYTES_1]
+        ? (options[OP_BYTES_1] as string)
+        : (options[OP_BYTES_2] as string);
+      switch (btype) {
         case "BASE58":
         case "CONTRACT_ID":
         case "ADDRESS":
@@ -255,9 +262,7 @@ export class Serializer {
           object[name] = `0x${toHexString(object[name] as Uint8Array)}`;
           break;
         default:
-          throw new Error(
-            `unknown koinos_byte_type ${options[OP_BYTES] as string}`
-          );
+          throw new Error(`unknown koinos_byte_type ${btype}`);
       }
     });
 

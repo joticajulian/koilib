@@ -274,6 +274,67 @@ describe("Signer", () => {
   });
 });
 
+describe("Serializer", () => {
+  it("should accept options btype and koinos.btype", async () => {
+    expect.assertions(2);
+    const serializer1 = new Serializer(
+      {
+        nested: {
+          my_data: {
+            fields: {
+              val1: {
+                type: "bytes",
+                id: 1,
+              },
+              val2: {
+                type: "bytes",
+                id: 2,
+                options: {
+                  "(btype)": "ADDRESS",
+                },
+              },
+            },
+          },
+        },
+      },
+      { defaultTypeName: "my_data" }
+    );
+    const serializer2 = new Serializer(
+      {
+        nested: {
+          my_data: {
+            fields: {
+              val1: {
+                type: "bytes",
+                id: 1,
+              },
+              val2: {
+                type: "bytes",
+                id: 2,
+                options: {
+                  "(koinos.btype)": "ADDRESS",
+                },
+              },
+            },
+          },
+        },
+      },
+      { defaultTypeName: "my_data" }
+    );
+
+    const value = {
+      val1: encodeBase64url(new Uint8Array([1, 2, 3, 4])),
+      val2: encodeBase58(new Uint8Array([1, 2, 3, 4])),
+    };
+
+    const ser1 = await serializer1.serialize(value);
+    const ser2 = await serializer2.serialize(value);
+    const deser = await serializer1.deserialize(ser1);
+    expect(deser).toStrictEqual(value);
+    expect(encodeBase64url(ser1)).toBe(encodeBase64url(ser2));
+  });
+});
+
 describe("Wallet and Contract", () => {
   it("should encode and decode bitcoin format", () => {
     expect.assertions(2);
