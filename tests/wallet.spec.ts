@@ -1,8 +1,10 @@
 import * as crossFetch from "cross-fetch";
 import { Type } from "protobufjs";
+import { sha256 } from "@noble/hashes/sha256";
 import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
 import { Provider } from "../src/Provider";
+import { Serializer } from "../src";
 import {
   bitcoinDecode,
   encodeBase64url,
@@ -16,17 +18,13 @@ import {
   decodeBase64url,
 } from "../src/utils";
 import {
-  CallContractOperationNested,
   UploadContractOperationNested,
   TransactionJson,
   Abi,
   WaitFunction,
   BlockJson,
-  // BlockJson,
+  OperationJson,
 } from "../src/interface";
-// import { Serializer } from "../src";
-import { sha256 } from "@noble/hashes/sha256";
-import { Serializer } from "../src";
 
 jest.mock("cross-fetch");
 const mockFetch = jest.spyOn(crossFetch, "fetch");
@@ -311,11 +309,11 @@ describe("Wallet and Contract", () => {
 
     expect(opEncoded).toStrictEqual({
       call_contract: {
-        contract_id: koinContract.id,
+        contract_id: koinContract.getId(),
         entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
-        args: expect.any(Uint8Array) as Uint8Array,
+        args: expect.any(String) as string,
       },
-    } as CallContractOperationNested);
+    } as OperationJson);
 
     expect(opDecoded).toStrictEqual(opTransfer);
   });
@@ -428,11 +426,11 @@ describe("Wallet and Contract", () => {
 
     expect(operation).toStrictEqual({
       call_contract: {
-        contract_id: koinContract.id,
+        contract_id: encodeBase58(koinContract.id!),
         entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
-        args: expect.any(Uint8Array) as Uint8Array,
+        args: expect.any(String) as string,
       },
-    } as CallContractOperationNested);
+    } as OperationJson);
 
     expect(transaction).toStrictEqual({
       id: "0x1220da3476bafa228cd753bd0def659ae743cbec2135b46e6aff06f67b0c2f16fc93",

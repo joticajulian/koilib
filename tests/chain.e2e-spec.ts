@@ -51,17 +51,17 @@ describe("Blockchain", () => {
 
     const periods = blocksResponse
       .map((b, i) => {
-        const timestamp = Number(b.block.header.timestamp);
+        const timestamp = Number(b.block.header!.timestamp);
         const blockPeriod =
           i > 0
-            ? timestamp - Number(blocksResponse[i - 1].block.header.timestamp)
+            ? timestamp - Number(blocksResponse[i - 1].block.header!.timestamp)
             : 0;
         return formatDelay(blockPeriod);
       })
       .slice(1);
 
     const currentTimestamp = Number(
-      blocksResponse[blocksResponse.length - 1].block.header.timestamp
+      blocksResponse[blocksResponse.length - 1].block.header!.timestamp
     );
     const timeAgo = formatDelay(Date.now() - currentTimestamp);
     console.log(`Block period last blocks: ${periods.join(", ")}
