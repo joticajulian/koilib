@@ -542,3 +542,23 @@ export interface ValueType {
   uint64_value?: string;
   [x: string]: unknown;
 }
+
+export interface TransactionReceipt {
+  id: string;
+  payer: string;
+  max_payer_rc: string;
+  rc_limit: string;
+  rc_used: string;
+  disk_storage_used: string;
+  network_bandwidth_used: string;
+  compute_bandwidth_used: string;
+  reverted: boolean;
+  events: {
+    sequence: number;
+    source: string;
+    name: string;
+    data: string;
+    impacted: string[];
+  }[];
+  logs: string[];
+}

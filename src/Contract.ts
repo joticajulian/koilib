@@ -10,6 +10,7 @@ import {
   DecodedOperationJson,
   OperationJson,
   DeployOptions,
+  TransactionReceipt,
 } from "./interface";
 import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
 
@@ -108,6 +109,7 @@ export class Contract {
       operation: OperationJson;
       transaction?: TransactionJsonWait;
       result?: T;
+      receipt?: TransactionReceipt;
     }>;
   };
 
@@ -191,6 +193,7 @@ export class Contract {
           operation: OperationJson;
           transaction?: TransactionJsonWait;
           result?: T;
+          receipt?: TransactionReceipt;
         }> => {
           if (!this.provider) throw new Error("provider not found");
           if (!this.abi || !this.abi.methods)
@@ -266,8 +269,11 @@ export class Contract {
             return { operation, transaction: { ...tx, wait: noWait } };
           }
 
-          const transaction = await this.signer.sendTransaction(tx, abis);
-          return { operation, transaction };
+          const { transaction, receipt } = await this.signer.sendTransaction(
+            tx,
+            abis
+          );
+          return { operation, transaction, receipt };
         };
       });
     }
@@ -325,6 +331,7 @@ export class Contract {
   async deploy(options?: DeployOptions): Promise<{
     operation: UploadContractOperationNested;
     transaction: TransactionJsonWait;
+    receipt?: TransactionReceipt;
   }> {
     if (!this.signer) throw new Error("signer not found");
     if (!this.bytecode) throw new Error("bytecode not found");
@@ -377,8 +384,8 @@ export class Contract {
       return { operation, transaction: { ...tx, wait: noWait } };
     }
 
-    const transaction = await this.signer.sendTransaction(tx);
-    return { operation, transaction };
+    const { transaction, receipt } = await this.signer.sendTransaction(tx);
+    return { operation, transaction, receipt };
   }
 
   /**

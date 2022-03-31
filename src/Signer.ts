@@ -9,6 +9,7 @@ import {
   RecoverPublicKeyOptions,
   Abi,
   TypeField,
+  TransactionReceipt,
 } from "./interface";
 import {
   bitcoinAddress,
@@ -37,7 +38,10 @@ export interface SignerInterface {
   sendTransaction: (
     tx: TransactionJson | TransactionJsonWait,
     abis?: Record<string, Abi>
-  ) => Promise<TransactionJsonWait>;
+  ) => Promise<{
+    receipt: TransactionReceipt;
+    transaction: TransactionJsonWait;
+  }>;
   prepareTransaction: (tx: TransactionJson) => Promise<TransactionJson>;
   prepareBlock: (block: BlockJson) => Promise<BlockJson>;
   signBlock: (block: BlockJson) => Promise<BlockJson>;
@@ -382,11 +386,14 @@ export class Signer implements SignerInterface {
   async sendTransaction(
     tx: TransactionJson | TransactionJsonWait,
     _abis?: Record<string, Abi>
-  ): Promise<TransactionJsonWait> {
+  ): Promise<{
+    receipt: TransactionReceipt;
+    transaction: TransactionJsonWait;
+  }> {
     if (!tx.signatures || !tx.signatures?.length)
       tx = await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
-    await this.provider.sendTransaction(tx);
+    const { receipt } = await this.provider.sendTransaction(tx);
     (tx as TransactionJsonWait).wait = async (
       type: "byTransactionId" | "byBlock" = "byBlock",
       timeout = 30000
@@ -394,7 +401,7 @@ export class Signer implements SignerInterface {
       if (!this.provider) throw new Error("provider is undefined");
       return this.provider.wait(tx.id as string, type, timeout);
     };
-    return tx as TransactionJsonWait;
+    return { receipt, transaction: tx as TransactionJsonWait };
   }
 
   /**

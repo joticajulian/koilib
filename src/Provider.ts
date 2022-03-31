@@ -3,6 +3,7 @@ import {
   BlockJson,
   TransactionJson,
   CallContractOperationJson,
+  TransactionReceipt,
 } from "./interface";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -406,9 +407,9 @@ export class Provider {
    * Function to call "chain.submit_transaction" to send a signed
    * transaction to the blockchain.
    */
-  async sendTransaction(
-    transaction: TransactionJson
-  ): Promise<Record<string, never>> {
+  async sendTransaction(transaction: TransactionJson): Promise<{
+    receipt: TransactionReceipt;
+  }> {
     return this.call("chain.submit_transaction", { transaction });
   }
 
