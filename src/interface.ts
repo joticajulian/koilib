@@ -269,7 +269,7 @@ export interface RecoverPublicKeyOptions {
  *
  * When _byTransactionId_ is used it returns the block id.
  *
- * @param timeout - Timeout in milliseconds. By default it is 30000
+ * @param timeout - Timeout in milliseconds. By default it is 60000
  */
 export type WaitFunction = (
   type?: "byBlock" | "byTransactionId",

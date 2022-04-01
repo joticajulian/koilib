@@ -396,7 +396,7 @@ export class Signer implements SignerInterface {
     const { receipt } = await this.provider.sendTransaction(tx);
     (tx as TransactionJsonWait).wait = async (
       type: "byTransactionId" | "byBlock" = "byBlock",
-      timeout = 30000
+      timeout = 60000
     ) => {
       if (!this.provider) throw new Error("provider is undefined");
       return this.provider.wait(tx.id as string, type, timeout);

@@ -320,19 +320,19 @@ export class Provider {
    *
    * When _byTransactionId_ is used it returns the block id.
    *
-   * @param timeout - Timeout in milliseconds. By default it is 30000
+   * @param timeout - Timeout in milliseconds. By default it is 60000
    * @example
    * ```ts
    * const blockNumber = await provider.wait(txId);
-   * // const blockNumber = await provider.wait(txId, "byBlock", 30000);
-   * // const blockId = await provider.wait(txId, "byTransactionId", 30000);
+   * // const blockNumber = await provider.wait(txId, "byBlock", 60000);
+   * // const blockId = await provider.wait(txId, "byTransactionId", 60000);
    * console.log("Transaction mined")
    * ```
    */
   async wait(
     txId: string,
     type: "byTransactionId" | "byBlock" = "byBlock",
-    timeout = 30000
+    timeout = 60000
   ): Promise<string | number> {
     const iniTime = Date.now();
     if (type === "byTransactionId") {
