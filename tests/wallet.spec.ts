@@ -64,6 +64,7 @@ const rpcNodes = [
 ];
 
 const provider = new Provider(rpcNodes);
+provider.onError = () => true;
 const signer = new Signer({ privateKey, provider });
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
@@ -547,10 +548,10 @@ describe("Wallet and Contract", () => {
   });
 
   it("should rewrite the default options when creating transactions", async () => {
-    expect.assertions(3);
+    expect.assertions(4);
     mockFetch.mockImplementation(async () => fetchResponse({ nonce: "OHs=" }));
 
-    const { transaction, operation, result } = await koin.transfer(
+    const { transaction, operation, result, receipt } = await koin.transfer(
       {
         from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
         to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
@@ -559,10 +560,65 @@ describe("Wallet and Contract", () => {
       { sendTransaction: false }
     );
 
-    // As send is false only operation is defined
+    // As send is false there is no result or receipt
     expect(operation).toBeDefined();
     expect(transaction).toBeDefined();
     expect(result).toBeUndefined();
+    expect(receipt).toBeUndefined();
+  });
+
+  it("should submit a transaction", async () => {
+    expect.assertions(4);
+
+    const receipt = {
+      id: "0x1220cf763bc42c18091fddf7a9d3c2963f95102b64a019d76c20215163ca9d900ff2",
+      payer: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+      max_payer_rc: "930000000",
+      rc_limit: "930000000",
+      rc_used: "470895",
+      network_bandwidth_used: "311",
+      compute_bandwidth_used: "369509",
+      events: [
+        {
+          source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+          name: "koin.transfer",
+          data: "ChkAOraorkYwQTkrfp9ViHFI2CJvmCQh2mz7EhkArriH22GZ1VJLkeJ-x4JUGF4zPAEZrNUiGMCEPQ==",
+          impacted: [
+            "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+            "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          ],
+        },
+      ],
+    };
+
+    jest.clearAllMocks();
+    mockFetch.mockImplementation(async () => fetchResponse("mock error", 400));
+    mockFetch.mockImplementationOnce(async () =>
+      fetchResponse({ nonce: "OBE=" })
+    ); // nonce
+    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () => fetchResponse({ receipt }));
+
+    const {
+      transaction,
+      operation,
+      result,
+      receipt: receiptReceived,
+    } = await koin.transfer(
+      {
+        from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+        to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+        value: "1000000",
+      },
+      {
+        chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+      }
+    );
+
+    expect(operation).toBeDefined();
+    expect(transaction).toBeDefined();
+    expect(result).toBeUndefined();
+    expect(receiptReceived).toStrictEqual(receipt);
   });
 
   it("should get the balance of an account", async () => {
