@@ -89,7 +89,7 @@ export class Provider {
     // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
-        const data = {
+        const body = {
           id: Math.round(Math.random() * 1000),
           jsonrpc: "2.0",
           method,
@@ -100,23 +100,33 @@ export class Provider {
 
         const response = await fetch(url, {
           method: "POST",
-          body: JSON.stringify(data),
+          body: JSON.stringify(body),
         });
         const json = (await response.json()) as {
           result: T;
           error?: {
             message?: string;
+            data?: string;
           };
         };
-        if (json.error && json.error.message) {
-          const error = new Error(json.error.message);
-          (error as unknown as { request: unknown }).request = {
-            method,
-            params,
-          };
-          throw error;
+
+        if (json.result !== undefined) return json.result;
+
+        if (!json.error) throw new Error("undefined error");
+        const { message, data } = json.error;
+        if (!data) throw new Error(message);
+        let dataJson: Record<string, unknown>;
+        try {
+          dataJson = JSON.parse(data);
+        } catch (e) {
+          dataJson = { data };
         }
-        return json.result;
+        throw new Error(
+          JSON.stringify({
+            ...(message && { error: message }),
+            ...dataJson,
+          })
+        );
       } catch (e) {
         const currentNode = this.rpcNodes[this.currentNodeId];
         this.currentNodeId = (this.currentNodeId + 1) % this.rpcNodes.length;

@@ -34,17 +34,18 @@ interface FetchParams {
   body: string;
 }
 
-const fetchResponse = <T = unknown>(result: T, status = 200) => {
+const fetchResponse = (result: unknown, error?: unknown) => {
   return Promise.resolve({
     json: () => ({
       jsonrpc: "2.0",
       id: 1,
-      ...(status === 200 && { result }),
-      ...(status !== 200 && { error: result }),
-      result,
+      ...(result !== undefined && { result }),
+      ...(error !== undefined && { error }),
     }),
   } as unknown as Response);
 };
+
+const fetchError = (error: unknown) => fetchResponse(undefined, error);
 
 const privateKey =
   "bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37";
@@ -619,6 +620,91 @@ describe("Wallet and Contract", () => {
     expect(transaction).toBeDefined();
     expect(result).toBeUndefined();
     expect(receiptReceived).toStrictEqual(receipt);
+  });
+
+  it("should get the error response from a failed transaction", async () => {
+    expect.assertions(3);
+    jest.clearAllMocks();
+
+    mockFetch.mockImplementationOnce(async () =>
+      fetchResponse({ nonce: "OBE=" })
+    ); // nonce
+    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () =>
+      fetchError({
+        code: -32603,
+        message: "",
+        data: '{"logs":["error from contract"]}',
+      })
+    );
+
+    await expect(
+      koin.transfer(
+        {
+          from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+          value: "1000000",
+        },
+        {
+          chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+        }
+      )
+    ).rejects.toThrow('{"logs":["error from contract"]}');
+
+    jest.clearAllMocks();
+
+    mockFetch.mockImplementationOnce(async () =>
+      fetchResponse({ nonce: "OBE=" })
+    ); // nonce
+    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () =>
+      fetchError({
+        code: -32603,
+        message: "error message",
+        data: '{"logs":["error from contract"]}',
+      })
+    );
+
+    await expect(
+      koin.transfer(
+        {
+          from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+          value: "1000000",
+        },
+        {
+          chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+        }
+      )
+    ).rejects.toThrow(
+      '{"error":"error message","logs":["error from contract"]}'
+    );
+
+    jest.clearAllMocks();
+
+    mockFetch.mockImplementationOnce(async () =>
+      fetchResponse({ nonce: "OBE=" })
+    ); // nonce
+    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () =>
+      fetchError({
+        code: -32603,
+        message: "error message",
+      })
+    );
+
+    await expect(
+      koin.transfer(
+        {
+          from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+          value: "1000000",
+        },
+        {
+          chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+        }
+      )
+    ).rejects.toThrow("error message");
   });
 
   it("should get the balance of an account", async () => {
