@@ -278,4 +278,18 @@ describe("Contract", () => {
       ],
     });
   });
+
+  it("should submit an invalid transfer", async () => {
+    expect.assertions(1);
+    const { receipt } = await koin.transfer({
+      from: signer.getAddress(),
+      to: signer.getAddress(),
+      value: "100",
+    });
+    expect(receipt).toStrictEqual(
+      expect.objectContaining({
+        logs: ["Cannot transfer to self"],
+      }) as unknown
+    );
+  });
 });
