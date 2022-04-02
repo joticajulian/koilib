@@ -229,12 +229,28 @@ export function parseUnits(value: string, decimals: number): string {
   return `${sign}${`${integerPart}${decimalPart}`.replace(/^0+(?=\d)/, "")}`;
 }
 
+/**
+ * Makes a copy of a value. The returned value can be modified
+ * without altering the original one. Although this is not needed
+ * for strings or numbers and only needed for objects and arrays,
+ * all these options are covered in a single function
+ *
+ * It is assumed that the argument is number, string, or contructions
+ * of these types inside objects or arrays.
+ */
+function copyValue(value: unknown): unknown {
+  if (typeof value === "string" || typeof value === "number") {
+    return value;
+  }
+  return JSON.parse(JSON.stringify(value)) as unknown;
+}
+
 export function btypeDecodeValue(
   valueEncoded: unknown,
   typeField: TypeField
 ): unknown {
   // No byte conversion
-  if (typeField.type !== "bytes") return valueEncoded;
+  if (typeField.type !== "bytes") return copyValue(valueEncoded);
 
   const value = valueEncoded as string;
 
@@ -265,7 +281,7 @@ export function btypeEncodeValue(
   typeField: TypeField
 ): unknown {
   // No byte conversion
-  if (typeField.type !== "bytes") return valueDecoded;
+  if (typeField.type !== "bytes") return copyValue(valueDecoded);
 
   const value = valueDecoded as Uint8Array;
 

@@ -368,6 +368,113 @@ describe("Signer", () => {
 });
 
 describe("Serializer", () => {
+  it("should serialize and deserialize", async () => {
+    const serializer = new Serializer(
+      {
+        nested: {
+          main_object: {
+            fields: {
+              from: {
+                type: "bytes",
+                id: 1,
+                options: {
+                  "(btype)": "BASE58",
+                },
+              },
+              chainId: {
+                type: "bytes",
+                id: 2,
+                options: {
+                  "(btype)": "BASE64",
+                },
+              },
+              points: {
+                type: "uint32",
+                id: 3,
+              },
+              name: {
+                type: "string",
+                id: 4,
+              },
+              offer: {
+                type: "offer_type",
+                id: 5,
+              },
+              offers: {
+                type: "offer_type",
+                rule: "repeated",
+                id: 6,
+              },
+              addresses: {
+                type: "bytes",
+                rule: "repeated",
+                id: 7,
+                options: {
+                  "(koinos.btype)": "BASE58",
+                },
+              },
+            },
+          },
+          offer_type: {
+            fields: {
+              name: {
+                type: "string",
+                id: 1,
+              },
+              data: {
+                type: "bytes",
+                id: 2,
+                options: {
+                  "(btype)": "BASE58",
+                },
+              },
+              data2: {
+                type: "bytes",
+                id: 3,
+                options: {
+                  "(koinos.btype)": "BASE64",
+                },
+              },
+            },
+          },
+        },
+      },
+      { defaultTypeName: "main_object" }
+    );
+
+    const mainObject = {
+      from: encodeBase58(new Uint8Array([1, 2, 3, 4])),
+      chainId: encodeBase64url(new Uint8Array([5, 6, 7, 8])),
+      points: 34,
+      name: "alice",
+      offer: {
+        name: "offer1",
+        data: encodeBase58(new Uint8Array([9, 10, 11, 12])),
+        data2: encodeBase64url(new Uint8Array([13, 14, 15, 16])),
+      },
+      offers: [
+        {
+          name: "offer1",
+          data: encodeBase58(new Uint8Array([0])),
+          data2: encodeBase64url(new Uint8Array([1])),
+        },
+        {
+          name: "offer2",
+          data: encodeBase58(new Uint8Array([12])),
+          data2: encodeBase64url(new Uint8Array([13])),
+        },
+      ],
+      addresses: [
+        encodeBase58(new Uint8Array([10, 20, 30])),
+        encodeBase58(new Uint8Array([40, 50, 60])),
+      ],
+    };
+
+    const serialized = await serializer.serialize(mainObject);
+    const deserizaled = await serializer.deserialize(serialized);
+    expect(deserizaled).toStrictEqual(mainObject);
+  });
+
   it("should accept options btype and koinos.btype", async () => {
     expect.assertions(2);
     const serializer1 = new Serializer(

@@ -177,7 +177,7 @@ describe("Contract", () => {
       provider,
     });
     const contract = new Contract({ signer: newSigner, provider, bytecode });
-    let { transaction } = await contract.deploy({
+    const { transaction } = await contract.deploy({
       abi: "test",
       authorizesCallContract: true,
       authorizesTransactionApplication: true,
