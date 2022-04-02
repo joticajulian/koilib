@@ -52,11 +52,16 @@ import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
  *   console.log(result)
  *
  *   // Transfer
- *   const { transaction } = await koin.transfer({
+ *   const { transaction, receipt } = await koin.transfer({
  *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
  *     value: "10.0001",
  *   });
- *   console.log(`Transaction id ${transaction.id} submitted`);
+ *   console.log(`Transaction id ${transaction.id} submitted. Receipt:`);
+ *   console.log(receipt);
+ *
+ *   if (receipt.logs) {
+ *     console.log(`Transfer failed. Logs: ${receipt.logs.join(",")}`);
+ *   }
  *
  *   // wait to be mined
  *   const blockNumber = await transaction.wait();
@@ -297,7 +302,8 @@ export class Contract {
    * const signer = new Signer({ privateKey, provider });
    * const bytecode = new Uint8Array([1, 2, 3, 4]);
    * const contract = new Contract({ signer, provider, bytecode });
-   * const { transaction } = await contract.deploy();
+   * const { transaction, receipt } = await contract.deploy();
+   * console.log(receipt);
    * // wait to be mined
    * const blockNumber = await transaction.wait();
    * console.log(`Contract uploaded in block number ${blockNumber}`);
@@ -305,7 +311,7 @@ export class Contract {
    *
    * @example using options
    * ```ts
-   * const { transaction } = await contract.deploy({
+   * const { transaction, receipt } = await contract.deploy({
    *   // contract options
    *   abi: "CssCChRrb2lub3Mvb3B0aW9ucy5wc...",
    *   authorizesCallContract: true,
@@ -323,6 +329,7 @@ export class Contract {
    *   signTransaction: true,
    *   sendTransaction: true,
    * });
+   * console.log(receipt);
    * // wait to be mined
    * const blockNumber = await transaction.wait();
    * console.log(`Contract uploaded in block number ${blockNumber}`);
