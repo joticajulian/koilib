@@ -9,7 +9,7 @@ import {
   bitcoinDecode,
   encodeBase64url,
   toHexString,
-  Krc20Abi,
+  tokenAbi,
   formatUnits,
   parseUnits,
   calculateMerkleRoot,
@@ -71,7 +71,7 @@ const provider = new Provider(rpcNodes);
 const signer = new Signer({ privateKey, provider });
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-  abi: Krc20Abi,
+  abi: tokenAbi,
   provider,
   signer,
 });
@@ -707,7 +707,7 @@ describe("Wallet and Contract", () => {
         {
           call_contract: {
             contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-            entry_point: Krc20Abi.methods.transfer.entryPoint,
+            entry_point: tokenAbi.methods.transfer.entryPoint,
             args: "ChkAEjl6vrl55V2Oym_rzsnMxIqBoie9PHmMEhkAQgjT1UACatdFY3e5QRkyG7OAzwcCCIylGOgH",
           },
         },
@@ -933,7 +933,7 @@ describe("Wallet and Contract", () => {
     const contractInstance = new Contract({
       id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
       signer,
-      abi: JSON.parse(JSON.stringify(Krc20Abi)) as Abi,
+      abi: JSON.parse(JSON.stringify(tokenAbi)) as Abi,
     });
     contractInstance.abi!.methods.balanceOf.preformatInput = (owner) => ({
       owner,

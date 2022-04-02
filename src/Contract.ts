@@ -29,7 +29,7 @@ import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
  * const signer = new Signer({ privateKey, provider });
  * const koinContract = new Contract({
  *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
- *   abi: utils.Krc20Abi,
+ *   abi: utils.tokenAbi,
  *   provider,
  *   signer,
  * });

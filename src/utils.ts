@@ -2,8 +2,7 @@ import * as multibase from "multibase";
 import { sha256 } from "@noble/hashes/sha256";
 import { ripemd160 } from "@noble/hashes/ripemd160";
 import { Abi, TypeField } from "./interface";
-import krc20ProtoJson from "./jsonDescriptors/krc20-proto.json";
-//import protocolJson from "./jsonDescriptors/protocol-proto.json";
+import tokenProtoJson from "./jsonDescriptors/token-proto.json";
 
 /**
  * Converts an hex string to Uint8Array
@@ -370,7 +369,7 @@ export function btypeEncode(
 /**
  * ABI for tokens
  */
-export const Krc20Abi: Abi = {
+export const tokenAbi: Abi = {
   methods: {
     name: {
       entryPoint: 0x82a3537f,
@@ -414,7 +413,7 @@ export const Krc20Abi: Abi = {
       output: "mint_result",
     },
   },
-  types: krc20ProtoJson,
+  types: tokenProtoJson,
 };
 
 //export const ProtocolTypes = protocolJson;

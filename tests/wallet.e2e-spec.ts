@@ -30,7 +30,7 @@ const signer2 = new Signer({
 });
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-  abi: utils.Krc20Abi,
+  abi: utils.tokenAbi,
   provider,
   signer,
 });

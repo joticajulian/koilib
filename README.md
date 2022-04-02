@@ -37,7 +37,7 @@ You can also load it directly to the browser by downloading the bunble file loca
         signer.provider = provider;
         const koinContract = new Contract({
           id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-          abi: utils.Krc20Abi,
+          abi: utils.tokenAbi,
           provider,
           signer,
         });
@@ -92,7 +92,7 @@ a transaction, and read contracts.
   signer.provider = provider;
   const koinContract = new Contract({
     id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-    abi: utils.Krc20Abi,
+    abi: utils.tokenAbi,
     provider,
     signer,
   });
