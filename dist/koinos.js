@@ -9785,7 +9785,7 @@ const utils_1 = __webpack_require__(8593);
  * const signer = new Signer({ privateKey, provider });
  * const koinContract = new Contract({
  *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
- *   abi: utils.Krc20Abi,
+ *   abi: utils.tokenAbi,
  *   provider,
  *   signer,
  * });
@@ -9808,11 +9808,16 @@ const utils_1 = __webpack_require__(8593);
  *   console.log(result)
  *
  *   // Transfer
- *   const { transaction } = await koin.transfer({
+ *   const { transaction, receipt } = await koin.transfer({
  *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
  *     value: "10.0001",
  *   });
- *   console.log(`Transaction id ${transaction.id} submitted`);
+ *   console.log(`Transaction id ${transaction.id} submitted. Receipt:`);
+ *   console.log(receipt);
+ *
+ *   if (receipt.logs) {
+ *     console.log(`Transfer failed. Logs: ${receipt.logs.join(",")}`);
+ *   }
  *
  *   // wait to be mined
  *   const blockNumber = await transaction.wait();
@@ -9874,11 +9879,7 @@ class Contract {
                         if (!output)
                             throw new Error(`No output defined for ${name}`);
                         // read contract
-                        const { result: resultEncoded } = await this.provider.readContract({
-                            contract_id: (0, utils_1.encodeBase58)(operation.call_contract.contract_id),
-                            entry_point: operation.call_contract.entry_point,
-                            args: (0, utils_1.encodeBase64url)(operation.call_contract.args),
-                        });
+                        const { result: resultEncoded } = await this.provider.readContract(operation.call_contract);
                         let result = defaultOutput;
                         if (resultEncoded) {
                             result = await this.serializer.deserialize(resultEncoded, output);
@@ -9899,15 +9900,7 @@ class Contract {
                             ...((opts === null || opts === void 0 ? void 0 : opts.payer) && { payer: opts === null || opts === void 0 ? void 0 : opts.payer }),
                             ...((opts === null || opts === void 0 ? void 0 : opts.payee) && { payee: opts === null || opts === void 0 ? void 0 : opts.payee }),
                         },
-                        operations: [
-                            {
-                                call_contract: {
-                                    contract_id: (0, utils_1.encodeBase58)(operation.call_contract.contract_id),
-                                    entry_point: operation.call_contract.entry_point,
-                                    args: (0, utils_1.encodeBase64url)(operation.call_contract.args),
-                                },
-                            },
-                        ],
+                        operations: [operation],
                     });
                     const abis = {};
                     if (opts === null || opts === void 0 ? void 0 : opts.sendAbis) {
@@ -9923,8 +9916,8 @@ class Contract {
                             await this.signer.signTransaction(tx, abis);
                         return { operation, transaction: { ...tx, wait: noWait } };
                     }
-                    const transaction = await this.signer.sendTransaction(tx, abis);
-                    return { operation, transaction };
+                    const { transaction, receipt } = await this.signer.sendTransaction(tx, abis);
+                    return { operation, transaction, receipt };
                 };
             });
         }
@@ -9947,7 +9940,8 @@ class Contract {
      * const signer = new Signer({ privateKey, provider });
      * const bytecode = new Uint8Array([1, 2, 3, 4]);
      * const contract = new Contract({ signer, provider, bytecode });
-     * const { transaction } = await contract.deploy();
+     * const { transaction, receipt } = await contract.deploy();
+     * console.log(receipt);
      * // wait to be mined
      * const blockNumber = await transaction.wait();
      * console.log(`Contract uploaded in block number ${blockNumber}`);
@@ -9955,7 +9949,7 @@ class Contract {
      *
      * @example using options
      * ```ts
-     * const { transaction } = await contract.deploy({
+     * const { transaction, receipt } = await contract.deploy({
      *   // contract options
      *   abi: "CssCChRrb2lub3Mvb3B0aW9ucy5wc...",
      *   authorizesCallContract: true,
@@ -9973,6 +9967,7 @@ class Contract {
      *   signTransaction: true,
      *   sendTransaction: true,
      * });
+     * console.log(receipt);
      * // wait to be mined
      * const blockNumber = await transaction.wait();
      * console.log(`Contract uploaded in block number ${blockNumber}`);
@@ -10029,8 +10024,8 @@ class Contract {
                 await this.signer.signTransaction(tx);
             return { operation, transaction: { ...tx, wait: noWait } };
         }
-        const transaction = await this.signer.sendTransaction(tx);
-        return { operation, transaction };
+        const { transaction, receipt } = await this.signer.sendTransaction(tx);
+        return { operation, transaction, receipt };
     }
     /**
      * Encondes a contract operation using Koinos serialization
@@ -10052,8 +10047,8 @@ class Contract {
      * // {
      * //   call_contract: {
      * //     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-     * //     entry_point: 0x62efa292,
-     * //     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
+     * //     entry_point: 670398154,
+     * //     args: "ChkAEjl6vrl55V2Oym_rzsnMxIqBoie9PHmMEhkAQgjT1UACatdFY3e5QRkyG7OAzwcCCIylGOgH",
      * //   }
      * // }
      * ```
@@ -10074,9 +10069,9 @@ class Contract {
         }
         return {
             call_contract: {
-                contract_id: this.id,
+                contract_id: (0, utils_1.encodeBase58)(this.id),
                 entry_point: method.entryPoint,
-                args: bufferInputs,
+                args: (0, utils_1.encodeBase64url)(bufferInputs),
             },
         };
     }
@@ -10087,8 +10082,8 @@ class Contract {
      * const opDecoded = contract.decodeOperation({
      *   call_contract: {
      *     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-     *     entry_point: 0x62efa292,
-     *     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
+     *     entry_point: 0x27f576ca,
+     *     args: "ChkAEjl6vrl55V2Oym_rzsnMxIqBoie9PHmMEhkAQgjT1UACatdFY3e5QRkyG7OAzwcCCIylGOgH",
      *   }
      * });
      * console.log(opDecoded);
@@ -10111,8 +10106,8 @@ class Contract {
             throw new Error("Serializer is not defined");
         if (!op.call_contract)
             throw new Error("Operation is not CallContractOperation");
-        if ((0, utils_1.encodeBase58)(op.call_contract.contract_id) !== (0, utils_1.encodeBase58)(this.id))
-            throw new Error(`Invalid contract id. Expected: ${(0, utils_1.encodeBase58)(this.id)}. Received: ${(0, utils_1.encodeBase58)(op.call_contract.contract_id)}`);
+        if (op.call_contract.contract_id !== (0, utils_1.encodeBase58)(this.id))
+            throw new Error(`Invalid contract id. Expected: ${(0, utils_1.encodeBase58)(this.id)}. Received: ${op.call_contract.contract_id}`);
         for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
             const opName = Object.keys(this.abi.methods)[i];
             const method = this.abi.methods[opName];
@@ -10171,7 +10166,7 @@ class Provider {
         else
             this.rpcNodes = [rpcNodes];
         this.currentNodeId = 0;
-        this.onError = () => false;
+        this.onError = () => true;
     }
     /**
      * Function to make jsonrpc requests to the RPC node
@@ -10184,7 +10179,7 @@ class Provider {
         // eslint-disable-next-line no-constant-condition
         while (true) {
             try {
-                const data = {
+                const body = {
                     id: Math.round(Math.random() * 1000),
                     jsonrpc: "2.0",
                     method,
@@ -10193,18 +10188,27 @@ class Provider {
                 const url = this.rpcNodes[this.currentNodeId];
                 const response = await fetch(url, {
                     method: "POST",
-                    body: JSON.stringify(data),
+                    body: JSON.stringify(body),
                 });
                 const json = (await response.json());
-                if (json.error && json.error.message) {
-                    const error = new Error(json.error.message);
-                    error.request = {
-                        method,
-                        params,
-                    };
-                    throw error;
+                if (json.result !== undefined)
+                    return json.result;
+                if (!json.error)
+                    throw new Error("undefined error");
+                const { message, data } = json.error;
+                if (!data)
+                    throw new Error(message);
+                let dataJson;
+                try {
+                    dataJson = JSON.parse(data);
                 }
-                return json.result;
+                catch (e) {
+                    dataJson = { data };
+                }
+                throw new Error(JSON.stringify({
+                    ...(message && { error: message }),
+                    ...dataJson,
+                }));
             }
             catch (e) {
                 const currentNode = this.rpcNodes[this.currentNodeId];
@@ -10318,16 +10322,16 @@ class Provider {
      *
      * When _byTransactionId_ is used it returns the block id.
      *
-     * @param timeout - Timeout in milliseconds. By default it is 30000
+     * @param timeout - Timeout in milliseconds. By default it is 60000
      * @example
      * ```ts
      * const blockNumber = await provider.wait(txId);
-     * // const blockNumber = await provider.wait(txId, "byBlock", 30000);
-     * // const blockId = await provider.wait(txId, "byTransactionId", 30000);
+     * // const blockNumber = await provider.wait(txId, "byBlock", 60000);
+     * // const blockId = await provider.wait(txId, "byTransactionId", 60000);
      * console.log("Transaction mined")
      * ```
      */
-    async wait(txId, type = "byBlock", timeout = 30000) {
+    async wait(txId, type = "byBlock", timeout = 60000) {
         const iniTime = Date.now();
         if (type === "byTransactionId") {
             while (Date.now() < iniTime + timeout) {
@@ -10427,22 +10431,25 @@ exports.Serializer = void 0;
 /* eslint-disable @typescript-eslint/require-await */
 const light_1 = __webpack_require__(4492);
 const utils_1 = __webpack_require__(8593);
-const OP_BYTES = "(btype)";
-/**
- * Makes a copy of a value. The returned value can be modified
- * without altering the original one. Although this is not needed
- * for strings or numbers and only needed for objects and arrays,
- * all these options are covered in a single function
- *
- * It is assumed that the argument is number, string, or contructions
- * of these types inside objects or arrays.
- */
-function copyValue(value) {
-    if (typeof value === "string" || typeof value === "number") {
-        return value;
-    }
-    return JSON.parse(JSON.stringify(value));
-}
+const OP_BYTES_1 = "(btype)";
+const OP_BYTES_2 = "(koinos.btype)";
+const nativeTypes = [
+    "double",
+    "float",
+    "int32",
+    "int64",
+    "uint32",
+    "uint64",
+    "sint32",
+    "sint64",
+    "fixed32",
+    "fixed64",
+    "sfixed32",
+    "sfixed64",
+    "bool",
+    "string",
+    "bytes",
+];
 /**
  * The serializer class serialize and deserialize data using
  * protocol buffers.
@@ -10491,45 +10498,79 @@ class Serializer {
         if (opts && typeof opts.bytesConversion !== "undefined")
             this.bytesConversion = opts.bytesConversion;
     }
-    converter(valueDecoded, object, protobufType, fieldName) {
-        const { options, name, type } = protobufType.fields[fieldName];
-        if (!valueDecoded[name])
-            return;
-        // if operation
-        if (type.endsWith("_operation")) {
-            const protoBuf = this.root.lookupType(type);
-            object[name] = {};
-            Object.keys(protoBuf.fields).forEach((fdName) => this.converter(valueDecoded[name], object[name], protoBuf, fdName));
-            return;
-        }
-        // No byte conversion
-        if (type !== "bytes") {
-            object[name] = copyValue(valueDecoded[name]);
-            return;
-        }
-        // Default byte conversion
-        if (!options || !options[OP_BYTES]) {
-            object[name] = (0, utils_1.decodeBase64url)(valueDecoded[name]);
-            return;
-        }
-        // Specific byte conversion
-        switch (options[OP_BYTES]) {
-            case "BASE58":
-            case "CONTRACT_ID":
-            case "ADDRESS":
-                object[name] = (0, utils_1.decodeBase58)(valueDecoded[name]);
-                break;
-            case "BASE64":
-                object[name] = (0, utils_1.decodeBase64url)(valueDecoded[name]);
-                break;
-            case "HEX":
-            case "BLOCK_ID":
-            case "TRANSACTION_ID":
-                object[name] = (0, utils_1.toUint8Array)(valueDecoded[name].replace("0x", ""));
-                break;
-            default:
-                throw new Error(`unknown btype ${options[OP_BYTES]}`);
-        }
+    btypeDecode(valueBtypeEncoded, protobufType) {
+        const valueBtypeDecoded = {};
+        Object.keys(protobufType.fields).forEach((fieldName) => {
+            const { options, name, type, rule } = protobufType.fields[fieldName];
+            if (!valueBtypeEncoded[name])
+                return;
+            const typeField = { type };
+            if (options) {
+                if (options[OP_BYTES_1])
+                    typeField.btype = options[OP_BYTES_1];
+                else if (options[OP_BYTES_2])
+                    typeField.btype = options[OP_BYTES_2];
+            }
+            // arrays
+            if (rule === "repeated") {
+                valueBtypeDecoded[name] = valueBtypeEncoded[name].map((itemEncoded) => {
+                    // custom objects
+                    if (!nativeTypes.includes(type)) {
+                        const protoBuf = this.root.lookupType(type);
+                        return this.btypeDecode(itemEncoded, protoBuf);
+                    }
+                    // native types
+                    return (0, utils_1.btypeDecodeValue)(itemEncoded, typeField);
+                });
+                return;
+            }
+            // custom objects
+            if (!nativeTypes.includes(type)) {
+                const protoBuf = this.root.lookupType(type);
+                valueBtypeDecoded[name] = this.btypeDecode(valueBtypeEncoded[name], protoBuf);
+                return;
+            }
+            // native types
+            valueBtypeDecoded[name] = (0, utils_1.btypeDecodeValue)(valueBtypeEncoded[name], typeField);
+        });
+        return valueBtypeDecoded;
+    }
+    btypeEncode(valueBtypeDecoded, protobufType) {
+        const valueBtypeEncoded = {};
+        Object.keys(protobufType.fields).forEach((fieldName) => {
+            const { options, name, type, rule } = protobufType.fields[fieldName];
+            if (!valueBtypeDecoded[name])
+                return;
+            const typeField = { type };
+            if (options) {
+                if (options[OP_BYTES_1])
+                    typeField.btype = options[OP_BYTES_1];
+                else if (options[OP_BYTES_2])
+                    typeField.btype = options[OP_BYTES_2];
+            }
+            // arrays
+            if (rule === "repeated") {
+                valueBtypeEncoded[name] = valueBtypeDecoded[name].map((itemDecoded) => {
+                    // custom objects
+                    if (!nativeTypes.includes(type)) {
+                        const protoBuf = this.root.lookupType(type);
+                        return this.btypeEncode(itemDecoded, protoBuf);
+                    }
+                    // native types
+                    return (0, utils_1.btypeEncodeValue)(itemDecoded, typeField);
+                });
+                return;
+            }
+            // custom objects
+            if (!nativeTypes.includes(type)) {
+                const protoBuf = this.root.lookupType(type);
+                valueBtypeEncoded[name] = this.btypeEncode(valueBtypeDecoded[name], protoBuf);
+                return;
+            }
+            // native types
+            valueBtypeEncoded[name] = (0, utils_1.btypeEncodeValue)(valueBtypeDecoded[name], typeField);
+        });
+        return valueBtypeEncoded;
     }
     /**
      * Function to encode a type using the protobuffer definitions
@@ -10543,8 +10584,7 @@ class Serializer {
             ? this.bytesConversion
             : opts.bytesConversion;
         if (bytesConversion) {
-            // TODO: format from Buffer to base58/base64 for nested fields
-            Object.keys(protobufType.fields).forEach((fieldName) => this.converter(valueDecoded, object, protobufType, fieldName));
+            object = this.btypeDecode(valueDecoded, protobufType);
         }
         else {
             object = valueDecoded;
@@ -10571,38 +10611,9 @@ class Serializer {
         const bytesConversion = (opts === null || opts === void 0 ? void 0 : opts.bytesConversion) === undefined
             ? this.bytesConversion
             : opts.bytesConversion;
-        if (!bytesConversion)
-            return object;
-        // TODO: format from Buffer to base58/base64 for nested fields
-        Object.keys(protobufType.fields).forEach((fieldName) => {
-            const { options, name, type } = protobufType.fields[fieldName];
-            // No byte conversion
-            if (type !== "bytes")
-                return;
-            // Default byte conversion
-            if (!options || !options[OP_BYTES]) {
-                object[name] = (0, utils_1.encodeBase64url)(object[name]);
-                return;
-            }
-            // Specific byte conversion
-            switch (options[OP_BYTES]) {
-                case "BASE58":
-                case "CONTRACT_ID":
-                case "ADDRESS":
-                    object[name] = (0, utils_1.encodeBase58)(object[name]);
-                    break;
-                case "BASE64":
-                    object[name] = (0, utils_1.encodeBase64url)(object[name]);
-                    break;
-                case "HEX":
-                case "BLOCK_ID":
-                case "TRANSACTION_ID":
-                    object[name] = `0x${(0, utils_1.toHexString)(object[name])}`;
-                    break;
-                default:
-                    throw new Error(`unknown koinos_byte_type ${options[OP_BYTES]}`);
-            }
-        });
+        if (bytesConversion) {
+            return this.btypeEncode(object, protobufType);
+        }
         return object;
     }
 }
@@ -10944,13 +10955,13 @@ class Signer {
             tx = await this.signTransaction(tx);
         if (!this.provider)
             throw new Error("provider is undefined");
-        await this.provider.sendTransaction(tx);
-        tx.wait = async (type = "byBlock", timeout = 30000) => {
+        const { receipt } = await this.provider.sendTransaction(tx);
+        tx.wait = async (type = "byBlock", timeout = 60000) => {
             if (!this.provider)
                 throw new Error("provider is undefined");
             return this.provider.wait(tx.id, type, timeout);
         };
-        return tx;
+        return { receipt, transaction: tx };
     }
     /**
      * Function to recover the public key from hash and signature
@@ -11337,12 +11348,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Krc20Abi = exports.btypeEncode = exports.btypeDecode = exports.btypeEncodeValue = exports.btypeDecodeValue = exports.parseUnits = exports.formatUnits = exports.bitcoinAddress = exports.bitcoinDecode = exports.bitcoinEncode = exports.calculateMerkleRoot = exports.decodeBase64 = exports.multihash = exports.encodeBase64 = exports.decodeBase64url = exports.encodeBase64url = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
+exports.tokenAbi = exports.btypeEncode = exports.btypeDecode = exports.btypeEncodeValue = exports.btypeDecodeValue = exports.parseUnits = exports.formatUnits = exports.bitcoinAddress = exports.bitcoinDecode = exports.bitcoinEncode = exports.calculateMerkleRoot = exports.decodeBase64 = exports.multihash = exports.encodeBase64 = exports.decodeBase64url = exports.encodeBase64url = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
 const multibase = __importStar(__webpack_require__(6957));
 const sha256_1 = __webpack_require__(3061);
 const ripemd160_1 = __webpack_require__(830);
-const krc20_proto_json_1 = __importDefault(__webpack_require__(7177));
-//import protocolJson from "./jsonDescriptors/protocol-proto.json";
+const token_proto_json_1 = __importDefault(__webpack_require__(6567));
 /**
  * Converts an hex string to Uint8Array
  */
@@ -11561,10 +11571,25 @@ function parseUnits(value, decimals) {
     return `${sign}${`${integerPart}${decimalPart}`.replace(/^0+(?=\d)/, "")}`;
 }
 exports.parseUnits = parseUnits;
+/**
+ * Makes a copy of a value. The returned value can be modified
+ * without altering the original one. Although this is not needed
+ * for strings or numbers and only needed for objects and arrays,
+ * all these options are covered in a single function
+ *
+ * It is assumed that the argument is number, string, or contructions
+ * of these types inside objects or arrays.
+ */
+function copyValue(value) {
+    if (typeof value === "string" || typeof value === "number") {
+        return value;
+    }
+    return JSON.parse(JSON.stringify(value));
+}
 function btypeDecodeValue(valueEncoded, typeField) {
     // No byte conversion
     if (typeField.type !== "bytes")
-        return valueEncoded;
+        return copyValue(valueEncoded);
     const value = valueEncoded;
     // Default byte conversion
     if (!typeField.btype) {
@@ -11590,7 +11615,7 @@ exports.btypeDecodeValue = btypeDecodeValue;
 function btypeEncodeValue(valueDecoded, typeField) {
     // No byte conversion
     if (typeField.type !== "bytes")
-        return valueDecoded;
+        return copyValue(valueDecoded);
     const value = valueDecoded;
     // Default byte conversion
     if (!typeField.btype) {
@@ -11620,7 +11645,13 @@ function btypeDecode(valueEncoded, fields) {
     Object.keys(fields).forEach((name) => {
         if (!valueEncoded[name])
             return;
-        if (fields[name].subtypes)
+        if (fields[name].rule === "repeated")
+            valueDecoded[name] = valueEncoded[name].map((itemEncoded) => {
+                if (fields[name].subtypes)
+                    return btypeDecode(itemEncoded, fields[name].subtypes);
+                return btypeDecodeValue(itemEncoded, fields[name]);
+            });
+        else if (fields[name].subtypes)
             valueDecoded[name] = btypeDecode(valueEncoded[name], fields[name].subtypes);
         else
             valueDecoded[name] = btypeDecodeValue(valueEncoded[name], fields[name]);
@@ -11635,9 +11666,16 @@ function btypeEncode(valueDecoded, fields) {
     Object.keys(fields).forEach((name) => {
         if (!valueDecoded[name])
             return;
-        if (fields[name].subtypes)
+        if (fields[name].rule === "repeated")
+            valueEncoded[name] = valueDecoded[name].map((itemDecoded) => {
+                if (fields[name].subtypes)
+                    return btypeEncode(itemDecoded, fields[name].subtypes);
+                return btypeEncodeValue(itemDecoded, fields[name]);
+            });
+        else if (fields[name].subtypes)
             valueEncoded[name] = btypeEncode(valueDecoded[name], fields[name].subtypes);
-        valueEncoded[name] = btypeEncodeValue(valueDecoded[name], fields[name]);
+        else
+            valueEncoded[name] = btypeEncodeValue(valueDecoded[name], fields[name]);
     });
     return valueEncoded;
 }
@@ -11645,7 +11683,7 @@ exports.btypeEncode = btypeEncode;
 /**
  * ABI for tokens
  */
-exports.Krc20Abi = {
+exports.tokenAbi = {
     methods: {
         name: {
             entryPoint: 0x82a3537f,
@@ -11689,7 +11727,7 @@ exports.Krc20Abi = {
             output: "mint_result",
         },
     },
-    types: krc20_proto_json_1.default,
+    types: token_proto_json_1.default,
 };
 //export const ProtocolTypes = protocolJson;
 
@@ -19482,7 +19520,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 
 /***/ }),
 
-/***/ 7177:
+/***/ 6567:
 /***/ ((module) => {
 
 "use strict";
