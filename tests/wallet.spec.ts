@@ -16,6 +16,8 @@ import {
   toUint8Array,
   encodeBase58,
   decodeBase64url,
+  btypeDecode,
+  btypeEncode,
 } from "../src/utils";
 import {
   UploadContractOperationNested,
@@ -24,6 +26,7 @@ import {
   WaitFunction,
   BlockJson,
   OperationJson,
+  TypeField,
 } from "../src/interface";
 
 jest.mock("cross-fetch");
@@ -200,6 +203,95 @@ describe("utils", () => {
     expect(calculateMerkleRoot(n01234567leaves)).toEqual(n01234567);
     expect(calculateMerkleRoot(n8leaves)).toEqual(n8);
     expect(calculateMerkleRoot(hashes)).toEqual(merkleRoot);
+  });
+
+  it("should encode decode objects with btype", () => {
+    const obj = {
+      from: encodeBase58(new Uint8Array([1, 2, 3, 4])),
+      chainId: encodeBase64url(new Uint8Array([5, 6, 7, 8])),
+      points: 34,
+      name: "alice",
+      offer: {
+        name: "offer1",
+        data: encodeBase58(new Uint8Array([9, 10, 11, 12])),
+        data2: encodeBase64url(new Uint8Array([13, 14, 15, 16])),
+      },
+      offers: [
+        {
+          name: "offer1",
+          data: encodeBase58(new Uint8Array([0])),
+          data2: encodeBase64url(new Uint8Array([1])),
+        },
+        {
+          name: "offer2",
+          data: encodeBase58(new Uint8Array([12])),
+          data2: encodeBase64url(new Uint8Array([13])),
+        },
+      ],
+      addresses: [
+        encodeBase58(new Uint8Array([10, 20, 30])),
+        encodeBase58(new Uint8Array([40, 50, 60])),
+      ],
+    };
+
+    const btypeObj: TypeField["subtypes"] = {
+      from: { type: "bytes", btype: "ADDRESS" },
+      chainId: { type: "bytes" },
+      points: { type: "uint64" },
+      name: { type: "string" },
+      offer: {
+        type: "object",
+        subtypes: {
+          name: { type: "string" },
+          data: { type: "bytes", btype: "ADDRESS" },
+          data2: { type: "bytes" },
+        },
+      },
+      offers: {
+        rule: "repeated",
+        type: "object",
+        subtypes: {
+          name: { type: "string" },
+          data: { type: "bytes", btype: "ADDRESS" },
+          data2: { type: "bytes" },
+        },
+      },
+      addresses: {
+        rule: "repeated",
+        type: "bytes",
+        btype: "ADDRESS",
+      },
+    };
+
+    const objDecoded = btypeDecode(obj, btypeObj);
+
+    expect(objDecoded).toStrictEqual({
+      from: new Uint8Array([1, 2, 3, 4]),
+      chainId: new Uint8Array([5, 6, 7, 8]),
+      points: 34,
+      name: "alice",
+      offer: {
+        name: "offer1",
+        data: new Uint8Array([9, 10, 11, 12]),
+        data2: new Uint8Array([13, 14, 15, 16]),
+      },
+      offers: [
+        {
+          name: "offer1",
+          data: new Uint8Array([0]),
+          data2: new Uint8Array([1]),
+        },
+        {
+          name: "offer2",
+          data: new Uint8Array([12]),
+          data2: new Uint8Array([13]),
+        },
+      ],
+      addresses: [new Uint8Array([10, 20, 30]), new Uint8Array([40, 50, 60])],
+    });
+
+    const objEncoded = btypeEncode(objDecoded, btypeObj);
+    expect(objEncoded).toStrictEqual(obj);
   });
 });
 

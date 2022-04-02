@@ -331,6 +331,7 @@ export interface TypeField {
   type: string;
   btype?: string;
   subtypes?: Record<string, TypeField>;
+  rule?: "repeated";
 }
 
 export interface ContractCallBundle {

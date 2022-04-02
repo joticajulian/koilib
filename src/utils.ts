@@ -292,14 +292,25 @@ export function btypeEncodeValue(
 }
 
 export function btypeDecode(
-  valueEncoded: Record<string, unknown>,
+  valueEncoded: Record<string, unknown> | unknown[],
   fields: Record<string, TypeField>
 ) {
   if (typeof valueEncoded !== "object") return valueEncoded;
   const valueDecoded = {} as Record<string, unknown>;
   Object.keys(fields).forEach((name) => {
     if (!valueEncoded[name]) return;
-    if (fields[name].subtypes)
+    if (fields[name].rule === "repeated")
+      valueDecoded[name] = (valueEncoded[name] as unknown[]).map(
+        (itemEncoded) => {
+          if (fields[name].subtypes)
+            return btypeDecode(
+              itemEncoded as Record<string, unknown>,
+              fields[name].subtypes!
+            );
+          return btypeDecodeValue(itemEncoded, fields[name]);
+        }
+      );
+    else if (fields[name].subtypes)
       valueDecoded[name] = btypeDecode(
         valueEncoded[name] as Record<string, unknown>,
         fields[name].subtypes!
@@ -311,19 +322,31 @@ export function btypeDecode(
 }
 
 export function btypeEncode(
-  valueDecoded: Record<string, unknown>,
+  valueDecoded: Record<string, unknown> | unknown[],
   fields: Record<string, TypeField>
 ) {
   if (typeof valueDecoded !== "object") return valueDecoded;
   const valueEncoded = {} as Record<string, unknown>;
   Object.keys(fields).forEach((name) => {
     if (!valueDecoded[name]) return;
-    if (fields[name].subtypes)
+    if (fields[name].rule === "repeated")
+      valueEncoded[name] = (valueDecoded[name] as unknown[]).map(
+        (itemDecoded) => {
+          if (fields[name].subtypes)
+            return btypeEncode(
+              itemDecoded as Record<string, unknown>,
+              fields[name].subtypes!
+            );
+          return btypeEncodeValue(itemDecoded, fields[name]);
+        }
+      );
+    else if (fields[name].subtypes)
       valueEncoded[name] = btypeEncode(
         valueDecoded[name] as Record<string, unknown>,
         fields[name].subtypes!
       );
-    valueEncoded[name] = btypeEncodeValue(valueDecoded[name], fields[name]);
+    else
+      valueEncoded[name] = btypeEncodeValue(valueDecoded[name], fields[name]);
   });
   return valueEncoded;
 }
