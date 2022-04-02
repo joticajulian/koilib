@@ -65,7 +65,6 @@ const rpcNodes = [
 ];
 
 const provider = new Provider(rpcNodes);
-provider.onError = () => true;
 const signer = new Signer({ privateKey, provider });
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",

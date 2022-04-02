@@ -20,11 +20,6 @@ const privateKeyHex = process.env.PRIVATE_KEY_WIF;
 const rpcNodes = process.env.RPC_NODES.split(",");
 const addressReceiver = process.env.ADDRESS_RECEIVER;
 const provider = new Provider(rpcNodes);
-let numError = 0;
-provider.onError = () => {
-  numError += 1;
-  return numError > 5;
-};
 // signer with history and balance
 const signer = Signer.fromWif(privateKeyHex, true);
 signer.provider = provider;

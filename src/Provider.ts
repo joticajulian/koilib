@@ -75,7 +75,7 @@ export class Provider {
     if (Array.isArray(rpcNodes)) this.rpcNodes = rpcNodes;
     else this.rpcNodes = [rpcNodes];
     this.currentNodeId = 0;
-    this.onError = () => false;
+    this.onError = () => true;
   }
 
   /**
