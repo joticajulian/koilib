@@ -2,7 +2,7 @@
 import crypto from "crypto";
 import * as dotenv from "dotenv";
 import { Signer, Provider, Contract, utils, Serializer } from "../src";
-import { BlockJson } from "../src/interface";
+import { BlockJson, TransactionReceipt } from "../src/interface";
 import powJson from "../src/jsonDescriptors/pow-proto.json";
 
 dotenv.config();
@@ -20,11 +20,6 @@ const privateKeyHex = process.env.PRIVATE_KEY_WIF;
 const rpcNodes = process.env.RPC_NODES.split(",");
 const addressReceiver = process.env.ADDRESS_RECEIVER;
 const provider = new Provider(rpcNodes);
-let numError = 0;
-provider.onError = () => {
-  numError += 1;
-  return numError > 5;
-};
 // signer with history and balance
 const signer = Signer.fromWif(privateKeyHex, true);
 signer.provider = provider;
@@ -35,7 +30,7 @@ const signer2 = new Signer({
 });
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-  abi: utils.Krc20Abi,
+  abi: utils.tokenAbi,
   provider,
   signer,
 });
@@ -175,36 +170,24 @@ describe("Contract", () => {
     expect(typeof blockNumber).toBe("number");
   });
 
-  it("upload a contract overriding authorize functions", async () => {
-    expect.assertions(2);
-    const bytecode = new Uint8Array(crypto.randomBytes(6));
-    const contract = new Contract({ signer, provider, bytecode });
-    const { transaction } = await contract.deploy({
-      abi: "test",
-      authorizesCallContract: true,
-      authorizesTransactionApplication: true,
-      authorizesUploadContract: true,
-    });
-    expect(transaction).toBeDefined();
-    if (!transaction) throw new Error("Transaction response undefined");
-    const blockNumber = await transaction.wait("byBlock");
-    expect(typeof blockNumber).toBe("number");
-  });
-
-  it("should pay a transaction to upload a contract", async () => {
+  it("should pay a transaction to upload a contract, and override functions", async () => {
     const bytecode = new Uint8Array(crypto.randomBytes(2));
     const newSigner = new Signer({
       privateKey: crypto.randomBytes(32).toString("hex"),
       provider,
     });
     const contract = new Contract({ signer: newSigner, provider, bytecode });
-    let { transaction } = await contract.deploy({
+    const { transaction } = await contract.deploy({
+      abi: "test",
+      authorizesCallContract: true,
+      authorizesTransactionApplication: true,
+      authorizesUploadContract: true,
       payer: signer.address,
       sendTransaction: false,
     });
     await signer.signTransaction(transaction);
     expect(transaction.signatures).toHaveLength(2);
-    transaction = await signer.sendTransaction(transaction);
+    await signer.sendTransaction(transaction);
     const blockNumber = await transaction.wait();
     expect(typeof blockNumber).toBe("number");
   });
@@ -234,8 +217,8 @@ describe("Contract", () => {
   });
 
   it("should transfer and get receipt - wait byBlock", async () => {
-    expect.assertions(4);
-    const { operation, transaction, result } = await koin.transfer({
+    expect.assertions(5);
+    const { operation, transaction, result, receipt } = await koin.transfer({
       from: signer.getAddress(),
       to: addressReceiver,
       value: Number(1e8).toString(),
@@ -243,6 +226,12 @@ describe("Contract", () => {
     expect(operation).toBeDefined();
     expect(transaction).toBeDefined();
     expect(result).toBeUndefined();
+    expect(receipt).toStrictEqual(
+      expect.objectContaining({
+        id: expect.any(String) as string,
+        payer: signer.getAddress(),
+      }) as TransactionReceipt
+    );
     if (!transaction) throw new Error("Transaction response undefined");
     const blockNumber = await transaction.wait(); // byBlock by default
     expect(typeof blockNumber).toBe("number");
@@ -250,8 +239,8 @@ describe("Contract", () => {
   });
 
   it("should transfer and get receipt - wait byTransactionId", async () => {
-    expect.assertions(5);
-    const { operation, transaction, result } = await koin.transfer({
+    expect.assertions(6);
+    const { operation, transaction, result, receipt } = await koin.transfer({
       from: signer.getAddress(),
       to: addressReceiver,
       value: Number(1e8).toString(),
@@ -259,10 +248,16 @@ describe("Contract", () => {
     expect(operation).toBeDefined();
     expect(transaction).toBeDefined();
     expect(result).toBeUndefined();
+    expect(receipt).toStrictEqual(
+      expect.objectContaining({
+        id: expect.any(String) as string,
+        payer: signer.getAddress(),
+      }) as TransactionReceipt
+    );
     if (!transaction) throw new Error("Transaction response undefined");
     const blockId = (await transaction.wait(
       "byTransactionId",
-      30000
+      60000
     )) as string;
     expect(typeof blockId).toBe("string");
     console.log(`Second tx mined in block id ${blockId}`);
@@ -277,5 +272,19 @@ describe("Contract", () => {
         },
       ],
     });
+  });
+
+  it("should submit an invalid transfer", async () => {
+    expect.assertions(1);
+    const { receipt } = await koin.transfer({
+      from: signer.getAddress(),
+      to: signer.getAddress(),
+      value: "100",
+    });
+    expect(receipt).toStrictEqual(
+      expect.objectContaining({
+        logs: ["Cannot transfer to self"],
+      }) as unknown
+    );
   });
 });

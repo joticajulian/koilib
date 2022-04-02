@@ -1,31 +1,28 @@
 /* eslint-disable @typescript-eslint/require-await */
 import { Root, Type, INamespace } from "protobufjs/light";
-import {
-  decodeBase58,
-  decodeBase64url,
-  encodeBase58,
-  encodeBase64url,
-  toHexString,
-  toUint8Array,
-} from "./utils";
+import { TypeField } from "./interface";
+import { btypeDecodeValue, btypeEncodeValue, decodeBase64url } from "./utils";
 
-const OP_BYTES = "(btype)";
+const OP_BYTES_1 = "(btype)";
+const OP_BYTES_2 = "(koinos.btype)";
 
-/**
- * Makes a copy of a value. The returned value can be modified
- * without altering the original one. Although this is not needed
- * for strings or numbers and only needed for objects and arrays,
- * all these options are covered in a single function
- *
- * It is assumed that the argument is number, string, or contructions
- * of these types inside objects or arrays.
- */
-function copyValue(value: unknown): unknown {
-  if (typeof value === "string" || typeof value === "number") {
-    return value;
-  }
-  return JSON.parse(JSON.stringify(value)) as unknown;
-}
+const nativeTypes = [
+  "double",
+  "float",
+  "int32",
+  "int64",
+  "uint32",
+  "uint64",
+  "sint32",
+  "sint64",
+  "fixed32",
+  "fixed64",
+  "sfixed32",
+  "sfixed64",
+  "bool",
+  "string",
+  "bytes",
+];
 
 /**
  * The serializer class serialize and deserialize data using
@@ -109,61 +106,116 @@ export class Serializer {
       this.bytesConversion = opts.bytesConversion;
   }
 
-  converter(
-    valueDecoded: Record<string, unknown>,
-    object: Record<string, unknown>,
-    protobufType: Type,
-    fieldName: string
+  btypeDecode(
+    valueBtypeEncoded: Record<string, unknown> | unknown[],
+    protobufType: Type
   ) {
-    const { options, name, type } = protobufType.fields[fieldName];
-    if (!valueDecoded[name]) return;
+    const valueBtypeDecoded = {} as Record<string, unknown>;
+    Object.keys(protobufType.fields).forEach((fieldName) => {
+      const { options, name, type, rule } = protobufType.fields[fieldName];
+      if (!valueBtypeEncoded[name]) return;
 
-    // if operation
-    if (type.endsWith("_operation")) {
-      const protoBuf = this.root.lookupType(type);
-      object[name] = {};
-      Object.keys(protoBuf.fields).forEach((fdName) =>
-        this.converter(
-          valueDecoded[name] as Record<string, unknown>,
-          object[name] as Record<string, unknown>,
-          protoBuf,
-          fdName
-        )
-      );
-      return;
-    }
+      const typeField: TypeField = { type };
+      if (options) {
+        if (options[OP_BYTES_1])
+          typeField.btype = options[OP_BYTES_1] as string;
+        else if (options[OP_BYTES_2])
+          typeField.btype = options[OP_BYTES_2] as string;
+      }
 
-    // No byte conversion
-    if (type !== "bytes") {
-      object[name] = copyValue(valueDecoded[name]);
-      return;
-    }
-    // Default byte conversion
-    if (!options || !options[OP_BYTES]) {
-      object[name] = decodeBase64url(valueDecoded[name] as string);
-      return;
-    }
-
-    // Specific byte conversion
-    switch (options[OP_BYTES]) {
-      case "BASE58":
-      case "CONTRACT_ID":
-      case "ADDRESS":
-        object[name] = decodeBase58(valueDecoded[name] as string);
-        break;
-      case "BASE64":
-        object[name] = decodeBase64url(valueDecoded[name] as string);
-        break;
-      case "HEX":
-      case "BLOCK_ID":
-      case "TRANSACTION_ID":
-        object[name] = toUint8Array(
-          (valueDecoded[name] as string).replace("0x", "")
+      // arrays
+      if (rule === "repeated") {
+        valueBtypeDecoded[name] = (valueBtypeEncoded[name] as unknown[]).map(
+          (itemEncoded) => {
+            // custom objects
+            if (!nativeTypes.includes(type)) {
+              const protoBuf = this.root.lookupType(type);
+              return this.btypeDecode(
+                itemEncoded as Record<string, unknown>,
+                protoBuf
+              );
+            }
+            // native types
+            return btypeDecodeValue(itemEncoded, typeField);
+          }
         );
-        break;
-      default:
-        throw new Error(`unknown btype ${options[OP_BYTES] as string}`);
-    }
+        return;
+      }
+
+      // custom objects
+      if (!nativeTypes.includes(type)) {
+        const protoBuf = this.root.lookupType(type);
+        valueBtypeDecoded[name] = this.btypeDecode(
+          valueBtypeEncoded[name] as Record<string, unknown>,
+          protoBuf
+        );
+        return;
+      }
+
+      // native types
+      valueBtypeDecoded[name] = btypeDecodeValue(
+        valueBtypeEncoded[name],
+        typeField
+      );
+    });
+
+    return valueBtypeDecoded;
+  }
+
+  btypeEncode(
+    valueBtypeDecoded: Record<string, unknown> | unknown[],
+    protobufType: Type
+  ) {
+    const valueBtypeEncoded = {} as Record<string, unknown>;
+    Object.keys(protobufType.fields).forEach((fieldName) => {
+      const { options, name, type, rule } = protobufType.fields[fieldName];
+      if (!valueBtypeDecoded[name]) return;
+
+      const typeField: TypeField = { type };
+      if (options) {
+        if (options[OP_BYTES_1])
+          typeField.btype = options[OP_BYTES_1] as string;
+        else if (options[OP_BYTES_2])
+          typeField.btype = options[OP_BYTES_2] as string;
+      }
+
+      // arrays
+      if (rule === "repeated") {
+        valueBtypeEncoded[name] = (valueBtypeDecoded[name] as unknown[]).map(
+          (itemDecoded) => {
+            // custom objects
+            if (!nativeTypes.includes(type)) {
+              const protoBuf = this.root.lookupType(type);
+              return this.btypeEncode(
+                itemDecoded as Record<string, unknown>,
+                protoBuf
+              );
+            }
+            // native types
+            return btypeEncodeValue(itemDecoded, typeField);
+          }
+        );
+        return;
+      }
+
+      // custom objects
+      if (!nativeTypes.includes(type)) {
+        const protoBuf = this.root.lookupType(type);
+        valueBtypeEncoded[name] = this.btypeEncode(
+          valueBtypeDecoded[name] as Record<string, unknown>,
+          protoBuf
+        );
+        return;
+      }
+
+      // native types
+      valueBtypeEncoded[name] = btypeEncodeValue(
+        valueBtypeDecoded[name],
+        typeField
+      );
+    });
+
+    return valueBtypeEncoded;
   }
 
   /**
@@ -184,11 +236,7 @@ export class Serializer {
         ? this.bytesConversion
         : opts.bytesConversion;
     if (bytesConversion) {
-      // TODO: format from Buffer to base58/base64 for nested fields
-
-      Object.keys(protobufType.fields).forEach((fieldName) =>
-        this.converter(valueDecoded, object, protobufType, fieldName)
-      );
+      object = this.btypeDecode(valueDecoded, protobufType);
     } else {
       object = valueDecoded;
     }
@@ -224,43 +272,9 @@ export class Serializer {
       opts?.bytesConversion === undefined
         ? this.bytesConversion
         : opts.bytesConversion;
-    if (!bytesConversion) return object as T;
-
-    // TODO: format from Buffer to base58/base64 for nested fields
-    Object.keys(protobufType.fields).forEach((fieldName) => {
-      const { options, name, type } = protobufType.fields[fieldName];
-
-      // No byte conversion
-      if (type !== "bytes") return;
-
-      // Default byte conversion
-      if (!options || !options[OP_BYTES]) {
-        object[name] = encodeBase64url(object[name] as Uint8Array);
-        return;
-      }
-
-      // Specific byte conversion
-      switch (options[OP_BYTES]) {
-        case "BASE58":
-        case "CONTRACT_ID":
-        case "ADDRESS":
-          object[name] = encodeBase58(object[name] as Uint8Array);
-          break;
-        case "BASE64":
-          object[name] = encodeBase64url(object[name] as Uint8Array);
-          break;
-        case "HEX":
-        case "BLOCK_ID":
-        case "TRANSACTION_ID":
-          object[name] = `0x${toHexString(object[name] as Uint8Array)}`;
-          break;
-        default:
-          throw new Error(
-            `unknown koinos_byte_type ${options[OP_BYTES] as string}`
-          );
-      }
-    });
-
+    if (bytesConversion) {
+      return this.btypeEncode(object, protobufType) as T;
+    }
     return object as T;
   }
 }

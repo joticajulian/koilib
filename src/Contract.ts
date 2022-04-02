@@ -3,7 +3,6 @@ import { Signer, SignerInterface } from "./Signer";
 import { Provider } from "./Provider";
 import { Serializer } from "./Serializer";
 import {
-  CallContractOperationNested,
   UploadContractOperationNested,
   TransactionJsonWait,
   Abi,
@@ -11,6 +10,7 @@ import {
   DecodedOperationJson,
   OperationJson,
   DeployOptions,
+  TransactionReceipt,
 } from "./interface";
 import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
 
@@ -29,7 +29,7 @@ import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
  * const signer = new Signer({ privateKey, provider });
  * const koinContract = new Contract({
  *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
- *   abi: utils.Krc20Abi,
+ *   abi: utils.tokenAbi,
  *   provider,
  *   signer,
  * });
@@ -52,11 +52,16 @@ import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
  *   console.log(result)
  *
  *   // Transfer
- *   const { transaction } = await koin.transfer({
+ *   const { transaction, receipt } = await koin.transfer({
  *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
  *     value: "10.0001",
  *   });
- *   console.log(`Transaction id ${transaction.id} submitted`);
+ *   console.log(`Transaction id ${transaction.id} submitted. Receipt:`);
+ *   console.log(receipt);
+ *
+ *   if (receipt.logs) {
+ *     console.log(`Transfer failed. Logs: ${receipt.logs.join(",")}`);
+ *   }
  *
  *   // wait to be mined
  *   const blockNumber = await transaction.wait();
@@ -106,9 +111,10 @@ export class Contract {
       args?: unknown,
       opts?: TransactionOptions
     ) => Promise<{
-      operation: CallContractOperationNested;
+      operation: OperationJson;
       transaction?: TransactionJsonWait;
       result?: T;
+      receipt?: TransactionReceipt;
     }>;
   };
 
@@ -189,9 +195,10 @@ export class Contract {
           argu: unknown = {},
           options?: TransactionOptions
         ): Promise<{
-          operation: CallContractOperationNested;
+          operation: OperationJson;
           transaction?: TransactionJsonWait;
           result?: T;
+          receipt?: TransactionReceipt;
         }> => {
           if (!this.provider) throw new Error("provider not found");
           if (!this.abi || !this.abi.methods)
@@ -222,11 +229,9 @@ export class Contract {
           if (readOnly) {
             if (!output) throw new Error(`No output defined for ${name}`);
             // read contract
-            const { result: resultEncoded } = await this.provider.readContract({
-              contract_id: encodeBase58(operation.call_contract.contract_id),
-              entry_point: operation.call_contract.entry_point,
-              args: encodeBase64url(operation.call_contract.args),
-            });
+            const { result: resultEncoded } = await this.provider.readContract(
+              operation.call_contract!
+            );
             let result = defaultOutput as T;
             if (resultEncoded) {
               result = await this.serializer!.deserialize<T>(
@@ -250,17 +255,7 @@ export class Contract {
               ...(opts?.payer && { payer: opts?.payer }),
               ...(opts?.payee && { payee: opts?.payee }),
             },
-            operations: [
-              {
-                call_contract: {
-                  contract_id: encodeBase58(
-                    operation.call_contract.contract_id
-                  ),
-                  entry_point: operation.call_contract.entry_point,
-                  args: encodeBase64url(operation.call_contract.args),
-                },
-              } as OperationJson,
-            ],
+            operations: [operation],
           });
 
           const abis: Record<string, Abi> = {};
@@ -279,8 +274,11 @@ export class Contract {
             return { operation, transaction: { ...tx, wait: noWait } };
           }
 
-          const transaction = await this.signer.sendTransaction(tx, abis);
-          return { operation, transaction };
+          const { transaction, receipt } = await this.signer.sendTransaction(
+            tx,
+            abis
+          );
+          return { operation, transaction, receipt };
         };
       });
     }
@@ -304,7 +302,8 @@ export class Contract {
    * const signer = new Signer({ privateKey, provider });
    * const bytecode = new Uint8Array([1, 2, 3, 4]);
    * const contract = new Contract({ signer, provider, bytecode });
-   * const { transaction } = await contract.deploy();
+   * const { transaction, receipt } = await contract.deploy();
+   * console.log(receipt);
    * // wait to be mined
    * const blockNumber = await transaction.wait();
    * console.log(`Contract uploaded in block number ${blockNumber}`);
@@ -312,7 +311,7 @@ export class Contract {
    *
    * @example using options
    * ```ts
-   * const { transaction } = await contract.deploy({
+   * const { transaction, receipt } = await contract.deploy({
    *   // contract options
    *   abi: "CssCChRrb2lub3Mvb3B0aW9ucy5wc...",
    *   authorizesCallContract: true,
@@ -330,6 +329,7 @@ export class Contract {
    *   signTransaction: true,
    *   sendTransaction: true,
    * });
+   * console.log(receipt);
    * // wait to be mined
    * const blockNumber = await transaction.wait();
    * console.log(`Contract uploaded in block number ${blockNumber}`);
@@ -338,6 +338,7 @@ export class Contract {
   async deploy(options?: DeployOptions): Promise<{
     operation: UploadContractOperationNested;
     transaction: TransactionJsonWait;
+    receipt?: TransactionReceipt;
   }> {
     if (!this.signer) throw new Error("signer not found");
     if (!this.bytecode) throw new Error("bytecode not found");
@@ -390,8 +391,8 @@ export class Contract {
       return { operation, transaction: { ...tx, wait: noWait } };
     }
 
-    const transaction = await this.signer.sendTransaction(tx);
-    return { operation, transaction };
+    const { transaction, receipt } = await this.signer.sendTransaction(tx);
+    return { operation, transaction, receipt };
   }
 
   /**
@@ -414,15 +415,13 @@ export class Contract {
    * // {
    * //   call_contract: {
    * //     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-   * //     entry_point: 0x62efa292,
-   * //     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
+   * //     entry_point: 670398154,
+   * //     args: "ChkAEjl6vrl55V2Oym_rzsnMxIqBoie9PHmMEhkAQgjT1UACatdFY3e5QRkyG7OAzwcCCIylGOgH",
    * //   }
    * // }
    * ```
    */
-  async encodeOperation(
-    op: DecodedOperationJson
-  ): Promise<CallContractOperationNested> {
+  async encodeOperation(op: DecodedOperationJson): Promise<OperationJson> {
     if (!this.abi || !this.abi.methods || !this.abi.methods[op.name])
       throw new Error(`Operation ${op.name} unknown`);
     if (!this.serializer) throw new Error("Serializer is not defined");
@@ -438,9 +437,9 @@ export class Contract {
 
     return {
       call_contract: {
-        contract_id: this.id,
+        contract_id: encodeBase58(this.id),
         entry_point: method.entryPoint,
-        args: bufferInputs,
+        args: encodeBase64url(bufferInputs),
       },
     };
   }
@@ -452,8 +451,8 @@ export class Contract {
    * const opDecoded = contract.decodeOperation({
    *   call_contract: {
    *     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-   *     entry_point: 0x62efa292,
-   *     args: "MBWFsaWNlA2JvYgAAAAAAAAPo",
+   *     entry_point: 0x27f576ca,
+   *     args: "ChkAEjl6vrl55V2Oym_rzsnMxIqBoie9PHmMEhkAQgjT1UACatdFY3e5QRkyG7OAzwcCCIylGOgH",
    *   }
    * });
    * console.log(opDecoded);
@@ -467,20 +466,18 @@ export class Contract {
    * // }
    * ```
    */
-  async decodeOperation(
-    op: CallContractOperationNested
-  ): Promise<DecodedOperationJson> {
+  async decodeOperation(op: OperationJson): Promise<DecodedOperationJson> {
     if (!this.id) throw new Error("Contract id is not defined");
     if (!this.abi || !this.abi.methods)
       throw new Error("Methods are not defined");
     if (!this.serializer) throw new Error("Serializer is not defined");
     if (!op.call_contract)
       throw new Error("Operation is not CallContractOperation");
-    if (encodeBase58(op.call_contract.contract_id) !== encodeBase58(this.id))
+    if (op.call_contract.contract_id !== encodeBase58(this.id))
       throw new Error(
-        `Invalid contract id. Expected: ${encodeBase58(
-          this.id
-        )}. Received: ${encodeBase58(op.call_contract.contract_id)}`
+        `Invalid contract id. Expected: ${encodeBase58(this.id)}. Received: ${
+          op.call_contract.contract_id
+        }`
       );
     for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
       const opName = Object.keys(this.abi.methods)[i];

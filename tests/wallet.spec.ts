@@ -1,32 +1,33 @@
 import * as crossFetch from "cross-fetch";
 import { Type } from "protobufjs";
+import { sha256 } from "@noble/hashes/sha256";
 import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
 import { Provider } from "../src/Provider";
+import { Serializer } from "../src";
 import {
   bitcoinDecode,
   encodeBase64url,
   toHexString,
-  Krc20Abi,
+  tokenAbi,
   formatUnits,
   parseUnits,
   calculateMerkleRoot,
   toUint8Array,
   encodeBase58,
   decodeBase64url,
+  btypeDecode,
+  btypeEncode,
 } from "../src/utils";
 import {
-  CallContractOperationNested,
   UploadContractOperationNested,
   TransactionJson,
   Abi,
   WaitFunction,
   BlockJson,
-  // BlockJson,
+  OperationJson,
+  TypeField,
 } from "../src/interface";
-// import { Serializer } from "../src";
-import { sha256 } from "@noble/hashes/sha256";
-import { Serializer } from "../src";
 
 jest.mock("cross-fetch");
 const mockFetch = jest.spyOn(crossFetch, "fetch");
@@ -36,17 +37,18 @@ interface FetchParams {
   body: string;
 }
 
-const fetchResponse = <T = unknown>(result: T, status = 200) => {
+const fetchResponse = (result: unknown, error?: unknown) => {
   return Promise.resolve({
     json: () => ({
       jsonrpc: "2.0",
       id: 1,
-      ...(status === 200 && { result }),
-      ...(status !== 200 && { error: result }),
-      result,
+      ...(result !== undefined && { result }),
+      ...(error !== undefined && { error }),
     }),
   } as unknown as Response);
 };
+
+const fetchError = (error: unknown) => fetchResponse(undefined, error);
 
 const privateKey =
   "bab7fd6e5bd624f4ea0c33f7e7219262a6fa93a945a8964d9f110148286b7b37";
@@ -69,7 +71,7 @@ const provider = new Provider(rpcNodes);
 const signer = new Signer({ privateKey, provider });
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-  abi: Krc20Abi,
+  abi: tokenAbi,
   provider,
   signer,
 });
@@ -202,6 +204,95 @@ describe("utils", () => {
     expect(calculateMerkleRoot(n8leaves)).toEqual(n8);
     expect(calculateMerkleRoot(hashes)).toEqual(merkleRoot);
   });
+
+  it("should encode decode objects with btype", () => {
+    const obj = {
+      from: encodeBase58(new Uint8Array([1, 2, 3, 4])),
+      chainId: encodeBase64url(new Uint8Array([5, 6, 7, 8])),
+      points: 34,
+      name: "alice",
+      offer: {
+        name: "offer1",
+        data: encodeBase58(new Uint8Array([9, 10, 11, 12])),
+        data2: encodeBase64url(new Uint8Array([13, 14, 15, 16])),
+      },
+      offers: [
+        {
+          name: "offer1",
+          data: encodeBase58(new Uint8Array([0])),
+          data2: encodeBase64url(new Uint8Array([1])),
+        },
+        {
+          name: "offer2",
+          data: encodeBase58(new Uint8Array([12])),
+          data2: encodeBase64url(new Uint8Array([13])),
+        },
+      ],
+      addresses: [
+        encodeBase58(new Uint8Array([10, 20, 30])),
+        encodeBase58(new Uint8Array([40, 50, 60])),
+      ],
+    };
+
+    const btypeObj: TypeField["subtypes"] = {
+      from: { type: "bytes", btype: "ADDRESS" },
+      chainId: { type: "bytes" },
+      points: { type: "uint64" },
+      name: { type: "string" },
+      offer: {
+        type: "object",
+        subtypes: {
+          name: { type: "string" },
+          data: { type: "bytes", btype: "ADDRESS" },
+          data2: { type: "bytes" },
+        },
+      },
+      offers: {
+        rule: "repeated",
+        type: "object",
+        subtypes: {
+          name: { type: "string" },
+          data: { type: "bytes", btype: "ADDRESS" },
+          data2: { type: "bytes" },
+        },
+      },
+      addresses: {
+        rule: "repeated",
+        type: "bytes",
+        btype: "ADDRESS",
+      },
+    };
+
+    const objDecoded = btypeDecode(obj, btypeObj);
+
+    expect(objDecoded).toStrictEqual({
+      from: new Uint8Array([1, 2, 3, 4]),
+      chainId: new Uint8Array([5, 6, 7, 8]),
+      points: 34,
+      name: "alice",
+      offer: {
+        name: "offer1",
+        data: new Uint8Array([9, 10, 11, 12]),
+        data2: new Uint8Array([13, 14, 15, 16]),
+      },
+      offers: [
+        {
+          name: "offer1",
+          data: new Uint8Array([0]),
+          data2: new Uint8Array([1]),
+        },
+        {
+          name: "offer2",
+          data: new Uint8Array([12]),
+          data2: new Uint8Array([13]),
+        },
+      ],
+      addresses: [new Uint8Array([10, 20, 30]), new Uint8Array([40, 50, 60])],
+    });
+
+    const objEncoded = btypeEncode(objDecoded, btypeObj);
+    expect(objEncoded).toStrictEqual(obj);
+  });
 });
 
 describe("Signer", () => {
@@ -276,6 +367,174 @@ describe("Signer", () => {
   });
 });
 
+describe("Serializer", () => {
+  it("should serialize and deserialize", async () => {
+    const serializer = new Serializer(
+      {
+        nested: {
+          main_object: {
+            fields: {
+              from: {
+                type: "bytes",
+                id: 1,
+                options: {
+                  "(btype)": "BASE58",
+                },
+              },
+              chainId: {
+                type: "bytes",
+                id: 2,
+                options: {
+                  "(btype)": "BASE64",
+                },
+              },
+              points: {
+                type: "uint32",
+                id: 3,
+              },
+              name: {
+                type: "string",
+                id: 4,
+              },
+              offer: {
+                type: "offer_type",
+                id: 5,
+              },
+              offers: {
+                type: "offer_type",
+                rule: "repeated",
+                id: 6,
+              },
+              addresses: {
+                type: "bytes",
+                rule: "repeated",
+                id: 7,
+                options: {
+                  "(koinos.btype)": "BASE58",
+                },
+              },
+            },
+          },
+          offer_type: {
+            fields: {
+              name: {
+                type: "string",
+                id: 1,
+              },
+              data: {
+                type: "bytes",
+                id: 2,
+                options: {
+                  "(btype)": "BASE58",
+                },
+              },
+              data2: {
+                type: "bytes",
+                id: 3,
+                options: {
+                  "(koinos.btype)": "BASE64",
+                },
+              },
+            },
+          },
+        },
+      },
+      { defaultTypeName: "main_object" }
+    );
+
+    const mainObject = {
+      from: encodeBase58(new Uint8Array([1, 2, 3, 4])),
+      chainId: encodeBase64url(new Uint8Array([5, 6, 7, 8])),
+      points: 34,
+      name: "alice",
+      offer: {
+        name: "offer1",
+        data: encodeBase58(new Uint8Array([9, 10, 11, 12])),
+        data2: encodeBase64url(new Uint8Array([13, 14, 15, 16])),
+      },
+      offers: [
+        {
+          name: "offer1",
+          data: encodeBase58(new Uint8Array([0])),
+          data2: encodeBase64url(new Uint8Array([1])),
+        },
+        {
+          name: "offer2",
+          data: encodeBase58(new Uint8Array([12])),
+          data2: encodeBase64url(new Uint8Array([13])),
+        },
+      ],
+      addresses: [
+        encodeBase58(new Uint8Array([10, 20, 30])),
+        encodeBase58(new Uint8Array([40, 50, 60])),
+      ],
+    };
+
+    const serialized = await serializer.serialize(mainObject);
+    const deserizaled = await serializer.deserialize(serialized);
+    expect(deserizaled).toStrictEqual(mainObject);
+  });
+
+  it("should accept options btype and koinos.btype", async () => {
+    expect.assertions(2);
+    const serializer1 = new Serializer(
+      {
+        nested: {
+          my_data: {
+            fields: {
+              val1: {
+                type: "bytes",
+                id: 1,
+              },
+              val2: {
+                type: "bytes",
+                id: 2,
+                options: {
+                  "(btype)": "ADDRESS",
+                },
+              },
+            },
+          },
+        },
+      },
+      { defaultTypeName: "my_data" }
+    );
+    const serializer2 = new Serializer(
+      {
+        nested: {
+          my_data: {
+            fields: {
+              val1: {
+                type: "bytes",
+                id: 1,
+              },
+              val2: {
+                type: "bytes",
+                id: 2,
+                options: {
+                  "(koinos.btype)": "ADDRESS",
+                },
+              },
+            },
+          },
+        },
+      },
+      { defaultTypeName: "my_data" }
+    );
+
+    const value = {
+      val1: encodeBase64url(new Uint8Array([1, 2, 3, 4])),
+      val2: encodeBase58(new Uint8Array([1, 2, 3, 4])),
+    };
+
+    const ser1 = await serializer1.serialize(value);
+    const ser2 = await serializer2.serialize(value);
+    const deser = await serializer1.deserialize(ser1);
+    expect(deser).toStrictEqual(value);
+    expect(encodeBase64url(ser1)).toBe(encodeBase64url(ser2));
+  });
+});
+
 describe("Wallet and Contract", () => {
   it("should encode and decode bitcoin format", () => {
     expect.assertions(2);
@@ -311,11 +570,11 @@ describe("Wallet and Contract", () => {
 
     expect(opEncoded).toStrictEqual({
       call_contract: {
-        contract_id: koinContract.id,
+        contract_id: koinContract.getId(),
         entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
-        args: expect.any(Uint8Array) as Uint8Array,
+        args: expect.any(String) as string,
       },
-    } as CallContractOperationNested);
+    } as OperationJson);
 
     expect(opDecoded).toStrictEqual(opTransfer);
   });
@@ -428,11 +687,11 @@ describe("Wallet and Contract", () => {
 
     expect(operation).toStrictEqual({
       call_contract: {
-        contract_id: koinContract.id,
+        contract_id: encodeBase58(koinContract.id!),
         entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
-        args: expect.any(Uint8Array) as Uint8Array,
+        args: expect.any(String) as string,
       },
-    } as CallContractOperationNested);
+    } as OperationJson);
 
     expect(transaction).toStrictEqual({
       id: "0x1220da3476bafa228cd753bd0def659ae743cbec2135b46e6aff06f67b0c2f16fc93",
@@ -448,7 +707,7 @@ describe("Wallet and Contract", () => {
         {
           call_contract: {
             contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-            entry_point: Krc20Abi.methods.transfer.entryPoint,
+            entry_point: tokenAbi.methods.transfer.entryPoint,
             args: "ChkAEjl6vrl55V2Oym_rzsnMxIqBoie9PHmMEhkAQgjT1UACatdFY3e5QRkyG7OAzwcCCIylGOgH",
           },
         },
@@ -488,10 +747,10 @@ describe("Wallet and Contract", () => {
   });
 
   it("should rewrite the default options when creating transactions", async () => {
-    expect.assertions(3);
+    expect.assertions(4);
     mockFetch.mockImplementation(async () => fetchResponse({ nonce: "OHs=" }));
 
-    const { transaction, operation, result } = await koin.transfer(
+    const { transaction, operation, result, receipt } = await koin.transfer(
       {
         from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
         to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
@@ -500,10 +759,150 @@ describe("Wallet and Contract", () => {
       { sendTransaction: false }
     );
 
-    // As send is false only operation is defined
+    // As send is false there is no result or receipt
     expect(operation).toBeDefined();
     expect(transaction).toBeDefined();
     expect(result).toBeUndefined();
+    expect(receipt).toBeUndefined();
+  });
+
+  it("should submit a transaction", async () => {
+    expect.assertions(4);
+
+    const receipt = {
+      id: "0x1220cf763bc42c18091fddf7a9d3c2963f95102b64a019d76c20215163ca9d900ff2",
+      payer: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+      max_payer_rc: "930000000",
+      rc_limit: "930000000",
+      rc_used: "470895",
+      network_bandwidth_used: "311",
+      compute_bandwidth_used: "369509",
+      events: [
+        {
+          source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+          name: "koin.transfer",
+          data: "ChkAOraorkYwQTkrfp9ViHFI2CJvmCQh2mz7EhkArriH22GZ1VJLkeJ-x4JUGF4zPAEZrNUiGMCEPQ==",
+          impacted: [
+            "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+            "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          ],
+        },
+      ],
+    };
+
+    jest.clearAllMocks();
+    mockFetch.mockImplementation(async () => fetchResponse("mock error", 400));
+    mockFetch.mockImplementationOnce(async () =>
+      fetchResponse({ nonce: "OBE=" })
+    ); // nonce
+    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () => fetchResponse({ receipt }));
+
+    const {
+      transaction,
+      operation,
+      result,
+      receipt: receiptReceived,
+    } = await koin.transfer(
+      {
+        from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+        to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+        value: "1000000",
+      },
+      {
+        chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+      }
+    );
+
+    expect(operation).toBeDefined();
+    expect(transaction).toBeDefined();
+    expect(result).toBeUndefined();
+    expect(receiptReceived).toStrictEqual(receipt);
+  });
+
+  it("should get the error response from a failed transaction", async () => {
+    expect.assertions(3);
+    jest.clearAllMocks();
+
+    mockFetch.mockImplementationOnce(async () =>
+      fetchResponse({ nonce: "OBE=" })
+    ); // nonce
+    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () =>
+      fetchError({
+        code: -32603,
+        message: "",
+        data: '{"logs":["error from contract"]}',
+      })
+    );
+
+    await expect(
+      koin.transfer(
+        {
+          from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+          value: "1000000",
+        },
+        {
+          chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+        }
+      )
+    ).rejects.toThrow('{"logs":["error from contract"]}');
+
+    jest.clearAllMocks();
+
+    mockFetch.mockImplementationOnce(async () =>
+      fetchResponse({ nonce: "OBE=" })
+    ); // nonce
+    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () =>
+      fetchError({
+        code: -32603,
+        message: "error message",
+        data: '{"logs":["error from contract"]}',
+      })
+    );
+
+    await expect(
+      koin.transfer(
+        {
+          from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+          value: "1000000",
+        },
+        {
+          chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+        }
+      )
+    ).rejects.toThrow(
+      '{"error":"error message","logs":["error from contract"]}'
+    );
+
+    jest.clearAllMocks();
+
+    mockFetch.mockImplementationOnce(async () =>
+      fetchResponse({ nonce: "OBE=" })
+    ); // nonce
+    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () =>
+      fetchError({
+        code: -32603,
+        message: "error message",
+      })
+    );
+
+    await expect(
+      koin.transfer(
+        {
+          from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+          value: "1000000",
+        },
+        {
+          chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+        }
+      )
+    ).rejects.toThrow("error message");
   });
 
   it("should get the balance of an account", async () => {
@@ -534,7 +933,7 @@ describe("Wallet and Contract", () => {
     const contractInstance = new Contract({
       id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
       signer,
-      abi: JSON.parse(JSON.stringify(Krc20Abi)) as Abi,
+      abi: JSON.parse(JSON.stringify(tokenAbi)) as Abi,
     });
     contractInstance.abi!.methods.balanceOf.preformatInput = (owner) => ({
       owner,

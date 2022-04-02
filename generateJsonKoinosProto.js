@@ -26,7 +26,7 @@ pbjs.main(
   ],
   (err, output) => {
     if (err) throw err;
-    fs.writeFileSync("./src/jsonDescriptors/krc20-proto.json", output);
+    fs.writeFileSync("./src/jsonDescriptors/token-proto.json", output);
   }
 );
 

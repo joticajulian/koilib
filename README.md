@@ -37,7 +37,7 @@ You can also load it directly to the browser by downloading the bunble file loca
         signer.provider = provider;
         const koinContract = new Contract({
           id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-          abi: utils.Krc20Abi,
+          abi: utils.tokenAbi,
           provider,
           signer,
         });
@@ -92,7 +92,7 @@ a transaction, and read contracts.
   signer.provider = provider;
   const koinContract = new Contract({
     id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-    abi: utils.Krc20Abi,
+    abi: utils.tokenAbi,
     provider,
     signer,
   });
@@ -109,11 +109,16 @@ a transaction, and read contracts.
   });
 
   // Transfer
-  const { transaction } = await koin.transfer({
+  const { transaction, receipt } = await koin.transfer({
     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
     value: "10.0001",
   });
-  console.log(`Transaction id ${transaction.id} submitted`);
+  console.log(`Transaction id ${transaction.id} submitted. Receipt:`);
+  console.log(receipt);
+
+  if (receipt.logs) {
+    console.log(`Transfer failed. Logs: ${receipt.logs.join(",")}`);
+  }
 
   // wait to be mined
   const blockNumber = await transaction.wait();
@@ -139,7 +144,9 @@ It's also possible to upload contracts. First, follow the instructions in [koino
 
   // create contract and deploy
   const contract = new Contract({ signer, provider, bytecode });
-  const { transaction } = await contract.deploy();
+  const { transaction, receipt } = await contract.deploy();
+  console.log("Transaction submitted. Receipt:");
+  console.log(receipt);
   // wait to be mined
   const blockNumber = await transaction.wait();
   console.log(`Contract uploaded in block number ${blockNumber}`);
@@ -181,7 +188,9 @@ You can also upload a contract in a new address. It is not required that this ne
   // - signature of accountWithFunds
 
   // now broadcast the transaction to deploy
-  transaction = await newAccount.sendTransaction(transaction);
+  const { receipt } = await newAccount.sendTransaction(transaction);
+  console.log("Transaction submitted. Receipt: ");
+  console.log(receipt);
   const blockNumber = await transaction.wait();
   console.log(`Contract uploaded in block number ${blockNumber}`);
 })();

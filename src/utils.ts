@@ -2,8 +2,7 @@ import * as multibase from "multibase";
 import { sha256 } from "@noble/hashes/sha256";
 import { ripemd160 } from "@noble/hashes/ripemd160";
 import { Abi, TypeField } from "./interface";
-import krc20ProtoJson from "./jsonDescriptors/krc20-proto.json";
-//import protocolJson from "./jsonDescriptors/protocol-proto.json";
+import tokenProtoJson from "./jsonDescriptors/token-proto.json";
 
 /**
  * Converts an hex string to Uint8Array
@@ -229,12 +228,28 @@ export function parseUnits(value: string, decimals: number): string {
   return `${sign}${`${integerPart}${decimalPart}`.replace(/^0+(?=\d)/, "")}`;
 }
 
+/**
+ * Makes a copy of a value. The returned value can be modified
+ * without altering the original one. Although this is not needed
+ * for strings or numbers and only needed for objects and arrays,
+ * all these options are covered in a single function
+ *
+ * It is assumed that the argument is number, string, or contructions
+ * of these types inside objects or arrays.
+ */
+function copyValue(value: unknown): unknown {
+  if (typeof value === "string" || typeof value === "number") {
+    return value;
+  }
+  return JSON.parse(JSON.stringify(value)) as unknown;
+}
+
 export function btypeDecodeValue(
   valueEncoded: unknown,
   typeField: TypeField
 ): unknown {
   // No byte conversion
-  if (typeField.type !== "bytes") return valueEncoded;
+  if (typeField.type !== "bytes") return copyValue(valueEncoded);
 
   const value = valueEncoded as string;
 
@@ -265,7 +280,7 @@ export function btypeEncodeValue(
   typeField: TypeField
 ): unknown {
   // No byte conversion
-  if (typeField.type !== "bytes") return valueDecoded;
+  if (typeField.type !== "bytes") return copyValue(valueDecoded);
 
   const value = valueDecoded as Uint8Array;
 
@@ -292,14 +307,25 @@ export function btypeEncodeValue(
 }
 
 export function btypeDecode(
-  valueEncoded: Record<string, unknown>,
+  valueEncoded: Record<string, unknown> | unknown[],
   fields: Record<string, TypeField>
 ) {
   if (typeof valueEncoded !== "object") return valueEncoded;
   const valueDecoded = {} as Record<string, unknown>;
   Object.keys(fields).forEach((name) => {
     if (!valueEncoded[name]) return;
-    if (fields[name].subtypes)
+    if (fields[name].rule === "repeated")
+      valueDecoded[name] = (valueEncoded[name] as unknown[]).map(
+        (itemEncoded) => {
+          if (fields[name].subtypes)
+            return btypeDecode(
+              itemEncoded as Record<string, unknown>,
+              fields[name].subtypes!
+            );
+          return btypeDecodeValue(itemEncoded, fields[name]);
+        }
+      );
+    else if (fields[name].subtypes)
       valueDecoded[name] = btypeDecode(
         valueEncoded[name] as Record<string, unknown>,
         fields[name].subtypes!
@@ -311,19 +337,31 @@ export function btypeDecode(
 }
 
 export function btypeEncode(
-  valueDecoded: Record<string, unknown>,
+  valueDecoded: Record<string, unknown> | unknown[],
   fields: Record<string, TypeField>
 ) {
   if (typeof valueDecoded !== "object") return valueDecoded;
   const valueEncoded = {} as Record<string, unknown>;
   Object.keys(fields).forEach((name) => {
     if (!valueDecoded[name]) return;
-    if (fields[name].subtypes)
+    if (fields[name].rule === "repeated")
+      valueEncoded[name] = (valueDecoded[name] as unknown[]).map(
+        (itemDecoded) => {
+          if (fields[name].subtypes)
+            return btypeEncode(
+              itemDecoded as Record<string, unknown>,
+              fields[name].subtypes!
+            );
+          return btypeEncodeValue(itemDecoded, fields[name]);
+        }
+      );
+    else if (fields[name].subtypes)
       valueEncoded[name] = btypeEncode(
         valueDecoded[name] as Record<string, unknown>,
         fields[name].subtypes!
       );
-    valueEncoded[name] = btypeEncodeValue(valueDecoded[name], fields[name]);
+    else
+      valueEncoded[name] = btypeEncodeValue(valueDecoded[name], fields[name]);
   });
   return valueEncoded;
 }
@@ -331,7 +369,7 @@ export function btypeEncode(
 /**
  * ABI for tokens
  */
-export const Krc20Abi: Abi = {
+export const tokenAbi: Abi = {
   methods: {
     name: {
       entryPoint: 0x82a3537f,
@@ -375,7 +413,7 @@ export const Krc20Abi: Abi = {
       output: "mint_result",
     },
   },
-  types: krc20ProtoJson,
+  types: tokenProtoJson,
 };
 
 //export const ProtocolTypes = protocolJson;

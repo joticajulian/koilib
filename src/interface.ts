@@ -269,7 +269,7 @@ export interface RecoverPublicKeyOptions {
  *
  * When _byTransactionId_ is used it returns the block id.
  *
- * @param timeout - Timeout in milliseconds. By default it is 30000
+ * @param timeout - Timeout in milliseconds. By default it is 60000
  */
 export type WaitFunction = (
   type?: "byBlock" | "byTransactionId",
@@ -331,6 +331,7 @@ export interface TypeField {
   type: string;
   btype?: string;
   subtypes?: Record<string, TypeField>;
+  rule?: "repeated";
 }
 
 export interface ContractCallBundle {
@@ -541,4 +542,24 @@ export interface BlockJson {
 export interface ValueType {
   uint64_value?: string;
   [x: string]: unknown;
+}
+
+export interface TransactionReceipt {
+  id: string;
+  payer: string;
+  max_payer_rc: string;
+  rc_limit: string;
+  rc_used: string;
+  disk_storage_used: string;
+  network_bandwidth_used: string;
+  compute_bandwidth_used: string;
+  reverted: boolean;
+  events: {
+    sequence: number;
+    source: string;
+    name: string;
+    data: string;
+    impacted: string[];
+  }[];
+  logs: string[];
 }
