@@ -10813,7 +10813,7 @@ class Signer {
      * ```
      * @returns Signer object
      */
-    static fromWif(wif, compressed) {
+    static fromWif(wif, compressed = true) {
         const comp = compressed === undefined ? wif[0] !== "5" : compressed;
         const privateKey = (0, utils_1.bitcoinDecode)(wif);
         return new Signer({
@@ -10833,7 +10833,7 @@ class Signer {
      * ```
      * @returns Signer object
      */
-    static fromSeed(seed, compressed) {
+    static fromSeed(seed, compressed = true) {
         const privateKey = (0, sha256_1.sha256)(seed);
         return new Signer({ privateKey, compressed });
     }
@@ -10905,6 +10905,12 @@ class Signer {
         compactSignature.set([recovery + 31], 0);
         compactSignature.set(compSignature, 1);
         return compactSignature;
+    }
+    /**
+     * Function to sign a message, which could be a string or a Uint8Array
+     */
+    async signMessage(message) {
+        return this.signHash((0, sha256_1.sha256)(message));
     }
     /**
      * Function to sign a transaction. It's important to remark that
@@ -10986,6 +10992,9 @@ class Signer {
         else {
             return secp.Point.fromHex(publicKey).toHex(true);
         }
+    }
+    static recoverAddress(hash, signature, compressed = true) {
+        return (0, utils_1.bitcoinAddress)((0, utils_1.toUint8Array)(Signer.recoverPublicKey(hash, signature, compressed)));
     }
     /**
      * Function to recover the publics keys from a signed
