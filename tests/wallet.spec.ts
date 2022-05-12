@@ -365,6 +365,14 @@ describe("Signer", () => {
     const blockSigner = await signer.recoverAddresses(signedBlock);
     expect(blockSigner).toStrictEqual([addressCompressed]);
   });
+
+  it("should sign a message", async () => {
+    const message = "test message";
+    const hash = sha256(message);
+    const signature = await signer.signMessage(message);
+    const recoveredAddress = Signer.recoverAddress(hash, signature);
+    expect(recoveredAddress).toBe(addressCompressed);
+  });
 });
 
 describe("Serializer", () => {

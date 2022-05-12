@@ -168,7 +168,7 @@ You can also upload a contract in a new address. It is not required that this ne
 
   // create contract. Set newAccount as signer
   const contract = new Contract({
-    signer: newAccount.address,
+    signer: newAccount,
     provider,
     bytecode,
   });
