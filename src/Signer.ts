@@ -30,7 +30,11 @@ export interface SignerInterface {
   provider?: Provider;
   getAddress: (compressed?: boolean) => string;
   getPrivateKey: (format: "wif" | "hex", compressed?: boolean) => string;
-  signHash(hash: Uint8Array): Promise<Uint8Array>;
+  signHash: (hash: Uint8Array) => Promise<Uint8Array>;
+  signMessage: (message: string | Uint8Array) => Promise<Uint8Array>;
+
+  // Transaction
+  prepareTransaction: (tx: TransactionJson) => Promise<TransactionJson>;
   signTransaction: (
     tx: TransactionJson | TransactionJsonWait,
     abis?: Record<string, Abi>
@@ -42,7 +46,8 @@ export interface SignerInterface {
     receipt: TransactionReceipt;
     transaction: TransactionJsonWait;
   }>;
-  prepareTransaction: (tx: TransactionJson) => Promise<TransactionJson>;
+
+  // Block
   prepareBlock: (block: BlockJson) => Promise<BlockJson>;
   signBlock: (block: BlockJson) => Promise<BlockJson>;
 }
@@ -232,7 +237,7 @@ export class Signer implements SignerInterface {
    * ```
    * @returns Signer object
    */
-  static fromWif(wif: string, compressed?: boolean): Signer {
+  static fromWif(wif: string, compressed = true): Signer {
     const comp = compressed === undefined ? wif[0] !== "5" : compressed;
     const privateKey = bitcoinDecode(wif);
     return new Signer({
@@ -253,7 +258,7 @@ export class Signer implements SignerInterface {
    * ```
    * @returns Signer object
    */
-  static fromSeed(seed: string, compressed?: boolean): Signer {
+  static fromSeed(seed: string, compressed = true): Signer {
     const privateKey = sha256(seed);
     return new Signer({ privateKey, compressed });
   }
@@ -329,6 +334,13 @@ export class Signer implements SignerInterface {
     compactSignature.set([recovery + 31], 0);
     compactSignature.set(compSignature, 1);
     return compactSignature;
+  }
+
+  /**
+   * Function to sign a message, which could be a string or a Uint8Array
+   */
+  async signMessage(message: string | Uint8Array): Promise<Uint8Array> {
+    return this.signHash(sha256(message));
   }
 
   /**
@@ -434,6 +446,16 @@ export class Signer implements SignerInterface {
     } else {
       return secp.Point.fromHex(publicKey).toHex(true);
     }
+  }
+
+  static recoverAddress(
+    hash: Uint8Array,
+    signature: Uint8Array,
+    compressed = true
+  ): string {
+    return bitcoinAddress(
+      toUint8Array(Signer.recoverPublicKey(hash, signature, compressed))
+    );
   }
 
   /**
