@@ -9792,11 +9792,11 @@ const utils_1 = __webpack_require__(8593);
  * const koin = koinContract.functions;
  *
  * // optional: preformat input/output
- * koinContract.abi.methods.balanceOf.preformatInput = (owner) =>
+ * koinContract.abi.methods.balanceOf.preformat_argument = (owner) =>
  *   ({ owner });
- * koinContract.abi.methods.balanceOf.preformatOutput = (res) =>
+ * koinContract.abi.methods.balanceOf.preformat_return = (res) =>
  *   utils.formatUnits(res.value, 8);
- * koinContract.abi.methods.transfer.preformatInput = (input) => ({
+ * koinContract.abi.methods.transfer.preformat_argument = (input) => ({
  *   from: signer.getAddress(),
  *   to: input.to,
  *   value: utils.parseUnits(input.value, 8),
@@ -9866,10 +9866,10 @@ class Contract {
                         ...this.options,
                         ...options,
                     };
-                    const { readOnly, output, defaultOutput, preformatInput, preformatOutput, } = this.abi.methods[name];
+                    const { readOnly, output, defaultOutput, preformat_argument, preformat_return, } = this.abi.methods[name];
                     let args;
-                    if (typeof preformatInput === "function") {
-                        args = preformatInput(argu);
+                    if (typeof preformat_argument === "function") {
+                        args = preformat_argument(argu);
                     }
                     else {
                         args = argu;
@@ -9884,8 +9884,8 @@ class Contract {
                         if (resultEncoded) {
                             result = await this.serializer.deserialize(resultEncoded, output);
                         }
-                        if (typeof preformatOutput === "function") {
-                            result = preformatOutput(result);
+                        if (typeof preformat_return === "function") {
+                            result = preformat_return(result);
                         }
                         return { operation, result };
                     }
