@@ -9791,15 +9791,15 @@ const utils_1 = __webpack_require__(8593);
  * });
  * const koin = koinContract.functions;
  *
- * // optional: preformat input/output
+ * // optional: preformat argument/return
  * koinContract.abi.methods.balanceOf.preformat_argument = (owner) =>
  *   ({ owner });
  * koinContract.abi.methods.balanceOf.preformat_return = (res) =>
  *   utils.formatUnits(res.value, 8);
- * koinContract.abi.methods.transfer.preformat_argument = (input) => ({
+ * koinContract.abi.methods.transfer.preformat_argument = (arg) => ({
  *   from: signer.getAddress(),
- *   to: input.to,
- *   value: utils.parseUnits(input.value, 8),
+ *   to: arg.to,
+ *   value: utils.parseUnits(arg.value, 8),
  * });
  *
  * async funtion main() {
@@ -9839,8 +9839,8 @@ class Contract {
         if (c.serializer) {
             this.serializer = c.serializer;
         }
-        else if (c.abi && c.abi.types) {
-            this.serializer = new Serializer_1.Serializer(c.abi.types);
+        else if (c.abi && c.abi.koilib_types) {
+            this.serializer = new Serializer_1.Serializer(c.abi.koilib_types);
         }
         this.options = {
             signTransaction: true,
@@ -9866,10 +9866,10 @@ class Contract {
                         ...this.options,
                         ...options,
                     };
-                    const { readOnly, output, defaultOutput, preformat_argument, preformat_return, } = this.abi.methods[name];
+                    const { read_only: readOnly, return: output, default_output: defaultOutput, preformat_argument: preformatArgument, preformat_return: preformatReturn, } = this.abi.methods[name];
                     let args;
-                    if (typeof preformat_argument === "function") {
-                        args = preformat_argument(argu);
+                    if (typeof preformatArgument === "function") {
+                        args = preformatArgument(argu);
                     }
                     else {
                         args = argu;
@@ -9884,8 +9884,8 @@ class Contract {
                         if (resultEncoded) {
                             result = await this.serializer.deserialize(resultEncoded, output);
                         }
-                        if (typeof preformat_return === "function") {
-                            result = preformat_return(result);
+                        if (typeof preformatReturn === "function") {
+                            result = preformatReturn(result);
                         }
                         return { operation, result };
                     }
@@ -10061,17 +10061,17 @@ class Contract {
         if (!this.id)
             throw new Error("Contract id is not defined");
         const method = this.abi.methods[op.name];
-        let bufferInputs = new Uint8Array(0);
-        if (method.input) {
+        let bufferArguments = new Uint8Array(0);
+        if (method.argument) {
             if (!op.args)
-                throw new Error(`No arguments defined for type '${method.input}'`);
-            bufferInputs = await this.serializer.serialize(op.args, method.input);
+                throw new Error(`No arguments defined for type '${method.argument}'`);
+            bufferArguments = await this.serializer.serialize(op.args, method.argument);
         }
         return {
             call_contract: {
                 contract_id: (0, utils_1.encodeBase58)(this.id),
-                entry_point: method.entryPoint,
-                args: (0, utils_1.encodeBase64url)(bufferInputs),
+                entry_point: method.entry_point,
+                args: (0, utils_1.encodeBase64url)(bufferArguments),
             },
         };
     }
@@ -10111,12 +10111,12 @@ class Contract {
         for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
             const opName = Object.keys(this.abi.methods)[i];
             const method = this.abi.methods[opName];
-            if (op.call_contract.entry_point === method.entryPoint) {
-                if (!method.input)
+            if (op.call_contract.entry_point === method.entry_point) {
+                if (!method.argument)
                     return { name: opName };
                 return {
                     name: opName,
-                    args: await this.serializer.deserialize(op.call_contract.args, method.input),
+                    args: await this.serializer.deserialize(op.call_contract.args, method.argument),
                 };
             }
         }
@@ -10868,7 +10868,7 @@ class Signer {
      * // 5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd
      * ```
      */
-    getPrivateKey(format = "hex", compressed) {
+    getPrivateKey(format = "hex", compressed = false) {
         let stringPrivateKey;
         if (this.privateKey instanceof Uint8Array) {
             stringPrivateKey = (0, utils_1.toHexString)(this.privateKey);
@@ -11695,48 +11695,53 @@ exports.btypeEncode = btypeEncode;
 exports.tokenAbi = {
     methods: {
         name: {
-            entryPoint: 0x82a3537f,
-            input: "name_arguments",
-            output: "name_result",
-            readOnly: true,
+            entry_point: 0x82a3537f,
+            argument: "name_arguments",
+            return: "name_result",
+            read_only: true,
         },
         symbol: {
-            entryPoint: 0xb76a7ca1,
-            input: "symbol_arguments",
-            output: "symbol_result",
-            readOnly: true,
+            entry_point: 0xb76a7ca1,
+            argument: "symbol_arguments",
+            return: "symbol_result",
+            read_only: true,
         },
         decimals: {
-            entryPoint: 0xee80fd2f,
-            input: "decimals_arguments",
-            output: "decimals_result",
-            readOnly: true,
+            entry_point: 0xee80fd2f,
+            argument: "decimals_arguments",
+            return: "decimals_result",
+            read_only: true,
         },
         totalSupply: {
-            entryPoint: 0xb0da3934,
-            input: "total_supply_arguments",
-            output: "total_supply_result",
-            readOnly: true,
+            entry_point: 0xb0da3934,
+            argument: "total_supply_arguments",
+            return: "total_supply_result",
+            read_only: true,
         },
         balanceOf: {
-            entryPoint: 0x5c721497,
-            input: "balance_of_arguments",
-            output: "balance_of_result",
-            readOnly: true,
-            defaultOutput: { value: "0" },
+            entry_point: 0x5c721497,
+            argument: "balance_of_arguments",
+            return: "balance_of_result",
+            read_only: true,
+            default_output: { value: "0" },
         },
         transfer: {
-            entryPoint: 0x27f576ca,
-            input: "transfer_arguments",
-            output: "transfer_result",
+            entry_point: 0x27f576ca,
+            argument: "transfer_arguments",
+            return: "transfer_result",
         },
         mint: {
-            entryPoint: 0xdc6f17bb,
-            input: "mint_arguments",
-            output: "mint_result",
+            entry_point: 0xdc6f17bb,
+            argument: "mint_arguments",
+            return: "mint_result",
+        },
+        burn: {
+            entry_point: 0x859facc5,
+            argument: "burn_arguments",
+            return: "burn_result",
         },
     },
-    types: token_proto_json_1.default,
+    koilib_types: token_proto_json_1.default,
 };
 //export const ProtocolTypes = protocolJson;
 
