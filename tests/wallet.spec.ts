@@ -304,13 +304,13 @@ describe("Signer", () => {
     expect(signer1.getPrivateKey("hex")).toBe(privateKey);
 
     const signer2 = Signer.fromWif(wifCompressed);
-    expect(signer2.getPrivateKey("wif")).toBe(wifCompressed);
-    expect(signer2.getPrivateKey("wif", false)).toBe(wif);
+    expect(signer2.getPrivateKey("wif")).toBe(wif);
+    expect(signer2.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer2.getPrivateKey("hex")).toBe(privateKey);
 
     const signer3 = new Signer({ privateKey });
-    expect(signer3.getPrivateKey("wif", false)).toBe(wif);
-    expect(signer3.getPrivateKey("wif")).toBe(wifCompressed);
+    expect(signer3.getPrivateKey("wif")).toBe(wif);
+    expect(signer3.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer3.getPrivateKey("hex")).toBe(privateKey);
 
     const signer4 = new Signer({ privateKey, compressed: false });
@@ -319,8 +319,8 @@ describe("Signer", () => {
     expect(signer4.getPrivateKey("hex")).toBe(privateKey);
 
     const signer5 = Signer.fromSeed(seed);
-    expect(signer5.getPrivateKey("wif", false)).toBe(wif);
-    expect(signer5.getPrivateKey("wif")).toBe(wifCompressed);
+    expect(signer5.getPrivateKey("wif")).toBe(wif);
+    expect(signer5.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer5.getPrivateKey("hex")).toBe(privateKey);
 
     const signer6 = Signer.fromSeed(seed, false);
@@ -579,7 +579,7 @@ describe("Wallet and Contract", () => {
     expect(opEncoded).toStrictEqual({
       call_contract: {
         contract_id: koinContract.getId(),
-        entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
+        entry_point: koinContract.abi?.methods?.transfer?.entry_point,
         args: expect.any(String) as string,
       },
     } as OperationJson);
@@ -696,7 +696,7 @@ describe("Wallet and Contract", () => {
     expect(operation).toStrictEqual({
       call_contract: {
         contract_id: encodeBase58(koinContract.id!),
-        entry_point: koinContract.abi?.methods?.transfer?.entryPoint,
+        entry_point: koinContract.abi?.methods?.transfer?.entry_point,
         args: expect.any(String) as string,
       },
     } as OperationJson);
@@ -715,7 +715,7 @@ describe("Wallet and Contract", () => {
         {
           call_contract: {
             contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
-            entry_point: tokenAbi.methods.transfer.entryPoint,
+            entry_point: tokenAbi.methods.transfer.entry_point,
             args: "ChkAEjl6vrl55V2Oym_rzsnMxIqBoie9PHmMEhkAQgjT1UACatdFY3e5QRkyG7OAzwcCCIylGOgH",
           },
         },
@@ -927,7 +927,7 @@ describe("Wallet and Contract", () => {
     expect(result).toStrictEqual({ value: "123456" });
   });
 
-  it("should get the balance of an account using the preformatInput and preformatOutput", async () => {
+  it("should get the balance of an account using the preformat_argument and preformat_return", async () => {
     expect.assertions(2);
     const type = koinContract.serializer?.root?.lookupType(
       "balance_of_result"
@@ -943,10 +943,10 @@ describe("Wallet and Contract", () => {
       signer,
       abi: JSON.parse(JSON.stringify(tokenAbi)) as Abi,
     });
-    contractInstance.abi!.methods.balanceOf.preformatInput = (owner) => ({
+    contractInstance.abi!.methods.balanceOf.preformat_argument = (owner) => ({
       owner,
     });
-    contractInstance.abi!.methods.balanceOf.preformatOutput = (res) =>
+    contractInstance.abi!.methods.balanceOf.preformat_return = (res) =>
       formatUnits((res as { value: string }).value, 8);
     const contract = contractInstance.functions;
 

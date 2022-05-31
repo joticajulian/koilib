@@ -295,7 +295,7 @@ export class Signer implements SignerInterface {
    * // 5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd
    * ```
    */
-  getPrivateKey(format: "wif" | "hex" = "hex", compressed?: boolean): string {
+  getPrivateKey(format: "wif" | "hex" = "hex", compressed = false): string {
     let stringPrivateKey: string;
     if (this.privateKey instanceof Uint8Array) {
       stringPrivateKey = toHexString(this.privateKey);

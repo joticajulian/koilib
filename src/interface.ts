@@ -33,28 +33,28 @@ import { Serializer } from "./Serializer";
  * const abiToken = {
  *   methods: {
  *     balanceOf: {
- *       entryPoint: 0x15619248,
- *       inputs: "balance_of_arguments",
- *       outputs: "balance_of_result",
- *       readOnly: true,
- *       defaultOutput: { value: "0" },
+ *       entry_point: 0x15619248,
+ *       argument: "balance_of_arguments",
+ *       return: "balance_of_result",
+ *       read_only: true,
+ *       default_output: { value: "0" },
  *     },
  *     transfer: {
- *       entryPoint: 0x62efa292,
- *       inputs: "transfer_arguments",
- *       outputs: "transfer_result",
+ *       entry_point: 0x62efa292,
+ *       argument: "transfer_arguments",
+ *       return: "transfer_result",
  *     },
  *     mint: {
- *       entryPoint: 0xc2f82bdc,
- *       inputs: "mint_argumnets",
- *       outputs: "mint_result",
+ *       entry_point: 0xc2f82bdc,
+ *       argument: "mint_argumnets",
+ *       return: "mint_result",
  *     },
  *   },
  *   types: tokenJson,
  * };
  * ```
  *
- * Note that this example uses "defaultOutput" for the method
+ * Note that this example uses "default_output" for the method
  * "balanceOf". This is used when the smart contract returns an
  * empty response (for instance when there are no balance records
  * for a specific address) and you require a default output in
@@ -65,22 +65,22 @@ export interface Abi {
     /** Name of the method */
     [x: string]: {
       /** Entry point ID */
-      entryPoint: number;
-      /** Protobuffer type for input */
-      input?: string;
-      /** Protobuffer type for output */
-      output?: string;
+      entry_point: number;
+      /** Protobuffer type for argument */
+      argument?: string;
+      /** Protobuffer type for returned value */
+      return?: string;
       /** Boolean to differentiate write methods
        * (using transactions) from read methods
        * (query the contract)
        */
-      readOnly?: boolean;
+      read_only?: boolean;
       /** Default value when the output is undefined */
-      defaultOutput?: unknown;
-      /** Optional function to preformat the input */
-      preformatInput?: (input: unknown) => Record<string, unknown>;
-      /** Optional function to preformat the output */
-      preformatOutput?: (output: Record<string, unknown>) => unknown;
+      default_output?: unknown;
+      /** Optional function to preformat the argument */
+      preformat_argument?: (arg: unknown) => Record<string, unknown>;
+      /** Optional function to preformat the returned value */
+      preformat_return?: (output: Record<string, unknown>) => unknown;
       /** Description of the method */
       description?: string;
     };
@@ -89,7 +89,7 @@ export interface Abi {
    * Protobuffers descriptor in JSON format.
    * See https://www.npmjs.com/package/protobufjs#using-json-descriptors
    */
-  types: INamespace;
+  koilib_types: INamespace;
 }
 
 /**

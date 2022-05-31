@@ -35,15 +35,15 @@ import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
  * });
  * const koin = koinContract.functions;
  *
- * // optional: preformat input/output
- * koinContract.abi.methods.balanceOf.preformatInput = (owner) =>
+ * // optional: preformat argument/return
+ * koinContract.abi.methods.balanceOf.preformat_argument = (owner) =>
  *   ({ owner });
- * koinContract.abi.methods.balanceOf.preformatOutput = (res) =>
+ * koinContract.abi.methods.balanceOf.preformat_return = (res) =>
  *   utils.formatUnits(res.value, 8);
- * koinContract.abi.methods.transfer.preformatInput = (input) => ({
+ * koinContract.abi.methods.transfer.preformat_argument = (arg) => ({
  *   from: signer.getAddress(),
- *   to: input.to,
- *   value: utils.parseUnits(input.value, 8),
+ *   to: arg.to,
+ *   value: utils.parseUnits(arg.value, 8),
  * });
  *
  * async funtion main() {
@@ -172,8 +172,8 @@ export class Contract {
     this.bytecode = c.bytecode;
     if (c.serializer) {
       this.serializer = c.serializer;
-    } else if (c.abi && c.abi.types) {
-      this.serializer = new Serializer(c.abi.types);
+    } else if (c.abi && c.abi.koilib_types) {
+      this.serializer = new Serializer(c.abi.koilib_types);
     }
     this.options = {
       signTransaction: true,
@@ -211,15 +211,15 @@ export class Contract {
           };
 
           const {
-            readOnly,
-            output,
-            defaultOutput,
-            preformatInput,
-            preformatOutput,
+            read_only: readOnly,
+            return: output,
+            default_output: defaultOutput,
+            preformat_argument: preformatArgument,
+            preformat_return: preformatReturn,
           } = this.abi.methods[name];
           let args: Record<string, unknown>;
-          if (typeof preformatInput === "function") {
-            args = preformatInput(argu);
+          if (typeof preformatArgument === "function") {
+            args = preformatArgument(argu);
           } else {
             args = argu as Record<string, unknown>;
           }
@@ -239,8 +239,8 @@ export class Contract {
                 output
               );
             }
-            if (typeof preformatOutput === "function") {
-              result = preformatOutput(result as Record<string, unknown>) as T;
+            if (typeof preformatReturn === "function") {
+              result = preformatReturn(result as Record<string, unknown>) as T;
             }
             return { operation, result };
           }
@@ -428,18 +428,21 @@ export class Contract {
     if (!this.id) throw new Error("Contract id is not defined");
     const method = this.abi.methods[op.name];
 
-    let bufferInputs = new Uint8Array(0);
-    if (method.input) {
+    let bufferArguments = new Uint8Array(0);
+    if (method.argument) {
       if (!op.args)
-        throw new Error(`No arguments defined for type '${method.input}'`);
-      bufferInputs = await this.serializer.serialize(op.args, method.input);
+        throw new Error(`No arguments defined for type '${method.argument}'`);
+      bufferArguments = await this.serializer.serialize(
+        op.args,
+        method.argument
+      );
     }
 
     return {
       call_contract: {
         contract_id: encodeBase58(this.id),
-        entry_point: method.entryPoint,
-        args: encodeBase64url(bufferInputs),
+        entry_point: method.entry_point,
+        args: encodeBase64url(bufferArguments),
       },
     };
   }
@@ -482,13 +485,13 @@ export class Contract {
     for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
       const opName = Object.keys(this.abi.methods)[i];
       const method = this.abi.methods[opName];
-      if (op.call_contract.entry_point === method.entryPoint) {
-        if (!method.input) return { name: opName };
+      if (op.call_contract.entry_point === method.entry_point) {
+        if (!method.argument) return { name: opName };
         return {
           name: opName,
           args: await this.serializer.deserialize(
             op.call_contract.args,
-            method.input
+            method.argument
           ),
         };
       }

@@ -16,6 +16,7 @@ module.exports = {
   rules: {
     "tsdoc/syntax": "warn",
     "import/no-cycle": "off",
+    "import/extensions": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
   },
 };

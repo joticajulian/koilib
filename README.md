@@ -99,10 +99,12 @@ a transaction, and read contracts.
   const koin = koinContract.functions;
 
   // optional: preformat input/output
-  koinContract.abi.methods.balanceOf.preformatInput = (owner) => ({ owner });
-  koinContract.abi.methods.balanceOf.preformatOutput = (res) =>
+  koinContract.abi.methods.balanceOf.preformat_argument = (owner) => ({
+    owner,
+  });
+  koinContract.abi.methods.balanceOf.preformat_return = (res) =>
     utils.formatUnits(res.value, 8);
-  koinContract.abi.methods.transfer.preformatInput = (input) => ({
+  koinContract.abi.methods.transfer.preformat_argument = (input) => ({
     from: signer.getAddress(),
     to: input.to,
     value: utils.parseUnits(input.value, 8),
@@ -222,28 +224,28 @@ const tokenJson = require("./token-proto.json");
 const abiToken = {
   methods: {
     balanceOf: {
-      entryPoint: 0x5c721497,
-      inputs: "balance_of_arguments",
-      outputs: "balance_of_result",
-      readOnly: true,
-      defaultOutput: { value: "0" },
+      entry_point: 0x5c721497,
+      argument: "balance_of_arguments",
+      return: "balance_of_result",
+      read_only: true,
+      default_output: { value: "0" },
     },
     transfer: {
-      entryPoint: 0x27f576ca,
-      inputs: "transfer_arguments",
-      outputs: "transfer_result",
+      entry_point: 0x27f576ca,
+      argument: "transfer_arguments",
+      return: "transfer_result",
     },
     mint: {
-      entryPoint: 0xdc6f17bb,
-      inputs: "mint_argumnets",
-      outputs: "mint_result",
+      entry_point: 0xdc6f17bb,
+      argument: "mint_argumnets",
+      return: "mint_result",
     },
   },
-  types: tokenJson,
+  koilib_types: tokenJson,
 };
 ```
 
-Note that this example uses "defaultOutput" for the method
+Note that this example uses "default_output" for the method
 "balanceOf". This is used when the smart contract returns an
 empty response (for instance when there are no balance records
 for a specific address) and you require a default output in
@@ -267,13 +269,14 @@ such cases.
    For the ABI you need the .proto file and the library
    [protobufjs](https://www.npmjs.com/package/protobufjs). Then follow the format
    for the ABI as described in the previous section. It's important to note that
-   this ABI is not the same ABI used in [koinos-cli](https://docs.koinos.io/architecture/contract-abi.html).
-   In particular, descriptors use different format (koilib using json format, cli
-   using binary format).
+   this ABI has a diffence with respect to the ABI used in [koinos-cli](https://docs.koinos.io/architecture/contract-abi.html).
+   In particular, koilib takes the descriptor from `koilib_types`, which is a
+   descriptor in json format, while the ABI in koinos-cli takes the descriptor from
+   `types`, which is a descriptor in binary format.
 
 4. Can this library be used to interact with smart contracts?
 
-   Yes. You can use it to call readOnly functions, or send transactions
+   Yes. You can use it to call read_only functions, or send transactions
    to the contract by calling write functions.
 
 ## Documentation
