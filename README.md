@@ -269,9 +269,10 @@ such cases.
    For the ABI you need the .proto file and the library
    [protobufjs](https://www.npmjs.com/package/protobufjs). Then follow the format
    for the ABI as described in the previous section. It's important to note that
-   this ABI is not the same ABI used in [koinos-cli](https://docs.koinos.io/architecture/contract-abi.html).
-   In particular, descriptors use different format (koilib using json format, cli
-   using binary format).
+   this ABI has a diffence with respect to the ABI used in [koinos-cli](https://docs.koinos.io/architecture/contract-abi.html).
+   In particular, koilib takes the descriptor from `koilib_types`, which is a
+   descriptor in json format, while the ABI in koinos-cli takes the descriptor from
+   `types`, which is a descriptor in binary format.
 
 4. Can this library be used to interact with smart contracts?
 
