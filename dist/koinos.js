@@ -9982,10 +9982,23 @@ class Contract {
             ...this.options,
             ...options,
         };
+        const contractId = this.id
+            ? (0, utils_1.encodeBase58)(this.id)
+            : this.signer.getAddress();
         const operation = {
             upload_contract: {
-                contract_id: (0, utils_1.decodeBase58)(this.signer.getAddress()),
-                bytecode: this.bytecode,
+                contract_id: contractId,
+                bytecode: (0, utils_1.encodeBase64url)(this.bytecode),
+                ...((opts === null || opts === void 0 ? void 0 : opts.abi) && { abi: opts === null || opts === void 0 ? void 0 : opts.abi }),
+                ...((opts === null || opts === void 0 ? void 0 : opts.authorizesCallContract) && {
+                    authorizes_call_contract: opts === null || opts === void 0 ? void 0 : opts.authorizesCallContract,
+                }),
+                ...((opts === null || opts === void 0 ? void 0 : opts.authorizesTransactionApplication) && {
+                    authorizes_transaction_application: opts === null || opts === void 0 ? void 0 : opts.authorizesTransactionApplication,
+                }),
+                ...((opts === null || opts === void 0 ? void 0 : opts.authorizesUploadContract) && {
+                    authorizes_upload_contract: opts === null || opts === void 0 ? void 0 : opts.authorizesUploadContract,
+                }),
             },
         };
         const tx = await this.signer.prepareTransaction({
@@ -9996,24 +10009,7 @@ class Contract {
                 ...((opts === null || opts === void 0 ? void 0 : opts.payer) && { payer: opts === null || opts === void 0 ? void 0 : opts.payer }),
                 ...((opts === null || opts === void 0 ? void 0 : opts.payee) && { payee: opts === null || opts === void 0 ? void 0 : opts.payee }),
             },
-            operations: [
-                {
-                    upload_contract: {
-                        contract_id: (0, utils_1.encodeBase58)(operation.upload_contract.contract_id),
-                        bytecode: (0, utils_1.encodeBase64url)(this.bytecode),
-                        ...((opts === null || opts === void 0 ? void 0 : opts.abi) && { abi: opts === null || opts === void 0 ? void 0 : opts.abi }),
-                        ...((opts === null || opts === void 0 ? void 0 : opts.authorizesCallContract) && {
-                            authorizes_call_contract: opts === null || opts === void 0 ? void 0 : opts.authorizesCallContract,
-                        }),
-                        ...((opts === null || opts === void 0 ? void 0 : opts.authorizesTransactionApplication) && {
-                            authorizes_transaction_application: opts === null || opts === void 0 ? void 0 : opts.authorizesTransactionApplication,
-                        }),
-                        ...((opts === null || opts === void 0 ? void 0 : opts.authorizesUploadContract) && {
-                            authorizes_upload_contract: opts === null || opts === void 0 ? void 0 : opts.authorizesUploadContract,
-                        }),
-                    },
-                },
-            ],
+            operations: [operation],
         });
         // return result if the transaction will not be broadcasted
         if (!(opts === null || opts === void 0 ? void 0 : opts.sendTransaction)) {
