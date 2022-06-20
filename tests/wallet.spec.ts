@@ -20,7 +20,6 @@ import {
   btypeEncode,
 } from "../src/utils";
 import {
-  UploadContractOperationNested,
   TransactionJson,
   Abi,
   WaitFunction,
@@ -1013,16 +1012,16 @@ describe("Wallet and Contract", () => {
 
     expect(operation).toStrictEqual({
       upload_contract: {
-        contract_id: expect.any(Uint8Array) as Uint8Array,
-        bytecode: expect.any(Uint8Array) as Uint8Array,
+        contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+        bytecode: "my_contract_bytecode",
       },
-    } as UploadContractOperationNested);
+    } as OperationJson);
 
     expect(transaction).toStrictEqual({
       operations: [
         {
           upload_contract: {
-            contract_id: addressCompressed,
+            contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
             bytecode: "my_contract_bytecode",
           },
         },
@@ -1032,12 +1031,12 @@ describe("Wallet and Contract", () => {
         rc_limit: "50000000",
         nonce: "OAE=",
         operation_merkle_root:
-          "EiC6RyWcgU-Wjx-koQicaeZlJoWStdV12e_0fv-QEx2DqA==",
+          "EiA0Va7dkQWSgpAGLURZeJtOc33JtsWFrqdk_1_oWtKMSA==",
         payer: addressCompressed,
       },
-      id: "0x1220ae807b6d8ac19011adc2f6af13b2f2ec1e708a18864d222a460b161d857f2091",
+      id: "0x1220d6bcf054d67de8de619c5c9212b0ec1bfea0a32adc6edbb68719cc914675b243",
       signatures: [
-        "H4WFQd7TfRtJa9s7sebcLHni7yA-aVtyJ8VszcnbZ9D1cwT46-WfbF9fKY4hPAaNdFKPjb_CU1lE4KcmopG8odE=",
+        "HydetCgjGkgHok-ClGgtdo5XuW0fIB5dhE-tZomWs6sfCLhjTL50Y6YtPmn6w2Ms-rJNdH5cC7Gf6o1BAvlpTCw=",
       ],
       wait: expect.any(Function) as WaitFunction,
     } as TransactionJson);

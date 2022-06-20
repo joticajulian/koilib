@@ -3,7 +3,6 @@ import { Signer, SignerInterface } from "./Signer";
 import { Provider } from "./Provider";
 import { Serializer } from "./Serializer";
 import {
-  UploadContractOperationNested,
   TransactionJsonWait,
   Abi,
   TransactionOptions,
@@ -336,7 +335,7 @@ export class Contract {
    * ```
    */
   async deploy(options?: DeployOptions): Promise<{
-    operation: UploadContractOperationNested;
+    operation: OperationJson;
     transaction: TransactionJsonWait;
     receipt?: TransactionReceipt;
   }> {
@@ -346,12 +345,28 @@ export class Contract {
       ...this.options,
       ...options,
     };
-    const operation: UploadContractOperationNested = {
+
+    const contractId = this.id
+      ? encodeBase58(this.id)
+      : this.signer.getAddress();
+
+    const operation = {
       upload_contract: {
-        contract_id: decodeBase58(this.signer.getAddress()),
-        bytecode: this.bytecode,
+        contract_id: contractId,
+        bytecode: encodeBase64url(this.bytecode),
+        ...(opts?.abi && { abi: opts?.abi }),
+        ...(opts?.authorizesCallContract && {
+          authorizes_call_contract: opts?.authorizesCallContract,
+        }),
+        ...(opts?.authorizesTransactionApplication && {
+          authorizes_transaction_application:
+            opts?.authorizesTransactionApplication,
+        }),
+        ...(opts?.authorizesUploadContract && {
+          authorizes_upload_contract: opts?.authorizesUploadContract,
+        }),
       },
-    };
+    } as OperationJson;
 
     const tx = await this.signer.prepareTransaction({
       header: {
@@ -361,25 +376,7 @@ export class Contract {
         ...(opts?.payer && { payer: opts?.payer }),
         ...(opts?.payee && { payee: opts?.payee }),
       },
-      operations: [
-        {
-          upload_contract: {
-            contract_id: encodeBase58(operation.upload_contract.contract_id!),
-            bytecode: encodeBase64url(this.bytecode),
-            ...(opts?.abi && { abi: opts?.abi }),
-            ...(opts?.authorizesCallContract && {
-              authorizes_call_contract: opts?.authorizesCallContract,
-            }),
-            ...(opts?.authorizesTransactionApplication && {
-              authorizes_transaction_application:
-                opts?.authorizesTransactionApplication,
-            }),
-            ...(opts?.authorizesUploadContract && {
-              authorizes_upload_contract: opts?.authorizesUploadContract,
-            }),
-          },
-        } as OperationJson,
-      ],
+      operations: [operation],
     });
 
     // return result if the transaction will not be broadcasted
