@@ -9892,7 +9892,7 @@ class Contract {
                     // write contract (sign and send)
                     if (!this.signer)
                         throw new Error("signer not found");
-                    const tx = await this.signer.prepareTransaction({
+                    let tx = await this.signer.prepareTransaction({
                         header: {
                             ...((opts === null || opts === void 0 ? void 0 : opts.chainId) && { chain_id: opts === null || opts === void 0 ? void 0 : opts.chainId }),
                             ...((opts === null || opts === void 0 ? void 0 : opts.rcLimit) && { rc_limit: opts === null || opts === void 0 ? void 0 : opts.rcLimit }),
@@ -9913,7 +9913,7 @@ class Contract {
                             throw new Error("This transaction was not broadcasted");
                         };
                         if (opts.signTransaction)
-                            await this.signer.signTransaction(tx, abis);
+                            tx = await this.signer.signTransaction(tx, abis);
                         return { operation, transaction: { ...tx, wait: noWait } };
                     }
                     const { transaction, receipt } = await this.signer.sendTransaction(tx, abis);
@@ -10001,7 +10001,7 @@ class Contract {
                 }),
             },
         };
-        const tx = await this.signer.prepareTransaction({
+        let tx = await this.signer.prepareTransaction({
             header: {
                 ...((opts === null || opts === void 0 ? void 0 : opts.chainId) && { chain_id: opts === null || opts === void 0 ? void 0 : opts.chainId }),
                 ...((opts === null || opts === void 0 ? void 0 : opts.rcLimit) && { rc_limit: opts === null || opts === void 0 ? void 0 : opts.rcLimit }),
@@ -10017,7 +10017,7 @@ class Contract {
                 throw new Error("This transaction was not broadcasted");
             };
             if (opts.signTransaction)
-                await this.signer.signTransaction(tx);
+                tx = await this.signer.signTransaction(tx);
             return { operation, transaction: { ...tx, wait: noWait } };
         }
         const { transaction, receipt } = await this.signer.sendTransaction(tx);

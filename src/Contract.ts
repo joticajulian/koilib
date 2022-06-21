@@ -246,7 +246,7 @@ export class Contract {
 
           // write contract (sign and send)
           if (!this.signer) throw new Error("signer not found");
-          const tx = await this.signer.prepareTransaction({
+          let tx = await this.signer.prepareTransaction({
             header: {
               ...(opts?.chainId && { chain_id: opts?.chainId }),
               ...(opts?.rcLimit && { rc_limit: opts?.rcLimit }),
@@ -269,7 +269,7 @@ export class Contract {
               throw new Error("This transaction was not broadcasted");
             };
             if (opts.signTransaction)
-              await this.signer.signTransaction(tx, abis);
+              tx = await this.signer.signTransaction(tx, abis);
             return { operation, transaction: { ...tx, wait: noWait } };
           }
 
@@ -368,7 +368,7 @@ export class Contract {
       },
     } as OperationJson;
 
-    const tx = await this.signer.prepareTransaction({
+    let tx = await this.signer.prepareTransaction({
       header: {
         ...(opts?.chainId && { chain_id: opts?.chainId }),
         ...(opts?.rcLimit && { rc_limit: opts?.rcLimit }),
@@ -384,7 +384,7 @@ export class Contract {
       const noWait = () => {
         throw new Error("This transaction was not broadcasted");
       };
-      if (opts.signTransaction) await this.signer.signTransaction(tx);
+      if (opts.signTransaction) tx = await this.signer.signTransaction(tx);
       return { operation, transaction: { ...tx, wait: noWait } };
     }
 
