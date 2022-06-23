@@ -26,6 +26,7 @@ import {
   BlockJson,
   OperationJson,
   TypeField,
+  TransactionJsonWait,
 } from "../src/interface";
 
 jest.mock("cross-fetch");
@@ -825,6 +826,106 @@ describe("Wallet and Contract", () => {
     expect(transaction).toBeDefined();
     expect(result).toBeUndefined();
     expect(receiptReceived).toStrictEqual(receipt);
+  });
+
+  it("should submit a transaction using the provider directly", async () => {
+    expect.assertions(8);
+
+    const receipt = {
+      id: "0x1220cf763bc42c18091fddf7a9d3c2963f95102b64a019d76c20215163ca9d900ff2",
+      payer: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+      max_payer_rc: "930000000",
+      rc_limit: "930000000",
+      rc_used: "470895",
+      network_bandwidth_used: "311",
+      compute_bandwidth_used: "369509",
+      events: [
+        {
+          source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+          name: "koin.transfer",
+          data: "ChkAOraorkYwQTkrfp9ViHFI2CJvmCQh2mz7EhkArriH22GZ1VJLkeJ-x4JUGF4zPAEZrNUiGMCEPQ==",
+          impacted: [
+            "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+            "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          ],
+        },
+      ],
+    };
+
+    jest.clearAllMocks();
+    mockFetch.mockImplementation(async () => fetchResponse("mock error", 400));
+    mockFetch.mockImplementationOnce(async () =>
+      fetchResponse({ nonce: "OBE=" })
+    ); // nonce
+    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () => fetchResponse({ receipt }));
+
+    const {
+      transaction,
+      operation,
+      result,
+      receipt: noReceipt,
+    } = await koin.transfer(
+      {
+        from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+        to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+        value: "1000000",
+      },
+      {
+        chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+        sendTransaction: false,
+      }
+    );
+
+    const expectedTransaction: TransactionJson = {
+      operations: [
+        {
+          call_contract: {
+            contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+            entry_point: 670398154,
+            args: "ChkAOraorkYwQTkrfp9ViHFI2CJvmCQh2mz7EhkArriH22GZ1VJLkeJ-x4JUGF4zPAEZrNUiGMCEPQ==",
+          },
+        },
+      ],
+      header: {
+        chain_id: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+        rc_limit: "0",
+        nonce: "OBI=",
+        operation_merkle_root:
+          "EiCmVXWAuzW5xo1Pefx4256N_B_78cXvKwUxWFtKiY-PqQ==",
+        payer: addressCompressed,
+      },
+      id: "0x1220c347788d427d457cfd78009375642f85f5859ac116fb58472ff201866efcdd6d",
+      signatures: [
+        "HwnYjHzMWN1eVTod2T8w5R9MPSive9UOdsj1WayWa73Sdj9hqWBWZF5Z-mBlOa6Btfk8baCghpQ-dTfslF0VSRY=",
+      ],
+    };
+
+    expect(operation).toBeDefined();
+    expect(transaction).toMatchObject({
+      ...expectedTransaction,
+      wait: expect.any(Function) as Function,
+    } as TransactionJsonWait);
+    expect(result).toBeUndefined();
+    expect(noReceipt).toBeUndefined();
+    expect(transaction!.wait.toString()).toStrictEqual(
+      expect.stringContaining(
+        'throw new Error("This transaction was not broadcasted");'
+      )
+    );
+
+    const { transaction: transactionSend, receipt: receiptReceived } =
+      await provider.sendTransaction(transaction!);
+    expect(receiptReceived).toStrictEqual(receipt);
+    expect(transactionSend).toStrictEqual({
+      ...expectedTransaction,
+      wait: expect.any(Function) as Function,
+    } as TransactionJsonWait);
+    expect(transaction!.wait.toString()).toStrictEqual(
+      expect.stringContaining(
+        "return this.wait(transaction.id, type, timeout);"
+      )
+    );
   });
 
   it("should get the error response from a failed transaction", async () => {

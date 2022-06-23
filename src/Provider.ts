@@ -4,6 +4,7 @@ import {
   TransactionJson,
   CallContractOperationJson,
   TransactionReceipt,
+  TransactionJsonWait,
 } from "./interface";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -416,11 +417,26 @@ export class Provider {
   /**
    * Function to call "chain.submit_transaction" to send a signed
    * transaction to the blockchain.
+   * @returns It returns the receipt received from the RPC node
+   * and the transaction with the arrow function "wait" (see [[wait]])
    */
-  async sendTransaction(transaction: TransactionJson): Promise<{
+  async sendTransaction(
+    transaction: TransactionJson | TransactionJsonWait
+  ): Promise<{
     receipt: TransactionReceipt;
+    transaction: TransactionJsonWait;
   }> {
-    return this.call("chain.submit_transaction", { transaction });
+    const response = await this.call<{ receipt: TransactionReceipt }>(
+      "chain.submit_transaction",
+      { transaction }
+    );
+    (transaction as TransactionJsonWait).wait = async (
+      type: "byTransactionId" | "byBlock" = "byBlock",
+      timeout = 60000
+    ) => {
+      return this.wait(transaction.id as string, type, timeout);
+    };
+    return { ...response, transaction: transaction as TransactionJsonWait };
   }
 
   /**
