@@ -10391,9 +10391,15 @@ class Provider {
     /**
      * Function to call "chain.submit_transaction" to send a signed
      * transaction to the blockchain.
+     * @returns It returns the receipt received from the RPC node
+     * and the transaction with the arrow function "wait" (see [[wait]])
      */
     async sendTransaction(transaction) {
-        return this.call("chain.submit_transaction", { transaction });
+        const response = await this.call("chain.submit_transaction", { transaction });
+        transaction.wait = async (type = "byBlock", timeout = 60000) => {
+            return this.wait(transaction.id, type, timeout);
+        };
+        return { ...response, transaction: transaction };
     }
     /**
      * Function to call "chain.submit_block" to send a signed
@@ -10957,13 +10963,7 @@ class Signer {
             tx = await this.signTransaction(tx);
         if (!this.provider)
             throw new Error("provider is undefined");
-        const { receipt } = await this.provider.sendTransaction(tx);
-        tx.wait = async (type = "byBlock", timeout = 60000) => {
-            if (!this.provider)
-                throw new Error("provider is undefined");
-            return this.provider.wait(tx.id, type, timeout);
-        };
-        return { receipt, transaction: tx };
+        return this.provider.sendTransaction(tx);
     }
     /**
      * Function to recover the public key from hash and signature
