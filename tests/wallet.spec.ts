@@ -672,7 +672,7 @@ describe("Wallet and Contract", () => {
 
         switch (body.method) {
           case "chain.get_account_nonce":
-            return fetchResponse({ nonce: "OAE=" });
+            return fetchResponse({ nonce: "KAA=" });
           case "chain.get_account_rc":
             return fetchResponse({ rc: "50000000" });
           case "chain.get_chain_id":
@@ -702,11 +702,11 @@ describe("Wallet and Contract", () => {
     } as OperationJson);
 
     expect(transaction).toStrictEqual({
-      id: "0x1220da3476bafa228cd753bd0def659ae743cbec2135b46e6aff06f67b0c2f16fc93",
+      id: "0x1220463ac80ce9e3d146131c1dff5f2c408ad4a891decd1195986b553ae60a211a8d",
       header: {
         chain_id: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
         rc_limit: "50000000",
-        nonce: "OAI=",
+        nonce: "KAE=",
         operation_merkle_root:
           "EiANCoU4oibgL8tpnbuXZ_0aT5M0yKNLu6Fw9FLeD9oOhA==",
         payer: addressCompressed,
@@ -890,21 +890,21 @@ describe("Wallet and Contract", () => {
       header: {
         chain_id: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
         rc_limit: "0",
-        nonce: "OBI=",
+        nonce: "KAA=",
         operation_merkle_root:
           "EiCmVXWAuzW5xo1Pefx4256N_B_78cXvKwUxWFtKiY-PqQ==",
         payer: addressCompressed,
       },
-      id: "0x1220c347788d427d457cfd78009375642f85f5859ac116fb58472ff201866efcdd6d",
+      id: "0x122001f48ea8313c9ecccf06f5f5bd8ed7f949f806f3fdddc322bdab643d2c66e58c",
       signatures: [
-        "HwnYjHzMWN1eVTod2T8w5R9MPSive9UOdsj1WayWa73Sdj9hqWBWZF5Z-mBlOa6Btfk8baCghpQ-dTfslF0VSRY=",
+        "H47dht-BoxcLErCtQ8-6gXJ8HXVXwCpszvX4NbzGxJF8aa-qHN6SxE-iolOOTy-tE4C7K6826JOO6J5Z2mcn8p0=",
       ],
     };
 
     expect(operation).toBeDefined();
     expect(transaction).toMatchObject({
       ...expectedTransaction,
-      wait: expect.any(Function) as Function,
+      wait: expect.any(Function) as WaitFunction,
     } as TransactionJsonWait);
     expect(result).toBeUndefined();
     expect(noReceipt).toBeUndefined();
@@ -919,7 +919,7 @@ describe("Wallet and Contract", () => {
     expect(receiptReceived).toStrictEqual(receipt);
     expect(transactionSend).toStrictEqual({
       ...expectedTransaction,
-      wait: expect.any(Function) as Function,
+      wait: expect.any(Function) as WaitFunction,
     } as TransactionJsonWait);
     expect(transaction!.wait.toString()).toStrictEqual(
       expect.stringContaining(
@@ -933,9 +933,9 @@ describe("Wallet and Contract", () => {
     jest.clearAllMocks();
 
     mockFetch.mockImplementationOnce(async () =>
-      fetchResponse({ nonce: "OBE=" })
+      fetchResponse({ nonce: "KAA=" })
     ); // nonce
-    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () => fetchResponse("KAA=")); // rc limit
     mockFetch.mockImplementationOnce(async () =>
       fetchError({
         code: -32603,
@@ -1074,13 +1074,13 @@ describe("Wallet and Contract", () => {
         // eslint-disable-next-line @typescript-eslint/no-throw-literal
         throw fetchResponse({ message: "internal error" }, 500);
       }
-      return fetchResponse({ nonce: "OHs=" });
+      return fetchResponse({ nonce: "KAA=" });
     });
 
     const nonce = await myProvider.getNonce(address);
 
     expect(numErrors).toBe(2);
-    expect(nonce).toBe(123);
+    expect(nonce).toBe(0);
   });
 
   it("should upload a contract", async () => {
@@ -1130,14 +1130,14 @@ describe("Wallet and Contract", () => {
       header: {
         chain_id: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
         rc_limit: "50000000",
-        nonce: "OAE=",
+        nonce: "KAA=",
         operation_merkle_root:
           "EiA0Va7dkQWSgpAGLURZeJtOc33JtsWFrqdk_1_oWtKMSA==",
         payer: addressCompressed,
       },
-      id: "0x1220d6bcf054d67de8de619c5c9212b0ec1bfea0a32adc6edbb68719cc914675b243",
+      id: "0x1220d4a58fa175764e569431add0a5ee89a1d8ecfcc3c4728f426e589b2b04d6db41",
       signatures: [
-        "HydetCgjGkgHok-ClGgtdo5XuW0fIB5dhE-tZomWs6sfCLhjTL50Y6YtPmn6w2Ms-rJNdH5cC7Gf6o1BAvlpTCw=",
+        "IDcke0uJfY1ZrbY6EYAS_eWzeKuUrKSdCxhwELSKAyAvEFzghLTPK7rJdsGLuzOaEp6aciL0cnDFQaC1rkjMSUI=",
       ],
       wait: expect.any(Function) as WaitFunction,
     } as TransactionJson);
@@ -1172,7 +1172,7 @@ describe("Wallet and Contract", () => {
                     chain_id:
                       "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
                     rc_limit: "10000000",
-                    nonce: "OAE=",
+                    nonce: "KAA=",
                     operation_merkle_root:
                       "EiCVjlPWCZjF-hpfHZZG6XFVPnOBGcenqkIWc3XgS4_nhA==",
                     payer: "1AeXf4DF1DNPmrdcKp8jVPCbSspb9FrCtT",

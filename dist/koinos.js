@@ -134,6 +134,65 @@ module.exports = base
 
 /***/ }),
 
+/***/ 7320:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.output = exports.exists = exports.hash = exports.bytes = exports.bool = exports.number = void 0;
+function number(n) {
+    if (!Number.isSafeInteger(n) || n < 0)
+        throw new Error(`Wrong positive integer: ${n}`);
+}
+exports.number = number;
+function bool(b) {
+    if (typeof b !== 'boolean')
+        throw new Error(`Expected boolean, not ${b}`);
+}
+exports.bool = bool;
+function bytes(b, ...lengths) {
+    if (!(b instanceof Uint8Array))
+        throw new TypeError('Expected Uint8Array');
+    if (lengths.length > 0 && !lengths.includes(b.length))
+        throw new TypeError(`Expected Uint8Array of length ${lengths}, not of length=${b.length}`);
+}
+exports.bytes = bytes;
+function hash(hash) {
+    if (typeof hash !== 'function' || typeof hash.create !== 'function')
+        throw new Error('Hash should be wrapped by utils.wrapConstructor');
+    number(hash.outputLen);
+    number(hash.blockLen);
+}
+exports.hash = hash;
+function exists(instance, checkFinished = true) {
+    if (instance.destroyed)
+        throw new Error('Hash instance has been destroyed');
+    if (checkFinished && instance.finished)
+        throw new Error('Hash#digest() has already been called');
+}
+exports.exists = exists;
+function output(out, instance) {
+    bytes(out);
+    const min = instance.outputLen;
+    if (out.length < min) {
+        throw new Error(`digestInto() expects output buffer of length at least ${min}`);
+    }
+}
+exports.output = output;
+const assert = {
+    number,
+    bool,
+    bytes,
+    hash,
+    exists,
+    output,
+};
+exports["default"] = assert;
+
+
+/***/ }),
+
 /***/ 7505:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
@@ -141,6 +200,7 @@ module.exports = base
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SHA2 = void 0;
+const _assert_js_1 = __webpack_require__(7320);
 const utils_js_1 = __webpack_require__(8089);
 // Polyfill for Safari 14
 function setBigUint64(view, byteOffset, value, isLE) {
@@ -171,11 +231,8 @@ class SHA2 extends utils_js_1.Hash {
         this.view = (0, utils_js_1.createView)(this.buffer);
     }
     update(data) {
-        if (this.destroyed)
-            throw new Error('instance is destroyed');
-        const { view, buffer, blockLen, finished } = this;
-        if (finished)
-            throw new Error('digest() was already called');
+        _assert_js_1.default.exists(this);
+        const { view, buffer, blockLen } = this;
         data = (0, utils_js_1.toBytes)(data);
         const len = data.length;
         for (let pos = 0; pos < len;) {
@@ -200,12 +257,8 @@ class SHA2 extends utils_js_1.Hash {
         return this;
     }
     digestInto(out) {
-        if (this.destroyed)
-            throw new Error('instance is destroyed');
-        if (!(out instanceof Uint8Array) || out.length < this.outputLen)
-            throw new Error('_Sha2: Invalid output buffer');
-        if (this.finished)
-            throw new Error('digest() was already called');
+        _assert_js_1.default.exists(this);
+        _assert_js_1.default.output(out, this);
         this.finished = true;
         // Padding
         // We can avoid allocation of buffer for padding completely if it
@@ -223,9 +276,9 @@ class SHA2 extends utils_js_1.Hash {
         // Pad until full block byte with zeros
         for (let i = pos; i < blockLen; i++)
             buffer[i] = 0;
-        // NOTE: sha512 requires length to be 128bit integer, but length in JS will overflow before that
+        // Note: sha512 requires length to be 128bit integer, but length in JS will overflow before that
         // You need to write around 2 exabytes (u64_max / 8 / (1024**6)) for this to happen.
-        // So we just write lowest 64bit of that value.
+        // So we just write lowest 64 bits of that value.
         setBigUint64(view, blockLen - 8, BigInt(this.length * 8), isLE);
         this.process(view, 0);
         const oview = (0, utils_js_1.createView)(out);
@@ -501,14 +554,13 @@ exports.sha256 = (0, utils_js_1.wrapConstructor)(() => new SHA256());
 /***/ }),
 
 /***/ 8089:
-/***/ ((module, exports, __webpack_require__) => {
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
-/* module decorator */ module = __webpack_require__.nmd(module);
 
 /*! noble-hashes - MIT License (c) 2022 Paul Miller (paulmillr.com) */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.randomBytes = exports.wrapConstructorWithOpts = exports.wrapConstructor = exports.checkOpts = exports.Hash = exports.assertHash = exports.assertBytes = exports.assertBool = exports.assertNumber = exports.concatBytes = exports.toBytes = exports.utf8ToBytes = exports.asyncLoop = exports.nextTick = exports.hexToBytes = exports.bytesToHex = exports.isLE = exports.rotr = exports.createView = exports.u32 = exports.u8 = void 0;
+exports.randomBytes = exports.wrapConstructorWithOpts = exports.wrapConstructor = exports.checkOpts = exports.Hash = exports.concatBytes = exports.toBytes = exports.utf8ToBytes = exports.asyncLoop = exports.nextTick = exports.hexToBytes = exports.bytesToHex = exports.isLE = exports.rotr = exports.createView = exports.u32 = exports.u8 = void 0;
 // The import here is via the package name. This is to ensure
 // that exports mapping/resolution does fall into place.
 const crypto_1 = __webpack_require__(4421);
@@ -524,7 +576,7 @@ exports.createView = createView;
 const rotr = (word, shift) => (word << (32 - shift)) | (word >>> shift);
 exports.rotr = rotr;
 exports.isLE = new Uint8Array(new Uint32Array([0x11223344]).buffer)[0] === 0x44;
-// There is almost no big endian hardware, but js typed arrays uses platform specific endianess.
+// There is almost no big endian hardware, but js typed arrays uses platform specific endianness.
 // So, just to be sure not to corrupt anything.
 if (!exports.isLE)
     throw new Error('Non little-endian hardware is not supported');
@@ -534,6 +586,8 @@ const hexes = Array.from({ length: 256 }, (v, i) => i.toString(16).padStart(2, '
  */
 function bytesToHex(uint8a) {
     // pre-caching improves the speed 6x
+    if (!(uint8a instanceof Uint8Array))
+        throw new Error('Uint8Array expected');
     let hex = '';
     for (let i = 0; i < uint8a.length; i++) {
         hex += hexes[uint8a[i]];
@@ -555,28 +609,17 @@ function hexToBytes(hex) {
         const j = i * 2;
         const hexByte = hex.slice(j, j + 2);
         const byte = Number.parseInt(hexByte, 16);
-        if (Number.isNaN(byte))
+        if (Number.isNaN(byte) || byte < 0)
             throw new Error('Invalid byte sequence');
         array[i] = byte;
     }
     return array;
 }
 exports.hexToBytes = hexToBytes;
-// Currently avoid insertion of polyfills with packers (browserify/webpack/etc)
-// But setTimeout is pretty slow, maybe worth to investigate howto do minimal polyfill here
-exports.nextTick = (() => {
-    const nodeRequire =  true &&
-        typeof module.require === 'function' &&
-        module.require.bind(module);
-    try {
-        if (nodeRequire) {
-            const { setImmediate } = nodeRequire('timers');
-            return () => new Promise((resolve) => setImmediate(resolve));
-        }
-    }
-    catch (e) { }
-    return () => new Promise((resolve) => setTimeout(resolve, 0));
-})();
+// There is no setImmediate in browser and setTimeout is slow. However, call to async function will return Promise
+// which will be fullfiled only on next scheduler queue processing step and this is exactly what we need.
+const nextTick = async () => { };
+exports.nextTick = nextTick;
 // Returns control to thread each 'tick' ms to avoid blocking
 async function asyncLoop(iters, tick, cb) {
     let ts = Date.now();
@@ -625,31 +668,6 @@ function concatBytes(...arrays) {
     return result;
 }
 exports.concatBytes = concatBytes;
-function assertNumber(n) {
-    if (!Number.isSafeInteger(n) || n < 0)
-        throw new Error(`Wrong positive integer: ${n}`);
-}
-exports.assertNumber = assertNumber;
-function assertBool(b) {
-    if (typeof b !== 'boolean') {
-        throw new Error(`Expected boolean, not ${b}`);
-    }
-}
-exports.assertBool = assertBool;
-function assertBytes(bytes, ...lengths) {
-    if (bytes instanceof Uint8Array && (!lengths.length || lengths.includes(bytes.length))) {
-        return;
-    }
-    throw new TypeError(`Expected ${lengths} bytes, not ${typeof bytes} with length=${bytes.length}`);
-}
-exports.assertBytes = assertBytes;
-function assertHash(hash) {
-    if (typeof hash !== 'function' || typeof hash.create !== 'function')
-        throw new Error('Hash should be wrapped by utils.wrapConstructor');
-    assertNumber(hash.outputLen);
-    assertNumber(hash.blockLen);
-}
-exports.assertHash = assertHash;
 // For runtime check if class implements interface
 class Hash {
     // Safe version that clones internal state
@@ -660,11 +678,11 @@ class Hash {
 exports.Hash = Hash;
 // Check if object doens't have custom constructor (like Uint8Array/Array)
 const isPlainObject = (obj) => Object.prototype.toString.call(obj) === '[object Object]' && obj.constructor === Object;
-function checkOpts(def, _opts) {
-    if (_opts !== undefined && (typeof _opts !== 'object' || !isPlainObject(_opts)))
+function checkOpts(defaults, opts) {
+    if (opts !== undefined && (typeof opts !== 'object' || !isPlainObject(opts)))
         throw new TypeError('Options should be object or undefined');
-    const opts = Object.assign(def, _opts);
-    return opts;
+    const merged = Object.assign(defaults, opts);
+    return merged;
 }
 exports.checkOpts = checkOpts;
 function wrapConstructor(hashConstructor) {
@@ -705,17 +723,14 @@ exports.randomBytes = randomBytes;
 /***/ }),
 
 /***/ 9656:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 /*! noble-secp256k1 - MIT License (c) 2019 Paul Miller (paulmillr.com) */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.utils = exports.schnorr = exports.verify = exports.signSync = exports.sign = exports.getSharedSecret = exports.recoverPublicKey = exports.getPublicKey = exports.Signature = exports.Point = exports.CURVE = void 0;
-const crypto_1 = __importDefault(__webpack_require__(9159));
+const nodeCrypto = __webpack_require__(9159);
 const _0n = BigInt(0);
 const _1n = BigInt(1);
 const _2n = BigInt(2);
@@ -760,25 +775,27 @@ class JacobianPoint {
         return JacobianPoint.toAffineBatch(points).map(JacobianPoint.fromAffine);
     }
     equals(other) {
-        const a = this;
-        const b = other;
-        const az2 = mod(a.z * a.z);
-        const az3 = mod(a.z * az2);
-        const bz2 = mod(b.z * b.z);
-        const bz3 = mod(b.z * bz2);
-        return mod(a.x * bz2) === mod(az2 * b.x) && mod(a.y * bz3) === mod(az3 * b.y);
+        if (!(other instanceof JacobianPoint))
+            throw new TypeError('JacobianPoint expected');
+        const { x: X1, y: Y1, z: Z1 } = this;
+        const { x: X2, y: Y2, z: Z2 } = other;
+        const Z1Z1 = mod(Z1 ** _2n);
+        const Z2Z2 = mod(Z2 ** _2n);
+        const U1 = mod(X1 * Z2Z2);
+        const U2 = mod(X2 * Z1Z1);
+        const S1 = mod(mod(Y1 * Z2) * Z2Z2);
+        const S2 = mod(mod(Y2 * Z1) * Z1Z1);
+        return U1 === U2 && S1 === S2;
     }
     negate() {
         return new JacobianPoint(this.x, mod(-this.y), this.z);
     }
     double() {
-        const X1 = this.x;
-        const Y1 = this.y;
-        const Z1 = this.z;
+        const { x: X1, y: Y1, z: Z1 } = this;
         const A = mod(X1 ** _2n);
         const B = mod(Y1 ** _2n);
         const C = mod(B ** _2n);
-        const D = mod(_2n * (mod(mod((X1 + B) ** _2n)) - A - C));
+        const D = mod(_2n * (mod((X1 + B) ** _2n) - A - C));
         const E = mod(_3n * A);
         const F = mod(E ** _2n);
         const X3 = mod(F - _2n * D);
@@ -787,15 +804,10 @@ class JacobianPoint {
         return new JacobianPoint(X3, Y3, Z3);
     }
     add(other) {
-        if (!(other instanceof JacobianPoint)) {
-            throw new TypeError('JacobianPoint#add: expected JacobianPoint');
-        }
-        const X1 = this.x;
-        const Y1 = this.y;
-        const Z1 = this.z;
-        const X2 = other.x;
-        const Y2 = other.y;
-        const Z2 = other.z;
+        if (!(other instanceof JacobianPoint))
+            throw new TypeError('JacobianPoint expected');
+        const { x: X1, y: Y1, z: Z1 } = this;
+        const { x: X2, y: Y2, z: Z2 } = other;
         if (X2 === _0n || Y2 === _0n)
             return this;
         if (X1 === _0n || Y1 === _0n)
@@ -804,7 +816,7 @@ class JacobianPoint {
         const Z2Z2 = mod(Z2 ** _2n);
         const U1 = mod(X1 * Z2Z2);
         const U2 = mod(X2 * Z1Z1);
-        const S1 = mod(Y1 * Z2 * Z2Z2);
+        const S1 = mod(mod(Y1 * Z2) * Z2Z2);
         const S2 = mod(mod(Y2 * Z1) * Z1Z1);
         const H = mod(U2 - U1);
         const r = mod(S2 - S1);
@@ -828,9 +840,14 @@ class JacobianPoint {
         return this.add(other.negate());
     }
     multiplyUnsafe(scalar) {
+        const P0 = JacobianPoint.ZERO;
+        if (typeof scalar === 'bigint' && scalar === _0n)
+            return P0;
         let n = normalizeScalar(scalar);
+        if (n === _1n)
+            return this;
         if (!USE_ENDOMORPHISM) {
-            let p = JacobianPoint.ZERO;
+            let p = P0;
             let d = this;
             while (n > _0n) {
                 if (n & _1n)
@@ -841,8 +858,8 @@ class JacobianPoint {
             return p;
         }
         let { k1neg, k1, k2neg, k2 } = splitScalarEndo(n);
-        let k1p = JacobianPoint.ZERO;
-        let k2p = JacobianPoint.ZERO;
+        let k1p = P0;
+        let k2p = P0;
         let d = this;
         while (k1 > _0n || k2 > _0n) {
             if (k1 & _1n)
@@ -893,7 +910,7 @@ class JacobianPoint {
         }
         let p = JacobianPoint.ZERO;
         let f = JacobianPoint.ZERO;
-        const windows = USE_ENDOMORPHISM ? 128 / W + 1 : 256 / W + 1;
+        const windows = 1 + (USE_ENDOMORPHISM ? 128 / W : 256 / W);
         const windowSize = 2 ** (W - 1);
         const mask = BigInt(2 ** W - 1);
         const maxNumber = 2 ** W;
@@ -926,7 +943,7 @@ class JacobianPoint {
         let point;
         let fake;
         if (USE_ENDOMORPHISM) {
-            let { k1neg, k1, k2neg, k2 } = splitScalarEndo(n);
+            const { k1neg, k1, k2neg, k2 } = splitScalarEndo(n);
             let { p: k1p, f: f1p } = this.wNAF(k1, affinePoint);
             let { p: k2p, f: f2p } = this.wNAF(k2, affinePoint);
             if (k1neg)
@@ -938,17 +955,23 @@ class JacobianPoint {
             fake = f1p.add(f2p);
         }
         else {
-            let { p, f } = this.wNAF(n, affinePoint);
+            const { p, f } = this.wNAF(n, affinePoint);
             point = p;
             fake = f;
         }
         return JacobianPoint.normalizeZ([point, fake])[0];
     }
     toAffine(invZ = invert(this.z)) {
-        const invZ2 = invZ ** _2n;
-        const x = mod(this.x * invZ2);
-        const y = mod(this.y * invZ2 * invZ);
-        return new Point(x, y);
+        const { x, y, z } = this;
+        const iz1 = invZ;
+        const iz2 = mod(iz1 * iz1);
+        const iz3 = mod(iz2 * iz1);
+        const ax = mod(x * iz2);
+        const ay = mod(y * iz3);
+        const zz = mod(z * iz1);
+        if (zz !== _1n)
+            throw new Error('invZ was invalid');
+        return new Point(ax, ay);
     }
 }
 JacobianPoint.BASE = new JacobianPoint(CURVE.Gx, CURVE.Gy, _1n);
@@ -965,7 +988,9 @@ class Point {
     }
     static fromCompressedHex(bytes) {
         const isShort = bytes.length === 32;
-        const x = bytesToNumber(isShort ? bytes : bytes.slice(1));
+        const x = bytesToNumber(isShort ? bytes : bytes.subarray(1));
+        if (!isValidFieldElement(x))
+            throw new Error('Point is not on curve');
         const y2 = weistrass(x);
         let y = sqrtMod(y2);
         const isYOdd = (y & _1n) === _1n;
@@ -983,52 +1008,56 @@ class Point {
         return point;
     }
     static fromUncompressedHex(bytes) {
-        const x = bytesToNumber(bytes.slice(1, 33));
-        const y = bytesToNumber(bytes.slice(33));
+        const x = bytesToNumber(bytes.subarray(1, 33));
+        const y = bytesToNumber(bytes.subarray(33, 65));
         const point = new Point(x, y);
         point.assertValidity();
         return point;
     }
     static fromHex(hex) {
         const bytes = ensureBytes(hex);
+        const len = bytes.length;
         const header = bytes[0];
-        if (bytes.length === 32 || (bytes.length === 33 && (header === 0x02 || header === 0x03))) {
+        if (len === 32 || (len === 33 && (header === 0x02 || header === 0x03))) {
             return this.fromCompressedHex(bytes);
         }
-        if (bytes.length === 65 && header === 0x04)
+        if (len === 65 && header === 0x04)
             return this.fromUncompressedHex(bytes);
-        throw new Error(`Point.fromHex: received invalid point. Expected 32-33 compressed bytes or 65 uncompressed bytes, not ${bytes.length}`);
+        throw new Error(`Point.fromHex: received invalid point. Expected 32-33 compressed bytes or 65 uncompressed bytes, not ${len}`);
     }
     static fromPrivateKey(privateKey) {
         return Point.BASE.multiply(normalizePrivateKey(privateKey));
     }
     static fromSignature(msgHash, signature, recovery) {
-        let h = msgHash instanceof Uint8Array ? bytesToNumber(msgHash) : hexToNumber(msgHash);
-        const sig = normalizeSignature(signature);
-        const { r, s } = sig;
+        msgHash = ensureBytes(msgHash);
+        const h = truncateHash(msgHash);
+        const { r, s } = normalizeSignature(signature);
         if (recovery !== 0 && recovery !== 1) {
             throw new Error('Cannot recover signature: invalid recovery bit');
         }
-        const prefix = 2 + (recovery & 1);
-        const P_ = Point.fromHex(`0${prefix}${pad64(r)}`);
-        const sP = JacobianPoint.fromAffine(P_).multiplyUnsafe(s);
-        const hG = JacobianPoint.BASE.multiply(h);
-        const rinv = invert(r, CURVE.n);
-        const Q = sP.subtract(hG).multiplyUnsafe(rinv);
-        const point = Q.toAffine();
-        point.assertValidity();
-        return point;
+        const prefix = recovery & 1 ? '03' : '02';
+        const R = Point.fromHex(prefix + numTo32bStr(r));
+        const { n } = CURVE;
+        const rinv = invert(r, n);
+        const u1 = mod(-h * rinv, n);
+        const u2 = mod(s * rinv, n);
+        const Q = Point.BASE.multiplyAndAddUnsafe(R, u1, u2);
+        if (!Q)
+            throw new Error('Cannot recover signature: point at infinify');
+        Q.assertValidity();
+        return Q;
     }
     toRawBytes(isCompressed = false) {
         return hexToBytes(this.toHex(isCompressed));
     }
     toHex(isCompressed = false) {
-        const x = pad64(this.x);
+        const x = numTo32bStr(this.x);
         if (isCompressed) {
-            return `${this.y & _1n ? '03' : '02'}${x}`;
+            const prefix = this.y & _1n ? '03' : '02';
+            return `${prefix}${x}`;
         }
         else {
-            return `04${x}${pad64(this.y)}`;
+            return `04${x}${numTo32bStr(this.y)}`;
         }
     }
     toHexX() {
@@ -1040,7 +1069,7 @@ class Point {
     assertValidity() {
         const msg = 'Point is not on elliptic curve';
         const { x, y } = this;
-        if (!isWithinCurvePrime(x) || !isWithinCurvePrime(y))
+        if (!isValidFieldElement(x) || !isValidFieldElement(y))
             throw new Error(msg);
         const left = mod(y * y);
         const right = weistrass(x);
@@ -1064,6 +1093,13 @@ class Point {
     }
     multiply(scalar) {
         return JacobianPoint.fromAffine(this).multiply(scalar, this).toAffine();
+    }
+    multiplyAndAddUnsafe(Q, a, b) {
+        const P = JacobianPoint.fromAffine(this);
+        const aP = a === _0n || a === _1n || this !== Point.BASE ? P.multiplyUnsafe(a) : P.multiply(a);
+        const bQ = JacobianPoint.fromAffine(Q).multiplyUnsafe(b);
+        const sum = aP.add(bQ);
+        return sum.equals(JacobianPoint.ZERO) ? undefined : sum.toAffine();
     }
 }
 exports.Point = Point;
@@ -1107,7 +1143,7 @@ class Signature {
         this.assertValidity();
     }
     static fromCompact(hex) {
-        const arr = hex instanceof Uint8Array;
+        const arr = isUint8a(hex);
         const name = 'Signature.fromCompact';
         if (typeof hex !== 'string' && !arr)
             throw new TypeError(`${name}: Expected string or Uint8Array`);
@@ -1117,7 +1153,7 @@ class Signature {
         return new Signature(hexToNumber(str.slice(0, 64)), hexToNumber(str.slice(64, 128)));
     }
     static fromDER(hex) {
-        const arr = hex instanceof Uint8Array;
+        const arr = isUint8a(hex);
         if (typeof hex !== 'string' && !arr)
             throw new TypeError(`Signature.fromDER: Expected string or Uint8Array`);
         const { r, s } = parseDERSignature(arr ? hex : hexToBytes(hex));
@@ -1144,13 +1180,13 @@ class Signature {
         return hexToBytes(this.toDERHex(isCompressed));
     }
     toDERHex(isCompressed = false) {
-        const sHex = sliceDER(numberToHex(this.s));
+        const sHex = sliceDER(numberToHexUnpadded(this.s));
         if (isCompressed)
             return sHex;
-        const rHex = sliceDER(numberToHex(this.r));
-        const rLen = numberToHex(rHex.length / 2);
-        const sLen = numberToHex(sHex.length / 2);
-        const length = numberToHex(rHex.length / 2 + sHex.length / 2 + 4);
+        const rHex = sliceDER(numberToHexUnpadded(this.r));
+        const rLen = numberToHexUnpadded(rHex.length / 2);
+        const sLen = numberToHexUnpadded(sHex.length / 2);
+        const length = numberToHexUnpadded(rHex.length / 2 + sHex.length / 2 + 4);
         return `30${length}02${rLen}${rHex}02${sLen}${sHex}`;
     }
     toRawBytes() {
@@ -1163,12 +1199,12 @@ class Signature {
         return hexToBytes(this.toCompactHex());
     }
     toCompactHex() {
-        return pad64(this.r) + pad64(this.s);
+        return numTo32bStr(this.r) + numTo32bStr(this.s);
     }
 }
 exports.Signature = Signature;
 function concatBytes(...arrays) {
-    if (!arrays.every((a) => a instanceof Uint8Array))
+    if (!arrays.every(isUint8a))
         throw new Error('Uint8Array list expected');
     if (arrays.length === 1)
         return arrays[0];
@@ -1181,23 +1217,28 @@ function concatBytes(...arrays) {
     }
     return result;
 }
+function isUint8a(bytes) {
+    return bytes instanceof Uint8Array;
+}
 const hexes = Array.from({ length: 256 }, (v, i) => i.toString(16).padStart(2, '0'));
 function bytesToHex(uint8a) {
+    if (!(uint8a instanceof Uint8Array))
+        throw new Error('Expected Uint8Array');
     let hex = '';
     for (let i = 0; i < uint8a.length; i++) {
         hex += hexes[uint8a[i]];
     }
     return hex;
 }
-function pad64(num) {
+function numTo32bStr(num) {
     if (num > POW_2_256)
-        throw new Error('pad64: invalid number');
+        throw new Error('Expected number < 2^256');
     return num.toString(16).padStart(64, '0');
 }
-function pad32b(num) {
-    return hexToBytes(pad64(num));
+function numTo32b(num) {
+    return hexToBytes(numTo32bStr(num));
 }
-function numberToHex(num) {
+function numberToHexUnpadded(num) {
     const hex = num.toString(16);
     return hex.length & 1 ? `0${hex}` : hex;
 }
@@ -1218,22 +1259,20 @@ function hexToBytes(hex) {
         const j = i * 2;
         const hexByte = hex.slice(j, j + 2);
         const byte = Number.parseInt(hexByte, 16);
-        if (Number.isNaN(byte))
+        if (Number.isNaN(byte) || byte < 0)
             throw new Error('Invalid byte sequence');
         array[i] = byte;
     }
     return array;
 }
-function ensureBytes(hex) {
-    return hex instanceof Uint8Array ? hex : hexToBytes(hex);
-}
 function bytesToNumber(bytes) {
-    if (!(bytes instanceof Uint8Array))
-        throw new Error('Expected Uint8Array');
     return hexToNumber(bytesToHex(bytes));
 }
+function ensureBytes(hex) {
+    return hex instanceof Uint8Array ? Uint8Array.from(hex) : hexToBytes(hex);
+}
 function normalizeScalar(num) {
-    if (typeof num === 'number' && num > 0 && Number.isSafeInteger(num))
+    if (typeof num === 'number' && Number.isSafeInteger(num) && num > 0)
         return BigInt(num);
     if (typeof num === 'bigint' && isWithinCurveOrder(num))
         return num;
@@ -1241,7 +1280,7 @@ function normalizeScalar(num) {
 }
 function mod(a, b = CURVE.P) {
     const result = a % b;
-    return result >= 0 ? result : b + result;
+    return result >= _0n ? result : b + result;
 }
 function pow2(x, power) {
     const { P } = CURVE;
@@ -1294,25 +1333,22 @@ function invert(number, modulo = CURVE.P) {
         throw new Error('invert: does not exist');
     return mod(x, modulo);
 }
-function invertBatch(nums, n = CURVE.P) {
-    const len = nums.length;
-    const scratch = new Array(len);
-    let acc = _1n;
-    for (let i = 0; i < len; i++) {
-        if (nums[i] === _0n)
-            continue;
+function invertBatch(nums, p = CURVE.P) {
+    const scratch = new Array(nums.length);
+    const lastMultiplied = nums.reduce((acc, num, i) => {
+        if (num === _0n)
+            return acc;
         scratch[i] = acc;
-        acc = mod(acc * nums[i], n);
-    }
-    acc = invert(acc, n);
-    for (let i = len - 1; i >= 0; i--) {
-        if (nums[i] === _0n)
-            continue;
-        const tmp = mod(acc * nums[i], n);
-        nums[i] = mod(acc * scratch[i], n);
-        acc = tmp;
-    }
-    return nums;
+        return mod(acc * num, p);
+    }, _1n);
+    const inverted = invert(lastMultiplied, p);
+    nums.reduceRight((acc, num, i) => {
+        if (num === _0n)
+            return acc;
+        scratch[i] = mod(acc * scratch[i], p);
+        return mod(acc * num, p);
+    }, inverted);
+    return scratch;
 }
 const divNearest = (a, b) => (a + b / _2n) / b;
 const POW_2_128 = _2n ** BigInt(128);
@@ -1332,23 +1368,21 @@ function splitScalarEndo(k) {
         k1 = n - k1;
     if (k2neg)
         k2 = n - k2;
-    if (k1 > POW_2_128 || k2 > POW_2_128)
-        throw new Error('splitScalarEndo: Endomorphism failed');
+    if (k1 > POW_2_128 || k2 > POW_2_128) {
+        throw new Error('splitScalarEndo: Endomorphism failed, k=' + k);
+    }
     return { k1neg, k1, k2neg, k2 };
 }
 function truncateHash(hash) {
-    if (typeof hash !== 'string')
-        hash = bytesToHex(hash);
-    let msg = hexToNumber(hash || '0');
-    const byteLength = hash.length / 2;
+    const { n } = CURVE;
+    const byteLength = hash.length;
     const delta = byteLength * 8 - 256;
-    if (delta > 0) {
-        msg = msg >> BigInt(delta);
-    }
-    if (msg >= CURVE.n) {
-        msg -= CURVE.n;
-    }
-    return msg;
+    let h = bytesToNumber(hash);
+    if (delta > 0)
+        h = h >> BigInt(delta);
+    if (h >= n)
+        h -= n;
+    return h;
 }
 class HmacDrbg {
     constructor() {
@@ -1403,8 +1437,8 @@ class HmacDrbg {
 function isWithinCurveOrder(num) {
     return _0n < num && num < CURVE.n;
 }
-function isWithinCurvePrime(num) {
-    return 0n < num && num < CURVE.P;
+function isValidFieldElement(num) {
+    return _0n < num && num < CURVE.P;
 }
 function kmdToSig(kBytes, m, d) {
     const k = bytesToNumber(kBytes);
@@ -1435,7 +1469,7 @@ function normalizePrivateKey(key) {
             throw new Error('Expected 32 bytes of private key');
         num = hexToNumber(key);
     }
-    else if (key instanceof Uint8Array) {
+    else if (isUint8a(key)) {
         if (key.length !== 32)
             throw new Error('Expected 32 bytes of private key');
         num = bytesToNumber(key);
@@ -1472,12 +1506,12 @@ function getPublicKey(privateKey, isCompressed = false) {
     return Point.fromPrivateKey(privateKey).toRawBytes(isCompressed);
 }
 exports.getPublicKey = getPublicKey;
-function recoverPublicKey(msgHash, signature, recovery) {
-    return Point.fromSignature(msgHash, signature, recovery).toRawBytes();
+function recoverPublicKey(msgHash, signature, recovery, isCompressed = false) {
+    return Point.fromSignature(msgHash, signature, recovery).toRawBytes(isCompressed);
 }
 exports.recoverPublicKey = recoverPublicKey;
 function isPub(item) {
-    const arr = item instanceof Uint8Array;
+    const arr = isUint8a(item);
     const str = typeof item === 'string';
     const len = (arr || str) && item.length;
     if (arr)
@@ -1510,21 +1544,21 @@ function bits2octets(bytes) {
 function int2octets(num) {
     if (typeof num !== 'bigint')
         throw new Error('Expected bigint');
-    const hex = pad64(num);
+    const hex = numTo32bStr(num);
     return hexToBytes(hex);
 }
 function initSigArgs(msgHash, privateKey, extraEntropy) {
     if (msgHash == null)
-        throw new Error(`sign: expected valid msgHash, not "${msgHash}"`);
+        throw new Error(`sign: expected valid message hash, not "${msgHash}"`);
     const h1 = ensureBytes(msgHash);
     const d = normalizePrivateKey(privateKey);
     const seedArgs = [int2octets(d), bits2octets(h1)];
     if (extraEntropy != null) {
         if (extraEntropy === true)
             extraEntropy = exports.utils.randomBytes(32);
-        const e = pad32b(bytesToNumber(ensureBytes(extraEntropy)));
+        const e = ensureBytes(extraEntropy);
         if (e.length !== 32)
-            throw new Error('secp256k1: Expected 32 bytes of extra data');
+            throw new Error('sign: Expected 32 bytes of extra data');
         seedArgs.push(e);
     }
     const seed = concatBytes(...seedArgs);
@@ -1566,6 +1600,7 @@ function verify(signature, msgHash, publicKey, opts = vopts) {
     let sig;
     try {
         sig = normalizeSignature(signature);
+        msgHash = ensureBytes(msgHash);
     }
     catch (error) {
         return false;
@@ -1574,57 +1609,51 @@ function verify(signature, msgHash, publicKey, opts = vopts) {
     if (opts.strict && sig.hasHighS())
         return false;
     const h = truncateHash(msgHash);
-    if (h === _0n)
-        return false;
-    let pubKey;
+    let P;
     try {
-        pubKey = JacobianPoint.fromAffine(normalizePublicKey(publicKey));
+        P = normalizePublicKey(publicKey);
     }
     catch (error) {
         return false;
     }
     const { n } = CURVE;
-    const s1 = invert(s, n);
-    const u1 = mod(h * s1, n);
-    const u2 = mod(r * s1, n);
-    const Ghs1 = JacobianPoint.BASE.multiply(u1);
-    const Prs1 = pubKey.multiplyUnsafe(u2);
-    const R = Ghs1.add(Prs1).toAffine();
+    const sinv = invert(s, n);
+    const u1 = mod(h * sinv, n);
+    const u2 = mod(r * sinv, n);
+    const R = Point.BASE.multiplyAndAddUnsafe(P, u1, u2);
+    if (!R)
+        return false;
     const v = mod(R.x, n);
     return v === r;
 }
 exports.verify = verify;
-async function taggedHash(tag, ...messages) {
-    const tagB = new Uint8Array(tag.split('').map((c) => c.charCodeAt(0)));
-    const tagH = await exports.utils.sha256(tagB);
-    const h = await exports.utils.sha256(concatBytes(tagH, tagH, ...messages));
-    return bytesToNumber(h);
-}
-async function createChallenge(x, P, message) {
-    const rx = pad32b(x);
-    const t = await taggedHash('BIP0340/challenge', rx, P.toRawX(), message);
-    return mod(t, CURVE.n);
+function finalizeSchnorrChallenge(ch) {
+    return mod(bytesToNumber(ch), CURVE.n);
 }
 function hasEvenY(point) {
-    return mod(point.y, _2n) === _0n;
+    return (point.y & _1n) === _0n;
 }
 class SchnorrSignature {
     constructor(r, s) {
         this.r = r;
         this.s = s;
-        if (!isWithinCurvePrime(r) || !isWithinCurveOrder(s))
-            throw new Error('Invalid signature');
+        this.assertValidity();
     }
     static fromHex(hex) {
         const bytes = ensureBytes(hex);
         if (bytes.length !== 64)
             throw new TypeError(`SchnorrSignature.fromHex: expected 64 bytes, not ${bytes.length}`);
-        const r = bytesToNumber(bytes.slice(0, 32));
-        const s = bytesToNumber(bytes.slice(32, 64));
+        const r = bytesToNumber(bytes.subarray(0, 32));
+        const s = bytesToNumber(bytes.subarray(32, 64));
         return new SchnorrSignature(r, s);
     }
+    assertValidity() {
+        const { r, s } = this;
+        if (!isValidFieldElement(r) || !isWithinCurveOrder(s))
+            throw new Error('Invalid signature');
+    }
     toHex() {
-        return pad64(this.r) + pad64(this.s);
+        return numTo32bStr(this.r) + numTo32bStr(this.s);
     }
     toRawBytes() {
         return hexToBytes(this.toHex());
@@ -1633,55 +1662,112 @@ class SchnorrSignature {
 function schnorrGetPublicKey(privateKey) {
     return Point.fromPrivateKey(privateKey).toRawX();
 }
-async function schnorrSign(message, privateKey, auxRand = exports.utils.randomBytes()) {
+function initSchnorrSigArgs(message, privateKey, auxRand) {
     if (message == null)
         throw new TypeError(`sign: Expected valid message, not "${message}"`);
-    const { n } = CURVE;
     const m = ensureBytes(message);
     const d0 = normalizePrivateKey(privateKey);
     const rand = ensureBytes(auxRand);
     if (rand.length !== 32)
         throw new TypeError('sign: Expected 32 bytes of aux randomness');
     const P = Point.fromPrivateKey(d0);
-    const d = hasEvenY(P) ? d0 : n - d0;
-    const t0h = await taggedHash('BIP0340/aux', rand);
-    const t = d ^ t0h;
-    const k0h = await taggedHash('BIP0340/nonce', pad32b(t), P.toRawX(), m);
-    const k0 = mod(k0h, n);
+    const px = P.toRawX();
+    const d = hasEvenY(P) ? d0 : CURVE.n - d0;
+    return { m, P, px, d, rand };
+}
+function initSchnorrNonce(d, t0h) {
+    return numTo32b(d ^ bytesToNumber(t0h));
+}
+function finalizeSchnorrNonce(k0h) {
+    const k0 = mod(bytesToNumber(k0h), CURVE.n);
     if (k0 === _0n)
         throw new Error('sign: Creation of signature failed. k is zero');
     const R = Point.fromPrivateKey(k0);
-    const k = hasEvenY(R) ? k0 : n - k0;
-    const e = await createChallenge(R.x, P, m);
-    const sig = new SchnorrSignature(R.x, mod(k + e * d, n));
-    const isValid = await schnorrVerify(sig.toRawBytes(), m, P.toRawX());
+    const rx = R.toRawX();
+    const k = hasEvenY(R) ? k0 : CURVE.n - k0;
+    return { R, rx, k };
+}
+function finalizeSchnorrSig(R, k, e, d) {
+    return new SchnorrSignature(R.x, mod(k + e * d, CURVE.n)).toRawBytes();
+}
+async function schnorrSign(message, privateKey, auxRand = exports.utils.randomBytes()) {
+    const { m, px, d, rand } = initSchnorrSigArgs(message, privateKey, auxRand);
+    const t = initSchnorrNonce(d, await exports.utils.taggedHash(TAGS.aux, rand));
+    const { R, rx, k } = finalizeSchnorrNonce(await exports.utils.taggedHash(TAGS.nonce, t, px, m));
+    const e = finalizeSchnorrChallenge(await exports.utils.taggedHash(TAGS.challenge, rx, px, m));
+    const sig = finalizeSchnorrSig(R, k, e, d);
+    const isValid = await schnorrVerify(sig, m, px);
     if (!isValid)
         throw new Error('sign: Invalid signature produced');
-    return sig.toRawBytes();
+    return sig;
 }
-async function schnorrVerify(signature, message, publicKey) {
-    const sig = signature instanceof SchnorrSignature ? signature : SchnorrSignature.fromHex(signature);
-    const m = ensureBytes(message);
-    const P = normalizePublicKey(publicKey);
-    const e = await createChallenge(sig.r, P, m);
-    const sG = Point.fromPrivateKey(sig.s);
-    const eP = P.multiply(e);
-    const R = sG.subtract(eP);
-    if (R.equals(Point.BASE) || !hasEvenY(R) || R.x !== sig.r)
+function schnorrSignSync(message, privateKey, auxRand = exports.utils.randomBytes()) {
+    const { m, px, d, rand } = initSchnorrSigArgs(message, privateKey, auxRand);
+    const t = initSchnorrNonce(d, exports.utils.taggedHashSync(TAGS.aux, rand));
+    const { R, rx, k } = finalizeSchnorrNonce(exports.utils.taggedHashSync(TAGS.nonce, t, px, m));
+    const e = finalizeSchnorrChallenge(exports.utils.taggedHashSync(TAGS.challenge, rx, px, m));
+    const sig = finalizeSchnorrSig(R, k, e, d);
+    const isValid = schnorrVerifySync(sig, m, px);
+    if (!isValid)
+        throw new Error('sign: Invalid signature produced');
+    return sig;
+}
+function initSchnorrVerify(signature, message, publicKey) {
+    const raw = signature instanceof SchnorrSignature;
+    const sig = raw ? signature : SchnorrSignature.fromHex(signature);
+    if (raw)
+        sig.assertValidity();
+    return {
+        ...sig,
+        m: ensureBytes(message),
+        P: normalizePublicKey(publicKey),
+    };
+}
+function finalizeSchnorrVerify(r, P, s, e) {
+    const R = Point.BASE.multiplyAndAddUnsafe(P, normalizePrivateKey(s), mod(-e, CURVE.n));
+    if (!R || !hasEvenY(R) || R.x !== r)
         return false;
     return true;
+}
+async function schnorrVerify(signature, message, publicKey) {
+    try {
+        const { r, s, m, P } = initSchnorrVerify(signature, message, publicKey);
+        const e = finalizeSchnorrChallenge(await exports.utils.taggedHash(TAGS.challenge, numTo32b(r), P.toRawX(), m));
+        return finalizeSchnorrVerify(r, P, s, e);
+    }
+    catch (error) {
+        return false;
+    }
+}
+function schnorrVerifySync(signature, message, publicKey) {
+    try {
+        const { r, s, m, P } = initSchnorrVerify(signature, message, publicKey);
+        const e = finalizeSchnorrChallenge(exports.utils.taggedHashSync(TAGS.challenge, numTo32b(r), P.toRawX(), m));
+        return finalizeSchnorrVerify(r, P, s, e);
+    }
+    catch (error) {
+        return false;
+    }
 }
 exports.schnorr = {
     Signature: SchnorrSignature,
     getPublicKey: schnorrGetPublicKey,
     sign: schnorrSign,
     verify: schnorrVerify,
+    signSync: schnorrSignSync,
+    verifySync: schnorrVerifySync,
 };
 Point.BASE._setWindowSize(8);
 const crypto = {
-    node: crypto_1.default,
+    node: nodeCrypto,
     web: typeof self === 'object' && 'crypto' in self ? self.crypto : undefined,
 };
+const TAGS = {
+    challenge: 'BIP0340/challenge',
+    aux: 'BIP0340/aux',
+    nonce: 'BIP0340/nonce',
+};
+const TAGGED_HASH_PREFIXES = {};
 exports.utils = {
     isValidPrivateKey(privateKey) {
         try {
@@ -1691,6 +1777,35 @@ exports.utils = {
         catch (error) {
             return false;
         }
+    },
+    privateAdd: (privateKey, tweak) => {
+        const p = normalizePrivateKey(privateKey);
+        const t = normalizePrivateKey(tweak);
+        return numTo32b(mod(p + t, CURVE.n));
+    },
+    privateNegate: (privateKey) => {
+        const p = normalizePrivateKey(privateKey);
+        return numTo32b(CURVE.n - p);
+    },
+    pointAddScalar: (p, tweak, isCompressed) => {
+        const P = Point.fromHex(p);
+        const t = normalizePrivateKey(tweak);
+        const Q = Point.BASE.multiplyAndAddUnsafe(P, t, _1n);
+        if (!Q)
+            throw new Error('Tweaked point at infinity');
+        return Q.toRawBytes(isCompressed);
+    },
+    pointMultiply: (p, tweak, isCompressed) => {
+        const P = Point.fromHex(p);
+        const t = bytesToNumber(ensureBytes(tweak));
+        return P.multiply(t).toRawBytes(isCompressed);
+    },
+    hashToPrivateKey: (hash) => {
+        hash = ensureBytes(hash);
+        if (hash.length < 40 || hash.length > 1024)
+            throw new Error('Expected 40-1024 bytes of private key as per FIPS 186');
+        const num = mod(bytesToNumber(hash), CURVE.n - _1n) + _1n;
+        return numTo32b(num);
     },
     randomBytes: (bytesLength = 32) => {
         if (crypto.web) {
@@ -1705,24 +1820,23 @@ exports.utils = {
         }
     },
     randomPrivateKey: () => {
-        let i = 8;
-        while (i--) {
-            const b32 = exports.utils.randomBytes(32);
-            const num = bytesToNumber(b32);
-            if (isWithinCurveOrder(num) && num !== _1n)
-                return b32;
-        }
-        throw new Error('Valid private key was not found in 8 iterations. PRNG is broken');
+        return exports.utils.hashToPrivateKey(exports.utils.randomBytes(40));
     },
     bytesToHex,
-    sha256: async (message) => {
+    hexToBytes,
+    concatBytes,
+    mod,
+    invert,
+    sha256: async (...messages) => {
         if (crypto.web) {
-            const buffer = await crypto.web.subtle.digest('SHA-256', message.buffer);
+            const buffer = await crypto.web.subtle.digest('SHA-256', concatBytes(...messages));
             return new Uint8Array(buffer);
         }
         else if (crypto.node) {
             const { createHash } = crypto.node;
-            return Uint8Array.from(createHash('sha256').update(message).digest());
+            const hash = createHash('sha256');
+            messages.forEach((m) => hash.update(m));
+            return Uint8Array.from(hash.digest());
         }
         else {
             throw new Error("The environment doesn't have sha256 function");
@@ -1747,6 +1861,26 @@ exports.utils = {
     },
     sha256Sync: undefined,
     hmacSha256Sync: undefined,
+    taggedHash: async (tag, ...messages) => {
+        let tagP = TAGGED_HASH_PREFIXES[tag];
+        if (tagP === undefined) {
+            const tagH = await exports.utils.sha256(Uint8Array.from(tag, (c) => c.charCodeAt(0)));
+            tagP = concatBytes(tagH, tagH);
+            TAGGED_HASH_PREFIXES[tag] = tagP;
+        }
+        return exports.utils.sha256(tagP, ...messages);
+    },
+    taggedHashSync: (tag, ...messages) => {
+        if (typeof exports.utils.sha256Sync !== 'function')
+            throw new Error('utils.sha256Sync is undefined, you need to set it');
+        let tagP = TAGGED_HASH_PREFIXES[tag];
+        if (tagP === undefined) {
+            const tagH = exports.utils.sha256Sync(Uint8Array.from(tag, (c) => c.charCodeAt(0)));
+            tagP = concatBytes(tagH, tagH);
+            TAGGED_HASH_PREFIXES[tag] = tagP;
+        }
+        return exports.utils.sha256Sync(tagP, ...messages);
+    },
     precompute(windowSize = 8, point = Point.BASE) {
         const cached = point === Point.BASE ? point : new Point(point.x, point.y);
         cached._setWindowSize(windowSize);
@@ -3455,7 +3589,7 @@ function genValuePartial_fromObject(gen, field, fieldIndex, prop) {
             case "bytes": gen
                 ("if(typeof d%s===\"string\")", prop)
                     ("util.base64.decode(d%s,m%s=util.newBuffer(util.base64.length(d%s)),0)", prop, prop, prop)
-                ("else if(d%s.length)", prop)
+                ("else if(d%s.length >= 0)", prop)
                     ("m%s=d%s", prop, prop);
                 break;
             case "string": gen
@@ -3718,7 +3852,7 @@ function decoder(mtype) {
         var field = mtype._fieldsArray[i].resolve(),
             type  = field.resolvedType instanceof Enum ? "int32" : field.type,
             ref   = "m" + util.safeProp(field.name); gen
-            ("case %i:", field.id);
+            ("case %i: {", field.id);
 
         // Map fields
         if (field.map) { gen
@@ -3789,8 +3923,9 @@ function decoder(mtype) {
         else gen
                 ("%s=r.%s()", ref, type);
         gen
-                ("break");
-    // Unknown fields
+                ("break")
+            ("}");
+        // Unknown fields
     } gen
             ("default:")
                 ("r.skipType(t&7)")
@@ -4196,13 +4331,13 @@ function Field(name, id, type, rule, extend, options, comment) {
     if (extend !== undefined && !util.isString(extend))
         throw TypeError("extend must be a string");
 
-    if (rule === "proto3_optional") {
-        rule = "optional";
-    }
     /**
      * Field rule, if any.
      * @type {string|undefined}
      */
+    if (rule === "proto3_optional") {
+        rule = "optional";
+    }
     this.rule = rule && rule !== "optional" ? rule : undefined; // toJSON
 
     /**
@@ -4388,6 +4523,9 @@ Field.prototype.resolve = function resolve() {
             this.typeDefault = null;
         else // instanceof Enum
             this.typeDefault = this.resolvedType.values[Object.keys(this.resolvedType.values)[0]]; // first defined
+    } else if (this.options && this.options.proto3_optional) {
+        // proto3 scalar value marked optional; should default to null
+        this.typeDefault = null;
     }
 
     // use explicitly set default value if present
@@ -5110,7 +5248,6 @@ var ReflectionObject = __webpack_require__(3243);
 ((Namespace.prototype = Object.create(ReflectionObject.prototype)).constructor = Namespace).className = "Namespace";
 
 var Field    = __webpack_require__(3548),
-    OneOf    = __webpack_require__(7598),
     util     = __webpack_require__(9935);
 
 var Type,    // cyclic
@@ -5322,7 +5459,7 @@ Namespace.prototype.getEnum = function getEnum(name) {
  */
 Namespace.prototype.add = function add(object) {
 
-    if (!(object instanceof Field && object.extend !== undefined || object instanceof Type || object instanceof Enum || object instanceof Service || object instanceof Namespace || object instanceof OneOf))
+    if (!(object instanceof Field && object.extend !== undefined || object instanceof Type || object instanceof Enum || object instanceof Service || object instanceof Namespace))
         throw TypeError("object must be a valid nested object");
 
     if (!this.nested)
@@ -6861,7 +6998,7 @@ module.exports = {};
 /**
  * Named roots.
  * This is where pbjs stores generated structures (the option `-r, --root` specifies a name).
- * Can also be used manually to make roots available accross modules.
+ * Can also be used manually to make roots available across modules.
  * @name roots
  * @type {Object.<string,Root>}
  * @example
@@ -8229,6 +8366,9 @@ util.decorateEnum = function decorateEnum(object) {
 util.setProperty = function setProperty(dst, path, value) {
     function setProp(dst, path, value) {
         var part = path.shift();
+        if (part === "__proto__") {
+          return dst;
+        }
         if (path.length > 0) {
             dst[part] = setProp(dst[part] || {}, path, value);
         } else {
@@ -8758,13 +8898,30 @@ function newError(name) {
             merge(this, properties);
     }
 
-    (CustomError.prototype = Object.create(Error.prototype)).constructor = CustomError;
-
-    Object.defineProperty(CustomError.prototype, "name", { get: function() { return name; } });
-
-    CustomError.prototype.toString = function toString() {
-        return this.name + ": " + this.message;
-    };
+    CustomError.prototype = Object.create(Error.prototype, {
+        constructor: {
+            value: CustomError,
+            writable: true,
+            enumerable: false,
+            configurable: true,
+        },
+        name: {
+            get() { return name; },
+            set: undefined,
+            enumerable: false,
+            // configurable: false would accurately preserve the behavior of
+            // the original, but I'm guessing that was not intentional.
+            // For an actual error subclass, this property would
+            // be configurable.
+            configurable: true,
+        },
+        toString: {
+            value() { return this.name + ": " + this.message; },
+            writable: true,
+            enumerable: false,
+            configurable: true,
+        },
+    });
 
     return CustomError;
 }
@@ -9140,7 +9297,7 @@ wrappers[".google.protobuf.Any"] = {
             if (type) {
                 // type_url does not accept leading "."
                 var type_url = object["@type"].charAt(0) === "." ?
-                    object["@type"].substr(1) : object["@type"];
+                    object["@type"].slice(1) : object["@type"];
                 // type_url prefix is optional, but path seperator is required
                 if (type_url.indexOf("/") === -1) {
                     type_url = "/" + type_url;
@@ -9178,7 +9335,7 @@ wrappers[".google.protobuf.Any"] = {
         if (!(message instanceof this.ctor) && message instanceof Message) {
             var object = message.$type.toObject(message, options);
             var messageName = message.$type.fullName[0] === "." ?
-                message.$type.fullName.substr(1) : message.$type.fullName;
+                message.$type.fullName.slice(1) : message.$type.fullName;
             // Default to type.googleapis.com prefix if no prefix is used
             if (prefix === "") {
                 prefix = googleApi;
@@ -9845,6 +10002,7 @@ class Contract {
         this.options = {
             signTransaction: true,
             sendTransaction: true,
+            broadcast: true,
             sendAbis: true,
             ...c.options,
         };
@@ -9916,7 +10074,7 @@ class Contract {
                             tx = await this.signer.signTransaction(tx, abis);
                         return { operation, transaction: { ...tx, wait: noWait } };
                     }
-                    const { transaction, receipt } = await this.signer.sendTransaction(tx, abis);
+                    const { transaction, receipt } = await this.signer.sendTransaction(tx, opts.broadcast, abis);
                     return { operation, transaction, receipt };
                 };
             });
@@ -9966,6 +10124,7 @@ class Contract {
      *   // sign and broadcast
      *   signTransaction: true,
      *   sendTransaction: true,
+     *   broadcast: true,
      * });
      * console.log(receipt);
      * // wait to be mined
@@ -10020,7 +10179,7 @@ class Contract {
                 tx = await this.signer.signTransaction(tx);
             return { operation, transaction: { ...tx, wait: noWait } };
         }
-        const { transaction, receipt } = await this.signer.sendTransaction(tx);
+        const { transaction, receipt } = await this.signer.sendTransaction(tx, opts.broadcast);
         return { operation, transaction, receipt };
     }
     /**
@@ -10318,16 +10477,16 @@ class Provider {
      *
      * When _byTransactionId_ is used it returns the block id.
      *
-     * @param timeout - Timeout in milliseconds. By default it is 60000
+     * @param timeout - Timeout in milliseconds. By default it is 15000
      * @example
      * ```ts
      * const blockNumber = await provider.wait(txId);
-     * // const blockNumber = await provider.wait(txId, "byBlock", 60000);
-     * // const blockId = await provider.wait(txId, "byTransactionId", 60000);
+     * // const blockNumber = await provider.wait(txId, "byBlock", 15000);
+     * // const blockId = await provider.wait(txId, "byTransactionId", 15000);
      * console.log("Transaction mined")
      * ```
      */
-    async wait(txId, type = "byBlock", timeout = 60000) {
+    async wait(txId, type = "byBlock", timeout = 15000) {
         const iniTime = Date.now();
         if (type === "byTransactionId") {
             while (Date.now() < iniTime + timeout) {
@@ -10343,7 +10502,7 @@ class Provider {
         // byBlock
         const findTxInBlocks = async (ini, numBlocks, idRef) => {
             const blocks = await this.getBlocks(ini, numBlocks, idRef);
-            let bNum = 0;
+            let bNum = 0; //console.log(JSON.stringify(blocks,null,2))
             blocks.forEach((block) => {
                 if (!block ||
                     !block.block ||
@@ -10391,12 +10550,20 @@ class Provider {
     /**
      * Function to call "chain.submit_transaction" to send a signed
      * transaction to the blockchain.
+     *
+     * It also has the option to not broadcast the transaction (to not
+     * include the transaction the mempool), which is useful if you
+     * want to test the interaction with a contract and check the
+     * possible events triggered.
+     * @param transaction - Transaction
+     * @param broadcast - Option to broadcast the transaction to the
+     * whole network. By default it is true.
      * @returns It returns the receipt received from the RPC node
      * and the transaction with the arrow function "wait" (see [[wait]])
      */
-    async sendTransaction(transaction) {
-        const response = await this.call("chain.submit_transaction", { transaction });
-        transaction.wait = async (type = "byBlock", timeout = 60000) => {
+    async sendTransaction(transaction, broadcast = true) {
+        const response = await this.call("chain.submit_transaction", { transaction, broadcast });
+        transaction.wait = async (type = "byBlock", timeout = 15000) => {
             return this.wait(transaction.id, type, timeout);
         };
         return { ...response, transaction: transaction };
@@ -10503,6 +10670,7 @@ class Serializer {
     btypeDecode(valueBtypeEncoded, protobufType) {
         const valueBtypeDecoded = {};
         Object.keys(protobufType.fields).forEach((fieldName) => {
+            // @ts-ignore
             const { options, name, type, rule } = protobufType.fields[fieldName];
             if (!valueBtypeEncoded[name])
                 return;
@@ -10540,6 +10708,7 @@ class Serializer {
     btypeEncode(valueBtypeDecoded, protobufType) {
         const valueBtypeEncoded = {};
         Object.keys(protobufType.fields).forEach((fieldName) => {
+            // @ts-ignore
             const { options, name, type, rule } = protobufType.fields[fieldName];
             if (!valueBtypeDecoded[name])
                 return;
@@ -10632,7 +10801,11 @@ exports["default"] = Serializer;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -10953,17 +11126,19 @@ class Signer {
      * [[Provider.sendTransaction]]
      * @param tx - Transaction to send. It will be signed inside this function
      * if it is not signed yet
+     * @param broadcast - Option to broadcast the transaction to the
+     * different nodes in the network
      * @param _abis - Collection of Abis to parse the operations in the
      * transaction. This parameter is optional.
      * @returns
      */
-    async sendTransaction(tx, _abis) {
+    async sendTransaction(tx, broadcast, _abis) {
         var _a;
         if (!tx.signatures || !((_a = tx.signatures) === null || _a === void 0 ? void 0 : _a.length))
             tx = await this.signTransaction(tx);
         if (!this.provider)
             throw new Error("provider is undefined");
-        return this.provider.sendTransaction(tx);
+        return this.provider.sendTransaction(tx, broadcast);
     }
     /**
      * Function to recover the public key from hash and signature
@@ -11293,7 +11468,11 @@ exports["default"] = Signer;
 /*! koilib - MIT License (c) Julian Gonzalez (joticajulian@gmail.com) */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -11332,7 +11511,11 @@ window.Serializer = Serializer_1.Serializer;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -11938,23 +12121,28 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.sequence = reader.uint32();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.source = reader.bytes();
                 break;
-              case 3:
+              }
+              case 3: {
                 message.name = reader.string();
                 break;
-              case 4:
+              }
+              case 4: {
                 message.data = reader.bytes();
                 break;
-              case 5:
+              }
+              case 5: {
                 if (!(message.impacted && message.impacted.length))
                   message.impacted = [];
                 message.impacted.push(reader.bytes());
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -12047,7 +12235,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.source.length) message.source = object.source;
+            else if (object.source.length >= 0) message.source = object.source;
           if (object.name != null) message.name = String(object.name);
           if (object.data != null)
             if (typeof object.data === "string")
@@ -12058,7 +12246,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.data.length) message.data = object.data;
+            else if (object.data.length >= 0) message.data = object.data;
           if (object.impacted) {
             if (!Array.isArray(object.impacted))
               throw TypeError(
@@ -12074,7 +12262,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                   )),
                   0
                 );
-              else if (object.impacted[i].length)
+              else if (object.impacted[i].length >= 0)
                 message.impacted[i] = object.impacted[i];
           }
           return message;
@@ -12153,6 +12341,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         event_data.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for event_data
+         * @function getTypeUrl
+         * @memberof koinos.protocol.event_data
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        event_data.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.event_data";
         };
 
         return event_data;
@@ -12276,12 +12479,14 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.contract_id = reader.bytes();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.entry_point = reader.uint32();
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -12360,7 +12565,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.contract_id.length)
+            else if (object.contract_id.length >= 0)
               message.contract_id = object.contract_id;
           if (object.entry_point != null)
             message.entry_point = object.entry_point >>> 0;
@@ -12419,6 +12624,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         contract_call_bundle.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for contract_call_bundle
+         * @function getTypeUrl
+         * @memberof koinos.protocol.contract_call_bundle
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        contract_call_bundle.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.contract_call_bundle";
         };
 
         return contract_call_bundle;
@@ -12559,16 +12779,18 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.thunk_id = reader.uint32();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.system_call_bundle =
                   $root.koinos.protocol.contract_call_bundle.decode(
                     reader,
                     reader.uint32()
                   );
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -12690,6 +12912,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         system_call_target.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for system_call_target
+         * @function getTypeUrl
+         * @memberof koinos.protocol.system_call_target
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        system_call_target.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.system_call_target";
         };
 
         return system_call_target;
@@ -12873,24 +13110,30 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.contract_id = reader.bytes();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.bytecode = reader.bytes();
                 break;
-              case 3:
+              }
+              case 3: {
                 message.abi = reader.string();
                 break;
-              case 4:
+              }
+              case 4: {
                 message.authorizes_call_contract = reader.bool();
                 break;
-              case 5:
+              }
+              case 5: {
                 message.authorizes_transaction_application = reader.bool();
                 break;
-              case 6:
+              }
+              case 6: {
                 message.authorizes_upload_contract = reader.bool();
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -12992,7 +13235,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.contract_id.length)
+            else if (object.contract_id.length >= 0)
               message.contract_id = object.contract_id;
           if (object.bytecode != null)
             if (typeof object.bytecode === "string")
@@ -13003,7 +13246,8 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.bytecode.length) message.bytecode = object.bytecode;
+            else if (object.bytecode.length >= 0)
+              message.bytecode = object.bytecode;
           if (object.abi != null) message.abi = String(object.abi);
           if (object.authorizes_call_contract != null)
             message.authorizes_call_contract = Boolean(
@@ -13109,6 +13353,23 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         upload_contract_operation.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for upload_contract_operation
+         * @function getTypeUrl
+         * @memberof koinos.protocol.upload_contract_operation
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        upload_contract_operation.getTypeUrl = function getTypeUrl(
+          typeUrlPrefix
+        ) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.upload_contract_operation";
         };
 
         return upload_contract_operation;
@@ -13246,15 +13507,18 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.contract_id = reader.bytes();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.entry_point = reader.uint32();
                 break;
-              case 3:
+              }
+              case 3: {
                 message.args = reader.bytes();
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -13341,7 +13605,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.contract_id.length)
+            else if (object.contract_id.length >= 0)
               message.contract_id = object.contract_id;
           if (object.entry_point != null)
             message.entry_point = object.entry_point >>> 0;
@@ -13354,7 +13618,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.args.length) message.args = object.args;
+            else if (object.args.length >= 0) message.args = object.args;
           return message;
         };
 
@@ -13423,6 +13687,23 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         call_contract_operation.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for call_contract_operation
+         * @function getTypeUrl
+         * @memberof koinos.protocol.call_contract_operation
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        call_contract_operation.getTypeUrl = function getTypeUrl(
+          typeUrlPrefix
+        ) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.call_contract_operation";
         };
 
         return call_contract_operation;
@@ -13547,16 +13828,18 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.call_id = reader.uint32();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.target =
                   $root.koinos.protocol.system_call_target.decode(
                     reader,
                     reader.uint32()
                   );
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -13669,6 +13952,23 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         set_system_call_operation.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for set_system_call_operation
+         * @function getTypeUrl
+         * @memberof koinos.protocol.set_system_call_operation
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        set_system_call_operation.getTypeUrl = function getTypeUrl(
+          typeUrlPrefix
+        ) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.set_system_call_operation";
         };
 
         return set_system_call_operation;
@@ -13795,12 +14095,14 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.contract_id = reader.bytes();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.system_contract = reader.bool();
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -13882,7 +14184,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.contract_id.length)
+            else if (object.contract_id.length >= 0)
               message.contract_id = object.contract_id;
           if (object.system_contract != null)
             message.system_contract = Boolean(object.system_contract);
@@ -13944,6 +14246,25 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         set_system_contract_operation.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for set_system_contract_operation
+         * @function getTypeUrl
+         * @memberof koinos.protocol.set_system_contract_operation
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        set_system_contract_operation.getTypeUrl = function getTypeUrl(
+          typeUrlPrefix
+        ) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return (
+            typeUrlPrefix + "/koinos.protocol.set_system_contract_operation"
+          );
         };
 
         return set_system_contract_operation;
@@ -14129,34 +14450,38 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.upload_contract =
                   $root.koinos.protocol.upload_contract_operation.decode(
                     reader,
                     reader.uint32()
                   );
                 break;
-              case 2:
+              }
+              case 2: {
                 message.call_contract =
                   $root.koinos.protocol.call_contract_operation.decode(
                     reader,
                     reader.uint32()
                   );
                 break;
-              case 3:
+              }
+              case 3: {
                 message.set_system_call =
                   $root.koinos.protocol.set_system_call_operation.decode(
                     reader,
                     reader.uint32()
                   );
                 break;
-              case 4:
+              }
+              case 4: {
                 message.set_system_contract =
                   $root.koinos.protocol.set_system_contract_operation.decode(
                     reader,
                     reader.uint32()
                   );
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -14373,6 +14698,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
+        /**
+         * Gets the default type url for operation
+         * @function getTypeUrl
+         * @memberof koinos.protocol.operation
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        operation.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.operation";
+        };
+
         return operation;
       })();
 
@@ -14552,24 +14892,30 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.chain_id = reader.bytes();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.rc_limit = reader.uint64();
                 break;
-              case 3:
+              }
+              case 3: {
                 message.nonce = reader.bytes();
                 break;
-              case 4:
+              }
+              case 4: {
                 message.operation_merkle_root = reader.bytes();
                 break;
-              case 5:
+              }
+              case 5: {
                 message.payer = reader.bytes();
                 break;
-              case 6:
+              }
+              case 6: {
                 message.payee = reader.bytes();
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -14683,7 +15029,8 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.chain_id.length) message.chain_id = object.chain_id;
+            else if (object.chain_id.length >= 0)
+              message.chain_id = object.chain_id;
           if (object.rc_limit != null)
             if ($util.Long)
               (message.rc_limit = $util.Long.fromValue(
@@ -14707,7 +15054,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.nonce.length) message.nonce = object.nonce;
+            else if (object.nonce.length >= 0) message.nonce = object.nonce;
           if (object.operation_merkle_root != null)
             if (typeof object.operation_merkle_root === "string")
               $util.base64.decode(
@@ -14717,7 +15064,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.operation_merkle_root.length)
+            else if (object.operation_merkle_root.length >= 0)
               message.operation_merkle_root = object.operation_merkle_root;
           if (object.payer != null)
             if (typeof object.payer === "string")
@@ -14728,7 +15075,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.payer.length) message.payer = object.payer;
+            else if (object.payer.length >= 0) message.payer = object.payer;
           if (object.payee != null)
             if (typeof object.payee === "string")
               $util.base64.decode(
@@ -14738,7 +15085,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.payee.length) message.payee = object.payee;
+            else if (object.payee.length >= 0) message.payee = object.payee;
           return message;
         };
 
@@ -14871,6 +15218,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         transaction_header.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for transaction_header
+         * @function getTypeUrl
+         * @memberof koinos.protocol.transaction_header
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        transaction_header.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.transaction_header";
         };
 
         return transaction_header;
@@ -15025,17 +15387,19 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.id = reader.bytes();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.header =
                   $root.koinos.protocol.transaction_header.decode(
                     reader,
                     reader.uint32()
                   );
                 break;
-              case 3:
+              }
+              case 3: {
                 if (!(message.operations && message.operations.length))
                   message.operations = [];
                 message.operations.push(
@@ -15045,11 +15409,13 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                   )
                 );
                 break;
-              case 4:
+              }
+              case 4: {
                 if (!(message.signatures && message.signatures.length))
                   message.signatures = [];
                 message.signatures.push(reader.bytes());
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -15149,7 +15515,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 (message.id = $util.newBuffer($util.base64.length(object.id))),
                 0
               );
-            else if (object.id.length) message.id = object.id;
+            else if (object.id.length >= 0) message.id = object.id;
           if (object.header != null) {
             if (typeof object.header !== "object")
               throw TypeError(
@@ -15192,7 +15558,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                   )),
                   0
                 );
-              else if (object.signatures[i].length)
+              else if (object.signatures[i].length >= 0)
                 message.signatures[i] = object.signatures[i];
           }
           return message;
@@ -15269,6 +15635,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         transaction.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for transaction
+         * @function getTypeUrl
+         * @memberof koinos.protocol.transaction
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        transaction.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.transaction";
         };
 
         return transaction;
@@ -15536,34 +15917,43 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.id = reader.bytes();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.payer = reader.bytes();
                 break;
-              case 3:
+              }
+              case 3: {
                 message.max_payer_rc = reader.uint64();
                 break;
-              case 4:
+              }
+              case 4: {
                 message.rc_limit = reader.uint64();
                 break;
-              case 5:
+              }
+              case 5: {
                 message.rc_used = reader.uint64();
                 break;
-              case 6:
+              }
+              case 6: {
                 message.disk_storage_used = reader.uint64();
                 break;
-              case 7:
+              }
+              case 7: {
                 message.network_bandwidth_used = reader.uint64();
                 break;
-              case 8:
+              }
+              case 8: {
                 message.compute_bandwidth_used = reader.uint64();
                 break;
-              case 9:
+              }
+              case 9: {
                 message.reverted = reader.bool();
                 break;
-              case 10:
+              }
+              case 10: {
                 if (!(message.events && message.events.length))
                   message.events = [];
                 message.events.push(
@@ -15573,10 +15963,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                   )
                 );
                 break;
-              case 11:
+              }
+              case 11: {
                 if (!(message.logs && message.logs.length)) message.logs = [];
                 message.logs.push(reader.string());
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -15739,7 +16131,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 (message.id = $util.newBuffer($util.base64.length(object.id))),
                 0
               );
-            else if (object.id.length) message.id = object.id;
+            else if (object.id.length >= 0) message.id = object.id;
           if (object.payer != null)
             if (typeof object.payer === "string")
               $util.base64.decode(
@@ -15749,7 +16141,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.payer.length) message.payer = object.payer;
+            else if (object.payer.length >= 0) message.payer = object.payer;
           if (object.max_payer_rc != null)
             if ($util.Long)
               (message.max_payer_rc = $util.Long.fromValue(
@@ -16120,6 +16512,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
+        /**
+         * Gets the default type url for transaction_receipt
+         * @function getTypeUrl
+         * @memberof koinos.protocol.transaction_receipt
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        transaction_receipt.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.transaction_receipt";
+        };
+
         return transaction_receipt;
       })();
 
@@ -16134,6 +16541,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          * @property {Uint8Array|null} [previous_state_merkle_root] block_header previous_state_merkle_root
          * @property {Uint8Array|null} [transaction_merkle_root] block_header transaction_merkle_root
          * @property {Uint8Array|null} [signer] block_header signer
+         * @property {Array.<Uint8Array>|null} [approved_proposals] block_header approved_proposals
          */
 
         /**
@@ -16145,6 +16553,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          * @param {koinos.protocol.Iblock_header=} [properties] Properties to set
          */
         function block_header(properties) {
+          this.approved_proposals = [];
           if (properties)
             for (
               var keys = Object.keys(properties), i = 0;
@@ -16208,6 +16617,14 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
         block_header.prototype.signer = $util.newBuffer([]);
 
         /**
+         * block_header approved_proposals.
+         * @member {Array.<Uint8Array>} approved_proposals
+         * @memberof koinos.protocol.block_header
+         * @instance
+         */
+        block_header.prototype.approved_proposals = $util.emptyArray;
+
+        /**
          * Creates a new block_header instance using the specified properties.
          * @function create
          * @memberof koinos.protocol.block_header
@@ -16264,6 +16681,14 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             Object.hasOwnProperty.call(message, "signer")
           )
             writer.uint32(/* id 6, wireType 2 =*/ 50).bytes(message.signer);
+          if (
+            message.approved_proposals != null &&
+            message.approved_proposals.length
+          )
+            for (var i = 0; i < message.approved_proposals.length; ++i)
+              writer
+                .uint32(/* id 7, wireType 2 =*/ 58)
+                .bytes(message.approved_proposals[i]);
           return writer;
         };
 
@@ -16301,24 +16726,41 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.previous = reader.bytes();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.height = reader.uint64();
                 break;
-              case 3:
+              }
+              case 3: {
                 message.timestamp = reader.uint64();
                 break;
-              case 4:
+              }
+              case 4: {
                 message.previous_state_merkle_root = reader.bytes();
                 break;
-              case 5:
+              }
+              case 5: {
                 message.transaction_merkle_root = reader.bytes();
                 break;
-              case 6:
+              }
+              case 6: {
                 message.signer = reader.bytes();
                 break;
+              }
+              case 7: {
+                if (
+                  !(
+                    message.approved_proposals &&
+                    message.approved_proposals.length
+                  )
+                )
+                  message.approved_proposals = [];
+                message.approved_proposals.push(reader.bytes());
+                break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -16415,6 +16857,22 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
               )
             )
               return "signer: buffer expected";
+          if (
+            message.approved_proposals != null &&
+            message.hasOwnProperty("approved_proposals")
+          ) {
+            if (!Array.isArray(message.approved_proposals))
+              return "approved_proposals: array expected";
+            for (var i = 0; i < message.approved_proposals.length; ++i)
+              if (
+                !(
+                  (message.approved_proposals[i] &&
+                    typeof message.approved_proposals[i].length === "number") ||
+                  $util.isString(message.approved_proposals[i])
+                )
+              )
+                return "approved_proposals: buffer[] expected";
+          }
           return null;
         };
 
@@ -16439,7 +16897,8 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.previous.length) message.previous = object.previous;
+            else if (object.previous.length >= 0)
+              message.previous = object.previous;
           if (object.height != null)
             if ($util.Long)
               (message.height = $util.Long.fromValue(
@@ -16477,7 +16936,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.previous_state_merkle_root.length)
+            else if (object.previous_state_merkle_root.length >= 0)
               message.previous_state_merkle_root =
                 object.previous_state_merkle_root;
           if (object.transaction_merkle_root != null)
@@ -16489,7 +16948,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.transaction_merkle_root.length)
+            else if (object.transaction_merkle_root.length >= 0)
               message.transaction_merkle_root = object.transaction_merkle_root;
           if (object.signer != null)
             if (typeof object.signer === "string")
@@ -16500,7 +16959,25 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.signer.length) message.signer = object.signer;
+            else if (object.signer.length >= 0) message.signer = object.signer;
+          if (object.approved_proposals) {
+            if (!Array.isArray(object.approved_proposals))
+              throw TypeError(
+                ".koinos.protocol.block_header.approved_proposals: array expected"
+              );
+            message.approved_proposals = [];
+            for (var i = 0; i < object.approved_proposals.length; ++i)
+              if (typeof object.approved_proposals[i] === "string")
+                $util.base64.decode(
+                  object.approved_proposals[i],
+                  (message.approved_proposals[i] = $util.newBuffer(
+                    $util.base64.length(object.approved_proposals[i])
+                  )),
+                  0
+                );
+              else if (object.approved_proposals[i].length >= 0)
+                message.approved_proposals[i] = object.approved_proposals[i];
+          }
           return message;
         };
 
@@ -16516,6 +16993,8 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
         block_header.toObject = function toObject(message, options) {
           if (!options) options = {};
           var object = {};
+          if (options.arrays || options.defaults)
+            object.approved_proposals = [];
           if (options.defaults) {
             if (options.bytes === String) object.previous = "";
             else {
@@ -16643,6 +17122,20 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 : options.bytes === Array
                 ? Array.prototype.slice.call(message.signer)
                 : message.signer;
+          if (message.approved_proposals && message.approved_proposals.length) {
+            object.approved_proposals = [];
+            for (var j = 0; j < message.approved_proposals.length; ++j)
+              object.approved_proposals[j] =
+                options.bytes === String
+                  ? $util.base64.encode(
+                      message.approved_proposals[j],
+                      0,
+                      message.approved_proposals[j].length
+                    )
+                  : options.bytes === Array
+                  ? Array.prototype.slice.call(message.approved_proposals[j])
+                  : message.approved_proposals[j];
+          }
           return object;
         };
 
@@ -16655,6 +17148,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         block_header.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for block_header
+         * @function getTypeUrl
+         * @memberof koinos.protocol.block_header
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        block_header.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.block_header";
         };
 
         return block_header;
@@ -16805,16 +17313,18 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.id = reader.bytes();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.header = $root.koinos.protocol.block_header.decode(
                   reader,
                   reader.uint32()
                 );
                 break;
-              case 3:
+              }
+              case 3: {
                 if (!(message.transactions && message.transactions.length))
                   message.transactions = [];
                 message.transactions.push(
@@ -16824,9 +17334,11 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                   )
                 );
                 break;
-              case 4:
+              }
+              case 4: {
                 message.signature = reader.bytes();
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -16918,7 +17430,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 (message.id = $util.newBuffer($util.base64.length(object.id))),
                 0
               );
-            else if (object.id.length) message.id = object.id;
+            else if (object.id.length >= 0) message.id = object.id;
           if (object.header != null) {
             if (typeof object.header !== "object")
               throw TypeError(".koinos.protocol.block.header: object expected");
@@ -16952,7 +17464,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.signature.length)
+            else if (object.signature.length >= 0)
               message.signature = object.signature;
           return message;
         };
@@ -17029,6 +17541,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         block.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for block
+         * @function getTypeUrl
+         * @memberof koinos.protocol.block
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        block.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.block";
         };
 
         return block;
@@ -17269,25 +17796,31 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.id = reader.bytes();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.height = reader.uint64();
                 break;
-              case 3:
+              }
+              case 3: {
                 message.disk_storage_used = reader.uint64();
                 break;
-              case 4:
+              }
+              case 4: {
                 message.network_bandwidth_used = reader.uint64();
                 break;
-              case 5:
+              }
+              case 5: {
                 message.compute_bandwidth_used = reader.uint64();
                 break;
-              case 6:
+              }
+              case 6: {
                 message.state_merkle_root = reader.bytes();
                 break;
-              case 7:
+              }
+              case 7: {
                 if (!(message.events && message.events.length))
                   message.events = [];
                 message.events.push(
@@ -17297,7 +17830,8 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                   )
                 );
                 break;
-              case 8:
+              }
+              case 8: {
                 if (
                   !(
                     message.transaction_receipts &&
@@ -17312,10 +17846,12 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                   )
                 );
                 break;
-              case 9:
+              }
+              case 9: {
                 if (!(message.logs && message.logs.length)) message.logs = [];
                 message.logs.push(reader.string());
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -17469,7 +18005,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 (message.id = $util.newBuffer($util.base64.length(object.id))),
                 0
               );
-            else if (object.id.length) message.id = object.id;
+            else if (object.id.length >= 0) message.id = object.id;
           if (object.height != null)
             if ($util.Long)
               (message.height = $util.Long.fromValue(
@@ -17544,7 +18080,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.state_merkle_root.length)
+            else if (object.state_merkle_root.length >= 0)
               message.state_merkle_root = object.state_merkle_root;
           if (object.events) {
             if (!Array.isArray(object.events))
@@ -17804,6 +18340,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
+        /**
+         * Gets the default type url for block_receipt
+         * @function getTypeUrl
+         * @memberof koinos.protocol.block_receipt
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        block_receipt.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.block_receipt";
+        };
+
         return block_receipt;
       })();
 
@@ -17824,8 +18375,6 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          * @memberof koinos.chain
          * @interface Ivalue_type
          * @property {google.protobuf.IAny|null} [message_value] value_type message_value
-         * @property {number|null} [double_value] value_type double_value
-         * @property {number|null} [float_value] value_type float_value
          * @property {number|null} [int32_value] value_type int32_value
          * @property {number|Long|null} [int64_value] value_type int64_value
          * @property {number|null} [uint32_value] value_type uint32_value
@@ -17867,22 +18416,6 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          * @instance
          */
         value_type.prototype.message_value = null;
-
-        /**
-         * value_type double_value.
-         * @member {number|null|undefined} double_value
-         * @memberof koinos.chain.value_type
-         * @instance
-         */
-        value_type.prototype.double_value = null;
-
-        /**
-         * value_type float_value.
-         * @member {number|null|undefined} float_value
-         * @memberof koinos.chain.value_type
-         * @instance
-         */
-        value_type.prototype.float_value = null;
 
         /**
          * value_type int32_value.
@@ -17993,7 +18526,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 
         /**
          * value_type kind.
-         * @member {"message_value"|"double_value"|"float_value"|"int32_value"|"int64_value"|"uint32_value"|"uint64_value"|"sint32_value"|"sint64_value"|"fixed32_value"|"fixed64_value"|"sfixed32_value"|"sfixed64_value"|"bool_value"|"string_value"|"bytes_value"|undefined} kind
+         * @member {"message_value"|"int32_value"|"int64_value"|"uint32_value"|"uint64_value"|"sint32_value"|"sint64_value"|"fixed32_value"|"fixed64_value"|"sfixed32_value"|"sfixed64_value"|"bool_value"|"string_value"|"bytes_value"|undefined} kind
          * @memberof koinos.chain.value_type
          * @instance
          */
@@ -18001,8 +18534,6 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           get: $util.oneOfGetter(
             ($oneOfFields = [
               "message_value",
-              "double_value",
-              "float_value",
               "int32_value",
               "int64_value",
               "uint32_value",
@@ -18053,109 +18584,93 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
               writer.uint32(/* id 1, wireType 2 =*/ 10).fork()
             ).ldelim();
           if (
-            message.double_value != null &&
-            Object.hasOwnProperty.call(message, "double_value")
-          )
-            writer
-              .uint32(/* id 2, wireType 1 =*/ 17)
-              .double(message.double_value);
-          if (
-            message.float_value != null &&
-            Object.hasOwnProperty.call(message, "float_value")
-          )
-            writer
-              .uint32(/* id 3, wireType 5 =*/ 29)
-              .float(message.float_value);
-          if (
             message.int32_value != null &&
             Object.hasOwnProperty.call(message, "int32_value")
           )
             writer
-              .uint32(/* id 4, wireType 0 =*/ 32)
+              .uint32(/* id 2, wireType 0 =*/ 16)
               .int32(message.int32_value);
           if (
             message.int64_value != null &&
             Object.hasOwnProperty.call(message, "int64_value")
           )
             writer
-              .uint32(/* id 5, wireType 0 =*/ 40)
+              .uint32(/* id 3, wireType 0 =*/ 24)
               .int64(message.int64_value);
           if (
             message.uint32_value != null &&
             Object.hasOwnProperty.call(message, "uint32_value")
           )
             writer
-              .uint32(/* id 6, wireType 0 =*/ 48)
+              .uint32(/* id 4, wireType 0 =*/ 32)
               .uint32(message.uint32_value);
           if (
             message.uint64_value != null &&
             Object.hasOwnProperty.call(message, "uint64_value")
           )
             writer
-              .uint32(/* id 7, wireType 0 =*/ 56)
+              .uint32(/* id 5, wireType 0 =*/ 40)
               .uint64(message.uint64_value);
           if (
             message.sint32_value != null &&
             Object.hasOwnProperty.call(message, "sint32_value")
           )
             writer
-              .uint32(/* id 8, wireType 0 =*/ 64)
+              .uint32(/* id 6, wireType 0 =*/ 48)
               .sint32(message.sint32_value);
           if (
             message.sint64_value != null &&
             Object.hasOwnProperty.call(message, "sint64_value")
           )
             writer
-              .uint32(/* id 9, wireType 0 =*/ 72)
+              .uint32(/* id 7, wireType 0 =*/ 56)
               .sint64(message.sint64_value);
           if (
             message.fixed32_value != null &&
             Object.hasOwnProperty.call(message, "fixed32_value")
           )
             writer
-              .uint32(/* id 10, wireType 5 =*/ 85)
+              .uint32(/* id 8, wireType 5 =*/ 69)
               .fixed32(message.fixed32_value);
           if (
             message.fixed64_value != null &&
             Object.hasOwnProperty.call(message, "fixed64_value")
           )
             writer
-              .uint32(/* id 11, wireType 1 =*/ 89)
+              .uint32(/* id 9, wireType 1 =*/ 73)
               .fixed64(message.fixed64_value);
           if (
             message.sfixed32_value != null &&
             Object.hasOwnProperty.call(message, "sfixed32_value")
           )
             writer
-              .uint32(/* id 12, wireType 5 =*/ 101)
+              .uint32(/* id 10, wireType 5 =*/ 85)
               .sfixed32(message.sfixed32_value);
           if (
             message.sfixed64_value != null &&
             Object.hasOwnProperty.call(message, "sfixed64_value")
           )
             writer
-              .uint32(/* id 13, wireType 1 =*/ 105)
+              .uint32(/* id 11, wireType 1 =*/ 89)
               .sfixed64(message.sfixed64_value);
           if (
             message.bool_value != null &&
             Object.hasOwnProperty.call(message, "bool_value")
           )
-            writer
-              .uint32(/* id 14, wireType 0 =*/ 112)
-              .bool(message.bool_value);
+            writer.uint32(/* id 12, wireType 0 =*/ 96).bool(message.bool_value);
           if (
             message.string_value != null &&
             Object.hasOwnProperty.call(message, "string_value")
           )
             writer
-              .uint32(/* id 15, wireType 2 =*/ 122)
+              .uint32(/* id 13, wireType 2 =*/ 106)
               .string(message.string_value);
           if (
             message.bytes_value != null &&
             Object.hasOwnProperty.call(message, "bytes_value")
           )
             writer
-              .uint32(/* id 16, wireType 2 =*/ 130)
+              .uint32(/* id 14, wireType 2 =*/ 114)
               .bytes(message.bytes_value);
           return writer;
         };
@@ -18191,57 +18706,65 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.message_value = $root.google.protobuf.Any.decode(
                   reader,
                   reader.uint32()
                 );
                 break;
-              case 2:
-                message.double_value = reader.double();
-                break;
-              case 3:
-                message.float_value = reader.float();
-                break;
-              case 4:
+              }
+              case 2: {
                 message.int32_value = reader.int32();
                 break;
-              case 5:
+              }
+              case 3: {
                 message.int64_value = reader.int64();
                 break;
-              case 6:
+              }
+              case 4: {
                 message.uint32_value = reader.uint32();
                 break;
-              case 7:
+              }
+              case 5: {
                 message.uint64_value = reader.uint64();
                 break;
-              case 8:
+              }
+              case 6: {
                 message.sint32_value = reader.sint32();
                 break;
-              case 9:
+              }
+              case 7: {
                 message.sint64_value = reader.sint64();
                 break;
-              case 10:
+              }
+              case 8: {
                 message.fixed32_value = reader.fixed32();
                 break;
-              case 11:
+              }
+              case 9: {
                 message.fixed64_value = reader.fixed64();
                 break;
-              case 12:
+              }
+              case 10: {
                 message.sfixed32_value = reader.sfixed32();
                 break;
-              case 13:
+              }
+              case 11: {
                 message.sfixed64_value = reader.sfixed64();
                 break;
-              case 14:
+              }
+              case 12: {
                 message.bool_value = reader.bool();
                 break;
-              case 15:
+              }
+              case 13: {
                 message.string_value = reader.string();
                 break;
-              case 16:
+              }
+              case 14: {
                 message.bytes_value = reader.bytes();
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -18288,24 +18811,6 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
               );
               if (error) return "message_value." + error;
             }
-          }
-          if (
-            message.double_value != null &&
-            message.hasOwnProperty("double_value")
-          ) {
-            if (properties.kind === 1) return "kind: multiple values";
-            properties.kind = 1;
-            if (typeof message.double_value !== "number")
-              return "double_value: number expected";
-          }
-          if (
-            message.float_value != null &&
-            message.hasOwnProperty("float_value")
-          ) {
-            if (properties.kind === 1) return "kind: multiple values";
-            properties.kind = 1;
-            if (typeof message.float_value !== "number")
-              return "float_value: number expected";
           }
           if (
             message.int32_value != null &&
@@ -18488,10 +18993,6 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
               object.message_value
             );
           }
-          if (object.double_value != null)
-            message.double_value = Number(object.double_value);
-          if (object.float_value != null)
-            message.float_value = Number(object.float_value);
           if (object.int32_value != null)
             message.int32_value = object.int32_value | 0;
           if (object.int64_value != null)
@@ -18585,7 +19086,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.bytes_value.length)
+            else if (object.bytes_value.length >= 0)
               message.bytes_value = object.bytes_value;
           return message;
         };
@@ -18611,26 +19112,6 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
               options
             );
             if (options.oneofs) object.kind = "message_value";
-          }
-          if (
-            message.double_value != null &&
-            message.hasOwnProperty("double_value")
-          ) {
-            object.double_value =
-              options.json && !isFinite(message.double_value)
-                ? String(message.double_value)
-                : message.double_value;
-            if (options.oneofs) object.kind = "double_value";
-          }
-          if (
-            message.float_value != null &&
-            message.hasOwnProperty("float_value")
-          ) {
-            object.float_value =
-              options.json && !isFinite(message.float_value)
-                ? String(message.float_value)
-                : message.float_value;
-            if (options.oneofs) object.kind = "float_value";
           }
           if (
             message.int32_value != null &&
@@ -18816,6 +19297,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
+        /**
+         * Gets the default type url for value_type
+         * @function getTypeUrl
+         * @memberof koinos.chain.value_type
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        value_type.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.chain.value_type";
+        };
+
         return value_type;
       })();
 
@@ -18930,12 +19426,14 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.name = reader.string();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.number = reader.int32();
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -19026,6 +19524,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         enum_type.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for enum_type
+         * @function getTypeUrl
+         * @memberof koinos.chain.enum_type
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        enum_type.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.chain.enum_type";
         };
 
         return enum_type;
@@ -19132,13 +19645,14 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 if (!(message.values && message.values.length))
                   message.values = [];
                 message.values.push(
                   $root.koinos.chain.value_type.decode(reader, reader.uint32())
                 );
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -19246,6 +19760,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          */
         list_type.prototype.toJSON = function toJSON() {
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for list_type
+         * @function getTypeUrl
+         * @memberof koinos.chain.list_type
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        list_type.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.chain.list_type";
         };
 
         return list_type;
@@ -19384,12 +19913,14 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-              case 1:
+              case 1: {
                 message.type_url = reader.string();
                 break;
-              case 2:
+              }
+              case 2: {
                 message.value = reader.bytes();
                 break;
+              }
               default:
                 reader.skipType(tag & 7);
                 break;
@@ -19460,7 +19991,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                 )),
                 0
               );
-            else if (object.value.length) message.value = object.value;
+            else if (object.value.length >= 0) message.value = object.value;
           return message;
         };
 
@@ -19508,6 +20039,21 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
+        /**
+         * Gets the default type url for Any
+         * @function getTypeUrl
+         * @memberof google.protobuf.Any
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Any.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/google.protobuf.Any";
+        };
+
         return Any;
       })();
 
@@ -19534,7 +20080,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested":{"token":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/contracts/token"},"nested":{"name_arguments":{"fields":{}},"name_result":{"fields":{"value":{"type":"string","id":1}}},"symbol_arguments":{"fields":{}},"symbol_result":{"fields":{"value":{"type":"string","id":1}}},"decimals_arguments":{"fields":{}},"decimals_result":{"fields":{"value":{"type":"uint32","id":1}}},"total_supply_arguments":{"fields":{}},"total_supply_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"balance_of_arguments":{"fields":{"owner":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}}}},"balance_of_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"transfer_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"transfer_result":{"fields":{"value":{"type":"bool","id":1}}},"mint_arguments":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_result":{"fields":{"value":{"type":"bool","id":1}}},"balance_object":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"mana_balance_object":{"fields":{"balance":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"mana":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"last_mana_update":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"mint_event":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"transfer_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}}}}}}}}}}');
+module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested":{"token":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/contracts/token"},"nested":{"name_arguments":{"fields":{}},"name_result":{"fields":{"value":{"type":"string","id":1}}},"symbol_arguments":{"fields":{}},"symbol_result":{"fields":{"value":{"type":"string","id":1}}},"decimals_arguments":{"fields":{}},"decimals_result":{"fields":{"value":{"type":"uint32","id":1}}},"total_supply_arguments":{"fields":{}},"total_supply_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"balance_of_arguments":{"fields":{"owner":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}}}},"balance_of_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"transfer_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"transfer_result":{"fields":{}},"mint_arguments":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_result":{"fields":{}},"burn_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"burn_result":{"fields":{}},"balance_object":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"mana_balance_object":{"fields":{"balance":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"mana":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"last_mana_update":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"burn_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_event":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"transfer_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}}}}}}}}}}');
 
 /***/ })
 
@@ -19552,16 +20098,13 @@ module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested
 /******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			id: moduleId,
-/******/ 			loaded: false,
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
 /******/ 			exports: {}
 /******/ 		};
 /******/ 	
 /******/ 		// Execute the module function
 /******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-/******/ 	
-/******/ 		// Flag the module as loaded
-/******/ 		module.loaded = true;
 /******/ 	
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
@@ -19578,15 +20121,6 @@ module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested
 /******/ 				if (typeof window === 'object') return window;
 /******/ 			}
 /******/ 		})();
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/node module decorator */
-/******/ 	(() => {
-/******/ 		__webpack_require__.nmd = (module) => {
-/******/ 			module.paths = [];
-/******/ 			if (!module.children) module.children = [];
-/******/ 			return module;
-/******/ 		};
 /******/ 	})();
 /******/ 	
 /************************************************************************/

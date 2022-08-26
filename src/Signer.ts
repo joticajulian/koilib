@@ -41,6 +41,7 @@ export interface SignerInterface {
   ) => Promise<TransactionJson>;
   sendTransaction: (
     tx: TransactionJson | TransactionJsonWait,
+    broadcast?: boolean,
     abis?: Record<string, Abi>
   ) => Promise<{
     receipt: TransactionReceipt;
@@ -391,12 +392,15 @@ export class Signer implements SignerInterface {
    * [[Provider.sendTransaction]]
    * @param tx - Transaction to send. It will be signed inside this function
    * if it is not signed yet
+   * @param broadcast - Option to broadcast the transaction to the
+   * different nodes in the network
    * @param _abis - Collection of Abis to parse the operations in the
    * transaction. This parameter is optional.
    * @returns
    */
   async sendTransaction(
     tx: TransactionJson | TransactionJsonWait,
+    broadcast?: boolean,
     _abis?: Record<string, Abi>
   ): Promise<{
     receipt: TransactionReceipt;
@@ -405,7 +409,7 @@ export class Signer implements SignerInterface {
     if (!tx.signatures || !tx.signatures?.length)
       tx = await this.signTransaction(tx);
     if (!this.provider) throw new Error("provider is undefined");
-    return this.provider.sendTransaction(tx);
+    return this.provider.sendTransaction(tx, broadcast);
   }
 
   /**

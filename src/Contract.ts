@@ -101,6 +101,7 @@ export class Contract {
    *   payee: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
    *   signTransaction: true,
    *   sendTransaction: true,
+   *   broadcast: true,
    *   sendAbis: true,
    * });
    * ```
@@ -177,6 +178,7 @@ export class Contract {
     this.options = {
       signTransaction: true,
       sendTransaction: true,
+      broadcast: true,
       sendAbis: true,
       ...c.options,
     };
@@ -275,6 +277,7 @@ export class Contract {
 
           const { transaction, receipt } = await this.signer.sendTransaction(
             tx,
+            opts.broadcast,
             abis
           );
           return { operation, transaction, receipt };
@@ -327,6 +330,7 @@ export class Contract {
    *   // sign and broadcast
    *   signTransaction: true,
    *   sendTransaction: true,
+   *   broadcast: true,
    * });
    * console.log(receipt);
    * // wait to be mined
@@ -388,7 +392,10 @@ export class Contract {
       return { operation, transaction: { ...tx, wait: noWait } };
     }
 
-    const { transaction, receipt } = await this.signer.sendTransaction(tx);
+    const { transaction, receipt } = await this.signer.sendTransaction(
+      tx,
+      opts.broadcast
+    );
     return { operation, transaction, receipt };
   }
 

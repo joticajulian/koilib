@@ -181,10 +181,21 @@ export interface BaseTransactionOptions {
    * Send transaction
    *
    * Boolean to define if the transaction should be signed
-   * ans broadcasted to the blockchain. By default it is
+   * and sent to the RPC node. By default it is
    * true.
    */
   sendTransaction?: boolean;
+
+  /**
+   * Broadcast
+   *
+   * Boolean to define if the transaction should be broadcasted
+   * to the different nodes in the network. By default it is true.
+   *
+   * Set it to false if you want to interact with a contract for
+   * testing purposes and check the possible events triggered.
+   */
+  broadcast?: boolean;
 }
 
 export interface TransactionOptions extends BaseTransactionOptions {
@@ -269,7 +280,7 @@ export interface RecoverPublicKeyOptions {
  *
  * When _byTransactionId_ is used it returns the block id.
  *
- * @param timeout - Timeout in milliseconds. By default it is 60000
+ * @param timeout - Timeout in milliseconds. By default it is 15000
  */
 export type WaitFunction = (
   type?: "byBlock" | "byTransactionId",
