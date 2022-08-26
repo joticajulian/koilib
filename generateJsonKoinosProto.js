@@ -1,6 +1,6 @@
 /* eslint @typescript-eslint/no-var-requires: "off" */
 const fs = require("fs");
-const pbjs = require("protobufjs/cli/pbjs");
+const pbjs = require("protobufjs-cli/pbjs");
 
 pbjs.main(
   [

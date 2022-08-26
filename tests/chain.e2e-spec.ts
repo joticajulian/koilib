@@ -31,6 +31,7 @@ describe("Blockchain", () => {
     expect.assertions(1);
     const headInfo = await provider.getHeadInfo();
     expect(headInfo).toStrictEqual({
+      head_block_time: expect.any(String) as string,
       head_topology: {
         id: expect.stringContaining("0x1220") as string,
         height: expect.any(String) as string,

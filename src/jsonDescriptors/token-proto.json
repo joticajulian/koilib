@@ -104,12 +104,7 @@
                   }
                 },
                 "transfer_result": {
-                  "fields": {
-                    "value": {
-                      "type": "bool",
-                      "id": 1
-                    }
-                  }
+                  "fields": {}
                 },
                 "mint_arguments": {
                   "fields": {
@@ -130,12 +125,28 @@
                   }
                 },
                 "mint_result": {
+                  "fields": {}
+                },
+                "burn_arguments": {
                   "fields": {
+                    "from": {
+                      "type": "bytes",
+                      "id": 1,
+                      "options": {
+                        "(btype)": "ADDRESS"
+                      }
+                    },
                     "value": {
-                      "type": "bool",
-                      "id": 1
+                      "type": "uint64",
+                      "id": 2,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
                     }
                   }
+                },
+                "burn_result": {
+                  "fields": {}
                 },
                 "balance_object": {
                   "fields": {
@@ -167,6 +178,24 @@
                     "last_mana_update": {
                       "type": "uint64",
                       "id": 3,
+                      "options": {
+                        "jstype": "JS_STRING"
+                      }
+                    }
+                  }
+                },
+                "burn_event": {
+                  "fields": {
+                    "from": {
+                      "type": "bytes",
+                      "id": 1,
+                      "options": {
+                        "(btype)": "ADDRESS"
+                      }
+                    },
+                    "value": {
+                      "type": "uint64",
+                      "id": 2,
                       "options": {
                         "jstype": "JS_STRING"
                       }

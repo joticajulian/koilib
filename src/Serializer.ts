@@ -112,6 +112,7 @@ export class Serializer {
   ) {
     const valueBtypeDecoded = {} as Record<string, unknown>;
     Object.keys(protobufType.fields).forEach((fieldName) => {
+      // @ts-ignore
       const { options, name, type, rule } = protobufType.fields[fieldName];
       if (!valueBtypeEncoded[name]) return;
 
@@ -168,6 +169,7 @@ export class Serializer {
   ) {
     const valueBtypeEncoded = {} as Record<string, unknown>;
     Object.keys(protobufType.fields).forEach((fieldName) => {
+      // @ts-ignore
       const { options, name, type, rule } = protobufType.fields[fieldName];
       if (!valueBtypeDecoded[name]) return;
 

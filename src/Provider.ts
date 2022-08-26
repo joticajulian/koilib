@@ -216,6 +216,7 @@ export class Provider {
    * Function to get info from the head block in the blockchain
    */
   async getHeadInfo(): Promise<{
+    head_block_time: string;
     head_topology: {
       id: string;
       height: string;
@@ -225,6 +226,7 @@ export class Provider {
     last_irreversible_block: string;
   }> {
     return this.call<{
+      head_block_time: string;
       head_topology: {
         id: string;
         height: string;
@@ -321,19 +323,19 @@ export class Provider {
    *
    * When _byTransactionId_ is used it returns the block id.
    *
-   * @param timeout - Timeout in milliseconds. By default it is 60000
+   * @param timeout - Timeout in milliseconds. By default it is 15000
    * @example
    * ```ts
    * const blockNumber = await provider.wait(txId);
-   * // const blockNumber = await provider.wait(txId, "byBlock", 60000);
-   * // const blockId = await provider.wait(txId, "byTransactionId", 60000);
+   * // const blockNumber = await provider.wait(txId, "byBlock", 15000);
+   * // const blockId = await provider.wait(txId, "byTransactionId", 15000);
    * console.log("Transaction mined")
    * ```
    */
   async wait(
     txId: string,
     type: "byTransactionId" | "byBlock" = "byBlock",
-    timeout = 60000
+    timeout = 15000
   ): Promise<string | number> {
     const iniTime = Date.now();
     if (type === "byTransactionId") {
@@ -357,7 +359,7 @@ export class Provider {
       idRef: string
     ): Promise<[number, string]> => {
       const blocks = await this.getBlocks(ini, numBlocks, idRef);
-      let bNum = 0;
+      let bNum = 0; //console.log(JSON.stringify(blocks,null,2))
       blocks.forEach((block) => {
         if (
           !block ||
@@ -417,22 +419,31 @@ export class Provider {
   /**
    * Function to call "chain.submit_transaction" to send a signed
    * transaction to the blockchain.
+   *
+   * It also has the option to not broadcast the transaction (to not
+   * include the transaction the mempool), which is useful if you
+   * want to test the interaction with a contract and check the
+   * possible events triggered.
+   * @param transaction - Transaction
+   * @param broadcast - Option to broadcast the transaction to the
+   * whole network. By default it is true.
    * @returns It returns the receipt received from the RPC node
    * and the transaction with the arrow function "wait" (see [[wait]])
    */
   async sendTransaction(
-    transaction: TransactionJson | TransactionJsonWait
+    transaction: TransactionJson | TransactionJsonWait,
+    broadcast = true
   ): Promise<{
     receipt: TransactionReceipt;
     transaction: TransactionJsonWait;
   }> {
     const response = await this.call<{ receipt: TransactionReceipt }>(
       "chain.submit_transaction",
-      { transaction }
+      { transaction, broadcast }
     );
     (transaction as TransactionJsonWait).wait = async (
       type: "byTransactionId" | "byBlock" = "byBlock",
-      timeout = 60000
+      timeout = 15000
     ) => {
       return this.wait(transaction.id as string, type, timeout);
     };

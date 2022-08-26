@@ -44,16 +44,18 @@ describe("Provider", () => {
   });
 
   it("should get nonce", async () => {
-    expect.assertions(1);
-    const nonce = await provider.getNonce(signer.getAddress());
+    expect.assertions(2);
+    const nonce = (await provider.getNonce(signer.getAddress())) as number;
     console.log(`Nonce of ${signer.getAddress()} is ${nonce}`);
     expect(nonce).toBeDefined();
+    expect(Number.isNaN(nonce)).toBeFalsy();
   });
 
   it("should get head info", async () => {
     expect.assertions(1);
     const headInfo = await provider.getHeadInfo();
     expect(headInfo).toStrictEqual({
+      head_block_time: expect.any(String) as string,
       head_topology: {
         id: expect.stringContaining("0x1220") as string,
         height: expect.any(String) as string,
@@ -112,7 +114,7 @@ describe("Provider", () => {
     expect(signer1).toBe(block.block.header!.signer);
   });
 
-  it("should get a a block with pow consensus and get the signer address", async () => {
+  it.skip("should get a a block with pow consensus and get the signer address", async () => {
     expect.assertions(2);
     const block = await provider.getBlock(1000);
     expect(block).toStrictEqual({
@@ -221,7 +223,7 @@ describe("Contract", () => {
     const { operation, transaction, result, receipt } = await koin.transfer({
       from: signer.getAddress(),
       to: addressReceiver,
-      value: Number(1e8).toString(),
+      value: Number(1e6).toString(),
     });
     expect(operation).toBeDefined();
     expect(transaction).toBeDefined();
@@ -257,7 +259,7 @@ describe("Contract", () => {
     if (!transaction) throw new Error("Transaction response undefined");
     const blockId = (await transaction.wait(
       "byTransactionId",
-      60000
+      15000
     )) as string;
     expect(typeof blockId).toBe("string");
     console.log(`Second tx mined in block id ${blockId}`);
@@ -276,15 +278,18 @@ describe("Contract", () => {
 
   it("should submit an invalid transfer", async () => {
     expect.assertions(1);
-    const { receipt } = await koin.transfer({
-      from: signer.getAddress(),
-      to: signer.getAddress(),
-      value: "100",
-    });
-    expect(receipt).toStrictEqual(
-      expect.objectContaining({
-        logs: ["Cannot transfer to self"],
-      }) as unknown
+    await expect(
+      koin.transfer({
+        from: signer.getAddress(),
+        to: signer.getAddress(),
+        value: "100",
+      })
+    ).rejects.toThrow(
+      JSON.stringify({
+        error: "cannot transfer to self",
+        code: 1,
+        logs: [],
+      })
     );
   });
 });

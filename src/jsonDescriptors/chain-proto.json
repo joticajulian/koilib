@@ -378,6 +378,14 @@
                   "options": {
                     "(btype)": "ADDRESS"
                   }
+                },
+                "approved_proposals": {
+                  "rule": "repeated",
+                  "type": "bytes",
+                  "id": 7,
+                  "options": {
+                    "(btype)": "TRANSACTION_ID"
+                  }
                 }
               }
             },
@@ -470,6 +478,31 @@
             "go_package": "github.com/koinos/koinos-proto-golang/koinos/chain"
           },
           "nested": {
+            "error_data": {
+              "fields": {
+                "message": {
+                  "type": "string",
+                  "id": 1
+                }
+              }
+            },
+            "result": {
+              "oneofs": {
+                "value": {
+                  "oneof": ["object", "error"]
+                }
+              },
+              "fields": {
+                "object": {
+                  "type": "bytes",
+                  "id": 1
+                },
+                "error": {
+                  "type": "error_data",
+                  "id": 2
+                }
+              }
+            },
             "object_space": {
               "fields": {
                 "system": {
@@ -548,6 +581,18 @@
                 },
                 "caller_privilege": {
                   "type": "privilege",
+                  "id": 2
+                }
+              }
+            },
+            "argument_data": {
+              "fields": {
+                "entry_point": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "arguments": {
+                  "type": "bytes",
                   "id": 2
                 }
               }
@@ -666,6 +711,11 @@
                   "type": "genesis_entry",
                   "id": 1
                 }
+              }
+            },
+            "dsa": {
+              "values": {
+                "ecdsa_secp256k1": 0
               }
             }
           }
