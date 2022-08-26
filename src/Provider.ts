@@ -359,7 +359,7 @@ export class Provider {
       idRef: string
     ): Promise<[number, string]> => {
       const blocks = await this.getBlocks(ini, numBlocks, idRef);
-      let bNum = 0; //console.log(JSON.stringify(blocks,null,2))
+      let bNum = 0;
       blocks.forEach((block) => {
         if (
           !block ||
