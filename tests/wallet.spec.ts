@@ -904,7 +904,7 @@ describe("Wallet and Contract", () => {
     expect(operation).toBeDefined();
     expect(transaction).toMatchObject({
       ...expectedTransaction,
-      wait: expect.any(Function) as Function,
+      wait: expect.any(Function) as WaitFunction,
     } as TransactionJsonWait);
     expect(result).toBeUndefined();
     expect(noReceipt).toBeUndefined();
@@ -919,7 +919,7 @@ describe("Wallet and Contract", () => {
     expect(receiptReceived).toStrictEqual(receipt);
     expect(transactionSend).toStrictEqual({
       ...expectedTransaction,
-      wait: expect.any(Function) as Function,
+      wait: expect.any(Function) as WaitFunction,
     } as TransactionJsonWait);
     expect(transaction!.wait.toString()).toStrictEqual(
       expect.stringContaining(

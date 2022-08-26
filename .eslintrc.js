@@ -17,6 +17,8 @@ module.exports = {
     "tsdoc/syntax": "warn",
     "import/no-cycle": "off",
     "import/extensions": "off",
+    "import/no-extraneous-dependencies": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
   },
 };

@@ -66,6 +66,8 @@ describe("Blockchain", () => {
     );
     const timeAgo = formatDelay(Date.now() - currentTimestamp);
     console.log(`Block period last blocks: ${periods.join(", ")}
-Last block mined ${timeAgo} ago (${new Date(currentTimestamp).toISOString()})`);
+Last block mined ${timeAgo} ago (#${currentHeight} ${new Date(
+      currentTimestamp
+    ).toISOString()})`);
   });
 });
