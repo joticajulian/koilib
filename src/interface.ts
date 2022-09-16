@@ -196,6 +196,13 @@ export interface BaseTransactionOptions {
    * testing purposes and check the possible events triggered.
    */
   broadcast?: boolean;
+
+  /**
+   * Function to be called before sending a transaction to the
+   * blockchain. It is useful to apply multisignatures to
+   * the transaction
+   */
+  beforeSend?: (tx: TransactionJson) => Promise<TransactionJson>;
 }
 
 export interface TransactionOptions extends BaseTransactionOptions {
@@ -244,6 +251,32 @@ export interface DeployOptions extends BaseTransactionOptions {
    * function and can authorize upgrades of the actual contract
    */
   authorizesUploadContract?: boolean;
+}
+
+export interface SendTransactionOptions {
+  /**
+   * Broadcast
+   *
+   * Boolean to define if the transaction should be broadcasted
+   * to the different nodes in the network. By default it is true.
+   *
+   * Set it to false if you want to interact with a contract for
+   * testing purposes and check the possible events triggered.
+   */
+  broadcast?: boolean;
+
+  /**
+   * Collection of Abis so that the receiver can parse the
+   * operations in the transaction
+   */
+  abis?: Record<string, Abi>;
+
+  /**
+   * Function to be called before sending a transaction to the
+   * blockchain. It is useful to apply multisignatures to
+   * the transaction
+   */
+  beforeSend?: (tx: TransactionJson) => Promise<TransactionJson>;
 }
 
 export interface RecoverPublicKeyOptions {

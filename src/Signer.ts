@@ -10,6 +10,7 @@ import {
   Abi,
   TypeField,
   TransactionReceipt,
+  SendTransactionOptions,
 } from "./interface";
 import {
   bitcoinAddress,
@@ -36,13 +37,12 @@ export interface SignerInterface {
   // Transaction
   prepareTransaction: (tx: TransactionJson) => Promise<TransactionJson>;
   signTransaction: (
-    tx: TransactionJson | TransactionJsonWait,
+    transaction: TransactionJson | TransactionJsonWait,
     abis?: Record<string, Abi>
   ) => Promise<TransactionJson>;
   sendTransaction: (
-    tx: TransactionJson | TransactionJsonWait,
-    broadcast?: boolean,
-    abis?: Record<string, Abi>
+    transaction: TransactionJson | TransactionJsonWait,
+    options?: SendTransactionOptions
   ) => Promise<{
     receipt: TransactionReceipt;
     transaction: TransactionJsonWait;
@@ -193,6 +193,13 @@ export class Signer implements SignerInterface {
   provider?: Provider;
 
   /**
+   * Options to apply when sending a transaction.
+   * By default broadcast is true and the other fields
+   * are undefined
+   */
+  sendOptions?: SendTransactionOptions;
+
+  /**
    * The constructor receives de private key as hexstring, bigint or Uint8Array.
    * See also the functions [[Signer.fromWif]] and [[Signer.fromSeed]]
    * to create the signer from the WIF or Seed respectively.
@@ -213,6 +220,7 @@ export class Signer implements SignerInterface {
     compressed?: boolean;
     chainId?: string;
     provider?: Provider;
+    sendOptions?: SendTransactionOptions;
   }) {
     this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;
     this.privateKey = c.privateKey;
@@ -225,6 +233,10 @@ export class Signer implements SignerInterface {
       this.address = bitcoinAddress(this.publicKey);
     }
     if (c.chainId) this.chainId = c.chainId;
+    this.sendOptions = {
+      broadcast: true,
+      ...c.sendOptions,
+    };
   }
 
   /**
@@ -390,26 +402,28 @@ export class Signer implements SignerInterface {
   /**
    * Function to sign and send a transaction. It internally uses
    * [[Provider.sendTransaction]]
-   * @param tx - Transaction to send. It will be signed inside this function
-   * if it is not signed yet
-   * @param broadcast - Option to broadcast the transaction to the
-   * different nodes in the network
-   * @param _abis - Collection of Abis to parse the operations in the
-   * transaction. This parameter is optional.
-   * @returns
+   * @param transaction - Transaction to send. It will be signed inside this
+   * function if it is not signed yet
+   * @param options - See [[SendTransactionOptions]]
    */
   async sendTransaction(
-    tx: TransactionJson | TransactionJsonWait,
-    broadcast?: boolean,
-    _abis?: Record<string, Abi>
+    transaction: TransactionJson | TransactionJsonWait,
+    options?: SendTransactionOptions
   ): Promise<{
     receipt: TransactionReceipt;
     transaction: TransactionJsonWait;
   }> {
-    if (!tx.signatures || !tx.signatures?.length)
-      tx = await this.signTransaction(tx);
+    if (!transaction.signatures || !transaction.signatures?.length)
+      transaction = await this.signTransaction(transaction);
     if (!this.provider) throw new Error("provider is undefined");
-    return this.provider.sendTransaction(tx, broadcast);
+    const opts: SendTransactionOptions = {
+      ...this.sendOptions,
+      ...options,
+    };
+    if (opts.beforeSend) {
+      transaction = await opts.beforeSend(transaction);
+    }
+    return this.provider.sendTransaction(transaction, opts.broadcast);
   }
 
   /**

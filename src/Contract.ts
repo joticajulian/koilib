@@ -10,6 +10,7 @@ import {
   OperationJson,
   DeployOptions,
   TransactionReceipt,
+  SendTransactionOptions,
 } from "./interface";
 import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
 
@@ -184,13 +185,7 @@ export class Contract {
     };
     this.functions = {};
 
-    if (
-      this.signer &&
-      this.provider &&
-      this.abi &&
-      this.abi.methods &&
-      this.serializer
-    ) {
+    if (this.abi && this.abi.methods) {
       Object.keys(this.abi.methods).forEach((name) => {
         this.functions[name] = async <T = Record<string, unknown>>(
           argu: unknown = {},
@@ -250,35 +245,39 @@ export class Contract {
           if (!this.signer) throw new Error("signer not found");
           let tx = await this.signer.prepareTransaction({
             header: {
-              ...(opts?.chainId && { chain_id: opts?.chainId }),
-              ...(opts?.rcLimit && { rc_limit: opts?.rcLimit }),
-              ...(opts?.nonce && { nonce: opts?.nonce }),
-              ...(opts?.payer && { payer: opts?.payer }),
-              ...(opts?.payee && { payee: opts?.payee }),
+              ...(opts.chainId && { chain_id: opts.chainId }),
+              ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
+              ...(opts.nonce && { nonce: opts.nonce }),
+              ...(opts.payer && { payer: opts.payer }),
+              ...(opts.payee && { payee: opts.payee }),
             },
             operations: [operation],
           });
 
-          const abis: Record<string, Abi> = {};
-          if (opts?.sendAbis) {
+          const optsSend: SendTransactionOptions = {
+            broadcast: opts.broadcast,
+            beforeSend: opts.beforeSend,
+          };
+
+          if (opts.sendAbis) {
+            optsSend.abis = {};
             const contractId = encodeBase58(this.id as Uint8Array);
-            abis[contractId] = this.abi;
+            optsSend.abis[contractId] = this.abi;
           }
 
           // return result if the transaction will not be broadcasted
-          if (!opts?.sendTransaction) {
+          if (!opts.sendTransaction) {
             const noWait = () => {
               throw new Error("This transaction was not broadcasted");
             };
             if (opts.signTransaction)
-              tx = await this.signer.signTransaction(tx, abis);
+              tx = await this.signer.signTransaction(tx, optsSend.abis);
             return { operation, transaction: { ...tx, wait: noWait } };
           }
 
           const { transaction, receipt } = await this.signer.sendTransaction(
             tx,
-            opts.broadcast,
-            abis
+            optsSend
           );
           return { operation, transaction, receipt };
         };
@@ -358,33 +357,38 @@ export class Contract {
       upload_contract: {
         contract_id: contractId,
         bytecode: encodeBase64url(this.bytecode),
-        ...(opts?.abi && { abi: opts?.abi }),
-        ...(opts?.authorizesCallContract && {
-          authorizes_call_contract: opts?.authorizesCallContract,
+        ...(opts.abi && { abi: opts.abi }),
+        ...(opts.authorizesCallContract && {
+          authorizes_call_contract: opts.authorizesCallContract,
         }),
-        ...(opts?.authorizesTransactionApplication && {
+        ...(opts.authorizesTransactionApplication && {
           authorizes_transaction_application:
-            opts?.authorizesTransactionApplication,
+            opts.authorizesTransactionApplication,
         }),
-        ...(opts?.authorizesUploadContract && {
-          authorizes_upload_contract: opts?.authorizesUploadContract,
+        ...(opts.authorizesUploadContract && {
+          authorizes_upload_contract: opts.authorizesUploadContract,
         }),
       },
     } as OperationJson;
 
     let tx = await this.signer.prepareTransaction({
       header: {
-        ...(opts?.chainId && { chain_id: opts?.chainId }),
-        ...(opts?.rcLimit && { rc_limit: opts?.rcLimit }),
-        ...(opts?.nonce && { nonce: opts?.nonce }),
-        ...(opts?.payer && { payer: opts?.payer }),
-        ...(opts?.payee && { payee: opts?.payee }),
+        ...(opts.chainId && { chain_id: opts.chainId }),
+        ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
+        ...(opts.nonce && { nonce: opts.nonce }),
+        ...(opts.payer && { payer: opts.payer }),
+        ...(opts.payee && { payee: opts.payee }),
       },
       operations: [operation],
     });
 
+    const optsSend: SendTransactionOptions = {
+      broadcast: opts.broadcast,
+      beforeSend: opts.beforeSend,
+    };
+
     // return result if the transaction will not be broadcasted
-    if (!opts?.sendTransaction) {
+    if (!opts.sendTransaction) {
       const noWait = () => {
         throw new Error("This transaction was not broadcasted");
       };
@@ -394,7 +398,7 @@ export class Contract {
 
     const { transaction, receipt } = await this.signer.sendTransaction(
       tx,
-      opts.broadcast
+      optsSend
     );
     return { operation, transaction, receipt };
   }
