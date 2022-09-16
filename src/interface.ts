@@ -196,6 +196,13 @@ export interface BaseTransactionOptions {
    * testing purposes and check the possible events triggered.
    */
   broadcast?: boolean;
+
+  /**
+   * Function to be called before sending a transaction to the
+   * blockchain. It is useful to apply multisignatures to
+   * the transaction
+   */
+  beforeSend?: (tx: TransactionJson) => Promise<void>;
 }
 
 export interface TransactionOptions extends BaseTransactionOptions {
@@ -246,6 +253,55 @@ export interface DeployOptions extends BaseTransactionOptions {
   authorizesUploadContract?: boolean;
 }
 
+export interface SendTransactionOptions {
+  /**
+   * Broadcast
+   *
+   * Boolean to define if the transaction should be broadcasted
+   * to the different nodes in the network. By default it is true.
+   *
+   * Set it to false if you want to interact with a contract for
+   * testing purposes and check the possible events triggered.
+   */
+  broadcast?: boolean;
+
+  /**
+   * Collection of Abis so that the receiver can parse the
+   * operations in the transaction
+   */
+  abis?: Record<string, Abi>;
+
+  /**
+   * Function to be called before sending a transaction to the
+   * blockchain. It is useful to apply multisignatures to
+   * the transaction.
+   *
+   * @example
+   * ```ts
+   * const signer2 = Signer.fromSeed("signer2");
+   * const signer3 = Signer.fromSeed("signer3");
+   *
+   * const addMoreSignatures = async (tx) => {
+   *   await signer2.signTransaction(tx);
+   *   await signer3.signTransaction(tx);
+   * };
+   *
+   * const { transaction } = await koin.transfer(
+   *   {
+   *     from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+   *     to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+   *     value: "1000000",
+   *   },
+   *   {
+   *     payer: signer2.getAddress(),
+   *     beforeSend: addMoreSignatures,
+   *   }
+   * );
+   * ```
+   */
+  beforeSend?: (tx: TransactionJson) => Promise<void>;
+}
+
 export interface RecoverPublicKeyOptions {
   /**
    * Boolean to define if the public key should
@@ -285,7 +341,10 @@ export interface RecoverPublicKeyOptions {
 export type WaitFunction = (
   type?: "byBlock" | "byTransactionId",
   timeout?: number
-) => Promise<string | number>;
+) => Promise<{
+  blockId: string;
+  blockNumber?: number;
+}>;
 
 export interface GenesisDataEntryEncoded {
   space: {

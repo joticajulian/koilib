@@ -10007,11 +10007,7 @@ class Contract {
             ...c.options,
         };
         this.functions = {};
-        if (this.signer &&
-            this.provider &&
-            this.abi &&
-            this.abi.methods &&
-            this.serializer) {
+        if (this.abi && this.abi.methods) {
             Object.keys(this.abi.methods).forEach((name) => {
                 this.functions[name] = async (argu = {}, options) => {
                     if (!this.provider)
@@ -10052,29 +10048,33 @@ class Contract {
                         throw new Error("signer not found");
                     let tx = await this.signer.prepareTransaction({
                         header: {
-                            ...((opts === null || opts === void 0 ? void 0 : opts.chainId) && { chain_id: opts === null || opts === void 0 ? void 0 : opts.chainId }),
-                            ...((opts === null || opts === void 0 ? void 0 : opts.rcLimit) && { rc_limit: opts === null || opts === void 0 ? void 0 : opts.rcLimit }),
-                            ...((opts === null || opts === void 0 ? void 0 : opts.nonce) && { nonce: opts === null || opts === void 0 ? void 0 : opts.nonce }),
-                            ...((opts === null || opts === void 0 ? void 0 : opts.payer) && { payer: opts === null || opts === void 0 ? void 0 : opts.payer }),
-                            ...((opts === null || opts === void 0 ? void 0 : opts.payee) && { payee: opts === null || opts === void 0 ? void 0 : opts.payee }),
+                            ...(opts.chainId && { chain_id: opts.chainId }),
+                            ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
+                            ...(opts.nonce && { nonce: opts.nonce }),
+                            ...(opts.payer && { payer: opts.payer }),
+                            ...(opts.payee && { payee: opts.payee }),
                         },
                         operations: [operation],
                     });
-                    const abis = {};
-                    if (opts === null || opts === void 0 ? void 0 : opts.sendAbis) {
+                    const optsSend = {
+                        broadcast: opts.broadcast,
+                        beforeSend: opts.beforeSend,
+                    };
+                    if (opts.sendAbis) {
+                        optsSend.abis = {};
                         const contractId = (0, utils_1.encodeBase58)(this.id);
-                        abis[contractId] = this.abi;
+                        optsSend.abis[contractId] = this.abi;
                     }
                     // return result if the transaction will not be broadcasted
-                    if (!(opts === null || opts === void 0 ? void 0 : opts.sendTransaction)) {
+                    if (!opts.sendTransaction) {
                         const noWait = () => {
                             throw new Error("This transaction was not broadcasted");
                         };
                         if (opts.signTransaction)
-                            tx = await this.signer.signTransaction(tx, abis);
+                            tx = await this.signer.signTransaction(tx, optsSend.abis);
                         return { operation, transaction: { ...tx, wait: noWait } };
                     }
-                    const { transaction, receipt } = await this.signer.sendTransaction(tx, opts.broadcast, abis);
+                    const { transaction, receipt } = await this.signer.sendTransaction(tx, optsSend);
                     return { operation, transaction, receipt };
                 };
             });
@@ -10148,30 +10148,34 @@ class Contract {
             upload_contract: {
                 contract_id: contractId,
                 bytecode: (0, utils_1.encodeBase64url)(this.bytecode),
-                ...((opts === null || opts === void 0 ? void 0 : opts.abi) && { abi: opts === null || opts === void 0 ? void 0 : opts.abi }),
-                ...((opts === null || opts === void 0 ? void 0 : opts.authorizesCallContract) && {
-                    authorizes_call_contract: opts === null || opts === void 0 ? void 0 : opts.authorizesCallContract,
+                ...(opts.abi && { abi: opts.abi }),
+                ...(opts.authorizesCallContract && {
+                    authorizes_call_contract: opts.authorizesCallContract,
                 }),
-                ...((opts === null || opts === void 0 ? void 0 : opts.authorizesTransactionApplication) && {
-                    authorizes_transaction_application: opts === null || opts === void 0 ? void 0 : opts.authorizesTransactionApplication,
+                ...(opts.authorizesTransactionApplication && {
+                    authorizes_transaction_application: opts.authorizesTransactionApplication,
                 }),
-                ...((opts === null || opts === void 0 ? void 0 : opts.authorizesUploadContract) && {
-                    authorizes_upload_contract: opts === null || opts === void 0 ? void 0 : opts.authorizesUploadContract,
+                ...(opts.authorizesUploadContract && {
+                    authorizes_upload_contract: opts.authorizesUploadContract,
                 }),
             },
         };
         let tx = await this.signer.prepareTransaction({
             header: {
-                ...((opts === null || opts === void 0 ? void 0 : opts.chainId) && { chain_id: opts === null || opts === void 0 ? void 0 : opts.chainId }),
-                ...((opts === null || opts === void 0 ? void 0 : opts.rcLimit) && { rc_limit: opts === null || opts === void 0 ? void 0 : opts.rcLimit }),
-                ...((opts === null || opts === void 0 ? void 0 : opts.nonce) && { nonce: opts === null || opts === void 0 ? void 0 : opts.nonce }),
-                ...((opts === null || opts === void 0 ? void 0 : opts.payer) && { payer: opts === null || opts === void 0 ? void 0 : opts.payer }),
-                ...((opts === null || opts === void 0 ? void 0 : opts.payee) && { payee: opts === null || opts === void 0 ? void 0 : opts.payee }),
+                ...(opts.chainId && { chain_id: opts.chainId }),
+                ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
+                ...(opts.nonce && { nonce: opts.nonce }),
+                ...(opts.payer && { payer: opts.payer }),
+                ...(opts.payee && { payee: opts.payee }),
             },
             operations: [operation],
         });
+        const optsSend = {
+            broadcast: opts.broadcast,
+            beforeSend: opts.beforeSend,
+        };
         // return result if the transaction will not be broadcasted
-        if (!(opts === null || opts === void 0 ? void 0 : opts.sendTransaction)) {
+        if (!opts.sendTransaction) {
             const noWait = () => {
                 throw new Error("This transaction was not broadcasted");
             };
@@ -10179,7 +10183,7 @@ class Contract {
                 tx = await this.signer.signTransaction(tx);
             return { operation, transaction: { ...tx, wait: noWait } };
         }
-        const { transaction, receipt } = await this.signer.sendTransaction(tx, opts.broadcast);
+        const { transaction, receipt } = await this.signer.sendTransaction(tx, optsSend);
         return { operation, transaction, receipt };
     }
     /**
@@ -10495,14 +10499,17 @@ class Provider {
                 if (transactions &&
                     transactions[0] &&
                     transactions[0].containing_blocks)
-                    return transactions[0].containing_blocks[0];
+                    return {
+                        blockId: transactions[0].containing_blocks[0],
+                    };
             }
             throw new Error(`Transaction not mined after ${timeout} ms`);
         }
         // byBlock
         const findTxInBlocks = async (ini, numBlocks, idRef) => {
             const blocks = await this.getBlocks(ini, numBlocks, idRef);
-            let bNum = 0; //console.log(JSON.stringify(blocks,null,2))
+            let bNum = 0;
+            let bId = "";
             blocks.forEach((block) => {
                 if (!block ||
                     !block.block ||
@@ -10510,11 +10517,13 @@ class Provider {
                     !block.block.transactions)
                     return;
                 const tx = block.block.transactions.find((t) => t.id === txId);
-                if (tx)
+                if (tx) {
                     bNum = Number(block.block_height);
+                    bId = block.block_id;
+                }
             });
             const lastId = blocks[blocks.length - 1].block_id;
-            return [bNum, lastId];
+            return [bNum, bId, lastId];
         };
         let blockNumber = 0;
         let iniBlock = 0;
@@ -10529,18 +10538,24 @@ class Provider {
             if (Number(headTopology.height) === blockNumber - 1 &&
                 previousId &&
                 previousId !== headTopology.id) {
-                const [bNum, lastId] = await findTxInBlocks(iniBlock, Number(headTopology.height) - iniBlock + 1, headTopology.id);
+                const [bNum, bId, lastId] = await findTxInBlocks(iniBlock, Number(headTopology.height) - iniBlock + 1, headTopology.id);
                 if (bNum)
-                    return bNum;
+                    return {
+                        blockId: bId,
+                        blockNumber: bNum,
+                    };
                 previousId = lastId;
                 blockNumber = Number(headTopology.height) + 1;
             }
             // eslint-disable-next-line no-continue
             if (blockNumber > Number(headTopology.height))
                 continue;
-            const [bNum, lastId] = await findTxInBlocks(blockNumber, 1, headTopology.id);
+            const [bNum, bId, lastId] = await findTxInBlocks(blockNumber, 1, headTopology.id);
             if (bNum)
-                return bNum;
+                return {
+                    blockId: bId,
+                    blockNumber: bNum,
+                };
             if (!previousId)
                 previousId = lastId;
             blockNumber += 1;
@@ -10976,6 +10991,10 @@ class Signer {
         }
         if (c.chainId)
             this.chainId = c.chainId;
+        this.sendOptions = {
+            broadcast: true,
+            ...c.sendOptions,
+        };
     }
     /**
      * Function to import a private key from the WIF
@@ -11124,21 +11143,24 @@ class Signer {
     /**
      * Function to sign and send a transaction. It internally uses
      * [[Provider.sendTransaction]]
-     * @param tx - Transaction to send. It will be signed inside this function
-     * if it is not signed yet
-     * @param broadcast - Option to broadcast the transaction to the
-     * different nodes in the network
-     * @param _abis - Collection of Abis to parse the operations in the
-     * transaction. This parameter is optional.
-     * @returns
+     * @param transaction - Transaction to send. It will be signed inside this
+     * function if it is not signed yet
+     * @param options - Options for sending the transaction
      */
-    async sendTransaction(tx, broadcast, _abis) {
+    async sendTransaction(transaction, options) {
         var _a;
-        if (!tx.signatures || !((_a = tx.signatures) === null || _a === void 0 ? void 0 : _a.length))
-            tx = await this.signTransaction(tx);
+        if (!transaction.signatures || !((_a = transaction.signatures) === null || _a === void 0 ? void 0 : _a.length))
+            transaction = await this.signTransaction(transaction);
         if (!this.provider)
             throw new Error("provider is undefined");
-        return this.provider.sendTransaction(tx, broadcast);
+        const opts = {
+            ...this.sendOptions,
+            ...options,
+        };
+        if (opts.beforeSend) {
+            await opts.beforeSend(transaction);
+        }
+        return this.provider.sendTransaction(transaction, opts.broadcast);
     }
     /**
      * Function to recover the public key from hash and signature

@@ -336,7 +336,10 @@ export class Provider {
     txId: string,
     type: "byTransactionId" | "byBlock" = "byBlock",
     timeout = 15000
-  ): Promise<string | number> {
+  ): Promise<{
+    blockId: string;
+    blockNumber?: number;
+  }> {
     const iniTime = Date.now();
     if (type === "byTransactionId") {
       while (Date.now() < iniTime + timeout) {
@@ -347,7 +350,9 @@ export class Provider {
           transactions[0] &&
           transactions[0].containing_blocks
         )
-          return transactions[0].containing_blocks[0];
+          return {
+            blockId: transactions[0].containing_blocks[0],
+          };
       }
       throw new Error(`Transaction not mined after ${timeout} ms`);
     }
@@ -357,9 +362,10 @@ export class Provider {
       ini: number,
       numBlocks: number,
       idRef: string
-    ): Promise<[number, string]> => {
+    ): Promise<[number, string, string]> => {
       const blocks = await this.getBlocks(ini, numBlocks, idRef);
       let bNum = 0;
+      let bId = "";
       blocks.forEach((block) => {
         if (
           !block ||
@@ -369,10 +375,13 @@ export class Provider {
         )
           return;
         const tx = block.block.transactions.find((t) => t.id === txId);
-        if (tx) bNum = Number(block.block_height);
+        if (tx) {
+          bNum = Number(block.block_height);
+          bId = block.block_id;
+        }
       });
       const lastId = blocks[blocks.length - 1].block_id;
-      return [bNum, lastId];
+      return [bNum, bId, lastId];
     };
 
     let blockNumber = 0;
@@ -391,23 +400,31 @@ export class Provider {
         previousId &&
         previousId !== headTopology.id
       ) {
-        const [bNum, lastId] = await findTxInBlocks(
+        const [bNum, bId, lastId] = await findTxInBlocks(
           iniBlock,
           Number(headTopology.height) - iniBlock + 1,
           headTopology.id
         );
-        if (bNum) return bNum;
+        if (bNum)
+          return {
+            blockId: bId,
+            blockNumber: bNum,
+          };
         previousId = lastId;
         blockNumber = Number(headTopology.height) + 1;
       }
       // eslint-disable-next-line no-continue
       if (blockNumber > Number(headTopology.height)) continue;
-      const [bNum, lastId] = await findTxInBlocks(
+      const [bNum, bId, lastId] = await findTxInBlocks(
         blockNumber,
         1,
         headTopology.id
       );
-      if (bNum) return bNum;
+      if (bNum)
+        return {
+          blockId: bId,
+          blockNumber: bNum,
+        };
       if (!previousId) previousId = lastId;
       blockNumber += 1;
     }

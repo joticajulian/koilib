@@ -168,8 +168,11 @@ describe("Contract", () => {
     const { transaction } = await contract.deploy();
     expect(transaction).toBeDefined();
     if (!transaction) throw new Error("Transaction response undefined");
-    const blockNumber = await transaction.wait("byBlock");
-    expect(typeof blockNumber).toBe("number");
+    const waitResult = await transaction.wait("byBlock");
+    expect(waitResult).toStrictEqual({
+      blockNumber: expect.any(Number) as number,
+      blockId: expect.any(String) as string,
+    });
   });
 
   it("should pay a transaction to upload a contract, and override functions", async () => {
@@ -190,8 +193,11 @@ describe("Contract", () => {
     await signer.signTransaction(transaction);
     expect(transaction.signatures).toHaveLength(2);
     await signer.sendTransaction(transaction);
-    const blockNumber = await transaction.wait();
-    expect(typeof blockNumber).toBe("number");
+    const waitResult = await transaction.wait();
+    expect(waitResult).toStrictEqual({
+      blockNumber: expect.any(Number) as number,
+      blockId: expect.any(String) as string,
+    });
   });
 
   it("connect with koin smart contract", async () => {
@@ -219,7 +225,7 @@ describe("Contract", () => {
   });
 
   it("should transfer and get receipt - wait byBlock", async () => {
-    expect.assertions(5);
+    expect.assertions(4);
     const { operation, transaction, result, receipt } = await koin.transfer({
       from: signer.getAddress(),
       to: addressReceiver,
@@ -235,9 +241,8 @@ describe("Contract", () => {
       }) as TransactionReceipt
     );
     if (!transaction) throw new Error("Transaction response undefined");
-    const blockNumber = await transaction.wait(); // byBlock by default
-    expect(typeof blockNumber).toBe("number");
-    console.log(`Tx mined in block ${blockNumber}`);
+    const { blockNumber, blockId } = await transaction.wait(); // byBlock by default
+    console.log(`Tx mined in block ${blockNumber ?? "?"} (${blockId})`);
   });
 
   it("should transfer and get receipt - wait byTransactionId", async () => {
@@ -257,10 +262,7 @@ describe("Contract", () => {
       }) as TransactionReceipt
     );
     if (!transaction) throw new Error("Transaction response undefined");
-    const blockId = (await transaction.wait(
-      "byTransactionId",
-      15000
-    )) as string;
+    const { blockId } = await transaction.wait("byTransactionId", 15000);
     expect(typeof blockId).toBe("string");
     console.log(`Second tx mined in block id ${blockId}`);
 
