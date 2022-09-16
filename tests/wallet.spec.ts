@@ -1056,6 +1056,67 @@ describe("Wallet and Contract", () => {
     expect(operation).toStrictEqual(opKoin);
   });
 
+  it("should trigger beforeSend function for multisignatures", async () => {
+    expect.assertions(4);
+
+    jest.clearAllMocks();
+    mockFetch.mockImplementation(async () => fetchResponse("mock error", 400));
+    mockFetch.mockImplementationOnce(async () =>
+      fetchResponse({ nonce: "OBE=" })
+    ); // nonce
+    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () => fetchResponse({}));
+
+    const signer2 = Signer.fromSeed("signer2");
+    const signer3 = Signer.fromSeed("signer3");
+    const addMoreSignatures = async (tx: TransactionJson) => {
+      await signer2.signTransaction(tx);
+      await signer3.signTransaction(tx);
+    };
+
+    const { transaction } = await koin.transfer(
+      {
+        from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+        to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+        value: "1000000",
+      },
+      {
+        payer: signer2.getAddress(),
+        beforeSend: addMoreSignatures,
+      }
+    );
+    expect(transaction!.signatures).toHaveLength(3);
+    expect(transaction!.header!.payer).toBe(signer2.getAddress());
+
+    jest.clearAllMocks();
+    mockFetch.mockImplementation(async () => fetchResponse("mock error", 400));
+    mockFetch.mockImplementationOnce(async () =>
+      fetchResponse({ nonce: "OBE=" })
+    ); // nonce
+    mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+    mockFetch.mockImplementationOnce(async () => fetchResponse({}));
+
+    // beforeSend defined in the constructor
+    const koin2 = new Contract({
+      id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+      abi: tokenAbi,
+      provider,
+      signer,
+      options: {
+        payer: signer2.getAddress(),
+        beforeSend: addMoreSignatures,
+      },
+    }).functions;
+
+    const { transaction: transaction2 } = await koin2.transfer({
+      from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+      to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+      value: "1000000",
+    });
+    expect(transaction2!.signatures).toHaveLength(3);
+    expect(transaction!.header!.payer).toBe(signer2.getAddress());
+  });
+
   it("should change node", async () => {
     expect.assertions(2);
     const myProvider = new Provider([

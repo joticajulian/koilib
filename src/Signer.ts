@@ -421,7 +421,7 @@ export class Signer implements SignerInterface {
       ...options,
     };
     if (opts.beforeSend) {
-      transaction = await opts.beforeSend(transaction);
+      await opts.beforeSend(transaction);
     }
     return this.provider.sendTransaction(transaction, opts.broadcast);
   }
