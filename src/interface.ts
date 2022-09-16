@@ -318,7 +318,10 @@ export interface RecoverPublicKeyOptions {
 export type WaitFunction = (
   type?: "byBlock" | "byTransactionId",
   timeout?: number
-) => Promise<string | number>;
+) => Promise<{
+  blockId: string;
+  blockNumber?: number;
+}>;
 
 export interface GenesisDataEntryEncoded {
   space: {
