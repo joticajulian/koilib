@@ -123,7 +123,7 @@ a transaction, and read contracts.
   }
 
   // wait to be mined
-  const blockNumber = await transaction.wait();
+  const { blockNumber } = await transaction.wait();
   console.log(`Transaction mined. Block number: ${blockNumber}`);
 
   // read the balance
@@ -150,12 +150,55 @@ It's also possible to upload contracts. First, follow the instructions in [koino
   console.log("Transaction submitted. Receipt:");
   console.log(receipt);
   // wait to be mined
-  const blockNumber = await transaction.wait();
+  const { blockNumber } = await transaction.wait();
   console.log(`Contract uploaded in block number ${blockNumber}`);
 })();
 ```
 
 You can also upload a contract in a new address. It is not required that this new address has funds, you just have to set your principal wallet as payer.
+
+```typescript
+(async () => {
+  // define signer, provider and bytecode
+  const provider = new Provider(["http://api.koinos.io:8080"]);
+  const accountWithFunds = Signer.fromSeed("this account has funds");
+  const newAccount = Signer.fromSeed("new account without funds");
+  accountWithFunds.provider = provider;
+  newAccount.provider = provider;
+
+  const bytecode = fs.readFileSync("my_contract.wasm");
+
+  // create contract. Set newAccount as signer
+  const contract = new Contract({
+    signer: newAccount,
+    provider,
+    bytecode,
+    options: {
+      // transaction options
+      // set payer
+      payer: accountWithFunds.address,
+
+      // use "beforeSend" function to sign
+      // the transaction with the payer
+      beforeSend: async (tx) => {
+        accountWithFunds.signTransaction(tx);
+      },
+    },
+  });
+
+  // call deploy()
+  // By default it is signed by "newAccount". But, as
+  // in beforeSend it is signed by the payer then it
+  // will have 2 signatures
+  const { receipt } = await contract.deploy();
+  console.log("Transaction submitted. Receipt: ");
+  console.log(receipt);
+  const { blockNumber } = await transaction.wait();
+  console.log(`Contract uploaded in block number ${blockNumber}`);
+})();
+```
+
+In fact, there are several ways to set a different payer and use it to upload a contract. This is another example:
 
 ```typescript
 (async () => {
@@ -193,9 +236,35 @@ You can also upload a contract in a new address. It is not required that this ne
   const { receipt } = await newAccount.sendTransaction(transaction);
   console.log("Transaction submitted. Receipt: ");
   console.log(receipt);
-  const blockNumber = await transaction.wait();
+  const { blockNumber } = await transaction.wait();
   console.log(`Contract uploaded in block number ${blockNumber}`);
 })();
+```
+
+### Multisignatures
+
+It can be configured to sign a single transaction with multiple accounts. Here is an example:
+
+```ts
+const signer2 = Signer.fromSeed("signer2");
+const signer3 = Signer.fromSeed("signer3");
+
+const addMoreSignatures = async (tx) => {
+  await signer2.signTransaction(tx);
+  await signer3.signTransaction(tx);
+};
+
+const { transaction } = await koin.transfer(
+  {
+    from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+    to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+    value: "1000000",
+  },
+  {
+    payer: signer2.getAddress(),
+    beforeSend: addMoreSignatures,
+  }
+);
 ```
 
 ### Create ABIs
@@ -209,7 +278,7 @@ To generate the types is necessary to use the dependency protobufjs. The followi
 
 ```js
 const fs = require("fs");
-const pbjs = require("protobufjs/cli/pbjs");
+const pbjs = require("protobufjs-cli/pbjs");
 
 pbjs.main(["--target", "json", "./token.proto"], (err, output) => {
   if (err) throw err;
@@ -245,12 +314,6 @@ const abiToken = {
 };
 ```
 
-Note that this example uses "default_output" for the method
-"balanceOf". This is used when the smart contract returns an
-empty response (for instance when there are no balance records
-for a specific address) and you require a default output in
-such cases.
-
 ## FAQ
 
 1. Can this library be used to create smart contracts?
@@ -269,7 +332,7 @@ such cases.
    For the ABI you need the .proto file and the library
    [protobufjs](https://www.npmjs.com/package/protobufjs). Then follow the format
    for the ABI as described in the previous section. It's important to note that
-   this ABI has a diffence with respect to the ABI used in [koinos-cli](https://docs.koinos.io/architecture/contract-abi.html).
+   this ABI has a difference with respect to the ABI used in [koinos-cli](https://docs.koinos.io/architecture/contract-abi.html).
    In particular, koilib takes the descriptor from `koilib_types`, which is a
    descriptor in json format, while the ABI in koinos-cli takes the descriptor from
    `types`, which is a descriptor in binary format.

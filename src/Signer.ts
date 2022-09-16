@@ -404,7 +404,7 @@ export class Signer implements SignerInterface {
    * [[Provider.sendTransaction]]
    * @param transaction - Transaction to send. It will be signed inside this
    * function if it is not signed yet
-   * @param options - See [[SendTransactionOptions]]
+   * @param options - Options for sending the transaction
    */
   async sendTransaction(
     transaction: TransactionJson | TransactionJsonWait,

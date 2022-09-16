@@ -274,7 +274,30 @@ export interface SendTransactionOptions {
   /**
    * Function to be called before sending a transaction to the
    * blockchain. It is useful to apply multisignatures to
-   * the transaction
+   * the transaction.
+   *
+   * @example
+   * ```ts
+   * const signer2 = Signer.fromSeed("signer2");
+   * const signer3 = Signer.fromSeed("signer3");
+   *
+   * const addMoreSignatures = async (tx) => {
+   *   await signer2.signTransaction(tx);
+   *   await signer3.signTransaction(tx);
+   * };
+   *
+   * const { transaction } = await koin.transfer(
+   *   {
+   *     from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+   *     to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+   *     value: "1000000",
+   *   },
+   *   {
+   *     payer: signer2.getAddress(),
+   *     beforeSend: addMoreSignatures,
+   *   }
+   * );
+   * ```
    */
   beforeSend?: (tx: TransactionJson) => Promise<void>;
 }
