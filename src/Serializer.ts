@@ -130,11 +130,15 @@ export class Serializer {
           (itemEncoded) => {
             // custom objects
             if (!nativeTypes.includes(type)) {
-              const protoBuf = this.root.lookupType(type);
-              return this.btypeDecode(
-                itemEncoded as Record<string, unknown>,
-                protoBuf
-              );
+              try {
+                const protoBuf = this.root.lookupType(type);
+                return this.btypeDecode(
+                  itemEncoded as Record<string, unknown>,
+                  protoBuf
+                );
+              } catch (error) {
+                return itemEncoded;
+              }
             }
             // native types
             return btypeDecodeValue(itemEncoded, typeField);
@@ -145,11 +149,15 @@ export class Serializer {
 
       // custom objects
       if (!nativeTypes.includes(type)) {
-        const protoBuf = this.root.lookupType(type);
-        valueBtypeDecoded[name] = this.btypeDecode(
-          valueBtypeEncoded[name] as Record<string, unknown>,
-          protoBuf
-        );
+        try {
+          const protoBuf = this.root.lookupType(type);
+          valueBtypeDecoded[name] = this.btypeDecode(
+            valueBtypeEncoded[name] as Record<string, unknown>,
+            protoBuf
+          );
+        } catch (error) {
+          valueBtypeDecoded[name] = valueBtypeEncoded[name];
+        }
         return;
       }
 
@@ -187,11 +195,15 @@ export class Serializer {
           (itemDecoded) => {
             // custom objects
             if (!nativeTypes.includes(type)) {
-              const protoBuf = this.root.lookupType(type);
-              return this.btypeEncode(
-                itemDecoded as Record<string, unknown>,
-                protoBuf
-              );
+              try {
+                const protoBuf = this.root.lookupType(type);
+                return this.btypeEncode(
+                  itemDecoded as Record<string, unknown>,
+                  protoBuf
+                );
+              } catch (error) {
+                return itemDecoded;
+              }
             }
             // native types
             return btypeEncodeValue(itemDecoded, typeField);
@@ -202,11 +214,16 @@ export class Serializer {
 
       // custom objects
       if (!nativeTypes.includes(type)) {
-        const protoBuf = this.root.lookupType(type);
-        valueBtypeEncoded[name] = this.btypeEncode(
-          valueBtypeDecoded[name] as Record<string, unknown>,
-          protoBuf
-        );
+        try {
+          const protoBuf = this.root.lookupType(type);
+          valueBtypeEncoded[name] = this.btypeEncode(
+            valueBtypeDecoded[name] as Record<string, unknown>,
+            protoBuf
+          );
+        } catch (error) {
+          valueBtypeEncoded[name] = valueBtypeDecoded[name];
+        }
+
         return;
       }
 
