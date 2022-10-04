@@ -10701,7 +10701,11 @@ class Serializer {
                 valueBtypeDecoded[name] = valueBtypeEncoded[name].map((itemEncoded) => {
                     // custom objects
                     if (!nativeTypes.includes(type)) {
-                        const protoBuf = this.root.lookupType(type);
+                        const protoBuf = this.root.lookupTypeOrEnum(type);
+                        if (!protoBuf.fields) {
+                            // it's an enum
+                            return itemEncoded;
+                        }
                         return this.btypeDecode(itemEncoded, protoBuf);
                     }
                     // native types
@@ -10711,7 +10715,12 @@ class Serializer {
             }
             // custom objects
             if (!nativeTypes.includes(type)) {
-                const protoBuf = this.root.lookupType(type);
+                const protoBuf = this.root.lookupTypeOrEnum(type);
+                if (!protoBuf.fields) {
+                    // it's an enum
+                    valueBtypeDecoded[name] = valueBtypeEncoded[name];
+                    return;
+                }
                 valueBtypeDecoded[name] = this.btypeDecode(valueBtypeEncoded[name], protoBuf);
                 return;
             }
@@ -10739,7 +10748,11 @@ class Serializer {
                 valueBtypeEncoded[name] = valueBtypeDecoded[name].map((itemDecoded) => {
                     // custom objects
                     if (!nativeTypes.includes(type)) {
-                        const protoBuf = this.root.lookupType(type);
+                        const protoBuf = this.root.lookupTypeOrEnum(type);
+                        if (!protoBuf.fields) {
+                            // it's an enum
+                            return itemDecoded;
+                        }
                         return this.btypeEncode(itemDecoded, protoBuf);
                     }
                     // native types
@@ -10749,7 +10762,12 @@ class Serializer {
             }
             // custom objects
             if (!nativeTypes.includes(type)) {
-                const protoBuf = this.root.lookupType(type);
+                const protoBuf = this.root.lookupTypeOrEnum(type);
+                if (!protoBuf.fields) {
+                    // it's an enum
+                    valueBtypeEncoded[name] = valueBtypeDecoded[name];
+                    return;
+                }
                 valueBtypeEncoded[name] = this.btypeEncode(valueBtypeDecoded[name], protoBuf);
                 return;
             }

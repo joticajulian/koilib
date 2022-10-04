@@ -130,7 +130,11 @@ export class Serializer {
           (itemEncoded) => {
             // custom objects
             if (!nativeTypes.includes(type)) {
-              const protoBuf = this.root.lookupType(type);
+              const protoBuf = this.root.lookupTypeOrEnum(type);
+              if (!protoBuf.fields) {
+                // it's an enum
+                return itemEncoded;
+              }
               return this.btypeDecode(
                 itemEncoded as Record<string, unknown>,
                 protoBuf
@@ -145,7 +149,12 @@ export class Serializer {
 
       // custom objects
       if (!nativeTypes.includes(type)) {
-        const protoBuf = this.root.lookupType(type);
+        const protoBuf = this.root.lookupTypeOrEnum(type);
+        if (!protoBuf.fields) {
+          // it's an enum
+          valueBtypeDecoded[name] = valueBtypeEncoded[name];
+          return;
+        }
         valueBtypeDecoded[name] = this.btypeDecode(
           valueBtypeEncoded[name] as Record<string, unknown>,
           protoBuf
@@ -187,7 +196,11 @@ export class Serializer {
           (itemDecoded) => {
             // custom objects
             if (!nativeTypes.includes(type)) {
-              const protoBuf = this.root.lookupType(type);
+              const protoBuf = this.root.lookupTypeOrEnum(type);
+              if (!protoBuf.fields) {
+                // it's an enum
+                return itemDecoded;
+              }
               return this.btypeEncode(
                 itemDecoded as Record<string, unknown>,
                 protoBuf
@@ -202,7 +215,12 @@ export class Serializer {
 
       // custom objects
       if (!nativeTypes.includes(type)) {
-        const protoBuf = this.root.lookupType(type);
+        const protoBuf = this.root.lookupTypeOrEnum(type);
+        if (!protoBuf.fields) {
+          // it's an enum
+          valueBtypeEncoded[name] = valueBtypeDecoded[name];
+          return;
+        }
         valueBtypeEncoded[name] = this.btypeEncode(
           valueBtypeDecoded[name] as Record<string, unknown>,
           protoBuf
