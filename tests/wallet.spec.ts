@@ -380,6 +380,13 @@ describe("Serializer", () => {
     const serializer = new Serializer(
       {
         nested: {
+          my_enum: {
+            values: {
+              op0: 0,
+              op1: 1,
+              op2: 2,
+            },
+          },
           main_object: {
             fields: {
               from: {
@@ -420,6 +427,15 @@ describe("Serializer", () => {
                 options: {
                   "(koinos.btype)": "BASE58",
                 },
+              },
+              type_offers: {
+                type: "my_enum",
+                rule: "repeated",
+                id: 8,
+              },
+              type_offer: {
+                type: "my_enum",
+                id: 9,
               },
             },
           },
@@ -472,6 +488,8 @@ describe("Serializer", () => {
           data2: encodeBase64url(new Uint8Array([13])),
         },
       ],
+      type_offer: 1,
+      type_offers: [1, 2, 0, 1],
       addresses: [
         encodeBase58(new Uint8Array([10, 20, 30])),
         encodeBase58(new Uint8Array([40, 50, 60])),
@@ -479,8 +497,8 @@ describe("Serializer", () => {
     };
 
     const serialized = await serializer.serialize(mainObject);
-    const deserizaled = await serializer.deserialize(serialized);
-    expect(deserizaled).toStrictEqual(mainObject);
+    const deserialized = await serializer.deserialize(serialized);
+    expect(deserialized).toStrictEqual(mainObject);
   });
 
   it("should accept options btype and koinos.btype", async () => {
