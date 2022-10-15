@@ -110,6 +110,13 @@ const btypesOperation: TypeField["subtypes"] = {
       },
     },
   },
+  set_system_contract: {
+    type: "object",
+    subtypes: {
+      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+      system_contract: { type: "bool" },
+    },
+  },
 };
 
 /**

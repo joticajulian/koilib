@@ -653,7 +653,7 @@ describe("Wallet and Contract", () => {
         rc_limit: "10",
         nonce: "OAg=",
         operation_merkle_root:
-          "EiDeXZzhjmhRCShrMjANTJ_ntno06KLstXBZrLsGqZBwwg==",
+          "EiCLbSkD-m07WGxcqG3rUiSfJgpxbIxRfOr3fCj2jMhL7A==",
         payer: addressCompressed,
       },
       operations: [
@@ -678,7 +678,7 @@ describe("Wallet and Contract", () => {
           },
         },
       ],
-      id: "0x12209cef35988b17ff5594af827b9da55529a2663dcf3b6dbf15ec734744ada4d475",
+      id: "0x1220cf1268715e43392c70e7b0e8e8426ffa23424b50009a3a7c46fe7b5c5bc4bdc1",
     });
   });
 
