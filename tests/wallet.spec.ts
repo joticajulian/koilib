@@ -18,6 +18,8 @@ import {
   decodeBase64url,
   btypeDecode,
   btypeEncode,
+  isChecksumAddress,
+  isChecksumWif,
 } from "../src/utils";
 import {
   TransactionJson,
@@ -292,6 +294,30 @@ describe("utils", () => {
 
     const objEncoded = btypeEncode(objDecoded, btypeObj);
     expect(objEncoded).toStrictEqual(obj);
+  });
+
+  it("should check the checksum of addresses and private keys in WIF", () => {
+    expect(
+      isChecksumAddress("1QHvkarPYtRkzhApCXNPsk4qjcbiZjBzmu")
+    ).toBeTruthy();
+    expect(
+      isChecksumAddress("1HXJPbTR75ooph95TEXhik98ZymVv2v6MM")
+    ).toBeTruthy();
+    expect(
+      isChecksumWif("5JFtmPNRnWiZfZqgFWmzB7TYZwLVqEuyYD6g5nMbndSNdERYGDU")
+    ).toBeTruthy();
+    expect(
+      isChecksumWif("KyAjUujaPtATBDwrF4RZMdWALNq4FvQpYkQ3W7BvYPpzSVKm3tcJ")
+    ).toBeTruthy();
+
+    expect(isChecksumAddress("1QHVkarPYtRkzhApCXNPsk4qjcbiZjBzmu")).toBeFalsy();
+    expect(isChecksumAddress("1HxJPbTR75ooph95TEXhik98ZymVv2v6MM")).toBeFalsy();
+    expect(
+      isChecksumWif("5JftmPNRnWiZfZqgFWmzB7TYZwLVqEuyYD6g5nMbndSNdERYGDU")
+    ).toBeFalsy();
+    expect(
+      isChecksumWif("KyajUujaPtATBDwrF4RZMdWALNq4FvQpYkQ3W7BvYPpzSVKm3tcJ")
+    ).toBeFalsy();
   });
 });
 

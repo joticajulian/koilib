@@ -185,6 +185,88 @@ export function bitcoinAddress(publicKey: Uint8Array): string {
 }
 
 /**
+ * Checks if the last 4 bytes matches with the double sha256
+ * of the first part
+ */
+export function isChecksum(buffer: Uint8Array): boolean {
+  const dataLength = buffer.length - 4;
+  const data = new Uint8Array(dataLength);
+  data.set(buffer.slice(0, dataLength));
+
+  const checksum = new Uint8Array(4);
+  checksum.set(buffer.slice(dataLength));
+
+  const doubleHash = sha256(sha256(data));
+
+  // checksum must be the first 4 bytes of the double hash
+  for (let i = 0; i < 4; i += 1) {
+    if (checksum[i] !== doubleHash[i]) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Checks if the checksum of an address is correct.
+ *
+ * The address has 3 parts in this order:
+ * - prefix: 1 byte
+ * - data: 20 bytes
+ * - checksum: 4 bytes
+ *
+ * checks:
+ * - It must be "pay to public key hash" (P2PKH). That is prefix 0
+ * - checksum = first 4 bytes of sha256(sha256(prefix + data))
+ *
+ * See [How to generate a bitcoin address step by step](https://medium.com/coinmonks/how-to-generate-a-bitcoin-address-step-by-step-9d7fcbf1ad0b).
+ */
+export function isChecksumAddress(address: string): boolean {
+  const bufferAddress = decodeBase58(address);
+
+  // it must have 25 bytes
+  if (bufferAddress.length !== 25) return false;
+
+  // it must have prefix 0 (P2PKH address)
+  if (bufferAddress[0] !== 0) return false;
+
+  return isChecksum(bufferAddress);
+}
+
+/**
+ * Checks if the checksum of an private key WIF is correct.
+ *
+ * The private key WIF has 3 parts in this order:
+ * - prefix: 1 byte
+ * - private key: 32 bytes
+ * - compressed: 1 byte for compressed public key (no byte for uncompressed)
+ * - checksum: 4 bytes
+ *
+ * checks:
+ * - It must use version 0x80 in the prefix
+ * - If the corresponding public key is compressed the byte 33 must be 0x01
+ * - checksum = first 4 bytes of
+ *     sha256(sha256(prefix + private key + compressed))
+ *
+ * See [Bitcoin WIF](https://en.bitcoin.it/wiki/Wallet_import_format).
+ */
+export function isChecksumWif(wif: string): boolean {
+  const bufferWif = decodeBase58(wif);
+
+  // it must have 37 or 38 bytes
+  if (bufferWif.length !== 37 && bufferWif.length !== 38) return false;
+
+  const compressed = bufferWif.length === 38;
+
+  // if compressed then the last byte must be 0x01
+  if (compressed && bufferWif[33] !== 1) return false;
+
+  // it must have prefix version for private keys (0x80)
+  if (bufferWif[0] !== 128) return false;
+
+  return isChecksum(bufferWif);
+}
+
+/**
  * Function to format a number in a decimal point number
  * @example
  * ```js
