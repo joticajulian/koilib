@@ -265,7 +265,7 @@ describe("utils", () => {
       },
     };
 
-    const objDecoded = btypeDecode(obj, btypeObj);
+    const objDecoded = btypeDecode(obj, btypeObj, false);
 
     expect(objDecoded).toStrictEqual({
       from: new Uint8Array([1, 2, 3, 4]),
@@ -292,7 +292,7 @@ describe("utils", () => {
       addresses: [new Uint8Array([10, 20, 30]), new Uint8Array([40, 50, 60])],
     });
 
-    const objEncoded = btypeEncode(objDecoded, btypeObj);
+    const objEncoded = btypeEncode(objDecoded, btypeObj, false);
     expect(objEncoded).toStrictEqual(obj);
   });
 
@@ -579,8 +579,12 @@ describe("Serializer", () => {
       val2: encodeBase58(new Uint8Array([1, 2, 3, 4])),
     };
 
-    const ser1 = await serializer1.serialize(value);
-    const ser2 = await serializer2.serialize(value);
+    const ser1 = await serializer1.serialize(value, "my_data", {
+      verifyChecksum: false,
+    });
+    const ser2 = await serializer2.serialize(value, "my_data", {
+      verifyChecksum: false,
+    });
     const deser = await serializer1.deserialize(ser1);
     expect(deser).toStrictEqual(value);
     expect(encodeBase64url(ser1)).toBe(encodeBase64url(ser2));
@@ -629,6 +633,55 @@ describe("Wallet and Contract", () => {
     } as OperationJson);
 
     expect(opDecoded).toStrictEqual(opTransfer);
+  });
+
+  it("should be possible to disable verify checksum", async () => {
+    mockFetch.mockImplementation(async (_url, params) => {
+      if (params && params.body) {
+        const body = JSON.parse(params.body.toString()) as FetchParams;
+
+        switch (body.method) {
+          case "chain.get_account_nonce":
+            return fetchResponse({ nonce: "OAA=" });
+          case "chain.get_account_rc":
+            return fetchResponse({ rc: "50000000" });
+          case "chain.get_chain_id":
+            return fetchResponse({
+              chain_id: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
+            });
+          default:
+            return fetchResponse({});
+        }
+      }
+
+      return fetchResponse({});
+    });
+
+    const contract = new Contract({
+      id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+      abi: tokenAbi,
+      provider,
+      signer,
+    });
+
+    // it throws by default
+    await expect(
+      contract.functions.transfer({
+        from: "danny",
+        to: "bob",
+        value: "1000000",
+      })
+    ).rejects.toThrow("danny is an invalid address");
+
+    // now the checksum validation is skipped
+    contract.serializer!.verifyChecksum.serialize = false;
+    await expect(
+      contract.functions.transfer({
+        from: "danny",
+        to: "bob",
+        value: "1000000",
+      })
+    ).resolves.not.toThrow();
   });
 
   it("should prepare a transaction", async () => {
