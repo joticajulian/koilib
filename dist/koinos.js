@@ -10675,6 +10675,14 @@ class Serializer {
          * Preformat bytes for base64url, base58 or hex string
          */
         this.bytesConversion = true;
+        /**
+         * Verify checksum in addresses during serialization
+         * or deserialization
+         */
+        this.verifyChecksum = {
+            serialize: true,
+            deserialize: false,
+        };
         this.types = types;
         this.root = light_1.Root.fromJSON(this.types);
         if (opts === null || opts === void 0 ? void 0 : opts.defaultTypeName)
@@ -10682,7 +10690,7 @@ class Serializer {
         if (opts && typeof opts.bytesConversion !== "undefined")
             this.bytesConversion = opts.bytesConversion;
     }
-    btypeDecode(valueBtypeEncoded, protobufType) {
+    btypeDecode(valueBtypeEncoded, protobufType, verifyChecksum) {
         const valueBtypeDecoded = {};
         Object.keys(protobufType.fields).forEach((fieldName) => {
             // @ts-ignore
@@ -10706,10 +10714,10 @@ class Serializer {
                             // it's an enum
                             return itemEncoded;
                         }
-                        return this.btypeDecode(itemEncoded, protoBuf);
+                        return this.btypeDecode(itemEncoded, protoBuf, verifyChecksum);
                     }
                     // native types
-                    return (0, utils_1.btypeDecodeValue)(itemEncoded, typeField);
+                    return (0, utils_1.btypeDecodeValue)(itemEncoded, typeField, verifyChecksum);
                 });
                 return;
             }
@@ -10721,15 +10729,15 @@ class Serializer {
                     valueBtypeDecoded[name] = valueBtypeEncoded[name];
                     return;
                 }
-                valueBtypeDecoded[name] = this.btypeDecode(valueBtypeEncoded[name], protoBuf);
+                valueBtypeDecoded[name] = this.btypeDecode(valueBtypeEncoded[name], protoBuf, verifyChecksum);
                 return;
             }
             // native types
-            valueBtypeDecoded[name] = (0, utils_1.btypeDecodeValue)(valueBtypeEncoded[name], typeField);
+            valueBtypeDecoded[name] = (0, utils_1.btypeDecodeValue)(valueBtypeEncoded[name], typeField, verifyChecksum);
         });
         return valueBtypeDecoded;
     }
-    btypeEncode(valueBtypeDecoded, protobufType) {
+    btypeEncode(valueBtypeDecoded, protobufType, verifyChecksum) {
         const valueBtypeEncoded = {};
         Object.keys(protobufType.fields).forEach((fieldName) => {
             // @ts-ignore
@@ -10753,10 +10761,10 @@ class Serializer {
                             // it's an enum
                             return itemDecoded;
                         }
-                        return this.btypeEncode(itemDecoded, protoBuf);
+                        return this.btypeEncode(itemDecoded, protoBuf, verifyChecksum);
                     }
                     // native types
-                    return (0, utils_1.btypeEncodeValue)(itemDecoded, typeField);
+                    return (0, utils_1.btypeEncodeValue)(itemDecoded, typeField, verifyChecksum);
                 });
                 return;
             }
@@ -10768,11 +10776,11 @@ class Serializer {
                     valueBtypeEncoded[name] = valueBtypeDecoded[name];
                     return;
                 }
-                valueBtypeEncoded[name] = this.btypeEncode(valueBtypeDecoded[name], protoBuf);
+                valueBtypeEncoded[name] = this.btypeEncode(valueBtypeDecoded[name], protoBuf, verifyChecksum);
                 return;
             }
             // native types
-            valueBtypeEncoded[name] = (0, utils_1.btypeEncodeValue)(valueBtypeDecoded[name], typeField);
+            valueBtypeEncoded[name] = (0, utils_1.btypeEncodeValue)(valueBtypeDecoded[name], typeField, verifyChecksum);
         });
         return valueBtypeEncoded;
     }
@@ -10787,8 +10795,11 @@ class Serializer {
         const bytesConversion = (opts === null || opts === void 0 ? void 0 : opts.bytesConversion) === undefined
             ? this.bytesConversion
             : opts.bytesConversion;
+        const verifyChecksum = (opts === null || opts === void 0 ? void 0 : opts.verifyChecksum) === undefined
+            ? this.verifyChecksum.serialize
+            : opts.verifyChecksum;
         if (bytesConversion) {
-            object = this.btypeDecode(valueDecoded, protobufType);
+            object = this.btypeDecode(valueDecoded, protobufType, verifyChecksum);
         }
         else {
             object = valueDecoded;
@@ -10815,8 +10826,11 @@ class Serializer {
         const bytesConversion = (opts === null || opts === void 0 ? void 0 : opts.bytesConversion) === undefined
             ? this.bytesConversion
             : opts.bytesConversion;
+        const verifyChecksum = (opts === null || opts === void 0 ? void 0 : opts.verifyChecksum) === undefined
+            ? this.verifyChecksum.deserialize
+            : opts.verifyChecksum;
         if (bytesConversion) {
-            return this.btypeEncode(object, protobufType);
+            return this.btypeEncode(object, protobufType, verifyChecksum);
         }
         return object;
     }
@@ -10917,6 +10931,13 @@ const btypesOperation = {
                     },
                 },
             },
+        },
+    },
+    set_system_contract: {
+        type: "object",
+        subtypes: {
+            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+            system_contract: { type: "bool" },
         },
     },
 };
@@ -11270,7 +11291,7 @@ class Signer {
             if (!block.signature)
                 throw new Error("Missing block signature");
             signatures = [block.signature];
-            const headerDecoded = (0, utils_1.btypeDecode)(block.header, btypeBlockHeader);
+            const headerDecoded = (0, utils_1.btypeDecode)(block.header, btypeBlockHeader, false);
             const message = protocol_proto_js_1.koinos.protocol.block_header.create(headerDecoded);
             headerBytes = protocol_proto_js_1.koinos.protocol.block_header.encode(message).finish();
         }
@@ -11281,7 +11302,7 @@ class Signer {
             if (!transaction.signatures)
                 throw new Error("Missing transaction signatures");
             signatures = transaction.signatures;
-            const headerDecoded = (0, utils_1.btypeDecode)(transaction.header, btypeTransactionHeader);
+            const headerDecoded = (0, utils_1.btypeDecode)(transaction.header, btypeTransactionHeader, false);
             const message = protocol_proto_js_1.koinos.protocol.transaction_header.create(headerDecoded);
             headerBytes = protocol_proto_js_1.koinos.protocol.transaction_header.encode(message).finish();
         }
@@ -11394,7 +11415,7 @@ class Signer {
         const operationsHashes = [];
         if (tx.operations) {
             for (let index = 0; index < ((_b = tx.operations) === null || _b === void 0 ? void 0 : _b.length); index += 1) {
-                const operationDecoded = (0, utils_1.btypeDecode)(tx.operations[index], btypesOperation);
+                const operationDecoded = (0, utils_1.btypeDecode)(tx.operations[index], btypesOperation, false);
                 const message = protocol_proto_js_1.koinos.protocol.operation.create(operationDecoded);
                 const operationEncoded = protocol_proto_js_1.koinos.protocol.operation
                     .encode(message)
@@ -11417,7 +11438,7 @@ class Signer {
             ...(payee && { payee }),
             // TODO: Option to resolve names (payer, payee)
         };
-        const headerDecoded = (0, utils_1.btypeDecode)(tx.header, btypeTransactionHeader);
+        const headerDecoded = (0, utils_1.btypeDecode)(tx.header, btypeTransactionHeader, false);
         const message = protocol_proto_js_1.koinos.protocol.transaction_header.create(headerDecoded);
         const headerBytes = protocol_proto_js_1.koinos.protocol.transaction_header
             .encode(message)
@@ -11441,7 +11462,7 @@ class Signer {
         if (block.transactions) {
             for (let index = 0; index < block.transactions.length; index++) {
                 const tx = block.transactions[index];
-                const headerDecoded = (0, utils_1.btypeDecode)(tx.header, btypeTransactionHeader);
+                const headerDecoded = (0, utils_1.btypeDecode)(tx.header, btypeTransactionHeader, false);
                 const message = protocol_proto_js_1.koinos.protocol.transaction_header.create(headerDecoded);
                 const headerBytes = protocol_proto_js_1.koinos.protocol.transaction_header
                     .encode(message)
@@ -11483,7 +11504,7 @@ class Signer {
             ])),
             signer: this.address,
         };
-        const headerDecoded = (0, utils_1.btypeDecode)(block.header, btypeBlockHeader);
+        const headerDecoded = (0, utils_1.btypeDecode)(block.header, btypeBlockHeader, false);
         const message = protocol_proto_js_1.koinos.protocol.block_header.create(headerDecoded);
         const headerBytes = protocol_proto_js_1.koinos.protocol.block_header
             .encode(message)
@@ -11576,7 +11597,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.tokenAbi = exports.btypeEncode = exports.btypeDecode = exports.btypeEncodeValue = exports.btypeDecodeValue = exports.parseUnits = exports.formatUnits = exports.bitcoinAddress = exports.bitcoinDecode = exports.bitcoinEncode = exports.calculateMerkleRoot = exports.decodeBase64 = exports.multihash = exports.encodeBase64 = exports.decodeBase64url = exports.encodeBase64url = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
+exports.tokenAbi = exports.btypeEncode = exports.btypeDecode = exports.btypeEncodeValue = exports.btypeDecodeValue = exports.parseUnits = exports.formatUnits = exports.isChecksumWif = exports.isChecksumAddress = exports.isChecksum = exports.bitcoinAddress = exports.bitcoinDecode = exports.bitcoinEncode = exports.calculateMerkleRoot = exports.decodeBase64 = exports.multihash = exports.encodeBase64 = exports.decodeBase64url = exports.encodeBase64url = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
 const multibase = __importStar(__webpack_require__(6957));
 const sha256_1 = __webpack_require__(3061);
 const ripemd160_1 = __webpack_require__(830);
@@ -11758,6 +11779,82 @@ function bitcoinAddress(publicKey) {
 }
 exports.bitcoinAddress = bitcoinAddress;
 /**
+ * Checks if the last 4 bytes matches with the double sha256
+ * of the first part
+ */
+function isChecksum(buffer) {
+    const dataLength = buffer.length - 4;
+    const data = new Uint8Array(dataLength);
+    data.set(buffer.slice(0, dataLength));
+    const checksum = new Uint8Array(4);
+    checksum.set(buffer.slice(dataLength));
+    const doubleHash = (0, sha256_1.sha256)((0, sha256_1.sha256)(data));
+    // checksum must be the first 4 bytes of the double hash
+    for (let i = 0; i < 4; i += 1) {
+        if (checksum[i] !== doubleHash[i])
+            return false;
+    }
+    return true;
+}
+exports.isChecksum = isChecksum;
+/**
+ * Checks if the checksum of an address is correct.
+ *
+ * The address has 3 parts in this order:
+ * - prefix: 1 byte
+ * - data: 20 bytes
+ * - checksum: 4 bytes
+ *
+ * checks:
+ * - It must be "pay to public key hash" (P2PKH). That is prefix 0
+ * - checksum = first 4 bytes of sha256(sha256(prefix + data))
+ *
+ * See [How to generate a bitcoin address step by step](https://medium.com/coinmonks/how-to-generate-a-bitcoin-address-step-by-step-9d7fcbf1ad0b).
+ */
+function isChecksumAddress(address) {
+    const bufferAddress = typeof address === "string" ? decodeBase58(address) : address;
+    // it must have 25 bytes
+    if (bufferAddress.length !== 25)
+        return false;
+    // it must have prefix 0 (P2PKH address)
+    if (bufferAddress[0] !== 0)
+        return false;
+    return isChecksum(bufferAddress);
+}
+exports.isChecksumAddress = isChecksumAddress;
+/**
+ * Checks if the checksum of an private key WIF is correct.
+ *
+ * The private key WIF has 3 parts in this order:
+ * - prefix: 1 byte
+ * - private key: 32 bytes
+ * - compressed: 1 byte for compressed public key (no byte for uncompressed)
+ * - checksum: 4 bytes
+ *
+ * checks:
+ * - It must use version 0x80 in the prefix
+ * - If the corresponding public key is compressed the byte 33 must be 0x01
+ * - checksum = first 4 bytes of
+ *     sha256(sha256(prefix + private key + compressed))
+ *
+ * See [Bitcoin WIF](https://en.bitcoin.it/wiki/Wallet_import_format).
+ */
+function isChecksumWif(wif) {
+    const bufferWif = typeof wif === "string" ? decodeBase58(wif) : wif;
+    // it must have 37 or 38 bytes
+    if (bufferWif.length !== 37 && bufferWif.length !== 38)
+        return false;
+    const compressed = bufferWif.length === 38;
+    // if compressed then the last byte must be 0x01
+    if (compressed && bufferWif[33] !== 1)
+        return false;
+    // it must have prefix version for private keys (0x80)
+    if (bufferWif[0] !== 128)
+        return false;
+    return isChecksum(bufferWif);
+}
+exports.isChecksumWif = isChecksumWif;
+/**
  * Function to format a number in a decimal point number
  * @example
  * ```js
@@ -11814,7 +11911,7 @@ function copyValue(value) {
     }
     return JSON.parse(JSON.stringify(value));
 }
-function btypeDecodeValue(valueEncoded, typeField) {
+function btypeDecodeValue(valueEncoded, typeField, verifyChecksum) {
     // No byte conversion
     if (typeField.type !== "bytes")
         return copyValue(valueEncoded);
@@ -11826,9 +11923,14 @@ function btypeDecodeValue(valueEncoded, typeField) {
     // Specific byte conversion
     switch (typeField.btype) {
         case "BASE58":
+            return decodeBase58(value);
         case "CONTRACT_ID":
         case "ADDRESS":
-            return decodeBase58(value);
+            const valueDecoded = decodeBase58(value);
+            if (verifyChecksum && !isChecksumAddress(valueDecoded)) {
+                throw new Error(`${value} is an invalid address`);
+            }
+            return valueDecoded;
         case "BASE64":
             return decodeBase64url(value);
         case "HEX":
@@ -11840,7 +11942,7 @@ function btypeDecodeValue(valueEncoded, typeField) {
     }
 }
 exports.btypeDecodeValue = btypeDecodeValue;
-function btypeEncodeValue(valueDecoded, typeField) {
+function btypeEncodeValue(valueDecoded, typeField, verifyChecksum) {
     // No byte conversion
     if (typeField.type !== "bytes")
         return copyValue(valueDecoded);
@@ -11852,9 +11954,14 @@ function btypeEncodeValue(valueDecoded, typeField) {
     // Specific byte conversion
     switch (typeField.btype) {
         case "BASE58":
+            return encodeBase58(value);
         case "CONTRACT_ID":
         case "ADDRESS":
-            return encodeBase58(value);
+            const valueEncoded = encodeBase58(value);
+            if (verifyChecksum && !isChecksumAddress(value)) {
+                throw new Error(`${valueEncoded} is an invalid address`);
+            }
+            return valueEncoded;
         case "BASE64":
             return encodeBase64url(value);
         case "HEX":
@@ -11866,7 +11973,7 @@ function btypeEncodeValue(valueDecoded, typeField) {
     }
 }
 exports.btypeEncodeValue = btypeEncodeValue;
-function btypeDecode(valueEncoded, fields) {
+function btypeDecode(valueEncoded, fields, verifyChecksum) {
     if (typeof valueEncoded !== "object")
         return valueEncoded;
     const valueDecoded = {};
@@ -11876,18 +11983,18 @@ function btypeDecode(valueEncoded, fields) {
         if (fields[name].rule === "repeated")
             valueDecoded[name] = valueEncoded[name].map((itemEncoded) => {
                 if (fields[name].subtypes)
-                    return btypeDecode(itemEncoded, fields[name].subtypes);
-                return btypeDecodeValue(itemEncoded, fields[name]);
+                    return btypeDecode(itemEncoded, fields[name].subtypes, verifyChecksum);
+                return btypeDecodeValue(itemEncoded, fields[name], verifyChecksum);
             });
         else if (fields[name].subtypes)
-            valueDecoded[name] = btypeDecode(valueEncoded[name], fields[name].subtypes);
+            valueDecoded[name] = btypeDecode(valueEncoded[name], fields[name].subtypes, verifyChecksum);
         else
-            valueDecoded[name] = btypeDecodeValue(valueEncoded[name], fields[name]);
+            valueDecoded[name] = btypeDecodeValue(valueEncoded[name], fields[name], verifyChecksum);
     });
     return valueDecoded;
 }
 exports.btypeDecode = btypeDecode;
-function btypeEncode(valueDecoded, fields) {
+function btypeEncode(valueDecoded, fields, verifyChecksum) {
     if (typeof valueDecoded !== "object")
         return valueDecoded;
     const valueEncoded = {};
@@ -11897,13 +12004,13 @@ function btypeEncode(valueDecoded, fields) {
         if (fields[name].rule === "repeated")
             valueEncoded[name] = valueDecoded[name].map((itemDecoded) => {
                 if (fields[name].subtypes)
-                    return btypeEncode(itemDecoded, fields[name].subtypes);
-                return btypeEncodeValue(itemDecoded, fields[name]);
+                    return btypeEncode(itemDecoded, fields[name].subtypes, verifyChecksum);
+                return btypeEncodeValue(itemDecoded, fields[name], verifyChecksum);
             });
         else if (fields[name].subtypes)
-            valueEncoded[name] = btypeEncode(valueDecoded[name], fields[name].subtypes);
+            valueEncoded[name] = btypeEncode(valueDecoded[name], fields[name].subtypes, verifyChecksum);
         else
-            valueEncoded[name] = btypeEncodeValue(valueDecoded[name], fields[name]);
+            valueEncoded[name] = btypeEncodeValue(valueDecoded[name], fields[name], verifyChecksum);
     });
     return valueEncoded;
 }
