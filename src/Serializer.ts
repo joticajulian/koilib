@@ -81,6 +81,15 @@ export class Serializer {
    */
   bytesConversion = true;
 
+  /**
+   * Verify checksum in addresses during serialization
+   * or deserialization
+   */
+  verifyChecksum = {
+    serialize: true,
+    deserialize: false,
+  };
+
   constructor(
     types: INamespace,
     opts?: {
@@ -108,7 +117,8 @@ export class Serializer {
 
   btypeDecode(
     valueBtypeEncoded: Record<string, unknown> | unknown[],
-    protobufType: Type
+    protobufType: Type,
+    verifyChecksum: boolean
   ) {
     const valueBtypeDecoded = {} as Record<string, unknown>;
     Object.keys(protobufType.fields).forEach((fieldName) => {
@@ -137,11 +147,12 @@ export class Serializer {
               }
               return this.btypeDecode(
                 itemEncoded as Record<string, unknown>,
-                protoBuf
+                protoBuf,
+                verifyChecksum
               );
             }
             // native types
-            return btypeDecodeValue(itemEncoded, typeField);
+            return btypeDecodeValue(itemEncoded, typeField, verifyChecksum);
           }
         );
         return;
@@ -157,7 +168,8 @@ export class Serializer {
         }
         valueBtypeDecoded[name] = this.btypeDecode(
           valueBtypeEncoded[name] as Record<string, unknown>,
-          protoBuf
+          protoBuf,
+          verifyChecksum
         );
         return;
       }
@@ -165,7 +177,8 @@ export class Serializer {
       // native types
       valueBtypeDecoded[name] = btypeDecodeValue(
         valueBtypeEncoded[name],
-        typeField
+        typeField,
+        verifyChecksum
       );
     });
 
@@ -174,7 +187,8 @@ export class Serializer {
 
   btypeEncode(
     valueBtypeDecoded: Record<string, unknown> | unknown[],
-    protobufType: Type
+    protobufType: Type,
+    verifyChecksum: boolean
   ) {
     const valueBtypeEncoded = {} as Record<string, unknown>;
     Object.keys(protobufType.fields).forEach((fieldName) => {
@@ -203,11 +217,12 @@ export class Serializer {
               }
               return this.btypeEncode(
                 itemDecoded as Record<string, unknown>,
-                protoBuf
+                protoBuf,
+                verifyChecksum
               );
             }
             // native types
-            return btypeEncodeValue(itemDecoded, typeField);
+            return btypeEncodeValue(itemDecoded, typeField, verifyChecksum);
           }
         );
         return;
@@ -223,7 +238,8 @@ export class Serializer {
         }
         valueBtypeEncoded[name] = this.btypeEncode(
           valueBtypeDecoded[name] as Record<string, unknown>,
-          protoBuf
+          protoBuf,
+          verifyChecksum
         );
         return;
       }
@@ -231,7 +247,8 @@ export class Serializer {
       // native types
       valueBtypeEncoded[name] = btypeEncodeValue(
         valueBtypeDecoded[name],
-        typeField
+        typeField,
+        verifyChecksum
       );
     });
 
@@ -246,7 +263,7 @@ export class Serializer {
   async serialize(
     valueDecoded: Record<string, unknown>,
     typeName?: string,
-    opts?: { bytesConversion?: boolean }
+    opts?: { bytesConversion?: boolean; verifyChecksum?: boolean }
   ): Promise<Uint8Array> {
     const protobufType =
       this.defaultType || this.root.lookupType(typeName as string);
@@ -255,8 +272,12 @@ export class Serializer {
       opts?.bytesConversion === undefined
         ? this.bytesConversion
         : opts.bytesConversion;
+    const verifyChecksum =
+      opts?.verifyChecksum === undefined
+        ? this.verifyChecksum.serialize
+        : opts.verifyChecksum;
     if (bytesConversion) {
-      object = this.btypeDecode(valueDecoded, protobufType);
+      object = this.btypeDecode(valueDecoded, protobufType, verifyChecksum);
     } else {
       object = valueDecoded;
     }
@@ -275,7 +296,7 @@ export class Serializer {
   async deserialize<T = Record<string, unknown>>(
     valueEncoded: string | Uint8Array,
     typeName?: string,
-    opts?: { bytesConversion?: boolean }
+    opts?: { bytesConversion?: boolean; verifyChecksum?: boolean }
   ): Promise<T> {
     const valueBuffer =
       typeof valueEncoded === "string"
@@ -292,8 +313,12 @@ export class Serializer {
       opts?.bytesConversion === undefined
         ? this.bytesConversion
         : opts.bytesConversion;
+    const verifyChecksum =
+      opts?.verifyChecksum === undefined
+        ? this.verifyChecksum.deserialize
+        : opts.verifyChecksum;
     if (bytesConversion) {
-      return this.btypeEncode(object, protobufType) as T;
+      return this.btypeEncode(object, protobufType, verifyChecksum) as T;
     }
     return object as T;
   }

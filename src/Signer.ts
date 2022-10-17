@@ -110,6 +110,13 @@ const btypesOperation: TypeField["subtypes"] = {
       },
     },
   },
+  set_system_contract: {
+    type: "object",
+    subtypes: {
+      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+      system_contract: { type: "bool" },
+    },
+  },
 };
 
 /**
@@ -535,7 +542,7 @@ export class Signer implements SignerInterface {
       if (!block.header) throw new Error("Missing block header");
       if (!block.signature) throw new Error("Missing block signature");
       signatures = [block.signature];
-      const headerDecoded = btypeDecode(block.header, btypeBlockHeader!);
+      const headerDecoded = btypeDecode(block.header, btypeBlockHeader!, false);
       const message = koinos.protocol.block_header.create(headerDecoded);
       headerBytes = koinos.protocol.block_header.encode(message).finish();
     } else {
@@ -546,7 +553,8 @@ export class Signer implements SignerInterface {
       signatures = transaction.signatures;
       const headerDecoded = btypeDecode(
         transaction.header,
-        btypeTransactionHeader!
+        btypeTransactionHeader!,
+        false
       );
       const message = koinos.protocol.transaction_header.create(headerDecoded);
       headerBytes = koinos.protocol.transaction_header.encode(message).finish();
@@ -687,7 +695,8 @@ export class Signer implements SignerInterface {
       for (let index = 0; index < tx.operations?.length; index += 1) {
         const operationDecoded = btypeDecode(
           tx.operations[index],
-          btypesOperation!
+          btypesOperation!,
+          false
         );
         const message = koinos.protocol.operation.create(operationDecoded);
         const operationEncoded = koinos.protocol.operation
@@ -715,7 +724,11 @@ export class Signer implements SignerInterface {
       // TODO: Option to resolve names (payer, payee)
     };
 
-    const headerDecoded = btypeDecode(tx.header, btypeTransactionHeader!);
+    const headerDecoded = btypeDecode(
+      tx.header,
+      btypeTransactionHeader!,
+      false
+    );
     const message = koinos.protocol.transaction_header.create(headerDecoded);
     const headerBytes = koinos.protocol.transaction_header
       .encode(message)
@@ -743,7 +756,11 @@ export class Signer implements SignerInterface {
     if (block.transactions) {
       for (let index = 0; index < block.transactions.length; index++) {
         const tx = block.transactions[index];
-        const headerDecoded = btypeDecode(tx.header!, btypeTransactionHeader!);
+        const headerDecoded = btypeDecode(
+          tx.header!,
+          btypeTransactionHeader!,
+          false
+        );
         const message =
           koinos.protocol.transaction_header.create(headerDecoded);
         const headerBytes = koinos.protocol.transaction_header
@@ -799,7 +816,7 @@ export class Signer implements SignerInterface {
       signer: this.address,
     };
 
-    const headerDecoded = btypeDecode(block.header, btypeBlockHeader!);
+    const headerDecoded = btypeDecode(block.header, btypeBlockHeader!, false);
     const message = koinos.protocol.block_header.create(headerDecoded);
     const headerBytes = koinos.protocol.block_header
       .encode(message)

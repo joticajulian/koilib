@@ -185,6 +185,89 @@ export function bitcoinAddress(publicKey: Uint8Array): string {
 }
 
 /**
+ * Checks if the last 4 bytes matches with the double sha256
+ * of the first part
+ */
+export function isChecksum(buffer: Uint8Array): boolean {
+  const dataLength = buffer.length - 4;
+  const data = new Uint8Array(dataLength);
+  data.set(buffer.slice(0, dataLength));
+
+  const checksum = new Uint8Array(4);
+  checksum.set(buffer.slice(dataLength));
+
+  const doubleHash = sha256(sha256(data));
+
+  // checksum must be the first 4 bytes of the double hash
+  for (let i = 0; i < 4; i += 1) {
+    if (checksum[i] !== doubleHash[i]) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Checks if the checksum of an address is correct.
+ *
+ * The address has 3 parts in this order:
+ * - prefix: 1 byte
+ * - data: 20 bytes
+ * - checksum: 4 bytes
+ *
+ * checks:
+ * - It must be "pay to public key hash" (P2PKH). That is prefix 0
+ * - checksum = first 4 bytes of sha256(sha256(prefix + data))
+ *
+ * See [How to generate a bitcoin address step by step](https://medium.com/coinmonks/how-to-generate-a-bitcoin-address-step-by-step-9d7fcbf1ad0b).
+ */
+export function isChecksumAddress(address: string | Uint8Array): boolean {
+  const bufferAddress =
+    typeof address === "string" ? decodeBase58(address) : address;
+
+  // it must have 25 bytes
+  if (bufferAddress.length !== 25) return false;
+
+  // it must have prefix 0 (P2PKH address)
+  if (bufferAddress[0] !== 0) return false;
+
+  return isChecksum(bufferAddress);
+}
+
+/**
+ * Checks if the checksum of an private key WIF is correct.
+ *
+ * The private key WIF has 3 parts in this order:
+ * - prefix: 1 byte
+ * - private key: 32 bytes
+ * - compressed: 1 byte for compressed public key (no byte for uncompressed)
+ * - checksum: 4 bytes
+ *
+ * checks:
+ * - It must use version 0x80 in the prefix
+ * - If the corresponding public key is compressed the byte 33 must be 0x01
+ * - checksum = first 4 bytes of
+ *     sha256(sha256(prefix + private key + compressed))
+ *
+ * See [Bitcoin WIF](https://en.bitcoin.it/wiki/Wallet_import_format).
+ */
+export function isChecksumWif(wif: string | Uint8Array): boolean {
+  const bufferWif = typeof wif === "string" ? decodeBase58(wif) : wif;
+
+  // it must have 37 or 38 bytes
+  if (bufferWif.length !== 37 && bufferWif.length !== 38) return false;
+
+  const compressed = bufferWif.length === 38;
+
+  // if compressed then the last byte must be 0x01
+  if (compressed && bufferWif[33] !== 1) return false;
+
+  // it must have prefix version for private keys (0x80)
+  if (bufferWif[0] !== 128) return false;
+
+  return isChecksum(bufferWif);
+}
+
+/**
  * Function to format a number in a decimal point number
  * @example
  * ```js
@@ -246,7 +329,8 @@ function copyValue(value: unknown): unknown {
 
 export function btypeDecodeValue(
   valueEncoded: unknown,
-  typeField: TypeField
+  typeField: TypeField,
+  verifyChecksum: boolean
 ): unknown {
   // No byte conversion
   if (typeField.type !== "bytes") return copyValue(valueEncoded);
@@ -261,9 +345,14 @@ export function btypeDecodeValue(
   // Specific byte conversion
   switch (typeField.btype) {
     case "BASE58":
+      return decodeBase58(value);
     case "CONTRACT_ID":
     case "ADDRESS":
-      return decodeBase58(value);
+      const valueDecoded = decodeBase58(value);
+      if (verifyChecksum && !isChecksumAddress(valueDecoded)) {
+        throw new Error(`${value} is an invalid address`);
+      }
+      return valueDecoded;
     case "BASE64":
       return decodeBase64url(value);
     case "HEX":
@@ -277,7 +366,8 @@ export function btypeDecodeValue(
 
 export function btypeEncodeValue(
   valueDecoded: unknown,
-  typeField: TypeField
+  typeField: TypeField,
+  verifyChecksum: boolean
 ): unknown {
   // No byte conversion
   if (typeField.type !== "bytes") return copyValue(valueDecoded);
@@ -292,9 +382,14 @@ export function btypeEncodeValue(
   // Specific byte conversion
   switch (typeField.btype) {
     case "BASE58":
+      return encodeBase58(value);
     case "CONTRACT_ID":
     case "ADDRESS":
-      return encodeBase58(value);
+      const valueEncoded = encodeBase58(value);
+      if (verifyChecksum && !isChecksumAddress(value)) {
+        throw new Error(`${valueEncoded} is an invalid address`);
+      }
+      return valueEncoded;
     case "BASE64":
       return encodeBase64url(value);
     case "HEX":
@@ -308,7 +403,8 @@ export function btypeEncodeValue(
 
 export function btypeDecode(
   valueEncoded: Record<string, unknown> | unknown[],
-  fields: Record<string, TypeField>
+  fields: Record<string, TypeField>,
+  verifyChecksum: boolean
 ) {
   if (typeof valueEncoded !== "object") return valueEncoded;
   const valueDecoded = {} as Record<string, unknown>;
@@ -320,25 +416,32 @@ export function btypeDecode(
           if (fields[name].subtypes)
             return btypeDecode(
               itemEncoded as Record<string, unknown>,
-              fields[name].subtypes!
+              fields[name].subtypes!,
+              verifyChecksum
             );
-          return btypeDecodeValue(itemEncoded, fields[name]);
+          return btypeDecodeValue(itemEncoded, fields[name], verifyChecksum);
         }
       );
     else if (fields[name].subtypes)
       valueDecoded[name] = btypeDecode(
         valueEncoded[name] as Record<string, unknown>,
-        fields[name].subtypes!
+        fields[name].subtypes!,
+        verifyChecksum
       );
     else
-      valueDecoded[name] = btypeDecodeValue(valueEncoded[name], fields[name]);
+      valueDecoded[name] = btypeDecodeValue(
+        valueEncoded[name],
+        fields[name],
+        verifyChecksum
+      );
   });
   return valueDecoded;
 }
 
 export function btypeEncode(
   valueDecoded: Record<string, unknown> | unknown[],
-  fields: Record<string, TypeField>
+  fields: Record<string, TypeField>,
+  verifyChecksum: boolean
 ) {
   if (typeof valueDecoded !== "object") return valueDecoded;
   const valueEncoded = {} as Record<string, unknown>;
@@ -350,18 +453,24 @@ export function btypeEncode(
           if (fields[name].subtypes)
             return btypeEncode(
               itemDecoded as Record<string, unknown>,
-              fields[name].subtypes!
+              fields[name].subtypes!,
+              verifyChecksum
             );
-          return btypeEncodeValue(itemDecoded, fields[name]);
+          return btypeEncodeValue(itemDecoded, fields[name], verifyChecksum);
         }
       );
     else if (fields[name].subtypes)
       valueEncoded[name] = btypeEncode(
         valueDecoded[name] as Record<string, unknown>,
-        fields[name].subtypes!
+        fields[name].subtypes!,
+        verifyChecksum
       );
     else
-      valueEncoded[name] = btypeEncodeValue(valueDecoded[name], fields[name]);
+      valueEncoded[name] = btypeEncodeValue(
+        valueDecoded[name],
+        fields[name],
+        verifyChecksum
+      );
   });
   return valueEncoded;
 }
