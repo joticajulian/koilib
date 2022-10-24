@@ -10167,6 +10167,9 @@ class Contract {
                 }),
             },
         };
+        if (opts.onlyOperation) {
+            return { operation };
+        }
         let tx = await this.signer.prepareTransaction({
             header: {
                 ...(opts.chainId && { chain_id: opts.chainId }),
@@ -10175,7 +10178,11 @@ class Contract {
                 ...(opts.payer && { payer: opts.payer }),
                 ...(opts.payee && { payee: opts.payee }),
             },
-            operations: [operation],
+            operations: [
+                ...(opts.previousOperations ? opts.previousOperations : []),
+                operation,
+                ...(opts.nextOperations ? opts.nextOperations : []),
+            ],
         });
         const optsSend = {
             broadcast: opts.broadcast,

@@ -347,7 +347,7 @@ export class Contract {
    */
   async deploy(options?: DeployOptions): Promise<{
     operation: OperationJson;
-    transaction: TransactionJsonWait;
+    transaction?: TransactionJsonWait;
     receipt?: TransactionReceipt;
   }> {
     if (!this.signer) throw new Error("signer not found");
@@ -379,6 +379,10 @@ export class Contract {
       },
     } as OperationJson;
 
+    if (opts.onlyOperation) {
+      return { operation };
+    }
+
     let tx = await this.signer.prepareTransaction({
       header: {
         ...(opts.chainId && { chain_id: opts.chainId }),
@@ -387,7 +391,11 @@ export class Contract {
         ...(opts.payer && { payer: opts.payer }),
         ...(opts.payee && { payee: opts.payee }),
       },
-      operations: [operation],
+      operations: [
+        ...(opts.previousOperations ? opts.previousOperations : []),
+        operation,
+        ...(opts.nextOperations ? opts.nextOperations : []),
+      ],
     });
 
     const optsSend: SendTransactionOptions = {
