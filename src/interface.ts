@@ -170,6 +170,29 @@ export interface BaseTransactionOptions {
   payee?: string;
 
   /**
+   * Only operation
+   *
+   * Boolean to define if the intention is to get only the operation.
+   * No transaction or connection with the provider established.
+   * By default it is false.
+   */
+  onlyOperation?: boolean;
+
+  /**
+   * Previous operations
+   *
+   * List of extra operations to be included before the actual one in the transaction
+   */
+  previousOperations?: OperationJson[];
+
+  /**
+   * Next operations
+   *
+   * List of extra operations to be included after the actual one in the transaction
+   */
+  nextOperations?: OperationJson[];
+
+  /**
    * Sign transaction
    *
    * Boolean to define if the transaction should be signed.

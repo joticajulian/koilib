@@ -10029,6 +10029,9 @@ class Contract {
                         args = argu;
                     }
                     const operation = await this.encodeOperation({ name, args });
+                    if (opts.onlyOperation) {
+                        return { operation };
+                    }
                     if (readOnly) {
                         if (!output)
                             throw new Error(`No output defined for ${name}`);
@@ -10054,7 +10057,11 @@ class Contract {
                             ...(opts.payer && { payer: opts.payer }),
                             ...(opts.payee && { payee: opts.payee }),
                         },
-                        operations: [operation],
+                        operations: [
+                            ...(opts.previousOperations ? opts.previousOperations : []),
+                            operation,
+                            ...(opts.nextOperations ? opts.nextOperations : []),
+                        ],
                     });
                     const optsSend = {
                         broadcast: opts.broadcast,
