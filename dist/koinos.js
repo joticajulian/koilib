@@ -10395,8 +10395,8 @@ class Provider {
     }
     /**
      * Function to call "chain.get_account_nonce" to return the number of
-     * transactions for a particular account. This call is used
-     * when creating new transactions.
+     * transactions for a particular account. If you are creating a new
+     * transaction consider using [[Provider.getNextNonce]].
      * @param account - account address
      * @param deserialize - If set true it will deserialize the nonce
      * and return it as number (default). If set false it will return
@@ -10416,6 +10416,25 @@ class Provider {
         });
         // todo: consider the case where nonce is greater than max safe integer
         return Number(object.uint64_value);
+    }
+    /**
+     * Function to call "chain.get_account_nonce" (number of
+     * transactions for a particular account) and return the next nonce.
+     * This call is used when creating new transactions. The result is
+     * encoded in base64url
+     * @param account - account address
+     * @returns Nonce
+     */
+    async getNextNonce(account) {
+        const oldNonce = (await this.getNonce(account));
+        const message = protocol_proto_js_1.koinos.chain.value_type.create({
+            // todo: consider using bigint for big nonces
+            uint64_value: String(oldNonce + 1),
+        });
+        const nonceEncoded = protocol_proto_js_1.koinos.chain.value_type
+            .encode(message)
+            .finish();
+        return (0, utils_1.encodeBase64url)(nonceEncoded);
     }
     async getAccountRc(account) {
         const { rc } = await this.call("chain.get_account_rc", {
@@ -11397,15 +11416,7 @@ class Signer {
         if (tx.header.nonce === undefined) {
             if (!this.provider)
                 throw new Error("Cannot get the nonce because provider is undefined. To skip this call set a nonce in the transaction header");
-            const oldNonce = (await this.provider.getNonce(payee || payer));
-            const message = protocol_proto_js_1.koinos.chain.value_type.create({
-                // todo: consider using bigint for big nonces
-                uint64_value: String(oldNonce + 1),
-            });
-            const nonceEncoded = protocol_proto_js_1.koinos.chain.value_type
-                .encode(message)
-                .finish();
-            nonce = (0, utils_1.encodeBase64url)(nonceEncoded);
+            nonce = await this.provider.getNextNonce(payee || payer);
         }
         else {
             nonce = tx.header.nonce;

@@ -1214,6 +1214,19 @@ describe("Wallet and Contract", () => {
     expect(transaction!.header!.payer).toBe(signer2.getAddress());
   });
 
+  it("should get nonce and next nonce", async () => {
+    const myProvider = new Provider(["http://good-server"]);
+    mockFetch.mockImplementation(async () => {
+      return fetchResponse({ nonce: "KAA=" });
+    });
+    const nonce = await myProvider.getNonce(address);
+    const nonceBase64url = await myProvider.getNonce(address, false);
+    const nextNonceBase64url = await myProvider.getNextNonce(address);
+    expect(nonce).toBe(0);
+    expect(nonceBase64url).toBe("KAA=");
+    expect(nextNonceBase64url).toBe("KAE=");
+  });
+
   it("should change node", async () => {
     expect.assertions(2);
     const myProvider = new Provider([
