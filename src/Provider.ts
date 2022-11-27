@@ -9,7 +9,7 @@ import {
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { koinos } from "./protoModules/protocol-proto.js";
-import { decodeBase64url } from "./utils";
+import { decodeBase64url, encodeBase64url } from "./utils";
 
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 
@@ -140,8 +140,8 @@ export class Provider {
 
   /**
    * Function to call "chain.get_account_nonce" to return the number of
-   * transactions for a particular account. This call is used
-   * when creating new transactions.
+   * transactions for a particular account. If you are creating a new
+   * transaction consider using [[Provider.getNextNonce]].
    * @param account - account address
    * @param deserialize - If set true it will deserialize the nonce
    * and return it as number (default). If set false it will return
@@ -169,6 +169,27 @@ export class Provider {
     }) as { uint64_value: string };
     // todo: consider the case where nonce is greater than max safe integer
     return Number(object.uint64_value);
+  }
+
+  /**
+   * Function to call "chain.get_account_nonce" (number of
+   * transactions for a particular account) and return the next nonce.
+   * This call is used when creating new transactions. The result is
+   * encoded in base64url
+   * @param account - account address
+   * @returns Nonce
+   */
+  async getNextNonce(account: string): Promise<string> {
+    const oldNonce = (await this.getNonce(account)) as number;
+    const message = koinos.chain.value_type.create({
+      // todo: consider using bigint for big nonces
+      uint64_value: String(oldNonce + 1),
+    });
+    const nonceEncoded = koinos.chain.value_type
+      .encode(message)
+      .finish() as Uint8Array;
+
+    return encodeBase64url(nonceEncoded);
   }
 
   async getAccountRc(account: string): Promise<string> {

@@ -654,16 +654,7 @@ export class Signer implements SignerInterface {
         throw new Error(
           "Cannot get the nonce because provider is undefined. To skip this call set a nonce in the transaction header"
         );
-      const oldNonce = (await this.provider.getNonce(payee || payer)) as number;
-      const message = koinos.chain.value_type.create({
-        // todo: consider using bigint for big nonces
-        uint64_value: String(oldNonce + 1),
-      });
-      const nonceEncoded = koinos.chain.value_type
-        .encode(message)
-        .finish() as Uint8Array;
-
-      nonce = encodeBase64url(nonceEncoded);
+      nonce = await this.provider.getNextNonce(payee || payer);
     } else {
       nonce = tx.header.nonce;
     }
