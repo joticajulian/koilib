@@ -304,7 +304,7 @@ export interface SendTransactionOptions {
    * const signer2 = Signer.fromSeed("signer2");
    * const signer3 = Signer.fromSeed("signer3");
    *
-   * const addMoreSignatures = async (tx) => {
+   * const addMoreSignatures = async (tx, opts) => {
    *   await signer2.signTransaction(tx);
    *   await signer3.signTransaction(tx);
    * };
@@ -322,7 +322,10 @@ export interface SendTransactionOptions {
    * );
    * ```
    */
-  beforeSend?: (tx: TransactionJson) => Promise<void>;
+  beforeSend?: (
+    tx: TransactionJson,
+    options?: SendTransactionOptions
+  ) => Promise<void>;
 }
 
 export interface RecoverPublicKeyOptions {

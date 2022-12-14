@@ -421,14 +421,14 @@ export class Signer implements SignerInterface {
     transaction: TransactionJsonWait;
   }> {
     if (!transaction.signatures || !transaction.signatures?.length)
-      transaction = await this.signTransaction(transaction);
+      transaction = await this.signTransaction(transaction, options?.abis);
     if (!this.provider) throw new Error("provider is undefined");
     const opts: SendTransactionOptions = {
       ...this.sendOptions,
       ...options,
     };
     if (opts.beforeSend) {
-      await opts.beforeSend(transaction);
+      await opts.beforeSend(transaction, options);
     }
     return this.provider.sendTransaction(transaction, opts.broadcast);
   }
