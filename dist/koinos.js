@@ -11222,7 +11222,7 @@ class Signer {
     async sendTransaction(transaction, options) {
         var _a;
         if (!transaction.signatures || !((_a = transaction.signatures) === null || _a === void 0 ? void 0 : _a.length))
-            transaction = await this.signTransaction(transaction);
+            transaction = await this.signTransaction(transaction, options === null || options === void 0 ? void 0 : options.abis);
         if (!this.provider)
             throw new Error("provider is undefined");
         const opts = {
@@ -11230,7 +11230,7 @@ class Signer {
             ...options,
         };
         if (opts.beforeSend) {
-            await opts.beforeSend(transaction);
+            await opts.beforeSend(transaction, options);
         }
         return this.provider.sendTransaction(transaction, opts.broadcast);
     }
