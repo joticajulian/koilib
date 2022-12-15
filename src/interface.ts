@@ -225,7 +225,10 @@ export interface BaseTransactionOptions {
    * blockchain. It is useful to apply multisignatures to
    * the transaction
    */
-  beforeSend?: (tx: TransactionJson) => Promise<void>;
+  beforeSend?: (
+    tx: TransactionJson,
+    options?: SendTransactionOptions
+  ) => Promise<void>;
 }
 
 export interface TransactionOptions extends BaseTransactionOptions {
