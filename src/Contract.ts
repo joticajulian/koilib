@@ -75,7 +75,7 @@ export class Contract {
   /**
    * Contract ID
    */
-  id?: Uint8Array;
+  id: Uint8Array;
 
   /**
    * Set of functions to interact with the smart
@@ -166,8 +166,13 @@ export class Contract {
      */
     serializer?: Serializer;
   }) {
-    if (c.id) this.id = decodeBase58(c.id);
     this.signer = c.signer;
+    if (c.id) this.id = decodeBase58(c.id);
+    else {
+      if (!this.signer)
+        throw new Error("at least signer or contract id must be defined");
+      this.id = decodeBase58(this.signer.getAddress());
+    }
     this.provider = c.provider || c.signer?.provider;
     this.abi = c.abi;
     this.bytecode = c.bytecode;
@@ -269,7 +274,7 @@ export class Contract {
 
           if (opts.sendAbis) {
             optsSend.abis = {};
-            const contractId = encodeBase58(this.id as Uint8Array);
+            const contractId = this.getId();
             optsSend.abis[contractId] = this.abi;
           }
 
@@ -297,7 +302,6 @@ export class Contract {
    * Get contract Id
    */
   getId(): string {
-    if (!this.id) throw new Error("id is not defined");
     return encodeBase58(this.id);
   }
 
@@ -357,9 +361,7 @@ export class Contract {
       ...options,
     };
 
-    const contractId = this.id
-      ? encodeBase58(this.id)
-      : this.signer.getAddress();
+    const contractId = this.getId();
 
     const operation = {
       upload_contract: {
@@ -449,7 +451,6 @@ export class Contract {
     if (!this.abi || !this.abi.methods || !this.abi.methods[op.name])
       throw new Error(`Operation ${op.name} unknown`);
     if (!this.serializer) throw new Error("Serializer is not defined");
-    if (!this.id) throw new Error("Contract id is not defined");
     const method = this.abi.methods[op.name];
 
     let bufferArguments = new Uint8Array(0);
@@ -464,7 +465,7 @@ export class Contract {
 
     return {
       call_contract: {
-        contract_id: encodeBase58(this.id),
+        contract_id: this.getId(),
         entry_point: method.entry_point,
         args: encodeBase64url(bufferArguments),
       },
@@ -494,15 +495,14 @@ export class Contract {
    * ```
    */
   async decodeOperation(op: OperationJson): Promise<DecodedOperationJson> {
-    if (!this.id) throw new Error("Contract id is not defined");
     if (!this.abi || !this.abi.methods)
       throw new Error("Methods are not defined");
     if (!this.serializer) throw new Error("Serializer is not defined");
     if (!op.call_contract)
       throw new Error("Operation is not CallContractOperation");
-    if (op.call_contract.contract_id !== encodeBase58(this.id))
+    if (op.call_contract.contract_id !== this.getId())
       throw new Error(
-        `Invalid contract id. Expected: ${encodeBase58(this.id)}. Received: ${
+        `Invalid contract id. Expected: ${this.getId()}. Received: ${
           op.call_contract.contract_id
         }`
       );
