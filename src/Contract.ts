@@ -5,12 +5,11 @@ import { Serializer } from "./Serializer";
 import {
   TransactionJsonWait,
   Abi,
-  TransactionOptions,
+  CallContractOptions,
   DecodedOperationJson,
   OperationJson,
   DeployOptions,
   TransactionReceipt,
-  SendTransactionOptions,
 } from "./interface";
 import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
 
@@ -110,7 +109,7 @@ export class Contract {
   functions: {
     [x: string]: <T = Record<string, unknown>>(
       args?: unknown,
-      opts?: TransactionOptions
+      opts?: CallContractOptions
     ) => Promise<{
       operation: OperationJson;
       transaction?: TransactionJsonWait;
@@ -149,13 +148,13 @@ export class Contract {
    * By default it set rc_limit to 1e8, sendTransaction true,
    * sendAbis true, and nonce undefined (to get it from the blockchain)
    */
-  options: TransactionOptions;
+  options: CallContractOptions;
 
   constructor(c: {
     id?: string;
     abi?: Abi;
     bytecode?: Uint8Array;
-    options?: TransactionOptions;
+    options?: CallContractOptions;
     signer?: Signer;
     provider?: Provider;
     /**
@@ -194,7 +193,7 @@ export class Contract {
       Object.keys(this.abi.methods).forEach((name) => {
         this.functions[name] = async <T = Record<string, unknown>>(
           argu: unknown = {},
-          options?: TransactionOptions
+          options?: CallContractOptions
         ): Promise<{
           operation: OperationJson;
           transaction?: TransactionJsonWait;
@@ -206,7 +205,7 @@ export class Contract {
             throw new Error("Methods are not defined");
           if (!this.abi.methods[name])
             throw new Error(`Method ${name} not defined in the ABI`);
-          const opts: TransactionOptions = {
+          const opts: CallContractOptions = {
             ...this.options,
             ...options,
           };
@@ -267,15 +266,10 @@ export class Contract {
             ],
           });
 
-          const optsSend: SendTransactionOptions = {
-            broadcast: opts.broadcast,
-            beforeSend: opts.beforeSend,
-          };
-
           if (opts.sendAbis) {
-            optsSend.abis = {};
+            if (!opts.abis) opts.abis = {};
             const contractId = this.getId();
-            optsSend.abis[contractId] = this.abi;
+            if (!opts.abis[contractId]) opts.abis[contractId] = this.abi;
           }
 
           // return result if the transaction will not be broadcasted
@@ -284,13 +278,16 @@ export class Contract {
               throw new Error("This transaction was not broadcasted");
             };
             if (opts.signTransaction)
-              tx = await this.signer.signTransaction(tx, optsSend.abis);
+              tx = await this.signer.signTransaction(
+                tx,
+                opts.sendAbis ? opts.abis : undefined
+              );
             return { operation, transaction: { ...tx, wait: noWait } };
           }
 
           const { transaction, receipt } = await this.signer.sendTransaction(
             tx,
-            optsSend
+            opts
           );
           return { operation, transaction, receipt };
         };
@@ -400,23 +397,22 @@ export class Contract {
       ],
     });
 
-    const optsSend: SendTransactionOptions = {
-      broadcast: opts.broadcast,
-      beforeSend: opts.beforeSend,
-    };
-
     // return result if the transaction will not be broadcasted
     if (!opts.sendTransaction) {
       const noWait = () => {
         throw new Error("This transaction was not broadcasted");
       };
-      if (opts.signTransaction) tx = await this.signer.signTransaction(tx);
+      if (opts.signTransaction)
+        tx = await this.signer.signTransaction(
+          tx,
+          opts.sendAbis ? opts.abis : undefined
+        );
       return { operation, transaction: { ...tx, wait: noWait } };
     }
 
     const { transaction, receipt } = await this.signer.sendTransaction(
       tx,
-      optsSend
+      opts
     );
     return { operation, transaction, receipt };
   }
