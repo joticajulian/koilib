@@ -115,7 +115,68 @@ export interface DecodedOperationJson {
   args?: Record<string, unknown>;
 }
 
-export interface BaseTransactionOptions {
+export interface SendTransactionOptions {
+  /**
+   * Broadcast
+   *
+   * Boolean to define if the transaction should be broadcasted
+   * to the different nodes in the network. By default it is true.
+   *
+   * Set it to false if you want to interact with a contract for
+   * testing purposes and check the possible events triggered.
+   */
+  broadcast?: boolean;
+
+  /**
+   * Collection of Abis so that the receiver can parse the
+   * operations in the transaction
+   */
+  abis?: Record<string, Abi>;
+
+  /**
+   * Send abis
+   *
+   * Boolean to define if the abis should be shared with
+   * the signer so it will be able to decode the operations.
+   * By default it is true.
+   */
+  sendAbis?: boolean;
+
+  /**
+   * Function to be called before sending a transaction to the
+   * blockchain. It is useful to apply multisignatures to
+   * the transaction.
+   *
+   * @example
+   * ```ts
+   * const signer2 = Signer.fromSeed("signer2");
+   * const signer3 = Signer.fromSeed("signer3");
+   *
+   * const addMoreSignatures = async (tx, opts) => {
+   *   await signer2.signTransaction(tx);
+   *   await signer3.signTransaction(tx);
+   * };
+   *
+   * const { transaction } = await koin.transfer(
+   *   {
+   *     from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+   *     to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+   *     value: "1000000",
+   *   },
+   *   {
+   *     payer: signer2.getAddress(),
+   *     beforeSend: addMoreSignatures,
+   *   }
+   * );
+   * ```
+   */
+  beforeSend?: (
+    tx: TransactionJson,
+    options?: SendTransactionOptions
+  ) => Promise<void>;
+}
+
+export interface TransactionOptions extends SendTransactionOptions {
   /**
    * Chain ID
    *
@@ -168,7 +229,9 @@ export interface BaseTransactionOptions {
    * not set the blockchain will increase the payer's nonce.
    */
   payee?: string;
+}
 
+export interface ContractTransactionOptions extends TransactionOptions {
   /**
    * Only operation
    *
@@ -208,41 +271,11 @@ export interface BaseTransactionOptions {
    * true.
    */
   sendTransaction?: boolean;
-
-  /**
-   * Broadcast
-   *
-   * Boolean to define if the transaction should be broadcasted
-   * to the different nodes in the network. By default it is true.
-   *
-   * Set it to false if you want to interact with a contract for
-   * testing purposes and check the possible events triggered.
-   */
-  broadcast?: boolean;
-
-  /**
-   * Function to be called before sending a transaction to the
-   * blockchain. It is useful to apply multisignatures to
-   * the transaction
-   */
-  beforeSend?: (
-    tx: TransactionJson,
-    options?: SendTransactionOptions
-  ) => Promise<void>;
 }
 
-export interface TransactionOptions extends BaseTransactionOptions {
-  /**
-   * Send abis
-   *
-   * Boolean to define if the abis should be shared with
-   * the signer so it will be able to decode the operations.
-   * By default it is true.
-   */
-  sendAbis?: boolean;
-}
+export interface CallContractOptions extends ContractTransactionOptions {}
 
-export interface DeployOptions extends BaseTransactionOptions {
+export interface DeployOptions extends ContractTransactionOptions {
   /**
    * ABI
    *
@@ -277,58 +310,6 @@ export interface DeployOptions extends BaseTransactionOptions {
    * function and can authorize upgrades of the actual contract
    */
   authorizesUploadContract?: boolean;
-}
-
-export interface SendTransactionOptions {
-  /**
-   * Broadcast
-   *
-   * Boolean to define if the transaction should be broadcasted
-   * to the different nodes in the network. By default it is true.
-   *
-   * Set it to false if you want to interact with a contract for
-   * testing purposes and check the possible events triggered.
-   */
-  broadcast?: boolean;
-
-  /**
-   * Collection of Abis so that the receiver can parse the
-   * operations in the transaction
-   */
-  abis?: Record<string, Abi>;
-
-  /**
-   * Function to be called before sending a transaction to the
-   * blockchain. It is useful to apply multisignatures to
-   * the transaction.
-   *
-   * @example
-   * ```ts
-   * const signer2 = Signer.fromSeed("signer2");
-   * const signer3 = Signer.fromSeed("signer3");
-   *
-   * const addMoreSignatures = async (tx, opts) => {
-   *   await signer2.signTransaction(tx);
-   *   await signer3.signTransaction(tx);
-   * };
-   *
-   * const { transaction } = await koin.transfer(
-   *   {
-   *     from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
-   *     to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
-   *     value: "1000000",
-   *   },
-   *   {
-   *     payer: signer2.getAddress(),
-   *     beforeSend: addMoreSignatures,
-   *   }
-   * );
-   * ```
-   */
-  beforeSend?: (
-    tx: TransactionJson,
-    options?: SendTransactionOptions
-  ) => Promise<void>;
 }
 
 export interface RecoverPublicKeyOptions {
