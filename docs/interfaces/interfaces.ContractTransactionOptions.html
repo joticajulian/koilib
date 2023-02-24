@@ -1,4 +1,4 @@
-<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>DeployOptions | koilib - v5.4.0</title><meta name="description" content="Documentation for koilib - v5.4.0"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script async src="../assets/search.js" id="search-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
+<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>ContractTransactionOptions | koilib - v5.4.0</title><meta name="description" content="Documentation for koilib - v5.4.0"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script async src="../assets/search.js" id="search-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
 <div class="tsd-toolbar-contents container">
 <div class="table-cell" id="tsd-search" data-base="..">
 <div class="field"><label for="tsd-search-field" class="tsd-widget search no-caption"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.7824 13.833L12.6666 10.7177C12.5259 10.5771 12.3353 10.499 12.1353 10.499H11.6259C12.4884 9.39596 13.001 8.00859 13.001 6.49937C13.001 2.90909 10.0914 0 6.50048 0C2.90959 0 0 2.90909 0 6.49937C0 10.0896 2.90959 12.9987 6.50048 12.9987C8.00996 12.9987 9.39756 12.4863 10.5008 11.6239V12.1332C10.5008 12.3332 10.5789 12.5238 10.7195 12.6644L13.8354 15.7797C14.1292 16.0734 14.6042 16.0734 14.8948 15.7797L15.7793 14.8954C16.0731 14.6017 16.0731 14.1267 15.7824 13.833ZM6.50048 10.499C4.29094 10.499 2.50018 8.71165 2.50018 6.49937C2.50018 4.29021 4.28781 2.49976 6.50048 2.49976C8.71001 2.49976 10.5008 4.28708 10.5008 6.49937C10.5008 8.70852 8.71314 10.499 6.50048 10.499Z" fill="var(--color-text)"></path></svg></label><input type="text" id="tsd-search-field" aria-label="Search"/></div>
@@ -12,16 +12,19 @@
 <ul class="tsd-breadcrumb">
 <li><a href="../modules.html">koilib - v5.4.0</a></li>
 <li><a href="../modules/interfaces.html">interfaces</a></li>
-<li><a href="interfaces.DeployOptions.html">DeployOptions</a></li></ul>
-<h1>Interface DeployOptions</h1></div>
+<li><a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a></li></ul>
+<h1>Interface ContractTransactionOptions</h1></div>
 <section class="tsd-panel tsd-hierarchy">
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
-<li><a href="interfaces.ContractTransactionOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">ContractTransactionOptions</a>
+<li><a href="interfaces.TransactionOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionOptions</a>
 <ul class="tsd-hierarchy">
-<li><span class="target">DeployOptions</span></li></ul></li></ul></section><aside class="tsd-sources">
+<li><span class="target">ContractTransactionOptions</span>
+<ul class="tsd-hierarchy">
+<li><a href="interfaces.CallContractOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">CallContractOptions</a></li>
+<li><a href="interfaces.DeployOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">DeployOptions</a></li></ul></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L278">interface.ts:278</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L234">interface.ts:234</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -29,75 +32,32 @@
 <div class="tsd-accordion-details">
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Properties</h3>
-<div class="tsd-index-list"><a href="interfaces.DeployOptions.html#abi" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF984D" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-1024-path"></rect><path d="M9.354 16V7.24H12.174C12.99 7.24 13.638 7.476 14.118 7.948C14.606 8.412 14.85 9.036 14.85 9.82C14.85 10.604 14.606 11.232 14.118 11.704C13.638 12.168 12.99 12.4 12.174 12.4H10.434V16H9.354ZM10.434 11.428H12.174C12.646 11.428 13.022 11.284 13.302 10.996C13.59 10.7 13.734 10.308 13.734 9.82C13.734 9.324 13.59 8.932 13.302 8.644C13.022 8.356 12.646 8.212 12.174 8.212H10.434V11.428Z" fill="var(--color-text)" id="icon-1024-text"></path></svg><span>abi?</span></a>
-<a href="interfaces.DeployOptions.html#abis" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>abis?</span></a>
-<a href="interfaces.DeployOptions.html#authorizesCallContract" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>authorizes<wbr/>Call<wbr/>Contract?</span></a>
-<a href="interfaces.DeployOptions.html#authorizesTransactionApplication" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>authorizes<wbr/>Transaction<wbr/>Application?</span></a>
-<a href="interfaces.DeployOptions.html#authorizesUploadContract" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>authorizes<wbr/>Upload<wbr/>Contract?</span></a>
-<a href="interfaces.DeployOptions.html#beforeSend" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>before<wbr/>Send?</span></a>
-<a href="interfaces.DeployOptions.html#broadcast" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>broadcast?</span></a>
-<a href="interfaces.DeployOptions.html#chainId" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>chain<wbr/>Id?</span></a>
-<a href="interfaces.DeployOptions.html#nextOperations" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>next<wbr/>Operations?</span></a>
-<a href="interfaces.DeployOptions.html#nonce" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>nonce?</span></a>
-<a href="interfaces.DeployOptions.html#onlyOperation" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>only<wbr/>Operation?</span></a>
-<a href="interfaces.DeployOptions.html#payee" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>payee?</span></a>
-<a href="interfaces.DeployOptions.html#payer" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>payer?</span></a>
-<a href="interfaces.DeployOptions.html#previousOperations" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>previous<wbr/>Operations?</span></a>
-<a href="interfaces.DeployOptions.html#rcLimit" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>rc<wbr/>Limit?</span></a>
-<a href="interfaces.DeployOptions.html#sendAbis" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>send<wbr/>Abis?</span></a>
-<a href="interfaces.DeployOptions.html#sendTransaction" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>send<wbr/>Transaction?</span></a>
-<a href="interfaces.DeployOptions.html#signTransaction" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>sign<wbr/>Transaction?</span></a>
+<div class="tsd-index-list"><a href="interfaces.ContractTransactionOptions.html#abis" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF984D" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-1024-path"></rect><path d="M9.354 16V7.24H12.174C12.99 7.24 13.638 7.476 14.118 7.948C14.606 8.412 14.85 9.036 14.85 9.82C14.85 10.604 14.606 11.232 14.118 11.704C13.638 12.168 12.99 12.4 12.174 12.4H10.434V16H9.354ZM10.434 11.428H12.174C12.646 11.428 13.022 11.284 13.302 10.996C13.59 10.7 13.734 10.308 13.734 9.82C13.734 9.324 13.59 8.932 13.302 8.644C13.022 8.356 12.646 8.212 12.174 8.212H10.434V11.428Z" fill="var(--color-text)" id="icon-1024-text"></path></svg><span>abis?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#beforeSend" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>before<wbr/>Send?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#broadcast" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>broadcast?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#chainId" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>chain<wbr/>Id?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#nextOperations" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>next<wbr/>Operations?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#nonce" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>nonce?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#onlyOperation" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>only<wbr/>Operation?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#payee" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>payee?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#payer" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>payer?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#previousOperations" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>previous<wbr/>Operations?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#rcLimit" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>rc<wbr/>Limit?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#sendAbis" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>send<wbr/>Abis?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#sendTransaction" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>send<wbr/>Transaction?</span></a>
+<a href="interfaces.ContractTransactionOptions.html#signTransaction" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>sign<wbr/>Transaction?</span></a>
 </div></section></div></details></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Properties</h2>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="abi" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>abi</span><a href="#abi" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" id="icon-anchor-a"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" id="icon-anchor-b"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" id="icon-anchor-c"></path></svg></a></h3>
-<div class="tsd-signature">abi<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
-<div class="tsd-comment tsd-typography"><p>ABI</p>
-<p>ABI to be stored in the koinos-contract-meta-store.
-This option is optional.</p>
-</div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L285">interface.ts:285</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="abis" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>abis</span><a href="#abis" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>abis</span><a href="#abis" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" id="icon-anchor-a"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" id="icon-anchor-b"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" id="icon-anchor-c"></path></svg></a></h3>
 <div class="tsd-signature">abis<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="interfaces.Abi.html" class="tsd-signature-type" data-tsd-kind="Interface">Abi</a><span class="tsd-signature-symbol">&gt;</span></div>
 <div class="tsd-comment tsd-typography"><p>Collection of Abis so that the receiver can parse the
 operations in the transaction</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#abis">abis</a></p>
+<p>Inherited from <a href="interfaces.TransactionOptions.html">TransactionOptions</a>.<a href="interfaces.TransactionOptions.html#abis">abis</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L134">interface.ts:134</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="authorizesCallContract" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>authorizes<wbr/>Call<wbr/>Contract</span><a href="#authorizesCallContract" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">authorizes<wbr/>Call<wbr/>Contract<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
-<div class="tsd-comment tsd-typography"><p>Authorizes call contract</p>
-<p>Set it true if the contract implements the &quot;authorize&quot;
-function and can authorize calling other contracts in
-its name.</p>
-</div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L294">interface.ts:294</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="authorizesTransactionApplication" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>authorizes<wbr/>Transaction<wbr/>Application</span><a href="#authorizesTransactionApplication" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">authorizes<wbr/>Transaction<wbr/>Application<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
-<div class="tsd-comment tsd-typography"><p>Authorizes transaction application</p>
-<p>Set it true if the contract implements the &quot;authorize&quot;
-function and can authorize paying the mana to apply
-transactions, or can authorize the use of its nonce
-to apply transactions.</p>
-</div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L304">interface.ts:304</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="authorizesUploadContract" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>authorizes<wbr/>Upload<wbr/>Contract</span><a href="#authorizesUploadContract" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">authorizes<wbr/>Upload<wbr/>Contract<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
-<div class="tsd-comment tsd-typography"><p>Authorizes upload contract</p>
-<p>Set it true if the contract implements the &quot;authorize&quot;
-function and can authorize upgrades of the actual contract</p>
-</div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L312">interface.ts:312</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="beforeSend" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>before<wbr/>Send</span><a href="#beforeSend" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">before<wbr/>Send<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span>tx<span class="tsd-signature-symbol">: </span><a href="interfaces.TransactionJson.html" class="tsd-signature-type" data-tsd-kind="Interface">TransactionJson</a>, options<span class="tsd-signature-symbol">?: </span><a href="interfaces.SendTransactionOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SendTransactionOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span></div>
@@ -123,7 +83,7 @@ the transaction.</p>
 <li>
 <h5><code class="tsd-tag ts-flagOptional">Optional</code> options: <a href="interfaces.SendTransactionOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SendTransactionOptions</a></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4></li></ul></li></ul></div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#beforeSend">beforeSend</a></p>
+<p>Inherited from <a href="interfaces.TransactionOptions.html">TransactionOptions</a>.<a href="interfaces.TransactionOptions.html#beforeSend">beforeSend</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L173">interface.ts:173</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="broadcast" class="tsd-anchor"></a>
@@ -135,7 +95,7 @@ to the different nodes in the network. By default it is true.</p>
 <p>Set it to false if you want to interact with a contract for
 testing purposes and check the possible events triggered.</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#broadcast">broadcast</a></p>
+<p>Inherited from <a href="interfaces.TransactionOptions.html">TransactionOptions</a>.<a href="interfaces.TransactionOptions.html#broadcast">broadcast</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L128">interface.ts:128</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="chainId" class="tsd-anchor"></a>
@@ -145,16 +105,15 @@ testing purposes and check the possible events triggered.</p>
 <p>If this option is not set it will be taken
 by querying the blockchain</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#chainId">chainId</a></p>
+<p>Inherited from <a href="interfaces.TransactionOptions.html">TransactionOptions</a>.<a href="interfaces.TransactionOptions.html#chainId">chainId</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L186">interface.ts:186</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="nextOperations" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="nextOperations" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>next<wbr/>Operations</span><a href="#nextOperations" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">next<wbr/>Operations<span class="tsd-signature-symbol">?:</span> <a href="../types/interfaces.OperationJson.html" class="tsd-signature-type" data-tsd-kind="Type alias">OperationJson</a><span class="tsd-signature-symbol">[]</span></div>
 <div class="tsd-comment tsd-typography"><p>Next operations</p>
 <p>List of extra operations to be included after the actual one in the transaction</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#nextOperations">nextOperations</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L256">interface.ts:256</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="nonce" class="tsd-anchor"></a>
@@ -171,10 +130,10 @@ only greater than the previous one.</p>
 from the blockchain depending on the payer/payee
 configuration.</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#nonce">nonce</a></p>
+<p>Inherited from <a href="interfaces.TransactionOptions.html">TransactionOptions</a>.<a href="interfaces.TransactionOptions.html#nonce">nonce</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L212">interface.ts:212</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="onlyOperation" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="onlyOperation" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>only<wbr/>Operation</span><a href="#onlyOperation" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">only<wbr/>Operation<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
 <div class="tsd-comment tsd-typography"><p>Only operation</p>
@@ -182,7 +141,6 @@ configuration.</p>
 No transaction or connection with the provider established.
 By default it is false.</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#onlyOperation">onlyOperation</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L242">interface.ts:242</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="payee" class="tsd-anchor"></a>
@@ -192,7 +150,7 @@ By default it is false.</p>
 <p>Address that increases the nonce. When this option is
 not set the blockchain will increase the payer&#39;s nonce.</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#payee">payee</a></p>
+<p>Inherited from <a href="interfaces.TransactionOptions.html">TransactionOptions</a>.<a href="interfaces.TransactionOptions.html#payee">payee</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L231">interface.ts:231</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="payer" class="tsd-anchor"></a>
@@ -204,16 +162,15 @@ consumed in the transaction.</p>
 <p>If this option is not set it will take the address
 of the signer as payer.</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#payer">payer</a></p>
+<p>Inherited from <a href="interfaces.TransactionOptions.html">TransactionOptions</a>.<a href="interfaces.TransactionOptions.html#payer">payer</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L223">interface.ts:223</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="previousOperations" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="previousOperations" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>previous<wbr/>Operations</span><a href="#previousOperations" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">previous<wbr/>Operations<span class="tsd-signature-symbol">?:</span> <a href="../types/interfaces.OperationJson.html" class="tsd-signature-type" data-tsd-kind="Type alias">OperationJson</a><span class="tsd-signature-symbol">[]</span></div>
 <div class="tsd-comment tsd-typography"><p>Previous operations</p>
 <p>List of extra operations to be included before the actual one in the transaction</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#previousOperations">previousOperations</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L249">interface.ts:249</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="rcLimit" class="tsd-anchor"></a>
@@ -224,7 +181,7 @@ of the signer as payer.</p>
 is not set it will be taken by querying the
 actual mana of the payer</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#rcLimit">rcLimit</a></p>
+<p>Inherited from <a href="interfaces.TransactionOptions.html">TransactionOptions</a>.<a href="interfaces.TransactionOptions.html#rcLimit">rcLimit</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L195">interface.ts:195</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="sendAbis" class="tsd-anchor"></a>
@@ -235,10 +192,10 @@ actual mana of the payer</p>
 the signer so it will be able to decode the operations.
 By default it is true.</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#sendAbis">sendAbis</a></p>
+<p>Inherited from <a href="interfaces.TransactionOptions.html">TransactionOptions</a>.<a href="interfaces.TransactionOptions.html#sendAbis">sendAbis</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L143">interface.ts:143</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="sendTransaction" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="sendTransaction" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>send<wbr/>Transaction</span><a href="#sendTransaction" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">send<wbr/>Transaction<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
 <div class="tsd-comment tsd-typography"><p>Send transaction</p>
@@ -246,17 +203,15 @@ By default it is true.</p>
 and sent to the RPC node. By default it is
 true.</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#sendTransaction">sendTransaction</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L273">interface.ts:273</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="signTransaction" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="signTransaction" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>sign<wbr/>Transaction</span><a href="#signTransaction" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">sign<wbr/>Transaction<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
 <div class="tsd-comment tsd-typography"><p>Sign transaction</p>
 <p>Boolean to define if the transaction should be signed.
 By default it is true.</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="interfaces.ContractTransactionOptions.html">ContractTransactionOptions</a>.<a href="interfaces.ContractTransactionOptions.html#signTransaction">signTransaction</a></p>
 <ul>
 <li>Defined in <a href="https://github.com/joticajulian/koilib/blob/7e8eb36/src/interface.ts#L264">interface.ts:264</a></li></ul></aside></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -284,26 +239,22 @@ By default it is true.</p>
 <li class="tsd-kind-namespace"><a href="../modules/utils.html">utils</a></li></ul></li></ul></div></details></nav>
 <nav class="tsd-navigation secondary menu-sticky">
 <ul>
-<li class="current tsd-kind-interface tsd-parent-kind-namespace"><a href="interfaces.DeployOptions.html" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-interface)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6" id="icon-256-path"></rect><path d="M9.51 16V15.016H11.298V8.224H9.51V7.24H14.19V8.224H12.402V15.016H14.19V16H9.51Z" fill="var(--color-text)" id="icon-256-text"></path></svg><span>Deploy<wbr/>Options</span></a>
+<li class="current tsd-kind-interface tsd-parent-kind-namespace"><a href="interfaces.ContractTransactionOptions.html" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-interface)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6" id="icon-256-path"></rect><path d="M9.51 16V15.016H11.298V8.224H9.51V7.24H14.19V8.224H12.402V15.016H14.19V16H9.51Z" fill="var(--color-text)" id="icon-256-text"></path></svg><span>Contract<wbr/>Transaction<wbr/>Options</span></a>
 <ul>
-<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.DeployOptions.html#abi" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>abi?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#abis" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>abis?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.DeployOptions.html#authorizesCallContract" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>authorizes<wbr/>Call<wbr/>Contract?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.DeployOptions.html#authorizesTransactionApplication" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>authorizes<wbr/>Transaction<wbr/>Application?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.DeployOptions.html#authorizesUploadContract" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>authorizes<wbr/>Upload<wbr/>Contract?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#beforeSend" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>before<wbr/>Send?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#broadcast" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>broadcast?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#chainId" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>chain<wbr/>Id?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#nextOperations" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>next<wbr/>Operations?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#nonce" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>nonce?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#onlyOperation" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>only<wbr/>Operation?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#payee" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>payee?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#payer" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>payer?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#previousOperations" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>previous<wbr/>Operations?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#rcLimit" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>rc<wbr/>Limit?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#sendAbis" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>send<wbr/>Abis?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#sendTransaction" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>send<wbr/>Transaction?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.DeployOptions.html#signTransaction" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>sign<wbr/>Transaction?</a></li></ul></li></ul></nav></div></div>
+<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.ContractTransactionOptions.html#abis" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>abis?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.ContractTransactionOptions.html#beforeSend" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>before<wbr/>Send?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.ContractTransactionOptions.html#broadcast" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>broadcast?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.ContractTransactionOptions.html#chainId" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>chain<wbr/>Id?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.ContractTransactionOptions.html#nextOperations" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>next<wbr/>Operations?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.ContractTransactionOptions.html#nonce" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>nonce?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.ContractTransactionOptions.html#onlyOperation" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>only<wbr/>Operation?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.ContractTransactionOptions.html#payee" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>payee?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.ContractTransactionOptions.html#payer" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>payer?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.ContractTransactionOptions.html#previousOperations" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>previous<wbr/>Operations?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.ContractTransactionOptions.html#rcLimit" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>rc<wbr/>Limit?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="interfaces.ContractTransactionOptions.html#sendAbis" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>send<wbr/>Abis?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.ContractTransactionOptions.html#sendTransaction" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>send<wbr/>Transaction?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface"><a href="interfaces.ContractTransactionOptions.html#signTransaction" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>sign<wbr/>Transaction?</a></li></ul></li></ul></nav></div></div>
 <div class="container tsd-generator">
 <p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div>
 <div class="overlay"></div><script src="../assets/main.js"></script></body></html>
