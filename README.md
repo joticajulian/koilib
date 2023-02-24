@@ -1,6 +1,7 @@
 # Koilib
 
 Koinos Library for Javascript and Typescript. It can be used in node and browsers.
+The complete documentation can be found at https://joticajulian.github.io/koilib/
 
 ## Table of Contents
 
@@ -60,20 +61,35 @@ You can also load it directly to the browser by downloading the bunble file loca
 With Typescript import the library
 
 ```typescript
-import { Signer, Contract, Provider, Serializer, utils } from "koilib";
+import {
+  Signer,
+  Contract,
+  Provider,
+  Transaction,
+  Serializer,
+  utils,
+} from "koilib";
 ```
 
 With Javascript import the library with require
 
 ```javascript
-const { Signer, Contract, Provider, Serializer, utils } = require("koilib");
+const {
+  Signer,
+  Contract,
+  Provider,
+  Transaction,
+  Serializer,
+  utils,
+} = require("koilib");
 ```
 
-There are 4 principal classes:
+There are 5 principal classes:
 
 - **Signer**: Class containing the private key. It is used to sign.
 - **Provider**: Class to connect with the RPC node.
 - **Contract**: Class defining the contract to interact with.
+- **Transaction**: Class to create transactions.
 - **Serializer**: Class with the protocol buffers definitions to
   serialize/deserialize data types.
 
@@ -267,6 +283,71 @@ const { transaction } = await koin.transfer(
 );
 ```
 
+### Multiple operations in a single transaction
+
+There are 3 ways to define a transaction with several operations. Use one of them as it is more convenient for you.
+
+Using the Contract class. You can use `previousOperations` or `nextOperations` to attach more operations in the transaction:
+
+```ts
+const fn = contract.functions;
+contract.options.onlyOperation = true;
+const { operation: op1 } = await fn.set_owner({
+  account: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+});
+const { operation: op3 } = await fn.set_address({
+  account: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+});
+const { transaction, receipt } = await fn.set_name(
+  {
+    name: "test",
+  },
+  {
+    previousOperations: [op1],
+    nextOperations: [op3],
+  }
+);
+await transaction.wait();
+```
+
+Using the Signer class with the Contract class. First all operations are created and then passed to the signer to create and send the transaction:
+
+```ts
+const fn = contract.functions;
+contract.options.onlyOperation = true;
+const { operation: op1 } = await fn.set_owner({
+  account: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+});
+const { operation: op2 } = await fn.set_name({
+  name: "test",
+});
+const { operation: op3 } = await fn.set_address({
+  account: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+});
+const tx = await signer.prepareTransaction({
+  operations: [op1, op2, op3],
+});
+const { transaction, receipt } = await signer.sendTransaction(tx);
+await transaction.wait();
+```
+
+Using the Transaction class:
+
+```ts
+const tx = new Transaction({ signer });
+await tx.pushOperation(fn.set_owner, {
+  account: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+});
+await tx.pushOperation(fn.set_name, {
+  name: "test",
+});
+await tx.pushOperation(fn.set_address, {
+  account: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+});
+const receipt = await tx.send();
+await tx.wait();
+```
+
 ### Create ABIs
 
 ABIs are composed of 2 elements: methods and types.
@@ -348,7 +429,7 @@ The complete documentation can be found at https://joticajulian.github.io/koilib
 
 ## Acknowledgments
 
-Many thanks to the sponsors of this library: @levineam, @Amikob, @motoeng, @isaacdozier, @imjwalker, and the private sponsors.
+Many thanks to the sponsors of this library: @levineam, @Amikob, @motoeng, @isaacdozier, @imjwalker, @brklyn8900, and the private sponsors.
 
 If you would like to contribute to the development of this library consider becoming a sponsor in https://github.com/sponsors/joticajulian.
 

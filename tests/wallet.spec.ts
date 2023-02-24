@@ -4,7 +4,7 @@ import { sha256 } from "@noble/hashes/sha256";
 import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
 import { Provider } from "../src/Provider";
-import { Serializer } from "../src";
+import { Serializer, Transaction } from "../src";
 import {
   bitcoinDecode,
   encodeBase64url,
@@ -1457,5 +1457,129 @@ describe("Wallet and Contract", () => {
       },
     });
     expect(signer1).toBe("1AeXf4DF1DNPmrdcKp8jVPCbSspb9FrCtT");
+  });
+
+  describe("Transaction class", () => {
+    it("should push multiple operations", async () => {
+      expect.assertions(1);
+      const tx = new Transaction();
+
+      const transferArgs1 = {
+        from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
+        to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
+        value: "1000",
+      };
+      const transferArgs2 = {
+        ...transferArgs1,
+        value: "2000",
+      };
+      const transferArgs3 = {
+        ...transferArgs1,
+        value: "3000",
+      };
+      const transferArgs4 = {
+        ...transferArgs1,
+        value: "4000",
+      };
+
+      await tx.pushOperation(koin.transfer, transferArgs1);
+      await tx.pushOperation(
+        await koin.transfer(transferArgs2, {
+          onlyOperation: true,
+        })
+      );
+      await tx.pushOperation(
+        (
+          await koin.transfer(transferArgs3, {
+            onlyOperation: true,
+          })
+        ).operation
+      );
+      await tx.pushOperation(
+        koin.transfer(transferArgs4, {
+          onlyOperation: true,
+        })
+      );
+
+      expect(tx.transaction.operations).toStrictEqual([
+        {
+          call_contract: {
+            args: "ChkA6v68JLCzRN3Glq4up7CcaEVOTsBaePqDEhkAGynNroAYmTUG8uSDY9MhWnGn4p3ote2LGOgH",
+            contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+            entry_point: 670398154,
+          },
+        },
+        {
+          call_contract: {
+            args: "ChkA6v68JLCzRN3Glq4up7CcaEVOTsBaePqDEhkAGynNroAYmTUG8uSDY9MhWnGn4p3ote2LGNAP",
+            contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+            entry_point: 670398154,
+          },
+        },
+        {
+          call_contract: {
+            args: "ChkA6v68JLCzRN3Glq4up7CcaEVOTsBaePqDEhkAGynNroAYmTUG8uSDY9MhWnGn4p3ote2LGLgX",
+            contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+            entry_point: 670398154,
+          },
+        },
+        {
+          call_contract: {
+            args: "ChkA6v68JLCzRN3Glq4up7CcaEVOTsBaePqDEhkAGynNroAYmTUG8uSDY9MhWnGn4p3ote2LGKAf",
+            contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+            entry_point: 670398154,
+          },
+        },
+      ]);
+    });
+
+    it("should submit a transaction", async () => {
+      expect.assertions(1);
+
+      const receipt = {
+        id: "0x1220cf763bc42c18091fddf7a9d3c2963f95102b64a019d76c20215163ca9d900ff2",
+        payer: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+        max_payer_rc: "930000000",
+        rc_limit: "930000000",
+        rc_used: "470895",
+        network_bandwidth_used: "311",
+        compute_bandwidth_used: "369509",
+        events: [
+          {
+            source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+            name: "koin.transfer",
+            data: "ChkAOraorkYwQTkrfp9ViHFI2CJvmCQh2mz7EhkArriH22GZ1VJLkeJ-x4JUGF4zPAEZrNUiGMCEPQ==",
+            impacted: [
+              "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+              "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+            ],
+          },
+        ],
+      };
+
+      jest.clearAllMocks();
+      mockFetch.mockImplementation(async () =>
+        fetchResponse("mock error", 400)
+      );
+      mockFetch.mockImplementationOnce(async () =>
+        fetchResponse({ nonce: "OBE=" })
+      ); // nonce
+      mockFetch.mockImplementationOnce(async () => fetchResponse("OBE=")); // rc limit
+      mockFetch.mockImplementationOnce(async () => fetchResponse({ receipt }));
+
+      const tx = new Transaction({
+        signer,
+        options: {
+          chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+        },
+      });
+      await tx.pushOperation(koin.transfer, {
+        from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+        to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+        value: "1000000",
+      });
+      const receiptReceived = await tx.send();
+      expect(receiptReceived).toStrictEqual(receipt);
+    });
   });
 });

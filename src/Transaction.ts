@@ -24,7 +24,7 @@ export class Transaction {
 
   /**
    * Transaction
-   */   
+   */
   transaction: TransactionJson;
 
   /**
@@ -37,25 +37,25 @@ export class Transaction {
    */
   options: TransactionOptions;
 
-  constructor(c: {
+  constructor(c?: {
     signer?: Signer;
     provider?: Provider;
     options?: TransactionOptions;
   }) {
-    this.signer = c.signer;
-    this.provider = c.provider;
+    this.signer = c?.signer;
+    this.provider = c?.provider;
     this.options = {
       broadcast: true,
       sendAbis: true,
-      ...c.options,
+      ...c?.options,
     };
     this.transaction = {
       header: {
-        ...(c.options?.chainId && { chain_id: c.options.chainId }),
-        ...(c.options?.rcLimit && { rc_limit: c.options.rcLimit }),
-        ...(c.options?.nonce && { nonce: c.options.nonce }),
-        ...(c.options?.payer && { payer: c.options.payer }),
-        ...(c.options?.payee && { payee: c.options.payee }),
+        ...(c?.options?.chainId && { chain_id: c.options.chainId }),
+        ...(c?.options?.rcLimit && { rc_limit: c.options.rcLimit }),
+        ...(c?.options?.nonce && { nonce: c.options.nonce }),
+        ...(c?.options?.payer && { payer: c.options.payer }),
+        ...(c?.options?.payee && { payee: c.options.payee }),
       },
       operations: [],
     };
@@ -63,47 +63,94 @@ export class Transaction {
 
   /**
    * Function to push an operation to the transaction. It can be created
-   * in several ways. Examples:
-   * 
+   * in several ways. Example:
+   *
    * @example
    * ```ts
-   * 
+   * const koin = new Contract({
+   *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   abi: utils.tokenAbi,
+   * }).functions;
+   * const signer = Signer.fromSeed("my seed");
+   * const provider = new Provider(["https://api.koinos.io"]);
+   * signer.provider = provider;
+   * const tx = new Transaction({ signer });
+   *
+   * // method 1
+   * await tx.pushOperation(koin.transfer, {
+   *   from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
+   *   to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
+   *   value: "1000",
+   * });
+   *
+   * // method 2
+   * await tx.pushOperation(
+   *   koin.transfer({
+   *     from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
+   *     to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
+   *     value: "1000",
+   *   },{
+   *    onlyOperation: true,
+   *   })
+   * );
+   *
+   * // method 3
+   * await tx.pushOperation(
+   *   await koin.transfer({
+   *     from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
+   *     to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
+   *     value: "1000",
+   *   },{
+   *    onlyOperation: true,
+   *   })
+   * );
+   *
+   * // method 4
+   * const { operation } = await koin.transfer({
+   *   from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
+   *   to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
+   *   value: "1000",
+   * },{
+   *  onlyOperation: true,
+   * });
+   * await tx.pushOperation(operation)
    * ```
-   * 
+   *
    */
   async pushOperation(
     input:
       | OperationJson
       | { operation: OperationJson }
-      | Contract
-      | Contract["functions"],
-    functionName?: string,
+      | Promise<{ operation: OperationJson }>
+      | Contract["functions"]["x"],
     args?: unknown
   ): Promise<void> {
     let operation: OperationJson;
-    if (input instanceof Contract) {
-      if (!functionName) throw new Error("function name not defined");
-      const result = await input.functions[functionName](args, {
-        onlyOperation: true,
-      });
+    if (typeof input === "function") {
+      const result = await input(args, { onlyOperation: true });
       operation = result.operation;
-    } else if (typeof input === "function") {
-      if (!functionName) throw new Error("function name not defined");
-      const result = await (input as Contract["functions"])[functionName](
-        args,
-        { onlyOperation: true }
-      );
-      operation = result.operation;
-    } else if ((input as { operation: OperationJson }).operation) {
-      operation = (input as { operation: OperationJson }).operation;
     } else {
-      operation = input as OperationJson;
+      let inp: OperationJson | { operation: OperationJson };
+      if (input instanceof Promise) {
+        inp = await input;
+      } else {
+        inp = input;
+      }
+      if ((inp as { operation: OperationJson }).operation) {
+        operation = (inp as { operation: OperationJson }).operation;
+      } else {
+        operation = input as OperationJson;
+      }
     }
 
     if (!this.transaction.operations) this.transaction.operations = [];
     this.transaction.operations.push(operation);
   }
 
+  /**
+   * Functon to prepare the transaction (set headers, merkle
+   * root, etc)
+   */
   async prepare(options?: TransactionOptions): Promise<TransactionJson> {
     if (options) {
       const header = {
@@ -132,19 +179,27 @@ export class Transaction {
     return this.transaction;
   }
 
+  /**
+   * Function to sign the transaction
+   */
   async sign(abis?: Record<string, Abi>): Promise<TransactionJson> {
     if (!this.signer) throw new Error("no signer defined");
+    if (!this.transaction.id) await this.prepare();
     return this.signer.signTransaction(
       this.transaction,
       this.options.sendAbis ? abis : undefined
     );
   }
 
+  /**
+   * Function to broadcast the transaction
+   */
   async send(options?: SendTransactionOptions): Promise<TransactionReceipt> {
     const opts = {
       ...this.options,
       options,
     };
+    if (!this.transaction.id) await this.prepare();
 
     if (this.signer && this.signer.provider) {
       const { transaction: tx, receipt } = await this.signer.sendTransaction(
@@ -158,7 +213,7 @@ export class Transaction {
 
     if (!this.provider) throw new Error("provider not defined");
     if (!this.transaction.signatures || !this.transaction.signatures.length) {
-      this.transaction = await this.sign(opts.sendAbis ? opts.abis : undefined);
+      throw new Error("transaction without signatures and no signer defined");
     }
 
     if (opts.beforeSend) {
