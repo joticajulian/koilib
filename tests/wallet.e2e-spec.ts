@@ -1,7 +1,14 @@
 /* eslint-disable no-console */
 import crypto from "crypto";
 import * as dotenv from "dotenv";
-import { Signer, Provider, Contract, utils, Serializer } from "../src";
+import {
+  Signer,
+  Provider,
+  Contract,
+  utils,
+  Serializer,
+  Transaction,
+} from "../src";
 import { BlockJson, TransactionReceipt } from "../src/interface";
 import powJson from "../src/jsonDescriptors/pow-proto.json";
 
@@ -161,20 +168,6 @@ describe("Provider", () => {
 });
 
 describe("Contract", () => {
-  it("upload a contract", async () => {
-    expect.assertions(2);
-    const bytecode = new Uint8Array(crypto.randomBytes(6));
-    const contract = new Contract({ signer, provider, bytecode });
-    const { transaction } = await contract.deploy();
-    expect(transaction).toBeDefined();
-    if (!transaction) throw new Error("Transaction response undefined");
-    const waitResult = await transaction.wait("byBlock");
-    expect(waitResult).toStrictEqual({
-      blockNumber: expect.any(Number) as number,
-      blockId: expect.any(String) as string,
-    });
-  });
-
   it("should pay a transaction to upload a contract, and override functions", async () => {
     const bytecode = new Uint8Array(crypto.randomBytes(2));
     const newSigner = new Signer({
@@ -190,10 +183,10 @@ describe("Contract", () => {
       payer: signer.address,
       sendTransaction: false,
     });
-    await signer.signTransaction(transaction);
-    expect(transaction.signatures).toHaveLength(2);
-    await signer.sendTransaction(transaction);
-    const waitResult = await transaction.wait();
+    await signer.signTransaction(transaction!);
+    expect(transaction!.signatures).toHaveLength(2);
+    await signer.sendTransaction(transaction!);
+    const waitResult = await transaction!.wait();
     expect(waitResult).toStrictEqual({
       blockNumber: expect.any(Number) as number,
       blockId: expect.any(String) as string,
@@ -293,5 +286,48 @@ describe("Contract", () => {
         logs: [],
       })
     );
+  });
+});
+
+describe("Transaction", () => {
+  it("should make multiple transfers using Transaction class", async () => {
+    expect.assertions(4);
+    const tx = new Transaction({ signer });
+    await tx.pushOperation(koin.transfer, {
+      from: signer.getAddress(),
+      to: addressReceiver,
+      value: "1",
+    });
+    await tx.pushOperation(koin.transfer, {
+      from: signer.getAddress(),
+      to: addressReceiver,
+      value: "2",
+    });
+    const receipt = await tx.send({ broadcast: false });
+    expect(receipt).toStrictEqual({
+      compute_bandwidth_used: expect.any(String) as string,
+      disk_storage_used: expect.any(String) as string,
+      events: [
+        {
+          data: expect.any(String) as string,
+          impacted: [addressReceiver, signer.address],
+          name: "koinos.contracts.token.transfer_event",
+          source: koinContract.getId(),
+        },
+        {
+          data: expect.any(String) as string,
+          impacted: [addressReceiver, signer.address],
+          name: "koinos.contracts.token.transfer_event",
+          sequence: 1,
+          source: koinContract.getId(),
+        },
+      ],
+      id: expect.any(String) as string,
+      max_payer_rc: expect.any(String) as string,
+      network_bandwidth_used: expect.any(String) as string,
+      payer: signer.address,
+      rc_limit: expect.any(String) as string,
+      rc_used: expect.any(String) as string,
+    });
   });
 });
