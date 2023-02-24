@@ -9987,9 +9987,14 @@ const utils_1 = __webpack_require__(8593);
 class Contract {
     constructor(c) {
         var _a;
+        this.signer = c.signer;
         if (c.id)
             this.id = (0, utils_1.decodeBase58)(c.id);
-        this.signer = c.signer;
+        else {
+            if (!this.signer)
+                throw new Error("at least signer or contract id must be defined");
+            this.id = (0, utils_1.decodeBase58)(this.signer.getAddress());
+        }
         this.provider = c.provider || ((_a = c.signer) === null || _a === void 0 ? void 0 : _a.provider);
         this.abi = c.abi;
         this.bytecode = c.bytecode;
@@ -10063,14 +10068,12 @@ class Contract {
                             ...(opts.nextOperations ? opts.nextOperations : []),
                         ],
                     });
-                    const optsSend = {
-                        broadcast: opts.broadcast,
-                        beforeSend: opts.beforeSend,
-                    };
                     if (opts.sendAbis) {
-                        optsSend.abis = {};
-                        const contractId = (0, utils_1.encodeBase58)(this.id);
-                        optsSend.abis[contractId] = this.abi;
+                        if (!opts.abis)
+                            opts.abis = {};
+                        const contractId = this.getId();
+                        if (!opts.abis[contractId])
+                            opts.abis[contractId] = this.abi;
                     }
                     // return result if the transaction will not be broadcasted
                     if (!opts.sendTransaction) {
@@ -10078,10 +10081,10 @@ class Contract {
                             throw new Error("This transaction was not broadcasted");
                         };
                         if (opts.signTransaction)
-                            tx = await this.signer.signTransaction(tx, optsSend.abis);
+                            tx = await this.signer.signTransaction(tx, opts.sendAbis ? opts.abis : undefined);
                         return { operation, transaction: { ...tx, wait: noWait } };
                     }
-                    const { transaction, receipt } = await this.signer.sendTransaction(tx, optsSend);
+                    const { transaction, receipt } = await this.signer.sendTransaction(tx, opts);
                     return { operation, transaction, receipt };
                 };
             });
@@ -10091,8 +10094,6 @@ class Contract {
      * Get contract Id
      */
     getId() {
-        if (!this.id)
-            throw new Error("id is not defined");
         return (0, utils_1.encodeBase58)(this.id);
     }
     /**
@@ -10148,9 +10149,7 @@ class Contract {
             ...this.options,
             ...options,
         };
-        const contractId = this.id
-            ? (0, utils_1.encodeBase58)(this.id)
-            : this.signer.getAddress();
+        const contractId = this.getId();
         const operation = {
             upload_contract: {
                 contract_id: contractId,
@@ -10184,20 +10183,16 @@ class Contract {
                 ...(opts.nextOperations ? opts.nextOperations : []),
             ],
         });
-        const optsSend = {
-            broadcast: opts.broadcast,
-            beforeSend: opts.beforeSend,
-        };
         // return result if the transaction will not be broadcasted
         if (!opts.sendTransaction) {
             const noWait = () => {
                 throw new Error("This transaction was not broadcasted");
             };
             if (opts.signTransaction)
-                tx = await this.signer.signTransaction(tx);
+                tx = await this.signer.signTransaction(tx, opts.sendAbis ? opts.abis : undefined);
             return { operation, transaction: { ...tx, wait: noWait } };
         }
-        const { transaction, receipt } = await this.signer.sendTransaction(tx, optsSend);
+        const { transaction, receipt } = await this.signer.sendTransaction(tx, opts);
         return { operation, transaction, receipt };
     }
     /**
@@ -10231,8 +10226,6 @@ class Contract {
             throw new Error(`Operation ${op.name} unknown`);
         if (!this.serializer)
             throw new Error("Serializer is not defined");
-        if (!this.id)
-            throw new Error("Contract id is not defined");
         const method = this.abi.methods[op.name];
         let bufferArguments = new Uint8Array(0);
         if (method.argument) {
@@ -10242,7 +10235,7 @@ class Contract {
         }
         return {
             call_contract: {
-                contract_id: (0, utils_1.encodeBase58)(this.id),
+                contract_id: this.getId(),
                 entry_point: method.entry_point,
                 args: (0, utils_1.encodeBase64url)(bufferArguments),
             },
@@ -10271,16 +10264,14 @@ class Contract {
      * ```
      */
     async decodeOperation(op) {
-        if (!this.id)
-            throw new Error("Contract id is not defined");
         if (!this.abi || !this.abi.methods)
             throw new Error("Methods are not defined");
         if (!this.serializer)
             throw new Error("Serializer is not defined");
         if (!op.call_contract)
             throw new Error("Operation is not CallContractOperation");
-        if (op.call_contract.contract_id !== (0, utils_1.encodeBase58)(this.id))
-            throw new Error(`Invalid contract id. Expected: ${(0, utils_1.encodeBase58)(this.id)}. Received: ${op.call_contract.contract_id}`);
+        if (op.call_contract.contract_id !== this.getId())
+            throw new Error(`Invalid contract id. Expected: ${this.getId()}. Received: ${op.call_contract.contract_id}`);
         for (let i = 0; i < Object.keys(this.abi.methods).length; i += 1) {
             const opName = Object.keys(this.abi.methods)[i];
             const method = this.abi.methods[opName];
@@ -11222,7 +11213,7 @@ class Signer {
     async sendTransaction(transaction, options) {
         var _a;
         if (!transaction.signatures || !((_a = transaction.signatures) === null || _a === void 0 ? void 0 : _a.length))
-            transaction = await this.signTransaction(transaction, options === null || options === void 0 ? void 0 : options.abis);
+            transaction = await this.signTransaction(transaction, (options === null || options === void 0 ? void 0 : options.sendAbis) ? options.abis : undefined);
         if (!this.provider)
             throw new Error("provider is undefined");
         const opts = {
@@ -11546,6 +11537,197 @@ exports["default"] = Signer;
 
 /***/ }),
 
+/***/ 7592:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Transaction = void 0;
+const Signer_1 = __webpack_require__(6991);
+class Transaction {
+    constructor(c) {
+        var _a, _b, _c, _d, _e;
+        this.signer = c === null || c === void 0 ? void 0 : c.signer;
+        this.provider = c === null || c === void 0 ? void 0 : c.provider;
+        this.options = {
+            broadcast: true,
+            sendAbis: true,
+            ...c === null || c === void 0 ? void 0 : c.options,
+        };
+        this.transaction = {
+            header: {
+                ...(((_a = c === null || c === void 0 ? void 0 : c.options) === null || _a === void 0 ? void 0 : _a.chainId) && { chain_id: c.options.chainId }),
+                ...(((_b = c === null || c === void 0 ? void 0 : c.options) === null || _b === void 0 ? void 0 : _b.rcLimit) && { rc_limit: c.options.rcLimit }),
+                ...(((_c = c === null || c === void 0 ? void 0 : c.options) === null || _c === void 0 ? void 0 : _c.nonce) && { nonce: c.options.nonce }),
+                ...(((_d = c === null || c === void 0 ? void 0 : c.options) === null || _d === void 0 ? void 0 : _d.payer) && { payer: c.options.payer }),
+                ...(((_e = c === null || c === void 0 ? void 0 : c.options) === null || _e === void 0 ? void 0 : _e.payee) && { payee: c.options.payee }),
+            },
+            operations: [],
+        };
+    }
+    /**
+     * Function to push an operation to the transaction. It can be created
+     * in several ways. Example:
+     *
+     * @example
+     * ```ts
+     * const koin = new Contract({
+     *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+     *   abi: utils.tokenAbi,
+     * }).functions;
+     * const signer = Signer.fromSeed("my seed");
+     * const provider = new Provider(["https://api.koinos.io"]);
+     * signer.provider = provider;
+     * const tx = new Transaction({ signer });
+     *
+     * // method 1
+     * await tx.pushOperation(koin.transfer, {
+     *   from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
+     *   to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
+     *   value: "1000",
+     * });
+     *
+     * // method 2
+     * await tx.pushOperation(
+     *   koin.transfer({
+     *     from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
+     *     to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
+     *     value: "1000",
+     *   },{
+     *    onlyOperation: true,
+     *   })
+     * );
+     *
+     * // method 3
+     * await tx.pushOperation(
+     *   await koin.transfer({
+     *     from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
+     *     to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
+     *     value: "1000",
+     *   },{
+     *    onlyOperation: true,
+     *   })
+     * );
+     *
+     * // method 4
+     * const { operation } = await koin.transfer({
+     *   from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
+     *   to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
+     *   value: "1000",
+     * },{
+     *  onlyOperation: true,
+     * });
+     * await tx.pushOperation(operation)
+     * ```
+     *
+     */
+    async pushOperation(input, args) {
+        let operation;
+        if (typeof input === "function") {
+            const result = await input(args, { onlyOperation: true });
+            operation = result.operation;
+        }
+        else {
+            let inp;
+            if (input instanceof Promise) {
+                inp = await input;
+            }
+            else {
+                inp = input;
+            }
+            if (inp.operation) {
+                operation = inp.operation;
+            }
+            else {
+                operation = input;
+            }
+        }
+        if (!this.transaction.operations)
+            this.transaction.operations = [];
+        this.transaction.operations.push(operation);
+    }
+    /**
+     * Functon to prepare the transaction (set headers, merkle
+     * root, etc)
+     */
+    async prepare(options) {
+        if (options) {
+            const header = {
+                ...((options === null || options === void 0 ? void 0 : options.chainId) && { chain_id: options.chainId }),
+                ...((options === null || options === void 0 ? void 0 : options.rcLimit) && { rc_limit: options.rcLimit }),
+                ...((options === null || options === void 0 ? void 0 : options.nonce) && { nonce: options.nonce }),
+                ...((options === null || options === void 0 ? void 0 : options.payer) && { payer: options.payer }),
+                ...((options === null || options === void 0 ? void 0 : options.payee) && { payee: options.payee }),
+            };
+            this.transaction.header = {
+                ...this.transaction.header,
+                header,
+            };
+        }
+        if (this.signer) {
+            this.transaction = await this.signer.prepareTransaction(this.transaction);
+        }
+        else {
+            if (!this.transaction.header || !this.transaction.header.payer) {
+                throw new Error("no payer defined");
+            }
+            const signer = Signer_1.Signer.fromSeed("0");
+            signer.provider = this.provider;
+            this.transaction = await signer.prepareTransaction(this.transaction);
+        }
+        return this.transaction;
+    }
+    /**
+     * Function to sign the transaction
+     */
+    async sign(abis) {
+        if (!this.signer)
+            throw new Error("no signer defined");
+        if (!this.transaction.id)
+            await this.prepare();
+        return this.signer.signTransaction(this.transaction, this.options.sendAbis ? abis : undefined);
+    }
+    /**
+     * Function to broadcast the transaction
+     */
+    async send(options) {
+        const opts = {
+            ...this.options,
+            options,
+        };
+        if (!this.transaction.id)
+            await this.prepare();
+        if (this.signer && this.signer.provider) {
+            const { transaction: tx, receipt } = await this.signer.sendTransaction(this.transaction, opts);
+            this.transaction = tx;
+            this.waitFunction = tx.wait;
+            return receipt;
+        }
+        if (!this.provider)
+            throw new Error("provider not defined");
+        if (!this.transaction.signatures || !this.transaction.signatures.length) {
+            throw new Error("transaction without signatures and no signer defined");
+        }
+        if (opts.beforeSend) {
+            await opts.beforeSend(this.transaction, opts);
+        }
+        const { transaction: tx, receipt } = await this.provider.sendTransaction(this.transaction, opts.broadcast);
+        this.transaction = tx;
+        this.waitFunction = tx.wait;
+        return receipt;
+    }
+    async wait(type, timeout) {
+        if (!this.waitFunction)
+            throw new Error("no wait function defined");
+        return this.waitFunction(type, timeout);
+    }
+}
+exports.Transaction = Transaction;
+
+
+/***/ }),
+
 /***/ 5738:
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
@@ -11580,11 +11762,13 @@ const utils = __importStar(__webpack_require__(8593));
 const Contract_1 = __webpack_require__(9822);
 const Signer_1 = __webpack_require__(6991);
 const Provider_1 = __webpack_require__(5635);
+const Transaction_1 = __webpack_require__(7592);
 const Serializer_1 = __webpack_require__(7187);
 window.utils = utils;
 window.Contract = Contract_1.Contract;
 window.Signer = Signer_1.Signer;
 window.Provider = Provider_1.Provider;
+window.Transaction = Transaction_1.Transaction;
 window.Serializer = Serializer_1.Serializer;
 
 
