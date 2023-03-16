@@ -162,7 +162,7 @@ export class Transaction {
       };
       this.transaction.header = {
         ...this.transaction.header,
-        header,
+        ...header,
       };
     }
 

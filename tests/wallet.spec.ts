@@ -1533,6 +1533,28 @@ describe("Wallet and Contract", () => {
       ]);
     });
 
+    it("should prepare a transaction", async () => {
+      const tx = new Transaction();
+      await tx.prepare({
+        chainId: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
+        nonce: "OAg=",
+        rcLimit: "10",
+        payer: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+      });
+      expect(tx.transaction).toStrictEqual({
+        header: {
+          chain_id: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
+          nonce: "OAg=",
+          operation_merkle_root:
+            "EiDjsMRCmPwcFJr79MiZb7kkJ65B5GSbk0yklZkbeFK4VQ==",
+          payer: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+          rc_limit: "10",
+        },
+        id: "0x1220264054966df1cdd3c0d1e68016deff8595cf57cdd40559e6268bc6192e4d2bbc",
+        operations: [],
+      });
+    });
+
     it("should submit a transaction", async () => {
       expect.assertions(1);
 
