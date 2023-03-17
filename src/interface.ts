@@ -624,6 +624,18 @@ export interface ValueType {
   [x: string]: unknown;
 }
 
+export interface EventData {
+  sequence: number;
+  source: string;
+  name: string;
+  data: string;
+  impacted: string[];
+}
+
+export interface DecodedEventData extends EventData {
+  args: Record<string, unknown>;
+}
+
 export interface TransactionReceipt {
   id: string;
   payer: string;
@@ -634,12 +646,6 @@ export interface TransactionReceipt {
   network_bandwidth_used: string;
   compute_bandwidth_used: string;
   reverted: boolean;
-  events: {
-    sequence: number;
-    source: string;
-    name: string;
-    data: string;
-    impacted: string[];
-  }[];
+  events: EventData[];
   logs: string[];
 }

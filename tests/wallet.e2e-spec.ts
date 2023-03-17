@@ -287,6 +287,31 @@ describe("Contract", () => {
       })
     );
   });
+
+  it("should get the abi of a contract", async () => {
+    const contract = new Contract({
+      // id: "16KZRu7TbjZZ8movNZnHcR2SmgqKDqJsoP",
+      id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+      provider,
+    });
+    console.log(await contract.fetcthAbi());
+  });
+
+  it("should decode an event", async () => {
+    const contract = new Contract({
+      id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+      abi: utils.tokenAbi,
+    });
+    console.log(
+      await contract.decodeEvent({
+        sequence: 1,
+        source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+        name: "koinos.contracts.token.mint_event",
+        data: "ChkAxjdqxuwS-B50lPQ-lqhRBA3bf2b2ooAHENrw3Ek=",
+        impacted: ["1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J"],
+      })
+    );
+  });
 });
 
 describe("Transaction", () => {
