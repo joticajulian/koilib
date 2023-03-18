@@ -4,11 +4,14 @@ import { Serializer } from "./Serializer";
 /**
  * Application Binary Interface (ABI)
  *
- * ABIs are composed of 2 elements: methods and types.
+ * ABIs are composed of 3 elements: methods, events, and koilib_types.
  * - The methods define the names of the entries of the smart contract,
  * the corresponding endpoints and the name of the types used.
- * - The types all the description to serialize and deserialize
- * using proto buffers.
+ * - The events define possible events triggered by the smart contract
+ * and the name of the types used.
+ * - The koilib_types contain the description to serialize and deserialize
+ * data using proto buffers. It is used to encode/decode the methods
+ * and events.
  *
  * To generate the types is necessary to use the dependency
  * protobufjs. The following example shows how to generate the
@@ -50,7 +53,12 @@ import { Serializer } from "./Serializer";
  *       return: "mint_result",
  *     },
  *   },
- *   types: tokenJson,
+ *   events: {
+ *     'koinos.contracts.token.mint_event': {
+ *       argument: "mint"
+ *     },
+ *   },
+ *   koilib_types: tokenJson,
  * };
  * ```
  *
@@ -59,6 +67,94 @@ import { Serializer } from "./Serializer";
  * empty response (for instance when there are no balance records
  * for a specific address) and you require a default output in
  * such cases.
+ *
+ * **Definition of events**
+ *
+ * There are 2 ways to define events in koinos:
+ * - Event names as protobuffer names
+ * - Custom event names
+ *
+ * 1. Event names as protobuffer names: The name of the event links
+ * with the protobuffer definition. In this case there is no need
+ * to define the event in the ABI.
+ *
+ * Example:
+ *
+ * Proto definition
+ * ```
+ * package koinos.contracts.token;
+ *
+ * message transfer_arguments {
+ *    bytes from = 1 [(btype) = ADDRESS];
+ *    bytes to = 2 [(btype) = ADDRESS];
+ *    uint64 value = 3 [jstype = JS_STRING];
+ * }
+ *
+ * message transfer_event {
+ *    bytes from = 1 [(btype) = ADDRESS];
+ *    bytes to = 2 [(btype) = ADDRESS];
+ *    uint64 value = 3 [jstype = JS_STRING];
+ * }
+ * ```
+ *
+ * Contract
+ * ```ts
+ * // token-contract.ts
+ * transfer(args: token.transfer_arguments): token.transfer_result {
+ *   ...
+ *   System.event("koinos.contracts.token.transfer_event", Protobuf.encode(event, token.transfer_event.encode), impacted);
+ * }
+ * ```
+ *
+ * 2. Custom event names: The previous definition has a limitation. It's
+ * necessary to define a proto message for each event and argument, and they can
+ * not be reused. In this second solution, the event names are defined
+ * in the ABI and they are linked with the corresponding protobuffer definitions.
+ * In this sense, they can be reused.
+ *
+ * Example
+ *
+ * Proto definition
+ * ```
+ * package koinos.contracts.token;
+ *
+ * // only 1 message
+ * message transfer {
+ *    bytes from = 1 [(btype) = ADDRESS];
+ *    bytes to = 2 [(btype) = ADDRESS];
+ *    uint64 value = 3 [jstype = JS_STRING];
+ * }
+ * ```
+ *
+ * Contract
+ * ```ts
+ * // token-contract.ts
+ *
+ * // Transfer of tokens
+ * // @event transfer_event token.transfer
+ * transfer(args: token.transfer): void {
+ *   ...
+ *   System.event("transfer_event", Protobuf.encode(event, token.transfer.encode), impacted);
+ * }
+ *
+ * ABI
+ * ```
+ * const abiToken = {
+ *   methods: {
+ *     transfer: {
+ *       entry_point: 0x62efa292,
+ *       argument: "transfer",
+ *       return: "",
+ *     },
+ *   },
+ *   events: {
+ *     'transfer_event': {
+ *       argument: "transfer"
+ *     },
+ *   },
+ *   koilib_types: tokenJson,
+ * };
+ * ```
  */
 export interface Abi {
   methods: {
@@ -90,6 +186,18 @@ export interface Abi {
    * See https://www.npmjs.com/package/protobufjs#using-json-descriptors
    */
   koilib_types: INamespace;
+
+  /**
+   * Definition of events
+   */
+  events?: {
+    [x: string]: {
+      /** Protobuffer type for argument */
+      argument?: string;
+      /** Description of the event */
+      description?: string;
+    };
+  };
 }
 
 /**

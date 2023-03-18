@@ -550,7 +550,13 @@ export class Contract {
 
   async decodeEvent(event: EventData): Promise<DecodedEventData> {
     if (!this.serializer) throw new Error("Serializer is not defined");
-    const args = await this.serializer.deserialize(event.data, event.name);
+    let typeName = event.name;
+    if (this.abi && this.abi.events && this.abi.events[event.name]) {
+      typeName = this.abi.events[event.name].argument as string;
+    }
+    const args = typeName
+      ? await this.serializer.deserialize(event.data, typeName)
+      : {};
     return { ...event, args };
   }
 }
