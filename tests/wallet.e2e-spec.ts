@@ -287,6 +287,54 @@ describe("Contract", () => {
       })
     );
   });
+
+  it("should decode an event", async () => {
+    const contract = new Contract({
+      id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+      abi: utils.tokenAbi,
+    });
+    const event = {
+      sequence: 1,
+      source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+      name: "koinos.contracts.token.mint_event",
+      data: "ChkAxjdqxuwS-B50lPQ-lqhRBA3bf2b2ooAHENrw3Ek=",
+      impacted: ["1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J"],
+    };
+    const eventDecoded = await contract.decodeEvent(event);
+    expect(eventDecoded).toStrictEqual({
+      ...event,
+      args: {
+        to: "1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J",
+        value: "154613850",
+      },
+    });
+  });
+
+  it("should decode an event with method 2", async () => {
+    const contract = new Contract({
+      id: "1MbsVfNw6yzQqA8499d8KQj8qdLyRs8CzW",
+      provider: new Provider(["http://api.koinos.io"]),
+    });
+    const abi = await contract.fetcthAbi();
+    expect(abi).toBeDefined();
+    const event = {
+      sequence: 7,
+      source: "1MbsVfNw6yzQqA8499d8KQj8qdLyRs8CzW",
+      name: "fogata.unstake",
+      data: "ChkAqocFjiIpkbTkq1rYuanW_MiuJ2k0p9NbEMDh2fgCILHmzvYC",
+      impacted: ["1GYfd5qR9CNZxtN34pDo5bEkGkXy8PWJfL"],
+    };
+    const eventDecoded = await contract.decodeEvent(event);
+    expect(eventDecoded).toStrictEqual({
+      ...event,
+      args: {
+        account: "1GYfd5qR9CNZxtN34pDo5bEkGkXy8PWJfL",
+        koin_amount: "789999808",
+        vhp_amount: "0",
+        stake: "785625905",
+      },
+    });
+  });
 });
 
 describe("Transaction", () => {

@@ -10,6 +10,8 @@ import {
   OperationJson,
   DeployOptions,
   TransactionReceipt,
+  EventData,
+  DecodedEventData,
 } from "./interface";
 import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
 
@@ -179,6 +181,8 @@ export class Contract {
       this.serializer = c.serializer;
     } else if (c.abi && c.abi.koilib_types) {
       this.serializer = new Serializer(c.abi.koilib_types);
+    } else if (c.abi && c.abi.types) {
+      this.serializer = new Serializer(c.abi.types);
     }
     this.options = {
       signTransaction: true,
@@ -188,111 +192,7 @@ export class Contract {
       ...c.options,
     };
     this.functions = {};
-
-    if (this.abi && this.abi.methods) {
-      Object.keys(this.abi.methods).forEach((name) => {
-        this.functions[name] = async <T = Record<string, unknown>>(
-          argu: unknown = {},
-          options?: CallContractOptions
-        ): Promise<{
-          operation: OperationJson;
-          transaction?: TransactionJsonWait;
-          result?: T;
-          receipt?: TransactionReceipt;
-        }> => {
-          if (!this.provider) throw new Error("provider not found");
-          if (!this.abi || !this.abi.methods)
-            throw new Error("Methods are not defined");
-          if (!this.abi.methods[name])
-            throw new Error(`Method ${name} not defined in the ABI`);
-          const opts: CallContractOptions = {
-            ...this.options,
-            ...options,
-          };
-
-          const {
-            read_only: readOnly,
-            return: output,
-            default_output: defaultOutput,
-            preformat_argument: preformatArgument,
-            preformat_return: preformatReturn,
-          } = this.abi.methods[name];
-          let args: Record<string, unknown>;
-          if (typeof preformatArgument === "function") {
-            args = preformatArgument(argu);
-          } else {
-            args = argu as Record<string, unknown>;
-          }
-
-          const operation = await this.encodeOperation({ name, args });
-
-          if (opts.onlyOperation) {
-            return { operation };
-          }
-
-          if (readOnly) {
-            if (!output) throw new Error(`No output defined for ${name}`);
-            // read contract
-            const { result: resultEncoded } = await this.provider.readContract(
-              operation.call_contract!
-            );
-            let result = defaultOutput as T;
-            if (resultEncoded) {
-              result = await this.serializer!.deserialize<T>(
-                resultEncoded,
-                output
-              );
-            }
-            if (typeof preformatReturn === "function") {
-              result = preformatReturn(result as Record<string, unknown>) as T;
-            }
-            return { operation, result };
-          }
-
-          // write contract (sign and send)
-          if (!this.signer) throw new Error("signer not found");
-          let tx = await this.signer.prepareTransaction({
-            header: {
-              ...(opts.chainId && { chain_id: opts.chainId }),
-              ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
-              ...(opts.nonce && { nonce: opts.nonce }),
-              ...(opts.payer && { payer: opts.payer }),
-              ...(opts.payee && { payee: opts.payee }),
-            },
-            operations: [
-              ...(opts.previousOperations ? opts.previousOperations : []),
-              operation,
-              ...(opts.nextOperations ? opts.nextOperations : []),
-            ],
-          });
-
-          if (opts.sendAbis) {
-            if (!opts.abis) opts.abis = {};
-            const contractId = this.getId();
-            if (!opts.abis[contractId]) opts.abis[contractId] = this.abi;
-          }
-
-          // return result if the transaction will not be broadcasted
-          if (!opts.sendTransaction) {
-            const noWait = () => {
-              throw new Error("This transaction was not broadcasted");
-            };
-            if (opts.signTransaction)
-              tx = await this.signer.signTransaction(
-                tx,
-                opts.sendAbis ? opts.abis : undefined
-              );
-            return { operation, transaction: { ...tx, wait: noWait } };
-          }
-
-          const { transaction, receipt } = await this.signer.sendTransaction(
-            tx,
-            opts
-          );
-          return { operation, transaction, receipt };
-        };
-      });
-    }
+    this.updateFunctionsFromAbi();
   }
 
   /**
@@ -300,6 +200,148 @@ export class Contract {
    */
   getId(): string {
     return encodeBase58(this.id);
+  }
+
+  /**
+   * Fetch the ABI from the contract meta store. The provider must
+   * have contract_meta_store microservice enabled.
+   */
+  async fetcthAbi(
+    opts: {
+      updateFunctions: boolean;
+      updateSerializer: boolean;
+    } = {
+      updateFunctions: true,
+      updateSerializer: true,
+    }
+  ): Promise<Abi | undefined> {
+    if (!this.provider) throw new Error("provider not found");
+    const response = await this.provider.call<{ meta: { abi: string } }>(
+      "contract_meta_store.get_contract_meta",
+      {
+        contract_id: this.getId(),
+      }
+    );
+    if (!response.meta || !response.meta.abi) return undefined;
+    this.abi = JSON.parse(response.meta.abi) as Abi;
+    if (opts.updateFunctions) this.updateFunctionsFromAbi();
+    if (opts.updateSerializer) {
+      if (this.abi.koilib_types)
+        this.serializer = new Serializer(this.abi.koilib_types);
+      else if (this.abi.types) this.serializer = new Serializer(this.abi.types);
+    }
+
+    return this.abi;
+  }
+
+  /**
+   * Create the contract functions based on the ABI
+   */
+  updateFunctionsFromAbi(): boolean {
+    if (!this.abi || !this.abi.methods) return false;
+    Object.keys(this.abi.methods).forEach((name) => {
+      this.functions[name] = async <T = Record<string, unknown>>(
+        argu: unknown = {},
+        options?: CallContractOptions
+      ): Promise<{
+        operation: OperationJson;
+        transaction?: TransactionJsonWait;
+        result?: T;
+        receipt?: TransactionReceipt;
+      }> => {
+        if (!this.provider) throw new Error("provider not found");
+        if (!this.abi || !this.abi.methods)
+          throw new Error("Methods are not defined");
+        if (!this.abi.methods[name])
+          throw new Error(`Method ${name} not defined in the ABI`);
+        const opts: CallContractOptions = {
+          ...this.options,
+          ...options,
+        };
+
+        const {
+          read_only: readOnly,
+          return: output,
+          default_output: defaultOutput,
+          preformat_argument: preformatArgument,
+          preformat_return: preformatReturn,
+        } = this.abi.methods[name];
+        let args: Record<string, unknown>;
+        if (typeof preformatArgument === "function") {
+          args = preformatArgument(argu);
+        } else {
+          args = argu as Record<string, unknown>;
+        }
+
+        const operation = await this.encodeOperation({ name, args });
+
+        if (opts.onlyOperation) {
+          return { operation };
+        }
+
+        if (readOnly) {
+          if (!output) throw new Error(`No output defined for ${name}`);
+          // read contract
+          const { result: resultEncoded } = await this.provider.readContract(
+            operation.call_contract!
+          );
+          let result = defaultOutput as T;
+          if (resultEncoded) {
+            result = await this.serializer!.deserialize<T>(
+              resultEncoded,
+              output
+            );
+          }
+          if (typeof preformatReturn === "function") {
+            result = preformatReturn(result as Record<string, unknown>) as T;
+          }
+          return { operation, result };
+        }
+
+        // write contract (sign and send)
+        if (!this.signer) throw new Error("signer not found");
+        let tx = await this.signer.prepareTransaction({
+          header: {
+            ...(opts.chainId && { chain_id: opts.chainId }),
+            ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
+            ...(opts.nonce && { nonce: opts.nonce }),
+            ...(opts.payer && { payer: opts.payer }),
+            ...(opts.payee && { payee: opts.payee }),
+          },
+          operations: [
+            ...(opts.previousOperations ? opts.previousOperations : []),
+            operation,
+            ...(opts.nextOperations ? opts.nextOperations : []),
+          ],
+        });
+
+        if (opts.sendAbis) {
+          if (!opts.abis) opts.abis = {};
+          const contractId = this.getId();
+          if (!opts.abis[contractId]) opts.abis[contractId] = this.abi;
+        }
+
+        // return result if the transaction will not be broadcasted
+        if (!opts.sendTransaction) {
+          const noWait = () => {
+            throw new Error("This transaction was not broadcasted");
+          };
+          if (opts.signTransaction)
+            tx = await this.signer.signTransaction(
+              tx,
+              opts.sendAbis ? opts.abis : undefined
+            );
+          return { operation, transaction: { ...tx, wait: noWait } };
+        }
+
+        const { transaction, receipt } = await this.signer.sendTransaction(
+          tx,
+          opts
+        );
+        return { operation, transaction, receipt };
+      };
+    });
+    return true;
   }
 
   /**
@@ -517,6 +559,49 @@ export class Contract {
       }
     }
     throw new Error(`Unknown method id ${op.call_contract.entry_point}`);
+  }
+
+  /**
+   * Decode an event received in a receipt
+   *
+   * @example
+   * ```ts
+   * const contract = new Contract({
+   *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   abi: utils.tokenAbi,
+   * });
+   * const event = {
+   *   sequence: 1,
+   *   source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   name: "koinos.contracts.token.mint_event",
+   *   data: "ChkAxjdqxuwS-B50lPQ-lqhRBA3bf2b2ooAHENrw3Ek=",
+   *   impacted: ["1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J"],
+   * };
+   * const eventDecoded = await contract.decodeEvent(event);
+   * console.log(eventDecoded);
+   * // {
+   * //   sequence: 1,
+   * //   source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   * //   name: "koinos.contracts.token.mint_event",
+   * //   data: "ChkAxjdqxuwS-B50lPQ-lqhRBA3bf2b2ooAHENrw3Ek=",
+   * //   impacted: ["1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J"],
+   * //   args: {
+   * //     to: "1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J",
+   * //     value: "154613850",
+   * //   },
+   * // }
+   * ```
+   */
+  async decodeEvent(event: EventData): Promise<DecodedEventData> {
+    if (!this.serializer) throw new Error("Serializer is not defined");
+    let typeName = event.name;
+    if (this.abi && this.abi.events && this.abi.events[event.name]) {
+      typeName = this.abi.events[event.name].argument as string;
+    }
+    const args = typeName
+      ? await this.serializer.deserialize(event.data, typeName)
+      : {};
+    return { ...event, args };
   }
 }
 

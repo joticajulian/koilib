@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/require-await */
-import { Root, Type, INamespace } from "protobufjs/light";
+import { Root, Type, INamespace, parse } from "protobufjs";
+import * as koinosPbToProto from "@roamin/koinos-pb-to-proto";
 import { TypeField } from "./interface";
 import { btypeDecodeValue, btypeEncodeValue, decodeBase64url } from "./utils";
 
@@ -26,9 +27,9 @@ const nativeTypes = [
 
 /**
  * The serializer class serialize and deserialize data using
- * protocol buffers.
+ * protocol buffers. It accepts the descriptor in JSON or binary format
  *
- * NOTE: This class uses the [protobufjs/light](https://www.npmjs.com/package/protobufjs)
+ * NOTE: This class uses the [protobufjs](https://www.npmjs.com/package/protobufjs)
  * library internally, which uses reflection (use of _eval_
  * and _new Function_) for the construction of the types.
  * This could cause issues in environments where _eval_ is not
@@ -40,23 +41,44 @@ const nativeTypes = [
  * @example
  *
  * ```ts
+ * // using descriptor JSON
  * const descriptorJson = {
  *   nested: {
  *     awesomepackage: {
  *       nested: {
  *         AwesomeMessage: {
  *           fields: {
- *             awesomeField: {
+ *             awesome_field: {
  *               type: "string",
- *               id: 1
- *             }
- *           }
- *         }
- *       }
- *     }
- *   }
- * }
- * const serializer = new Serializer(descriptorJson)
+ *               id: 1,
+ *             },
+ *           },
+ *         },
+ *       },
+ *     },
+ *   },
+ * };
+ * const serializer1 = new Serializer(descriptorJson);
+ * const message1 = await serializer1.deserialize(
+ *   "CgZrb2lub3M=",
+ *   "AwesomeMessage"
+ * );
+ * console.log(message1);
+ * // { awesome_field: 'koinos' }
+ *
+ * // using descriptor binary
+ * const descriptorBinary =
+ *   "Cl4KDWF3ZXNvbWUucHJvdG8SDmF3ZXNvbWVwYWN" +
+ *   "rYWdlIjUKDkF3ZXNvbWVNZXNzYWdlEiMKDWF3ZX" +
+ *   "NvbWVfZmllbGQYASABKAlSDGF3ZXNvbWVGaWVsZ" +
+ *   "GIGcHJvdG8z";
+ * const serializer2 = new Serializer(descriptorBinary);
+ * const message2 = await serializer2.deserialize(
+ *   "CgZrb2lub3M=",
+ *   "AwesomeMessage"
+ * );
+ * console.log(message2);
+ * // { awesome_field: 'koinos' }
  * ```
  */
 export class Serializer {
@@ -64,7 +86,7 @@ export class Serializer {
    * Protobuffers descriptor in JSON format.
    * See https://www.npmjs.com/package/protobufjs#using-json-descriptors
    */
-  types: INamespace;
+  types: INamespace | string;
 
   /**
    * Protobuffer definitions
@@ -91,7 +113,7 @@ export class Serializer {
   };
 
   constructor(
-    types: INamespace,
+    types: INamespace | string,
     opts?: {
       /**
        * Default type name. Use this option when you
@@ -108,7 +130,15 @@ export class Serializer {
     }
   ) {
     this.types = types;
-    this.root = Root.fromJSON(this.types);
+    if (typeof types === "string") {
+      const protos = koinosPbToProto.convert(types);
+      this.root = new Root();
+      for (const proto of protos) {
+        parse(proto.definition, this.root, { keepCase: true });
+      }
+    } else {
+      this.root = Root.fromJSON(types);
+    }
     if (opts?.defaultTypeName)
       this.defaultType = this.root.lookupType(opts.defaultTypeName);
     if (opts && typeof opts.bytesConversion !== "undefined")
@@ -265,8 +295,10 @@ export class Serializer {
     typeName?: string,
     opts?: { bytesConversion?: boolean; verifyChecksum?: boolean }
   ): Promise<Uint8Array> {
-    const protobufType =
-      this.defaultType || this.root.lookupType(typeName as string);
+    let protobufType: Type;
+    if (this.defaultType) protobufType = this.defaultType;
+    else if (!typeName) throw new Error("no typeName defined");
+    else protobufType = this.root.lookupType(typeName);
     let object: Record<string, unknown> = {};
     const bytesConversion =
       opts?.bytesConversion === undefined
@@ -302,8 +334,10 @@ export class Serializer {
       typeof valueEncoded === "string"
         ? decodeBase64url(valueEncoded)
         : valueEncoded;
-    const protobufType =
-      this.defaultType || this.root.lookupType(typeName as string);
+    let protobufType: Type;
+    if (this.defaultType) protobufType = this.defaultType;
+    else if (!typeName) throw new Error("no typeName defined");
+    else protobufType = this.root.lookupType(typeName);
     const message = protobufType.decode(valueBuffer);
     const object = protobufType.toObject(message, {
       longs: String,
