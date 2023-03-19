@@ -317,7 +317,6 @@ describe("Contract", () => {
     });
     const abi = await contract.fetcthAbi();
     expect(abi).toBeDefined();
-    contract.serializer = new Serializer(contract.abi!.koilib_types);
     const event = {
       sequence: 7,
       source: "1MbsVfNw6yzQqA8499d8KQj8qdLyRs8CzW",

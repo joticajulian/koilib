@@ -807,7 +807,7 @@ describe("Wallet and Contract", () => {
 
     expect(operation).toStrictEqual({
       call_contract: {
-        contract_id: encodeBase58(koinContract.id!),
+        contract_id: encodeBase58(koinContract.id),
         entry_point: koinContract.abi?.methods?.transfer?.entry_point,
         args: expect.any(String) as string,
       },

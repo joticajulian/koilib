@@ -181,6 +181,8 @@ export class Contract {
       this.serializer = c.serializer;
     } else if (c.abi && c.abi.koilib_types) {
       this.serializer = new Serializer(c.abi.koilib_types);
+    } else if (c.abi && c.abi.types) {
+      this.serializer = new Serializer(c.abi.types);
     }
     this.options = {
       signTransaction: true,
@@ -190,7 +192,7 @@ export class Contract {
       ...c.options,
     };
     this.functions = {};
-    this.applyAbi();
+    this.updateFunctionsFromAbi();
   }
 
   /**
@@ -203,10 +205,16 @@ export class Contract {
   /**
    * Fetch the ABI from the contract meta store. The provider must
    * have contract_meta_store microservice enabled.
-   * @param applyAbi - if true then [[Contract.applyAbi]] will be called
-   * to build the contract functions
    */
-  async fetcthAbi(applyAbi = true): Promise<Abi | undefined> {
+  async fetcthAbi(
+    opts: {
+      updateFunctions: boolean;
+      updateSerializer: boolean;
+    } = {
+      updateFunctions: true,
+      updateSerializer: true,
+    }
+  ): Promise<Abi | undefined> {
     if (!this.provider) throw new Error("provider not found");
     const response = await this.provider.call<{ meta: { abi: string } }>(
       "contract_meta_store.get_contract_meta",
@@ -216,7 +224,12 @@ export class Contract {
     );
     if (!response.meta || !response.meta.abi) return undefined;
     this.abi = JSON.parse(response.meta.abi) as Abi;
-    if (applyAbi) this.applyAbi();
+    if (opts.updateFunctions) this.updateFunctionsFromAbi();
+    if (opts.updateSerializer) {
+      if (this.abi.koilib_types)
+        this.serializer = new Serializer(this.abi.koilib_types);
+      else if (this.abi.types) this.serializer = new Serializer(this.abi.types);
+    }
 
     return this.abi;
   }
@@ -224,7 +237,7 @@ export class Contract {
   /**
    * Create the contract functions based on the ABI
    */
-  applyAbi(): boolean {
+  updateFunctionsFromAbi(): boolean {
     if (!this.abi || !this.abi.methods) return false;
     Object.keys(this.abi.methods).forEach((name) => {
       this.functions[name] = async <T = Record<string, unknown>>(

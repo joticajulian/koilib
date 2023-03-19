@@ -181,11 +181,17 @@ export interface Abi {
       description?: string;
     };
   };
+
+  /**
+   * Protobuffers descriptor in binary format encoded in base64url.
+   */
+  types?: string;
+
   /**
    * Protobuffers descriptor in JSON format.
    * See https://www.npmjs.com/package/protobufjs#using-json-descriptors
    */
-  koilib_types: INamespace;
+  koilib_types?: INamespace;
 
   /**
    * Definition of events
@@ -381,7 +387,7 @@ export interface ContractTransactionOptions extends TransactionOptions {
   sendTransaction?: boolean;
 }
 
-export interface CallContractOptions extends ContractTransactionOptions {}
+export type CallContractOptions = ContractTransactionOptions;
 
 export interface DeployOptions extends ContractTransactionOptions {
   /**
