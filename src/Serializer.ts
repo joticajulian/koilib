@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/require-await */
-import { Root, Type, INamespace } from "protobufjs/light";
+import { Root, Type, INamespace, parse } from "protobufjs";
+import * as koinosPbToProto from "@roamin/koinos-pb-to-proto";
 import { TypeField } from "./interface";
 import { btypeDecodeValue, btypeEncodeValue, decodeBase64url } from "./utils";
 
@@ -64,7 +65,7 @@ export class Serializer {
    * Protobuffers descriptor in JSON format.
    * See https://www.npmjs.com/package/protobufjs#using-json-descriptors
    */
-  types: INamespace;
+  types: INamespace | string;
 
   /**
    * Protobuffer definitions
@@ -91,7 +92,7 @@ export class Serializer {
   };
 
   constructor(
-    types: INamespace,
+    types: INamespace | string,
     opts?: {
       /**
        * Default type name. Use this option when you
@@ -108,7 +109,15 @@ export class Serializer {
     }
   ) {
     this.types = types;
-    this.root = Root.fromJSON(this.types);
+    if (typeof types === "string") {
+      const protos = koinosPbToProto.convert(types);
+      this.root = new Root();
+      for (const proto of protos) {
+        parse(proto.definition, this.root, { keepCase: true });
+      }
+    } else {
+      this.root = Root.fromJSON(types);
+    }
     if (opts?.defaultTypeName)
       this.defaultType = this.root.lookupType(opts.defaultTypeName);
     if (opts && typeof opts.bytesConversion !== "undefined")
