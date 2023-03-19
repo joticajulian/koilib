@@ -68,7 +68,10 @@ const nativeTypes = [
  *
  * // using descriptor binary
  * const descriptorBinary =
- *   "Cl4KDWF3ZXNvbWUucHJvdG8SDmF3ZXNvbWVwYWNrYWdlIjUKDkF3ZXNvbWVNZXNzYWdlEiMKDWF3ZXNvbWVfZmllbGQYASABKAlSDGF3ZXNvbWVGaWVsZGIGcHJvdG8z";
+ *   "Cl4KDWF3ZXNvbWUucHJvdG8SDmF3ZXNvbWVwYWN" +
+ *   "rYWdlIjUKDkF3ZXNvbWVNZXNzYWdlEiMKDWF3ZX" +
+ *   "NvbWVfZmllbGQYASABKAlSDGF3ZXNvbWVGaWVsZ" +
+ *   "GIGcHJvdG8z";
  * const serializer2 = new Serializer(descriptorBinary);
  * const message2 = await serializer2.deserialize(
  *   "CgZrb2lub3M=",
@@ -295,7 +298,7 @@ export class Serializer {
     let protobufType: Type;
     if (this.defaultType) protobufType = this.defaultType;
     else if (!typeName) throw new Error("no typeName defined");
-    else protobufType = this.root.lookupType(typeName as string);
+    else protobufType = this.root.lookupType(typeName);
     let object: Record<string, unknown> = {};
     const bytesConversion =
       opts?.bytesConversion === undefined
@@ -334,7 +337,7 @@ export class Serializer {
     let protobufType: Type;
     if (this.defaultType) protobufType = this.defaultType;
     else if (!typeName) throw new Error("no typeName defined");
-    else protobufType = this.root.lookupType(typeName as string);
+    else protobufType = this.root.lookupType(typeName);
     const message = protobufType.decode(valueBuffer);
     const object = protobufType.toObject(message, {
       longs: String,

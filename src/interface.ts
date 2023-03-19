@@ -4,14 +4,15 @@ import { Serializer } from "./Serializer";
 /**
  * Application Binary Interface (ABI)
  *
- * ABIs are composed of 3 elements: methods, events, and koilib_types.
+ * ABIs are composed of 3 elements: methods, events, and types.
  * - The methods define the names of the entries of the smart contract,
  * the corresponding endpoints and the name of the types used.
  * - The events define possible events triggered by the smart contract
  * and the name of the types used.
- * - The koilib_types contain the description to serialize and deserialize
+ * - The types contain the description to serialize and deserialize
  * data using proto buffers. It is used to encode/decode the methods
- * and events.
+ * and events. These types can be provided in binary format or json
+ * format (koilib_types)
  *
  * To generate the types is necessary to use the dependency
  * protobufjs. The following example shows how to generate the
@@ -136,9 +137,10 @@ import { Serializer } from "./Serializer";
  *   ...
  *   System.event("transfer_event", Protobuf.encode(event, token.transfer.encode), impacted);
  * }
+ * ```
  *
  * ABI
- * ```
+ * ```ts
  * const abiToken = {
  *   methods: {
  *     transfer: {

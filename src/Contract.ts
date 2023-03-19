@@ -561,6 +561,37 @@ export class Contract {
     throw new Error(`Unknown method id ${op.call_contract.entry_point}`);
   }
 
+  /**
+   * Decode an event received in a receipt
+   *
+   * @example
+   * ```ts
+   * const contract = new Contract({
+   *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   abi: utils.tokenAbi,
+   * });
+   * const event = {
+   *   sequence: 1,
+   *   source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   name: "koinos.contracts.token.mint_event",
+   *   data: "ChkAxjdqxuwS-B50lPQ-lqhRBA3bf2b2ooAHENrw3Ek=",
+   *   impacted: ["1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J"],
+   * };
+   * const eventDecoded = await contract.decodeEvent(event);
+   * console.log(eventDecoded);
+   * // {
+   * //   sequence: 1,
+   * //   source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   * //   name: "koinos.contracts.token.mint_event",
+   * //   data: "ChkAxjdqxuwS-B50lPQ-lqhRBA3bf2b2ooAHENrw3Ek=",
+   * //   impacted: ["1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J"],
+   * //   args: {
+   * //     to: "1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J",
+   * //     value: "154613850",
+   * //   },
+   * // }
+   * ```
+   */
   async decodeEvent(event: EventData): Promise<DecodedEventData> {
     if (!this.serializer) throw new Error("Serializer is not defined");
     let typeName = event.name;
