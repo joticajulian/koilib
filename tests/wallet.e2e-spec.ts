@@ -315,7 +315,7 @@ describe("Contract", () => {
       id: "1MbsVfNw6yzQqA8499d8KQj8qdLyRs8CzW",
       provider: new Provider(["http://api.koinos.io"]),
     });
-    const abi = await contract.fetcthAbi();
+    const abi = await contract.fetchAbi();
     expect(abi).toBeDefined();
     const event = {
       sequence: 7,

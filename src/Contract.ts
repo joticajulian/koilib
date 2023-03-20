@@ -203,10 +203,16 @@ export class Contract {
   }
 
   /**
-   * Fetch the ABI from the contract meta store. The provider must
-   * have contract_meta_store microservice enabled.
+   * Fetch the ABI from the contract meta store and save it in the
+   * abi of the contract. The provider must have contract_meta_store
+   * microservice enabled.
+   * @param opts - options object with 2 boolean: 1) updateFunctions to
+   * specify if the contract functions should be regenerated based on
+   * the new ABI, and 2) updateSerializer to determine if the serializer
+   * should be updated with the types in the new ABI.
+   * @returns the new ABI saved in the contract
    */
-  async fetcthAbi(
+  async fetchAbi(
     opts: {
       updateFunctions: boolean;
       updateSerializer: boolean;

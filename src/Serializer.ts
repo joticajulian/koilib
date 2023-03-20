@@ -2,7 +2,12 @@
 import { Root, Type, INamespace, parse } from "protobufjs";
 import * as koinosPbToProto from "@roamin/koinos-pb-to-proto";
 import { TypeField } from "./interface";
-import { btypeDecodeValue, btypeEncodeValue, decodeBase64url } from "./utils";
+import {
+  btypeDecodeValue,
+  btypeEncodeValue,
+  decodeBase64url,
+  decodeBase64,
+} from "./utils";
 
 const OP_BYTES_1 = "(btype)";
 const OP_BYTES_2 = "(koinos.btype)";
@@ -131,7 +136,7 @@ export class Serializer {
   ) {
     this.types = types;
     if (typeof types === "string") {
-      const protos = koinosPbToProto.convert(types);
+      const protos = koinosPbToProto.convert(decodeBase64(types) as Buffer);
       this.root = new Root();
       for (const proto of protos) {
         parse(proto.definition, this.root, { keepCase: true });
