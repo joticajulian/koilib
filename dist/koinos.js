@@ -22783,10 +22783,16 @@ class Contract {
         return (0, utils_1.encodeBase58)(this.id);
     }
     /**
-     * Fetch the ABI from the contract meta store. The provider must
-     * have contract_meta_store microservice enabled.
+     * Fetch the ABI from the contract meta store and save it in the
+     * abi of the contract. The provider must have contract_meta_store
+     * microservice enabled.
+     * @param opts - options object with 2 boolean: 1) updateFunctions to
+     * specify if the contract functions should be regenerated based on
+     * the new ABI, and 2) updateSerializer to determine if the serializer
+     * should be updated with the types in the new ABI.
+     * @returns the new ABI saved in the contract
      */
-    async fetcthAbi(opts = {
+    async fetchAbi(opts = {
         updateFunctions: true,
         updateSerializer: true,
     }) {
@@ -23592,7 +23598,7 @@ class Serializer {
         };
         this.types = types;
         if (typeof types === "string") {
-            const protos = koinosPbToProto.convert(types);
+            const protos = koinosPbToProto.convert((0, utils_1.decodeBase64)(types));
             this.root = new protobufjs_1.Root();
             for (const proto of protos) {
                 (0, protobufjs_1.parse)(proto.definition, this.root, { keepCase: true });
