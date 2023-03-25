@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v5.5.2](https://github.com/joticajulian/koilib/releases/tag/v5.5.2) (2023-03-25)
+
+### 🐛 Bug Fixes
+
+- Fix options in Transaction Class
+
 ## [v5.5.1](https://github.com/joticajulian/koilib/releases/tag/v5.5.1) (2023-03-20)
 
 ### 🐛 Bug Fixes

@@ -24604,7 +24604,7 @@ class Transaction {
     async send(options) {
         const opts = {
             ...this.options,
-            options,
+            ...options,
         };
         if (!this.transaction.id)
             await this.prepare();

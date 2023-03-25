@@ -9,3 +9,4 @@ koinos-proto
 src/protoModules
 local/*
 .env
+test.ts
