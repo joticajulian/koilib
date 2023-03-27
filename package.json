@@ -1,6 +1,6 @@
 {
   "name": "koilib",
-  "version": "5.5.2",
+  "version": "5.5.3",
   "description": "JS Koinos Library",
   "author": "Julian Gonzalez",
   "repository": {
@@ -46,7 +46,7 @@
   "dependencies": {
     "@noble/hashes": "^1.1.2",
     "@noble/secp256k1": "^1.6.3",
-    "@roamin/koinos-pb-to-proto": "^0.0.2",
+    "@roamin/koinos-pb-to-proto": "^0.0.3",
     "cross-fetch": "^3.1.5",
     "multibase": "^4.0.6",
     "protobufjs": "^7.0.0"
