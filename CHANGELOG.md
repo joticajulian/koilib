@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v5.5.3](https://github.com/joticajulian/koilib/releases/tag/v5.5.3) (2023-03-27)
+
+### 🐛 Bug Fixes
+
+- Update koinos-pb-to-proto to fix the parser in the Serializer
+
 ## [v5.5.2](https://github.com/joticajulian/koilib/releases/tag/v5.5.2) (2023-03-25)
 
 ### 🐛 Bug Fixes

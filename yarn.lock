@@ -1029,10 +1029,10 @@
   resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.0.tgz#a777360b5b39a1a2e5106f8e858f2fd2d060c570"
   integrity sha1-p3c2C1s5oaLlEG+OhY8v0tBgxXA=
 
-"@roamin/koinos-pb-to-proto@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@roamin/koinos-pb-to-proto/-/koinos-pb-to-proto-0.0.2.tgz#07289cf0d717d620cab0af6cf5497e8deadde88c"
-  integrity sha512-fXmX2EI2/m7CuklFO9KcD2/2gPphV967LPCAgoQTgAR9EFq7b3A5pwFZkE9V+39nj97wP8QzAIfeoMtNZjBACA==
+"@roamin/koinos-pb-to-proto@^0.0.3":
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/@roamin/koinos-pb-to-proto/-/koinos-pb-to-proto-0.0.3.tgz#7c8bb6c65ee3cfcb6e889f6a3969bed01647303a"
+  integrity sha512-FR7hOtTM+COIMPBXpR6gc1HlJvFzioGgbAod9h7QAF527ACCF6xQG5mNyTSM65PrpbUVu/SA51O4Itp9BvZlTg==
   dependencies:
     google-protobuf "^3.21.0"
 

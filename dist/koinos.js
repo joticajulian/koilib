@@ -3186,7 +3186,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getMessage = exports.getOneof = exports.getField = exports.getFieldType = exports.getFieldLabel = exports.getbType = exports.getJSType = exports.getExtension = exports.getEnum = exports.getImport = exports.getPackage = exports.getSyntax = void 0;
+exports.getMessage = exports.getOneofs = exports.getField = exports.getFieldType = exports.getFieldLabel = exports.getbType = exports.getJSType = exports.getExtension = exports.getEnum = exports.getImport = exports.getPackage = exports.getSyntax = void 0;
 const descriptor_pb_js_1 = __webpack_require__(9392);
 const optionspb = __importStar(__webpack_require__(5172));
 function getSyntax(fileDesc) {
@@ -3333,38 +3333,54 @@ function getField(fieldDesc) {
     return `${optional} ${getFieldLabel(fieldDesc)} ${getFieldType(fieldDesc)} ${fieldName} = ${fieldId} ${extension};`;
 }
 exports.getField = getField;
-function getOneof(messageDesc, fields) {
-    let oneof = '';
-    for (const oneofDesc of messageDesc.getOneofDeclList()) {
-        oneof = oneofDesc.getName();
+function getOneofs(messageDesc, oneOfFields) {
+    const result = [];
+    for (const [index, oneofDesc] of messageDesc.getOneofDeclList().entries()) {
+        const oneofName = oneofDesc.getName();
+        if (oneOfFields[index]) {
+            result.push(`
+    oneof ${oneofName} {
+      ${oneOfFields[index].join('\n    ')}
+    }\n\n`);
+        }
     }
-    // if no oneof
-    if (oneof === '') {
-        return fields.join('\n  ');
-    }
-    return `
-    oneof ${oneof} {
-      ${fields.join('\n    ')} 
-    }\n\n`;
+    return result;
 }
-exports.getOneof = getOneof;
+exports.getOneofs = getOneofs;
 function getMessage(messageDesc) {
     const nestedMessages = [];
     const fields = [];
+    const oneOfFields = [];
     // nested messages
     for (const nestedMessage of messageDesc.getNestedTypeList()) {
         nestedMessages.push(getMessage(nestedMessage));
     }
     // fields
     for (const fieldDesc of messageDesc.getFieldList()) {
-        fields.push(getField(fieldDesc));
+        const field = getField(fieldDesc);
+        if (fieldDesc.hasOneofIndex() && !fieldDesc.hasProto3Optional()) {
+            const oneOfIndex = fieldDesc.getOneofIndex();
+            if (oneOfIndex === undefined) {
+                throw new Error('Missing one_of index.');
+            }
+            let existingFields = oneOfFields[oneOfIndex];
+            if (existingFields === undefined) {
+                existingFields = [];
+                oneOfFields[oneOfIndex] = existingFields;
+            }
+            existingFields.push(field);
+        }
+        else {
+            fields.push(field);
+        }
     }
-    // oneof
-    const oneof = getOneof(messageDesc, fields);
+    // one_of fields
+    const oneOfs = getOneofs(messageDesc, oneOfFields);
     return `
   message ${messageDesc.getName()} {
     ${nestedMessages.join('\n  ')}
-    ${oneof}
+    ${fields.join('\n  ')}
+    ${oneOfs.join('\n  ')}
   }\n\n`;
 }
 exports.getMessage = getMessage;
