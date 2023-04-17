@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v5.5.4](https://github.com/joticajulian/koilib/releases/tag/v5.5.4) (2023-04-17)
+
+### 🐛 Bug Fixes
+
+- Publish the source files
+
 ## [v5.5.3](https://github.com/joticajulian/koilib/releases/tag/v5.5.3) (2023-03-27)
 
 ### 🐛 Bug Fixes

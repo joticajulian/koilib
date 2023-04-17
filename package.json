@@ -1,6 +1,6 @@
 {
   "name": "koilib",
-  "version": "5.5.3",
+  "version": "5.5.4",
   "description": "JS Koinos Library",
   "author": "Julian Gonzalez",
   "repository": {
@@ -12,7 +12,8 @@
   },
   "files": [
     "lib",
-    "dist"
+    "dist",
+    "src"
   ],
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
