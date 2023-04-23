@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v5.5.5](https://github.com/joticajulian/koilib/releases/tag/v5.5.5) (2023-04-23)
+
+### 🐛 Bug Fixes
+
+- Fix types for Contract functions to be able to extend them
+
 ## [v5.5.4](https://github.com/joticajulian/koilib/releases/tag/v5.5.4) (2023-04-17)
 
 ### 🐛 Bug Fixes
