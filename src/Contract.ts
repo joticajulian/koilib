@@ -109,8 +109,8 @@ export class Contract {
    * ```
    */
   functions: {
-    [x: string]: <T = Record<string, unknown>>(
-      args?: unknown,
+    [x: string]: <T = Record<string, any>>(
+      args?: any,
       opts?: CallContractOptions
     ) => Promise<{
       operation: OperationJson;
