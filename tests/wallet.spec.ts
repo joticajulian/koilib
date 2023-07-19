@@ -743,7 +743,11 @@ describe("Wallet and Contract", () => {
       ],
     };
 
-    const tx = await signer.prepareTransaction(transaction);
+    const tx = await Transaction.prepareTransaction(
+      transaction,
+      signer.provider,
+      signer.getAddress()
+    );
 
     expect(tx).toStrictEqual({
       header: {

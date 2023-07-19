@@ -14,6 +14,7 @@ import {
   DecodedEventData,
 } from "./interface";
 import { decodeBase58, encodeBase58, encodeBase64url } from "./utils";
+import { Transaction } from "./Transaction";
 
 /**
  * The contract class contains the contract ID and contract entries
@@ -306,20 +307,24 @@ export class Contract {
 
         // write contract (sign and send)
         if (!this.signer) throw new Error("signer not found");
-        let tx = await this.signer.prepareTransaction({
-          header: {
-            ...(opts.chainId && { chain_id: opts.chainId }),
-            ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
-            ...(opts.nonce && { nonce: opts.nonce }),
-            ...(opts.payer && { payer: opts.payer }),
-            ...(opts.payee && { payee: opts.payee }),
+        let tx = await Transaction.prepareTransaction(
+          {
+            header: {
+              ...(opts.chainId && { chain_id: opts.chainId }),
+              ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
+              ...(opts.nonce && { nonce: opts.nonce }),
+              ...(opts.payer && { payer: opts.payer }),
+              ...(opts.payee && { payee: opts.payee }),
+            },
+            operations: [
+              ...(opts.previousOperations ? opts.previousOperations : []),
+              operation,
+              ...(opts.nextOperations ? opts.nextOperations : []),
+            ],
           },
-          operations: [
-            ...(opts.previousOperations ? opts.previousOperations : []),
-            operation,
-            ...(opts.nextOperations ? opts.nextOperations : []),
-          ],
-        });
+          this.provider,
+          this.signer?.getAddress()
+        );
 
         if (opts.sendAbis) {
           if (!opts.abis) opts.abis = {};
@@ -430,20 +435,24 @@ export class Contract {
       return { operation };
     }
 
-    let tx = await this.signer.prepareTransaction({
-      header: {
-        ...(opts.chainId && { chain_id: opts.chainId }),
-        ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
-        ...(opts.nonce && { nonce: opts.nonce }),
-        ...(opts.payer && { payer: opts.payer }),
-        ...(opts.payee && { payee: opts.payee }),
+    let tx = await Transaction.prepareTransaction(
+      {
+        header: {
+          ...(opts.chainId && { chain_id: opts.chainId }),
+          ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
+          ...(opts.nonce && { nonce: opts.nonce }),
+          ...(opts.payer && { payer: opts.payer }),
+          ...(opts.payee && { payee: opts.payee }),
+        },
+        operations: [
+          ...(opts.previousOperations ? opts.previousOperations : []),
+          operation,
+          ...(opts.nextOperations ? opts.nextOperations : []),
+        ],
       },
-      operations: [
-        ...(opts.previousOperations ? opts.previousOperations : []),
-        operation,
-        ...(opts.nextOperations ? opts.nextOperations : []),
-      ],
-    });
+      this.provider,
+      this.signer?.getAddress()
+    );
 
     // return result if the transaction will not be broadcasted
     if (!opts.sendTransaction) {
