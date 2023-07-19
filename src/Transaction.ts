@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+import { sha256 } from "@noble/hashes/sha256";
 import { Contract } from "./Contract";
 import { Provider } from "./Provider";
 import { Signer } from "./Signer";
@@ -8,8 +10,75 @@ import {
   TransactionJson,
   TransactionOptions,
   TransactionReceipt,
+  TypeField,
   WaitFunction,
 } from "./interface";
+import {
+  btypeDecode,
+  calculateMerkleRoot,
+  encodeBase64url,
+  toHexString,
+} from "./utils";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { koinos } from "./protoModules/protocol-proto.js";
+
+const btypeTransactionHeader: TypeField["subtypes"] = {
+  chain_id: { type: "bytes" },
+  rc_limit: { type: "uint64" },
+  nonce: { type: "bytes" },
+  operation_merkle_root: { type: "bytes" },
+  payer: { type: "bytes", btype: "ADDRESS" },
+  payee: { type: "bytes", btype: "ADDRESS" },
+};
+
+const btypesOperation: TypeField["subtypes"] = {
+  upload_contract: {
+    type: "object",
+    subtypes: {
+      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+      bytecode: { type: "bytes" },
+      abi: { type: "string" },
+      authorizes_call_contract: { type: "bool" },
+      authorizes_transaction_application: { type: "bool" },
+      authorizes_upload_contract: { type: "bool" },
+    },
+  },
+  call_contract: {
+    type: "object",
+    subtypes: {
+      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+      entry_point: { type: "uint32" },
+      args: { type: "bytes" },
+    },
+  },
+  set_system_call: {
+    type: "object",
+    subtypes: {
+      call_id: { type: "uint32" },
+      target: {
+        type: "object",
+        subtypes: {
+          thunk_id: { type: "uint32" },
+          system_call_bundle: {
+            type: "object",
+            subtypes: {
+              contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+              entry_point: { type: "uint32" },
+            },
+          },
+        },
+      },
+    },
+  },
+  set_system_contract: {
+    type: "object",
+    subtypes: {
+      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+      system_contract: { type: "bool" },
+    },
+  },
+};
 
 export class Transaction {
   /**
@@ -43,7 +112,7 @@ export class Transaction {
     options?: TransactionOptions;
   }) {
     this.signer = c?.signer;
-    this.provider = c?.provider;
+    this.provider = c?.provider || c?.signer?.provider;
     this.options = {
       broadcast: true,
       sendAbis: true,
@@ -148,6 +217,110 @@ export class Transaction {
   }
 
   /**
+   * Function to prepare a transaction
+   * @param tx - Do not set the nonce to get it from the blockchain
+   * using the provider. The rc_limit is 1e8 by default.
+   * @param provider - Provider
+   * @param payer - payer to be used in case it is not defined in the transaction
+   * @returns A prepared transaction.
+   */
+  static async prepareTransaction(
+    tx: TransactionJson,
+    provider?: Provider,
+    payer?: string
+  ): Promise<TransactionJson> {
+    if (!tx.header) {
+      tx.header = {};
+    }
+
+    const { payer: payerHeader, payee } = tx.header;
+    if (!payerHeader) tx.header.payer = payer;
+    payer = tx.header.payer;
+    if (!payer) throw new Error("payer is undefined");
+
+    let nonce: string;
+    if (tx.header.nonce === undefined) {
+      if (!provider)
+        throw new Error(
+          "Cannot get the nonce because provider is undefined. To skip this call set a nonce in the transaction header"
+        );
+      nonce = await provider.getNextNonce(payee || payer);
+    } else {
+      nonce = tx.header.nonce;
+    }
+
+    let rcLimit: string;
+    if (tx.header.rc_limit === undefined) {
+      if (!provider)
+        throw new Error(
+          "Cannot get the rc_limit because provider is undefined. To skip this call set a rc_limit in the transaction header"
+        );
+      rcLimit = await provider.getAccountRc(payer);
+    } else {
+      rcLimit = tx.header.rc_limit;
+    }
+
+    if (!tx.header.chain_id) {
+      if (!provider)
+        throw new Error(
+          "Cannot get the chain_id because provider is undefined. To skip this call set a chain_id"
+        );
+      tx.header.chain_id = await provider.getChainId();
+    }
+
+    const operationsHashes: Uint8Array[] = [];
+
+    if (tx.operations) {
+      for (let index = 0; index < tx.operations?.length; index += 1) {
+        const operationDecoded = btypeDecode(
+          tx.operations[index],
+          btypesOperation!,
+          false
+        );
+        const message = koinos.protocol.operation.create(operationDecoded);
+        const operationEncoded = koinos.protocol.operation
+          .encode(message)
+          .finish() as Uint8Array;
+        operationsHashes.push(sha256(operationEncoded));
+      }
+    }
+    const operationMerkleRoot = encodeBase64url(
+      new Uint8Array([
+        // multihash sha256: 18, 32
+        18,
+        32,
+        ...calculateMerkleRoot(operationsHashes),
+      ])
+    );
+
+    tx.header = {
+      chain_id: tx.header.chain_id,
+      rc_limit: rcLimit,
+      nonce,
+      operation_merkle_root: operationMerkleRoot,
+      payer,
+      ...(payee && { payee }),
+      // TODO: Option to resolve names (payer, payee)
+    };
+
+    const headerDecoded = btypeDecode(
+      tx.header,
+      btypeTransactionHeader!,
+      false
+    );
+    const message = koinos.protocol.transaction_header.create(headerDecoded);
+    const headerBytes = koinos.protocol.transaction_header
+      .encode(message)
+      .finish() as Uint8Array;
+
+    const hash = sha256(headerBytes);
+
+    // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
+    tx.id = `0x1220${toHexString(hash)}`;
+    return tx;
+  }
+
+  /**
    * Functon to prepare the transaction (set headers, merkle
    * root, etc)
    */
@@ -162,20 +335,14 @@ export class Transaction {
       };
       this.transaction.header = {
         ...this.transaction.header,
-        header,
+        ...header,
       };
     }
-
-    if (this.signer) {
-      this.transaction = await this.signer.prepareTransaction(this.transaction);
-    } else {
-      if (!this.transaction.header || !this.transaction.header.payer) {
-        throw new Error("no payer defined");
-      }
-      const signer = Signer.fromSeed("0");
-      signer.provider = this.provider;
-      this.transaction = await signer.prepareTransaction(this.transaction);
-    }
+    this.transaction = await Transaction.prepareTransaction(
+      this.transaction,
+      this.provider,
+      this.signer?.getAddress()
+    );
     return this.transaction;
   }
 
@@ -197,7 +364,7 @@ export class Transaction {
   async send(options?: SendTransactionOptions): Promise<TransactionReceipt> {
     const opts = {
       ...this.options,
-      options,
+      ...options,
     };
     if (!this.transaction.id) await this.prepare();
 

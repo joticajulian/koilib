@@ -122,6 +122,10 @@ describe("utils", () => {
     ["12", 8, "1200000000"],
     ["12.3", 8, "1230000000"],
     ["123", 0, "123"],
+    ["0.500000001", 8, "50000000"],
+    ["0.500000005", 8, "50000001"],
+    ["0.500000000000000056", 8, "50000000"],
+    ["10.500000005001", 8, "1050000001"],
     // negative numbers
     ["-0.00000001", 8, "-1"],
     ["-0.00123456", 8, "-123456"],
@@ -589,6 +593,21 @@ describe("Serializer", () => {
     expect(deser).toStrictEqual(value);
     expect(encodeBase64url(ser1)).toBe(encodeBase64url(ser2));
   });
+
+  it("should support descriptor types", async () => {
+    const types =
+      "CqEOCgxmb2dhdGEucHJvdG8SBmZvZ2F0YRoUa29pbm9zL29wdGlvbnMucHJvdG8idAoKc3Rha2VfYXJncxIeCgdhY2NvdW50GAEgASgMQgSAtRgGUgdhY2NvdW50EiMKC2tvaW5fYW1vdW50GAIgASgEQgIwAVIKa29pbkFtb3VudBIhCgp2aHBfYW1vdW50GAMgASgEQgIwAVIJdmhwQW1vdW50Io8BCgtzdGFrZV9ldmVudBIeCgdhY2NvdW50GAEgASgMQgSAtRgGUgdhY2NvdW50EiMKC2tvaW5fYW1vdW50GAIgASgEQgIwAVIKa29pbkFtb3VudBIhCgp2aHBfYW1vdW50GAMgASgEQgIwAVIJdmhwQW1vdW50EhgKBXN0YWtlGAQgASgEQgIwAVIFc3Rha2UisQEKDnNuYXBzaG90X3N0YWtlEhgKBXN0YWtlGAEgASgEQgIwAVIFc3Rha2USLQoQY3VycmVudF9zbmFwc2hvdBgCIAEoBEICMAFSD2N1cnJlbnRTbmFwc2hvdBIpCg5rb2luX3dpdGhkcmF3bhgDIAEoBEICMAFSDWtvaW5XaXRoZHJhd24SKwoPdmFwb3Jfd2l0aGRyYXduGAQgASgEQgIwAVIOdmFwb3JXaXRoZHJhd24ieAoHYmFsYW5jZRIjCgtrb2luX2Ftb3VudBgBIAEoBEICMAFSCmtvaW5BbW91bnQSIQoKdmhwX2Ftb3VudBgCIAEoBEICMAFSCXZocEFtb3VudBIlCgx2YXBvcl9hbW91bnQYAyABKARCAjABUgt2YXBvckFtb3VudCJTCgxrb2luX2FjY291bnQSHgoHYWNjb3VudBgBIAEoDEIEgLUYBlIHYWNjb3VudBIjCgtrb2luX2Ftb3VudBgCIAEoBEICMAFSCmtvaW5BbW91bnQilwEKGGNvbGxlY3Rfa29pbl9wcmVmZXJlbmNlcxIeCgdhY2NvdW50GAEgASgMQgSAtRgGUgdhY2NvdW50EisKD3BlcmNlbnRhZ2Vfa29pbhgCIAEoBEICMAFSDnBlcmNlbnRhZ2VLb2luEi4KEWFsbF9hZnRlcl92aXJ0dWFsGAMgASgEQgIwAVIPYWxsQWZ0ZXJWaXJ0dWFsInwKCWFsbG93YW5jZRIqCgR0eXBlGAEgASgOMhYuZm9nYXRhLmFsbG93YW5jZV90eXBlUgR0eXBlEiMKC2tvaW5fYW1vdW50GAIgASgEQgIwAVIKa29pbkFtb3VudBIeCgdhY2NvdW50GAMgASgMQgSAtRgGUgdhY2NvdW50Ik0KC2JlbmVmaWNpYXJ5Eh4KB2FkZHJlc3MYASABKAxCBIC1GAZSB2FkZHJlc3MSHgoKcGVyY2VudGFnZRgCIAEoDVIKcGVyY2VudGFnZSK/AQoLcG9vbF9wYXJhbXMSEgoEbmFtZRgBIAEoCVIEbmFtZRIUCgVpbWFnZRgCIAEoCVIFaW1hZ2USIAoLZGVzY3JpcHRpb24YAyABKAlSC2Rlc2NyaXB0aW9uEjkKDWJlbmVmaWNpYXJpZXMYBCADKAsyEy5mb2dhdGEuYmVuZWZpY2lhcnlSDWJlbmVmaWNpYXJpZXMSKQoOcGF5bWVudF9wZXJpb2QYBSABKARCAjABUg1wYXltZW50UGVyaW9kIvMDCgpwb29sX3N0YXRlEhgKBXN0YWtlGAEgASgEQgIwAVIFc3Rha2USHAoHdmlydHVhbBgCIAEoBEICMAFSB3ZpcnR1YWwSKQoOc25hcHNob3Rfc3Rha2UYAyABKARCAjABUg1zbmFwc2hvdFN0YWtlEicKDXNuYXBzaG90X2tvaW4YBCABKARCAjABUgxzbmFwc2hvdEtvaW4SKQoOc25hcHNob3RfdmFwb3IYCCABKARCAjABUg1zbmFwc2hvdFZhcG9yEi0KEGN1cnJlbnRfc25hcHNob3QYBSABKARCAjABUg9jdXJyZW50U25hcHNob3QSJwoNbmV4dF9zbmFwc2hvdBgGIAEoBEICMAFSDG5leHRTbmFwc2hvdBIpCg5rb2luX3dpdGhkcmF3bhgHIAEoBEICMAFSDWtvaW5XaXRoZHJhd24SKwoPdmFwb3Jfd2l0aGRyYXduGAkgASgEQgIwAVIOdmFwb3JXaXRoZHJhd24SIQoKdXNlcl9jb3VudBgKIAEoBEICMAFSCXVzZXJDb3VudBIYCgV2YXBvchgLIAEoBEICMAFSBXZhcG9yEicKDXZpcnR1YWxfdmFwb3IYDCABKARCAjABUgx2aXJ0dWFsVmFwb3ISGAoHdmVyc2lvbhgNIAEoCVIHdmVyc2lvbipBCg5hbGxvd2FuY2VfdHlwZRINCglVTkRFRklORUQQABIRCg1UUkFOU0ZFUl9LT0lOEAESDQoJQlVSTl9LT0lOEAJiBnByb3RvMwqqAwoMY29tbW9uLnByb3RvEgZjb21tb24aFGtvaW5vcy9vcHRpb25zLnByb3RvIhsKA3N0chIUCgV2YWx1ZRgBIAEoCVIFdmFsdWUiHgoGdWludDMyEhQKBXZhbHVlGAEgASgNUgV2YWx1ZSIiCgZ1aW50NjQSGAoFdmFsdWUYASABKARCAjABUgV2YWx1ZSIdCgVib29sZRIUCgV2YWx1ZRgBIAEoCFIFdmFsdWUiKQoHYWRkcmVzcxIeCgdhY2NvdW50GAEgASgMQgSAtRgGUgdhY2NvdW50Im4KCWxpc3RfYXJncxIaCgVzdGFydBgBIAEoDEIEgLUYBlIFc3RhcnQSFAoFbGltaXQYAiABKAVSBWxpbWl0Ei8KCWRpcmVjdGlvbhgDIAEoDjIRLmNvbW1vbi5kaXJlY3Rpb25SCWRpcmVjdGlvbiItCglhZGRyZXNzZXMSIAoIYWNjb3VudHMYASADKAxCBIC1GAZSCGFjY291bnRzKioKCWRpcmVjdGlvbhINCglhc2NlbmRpbmcQABIOCgpkZXNjZW5kaW5nEAFiBnByb3RvMwpfCg1vd25hYmxlLnByb3RvEgdvd25hYmxlGhRrb2lub3Mvb3B0aW9ucy5wcm90byInCgVvd25lchIeCgdhY2NvdW50GAEgASgMQgSAtRgGUgdhY2NvdW50YgZwcm90bzMK/QMKC3Rva2VuLnByb3RvEgV0b2tlbhoUa29pbm9zL29wdGlvbnMucHJvdG8iTgoEaW5mbxISCgRuYW1lGAEgASgJUgRuYW1lEhYKBnN5bWJvbBgCIAEoCVIGc3ltYm9sEhoKCGRlY2ltYWxzGAMgASgNUghkZWNpbWFscyItCg9iYWxhbmNlX29mX2FyZ3MSGgoFb3duZXIYASABKAxCBIC1GAZSBW93bmVyIlkKDXRyYW5zZmVyX2FyZ3MSGAoEZnJvbRgBIAEoDEIEgLUYBlIEZnJvbRIUCgJ0bxgCIAEoDEIEgLUYBlICdG8SGAoFdmFsdWUYAyABKARCAjABUgV2YWx1ZSJFCg9jb250cmlidXRlX2FyZ3MSGAoEZnJvbRgBIAEoDEIEgLUYBlIEZnJvbRIYCgV2YWx1ZRgCIAEoBEICMAFSBXZhbHVlIjsKCW1pbnRfYXJncxIUCgJ0bxgBIAEoDEIEgLUYBlICdG8SGAoFdmFsdWUYAiABKARCAjABUgV2YWx1ZSI/CglidXJuX2FyZ3MSGAoEZnJvbRgBIAEoDEIEgLUYBlIEZnJvbRIYCgV2YWx1ZRgCIAEoBEICMAFSBXZhbHVlIioKDmJhbGFuY2Vfb2JqZWN0EhgKBXZhbHVlGAEgASgEQgIwAVIFdmFsdWViBnByb3RvMw==";
+    const serializer = new Serializer(types);
+    const data = {
+      account: "1GYfd5qR9CNZxtN34pDo5bEkGkXy8PWJfL",
+      koin_amount: "789999808",
+      vhp_amount: "0",
+      stake: "785625905",
+    };
+    const ser = await serializer.serialize(data, "fogata.stake_event");
+    const deser = await serializer.deserialize(ser, "fogata.stake_event");
+    expect(deser).toStrictEqual(data);
+  });
 });
 
 describe("Wallet and Contract", () => {
@@ -724,7 +743,11 @@ describe("Wallet and Contract", () => {
       ],
     };
 
-    const tx = await signer.prepareTransaction(transaction);
+    const tx = await Transaction.prepareTransaction(
+      transaction,
+      signer.provider,
+      signer.getAddress()
+    );
 
     expect(tx).toStrictEqual({
       header: {
@@ -792,7 +815,7 @@ describe("Wallet and Contract", () => {
 
     expect(operation).toStrictEqual({
       call_contract: {
-        contract_id: encodeBase58(koinContract.id!),
+        contract_id: encodeBase58(koinContract.id),
         entry_point: koinContract.abi?.methods?.transfer?.entry_point,
         args: expect.any(String) as string,
       },
@@ -1531,6 +1554,28 @@ describe("Wallet and Contract", () => {
           },
         },
       ]);
+    });
+
+    it("should prepare a transaction", async () => {
+      const tx = new Transaction();
+      await tx.prepare({
+        chainId: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
+        nonce: "OAg=",
+        rcLimit: "10",
+        payer: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+      });
+      expect(tx.transaction).toStrictEqual({
+        header: {
+          chain_id: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
+          nonce: "OAg=",
+          operation_merkle_root:
+            "EiDjsMRCmPwcFJr79MiZb7kkJ65B5GSbk0yklZkbeFK4VQ==",
+          payer: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+          rc_limit: "10",
+        },
+        id: "0x1220264054966df1cdd3c0d1e68016deff8595cf57cdd40559e6268bc6192e4d2bbc",
+        operations: [],
+      });
     });
 
     it("should submit a transaction", async () => {

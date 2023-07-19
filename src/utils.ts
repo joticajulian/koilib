@@ -308,6 +308,14 @@ export function parseUnits(value: string, decimals: number): string {
     .split(".");
   if (!decimalPart) decimalPart = "";
   decimalPart = decimalPart.padEnd(decimals, "0");
+  if (decimalPart.length > decimals) {
+    // approximate
+    const miniDecimals = decimalPart.substring(decimals);
+    decimalPart = decimalPart.substring(0, decimals);
+    if (miniDecimals.startsWith("5")) {
+      decimalPart = (BigInt(decimalPart) + BigInt(1)).toString();
+    }
+  }
   return `${sign}${`${integerPart}${decimalPart}`.replace(/^0+(?=\d)/, "")}`;
 }
 

@@ -639,9 +639,10 @@ export class Signer implements SignerInterface {
 
   /**
    * Function to prepare a transaction
+   * @deprecated - Use [[Transaction.prepareTransaction]] instead.
    * @param tx - Do not set the nonce to get it from the blockchain
    * using the provider. The rc_limit is 1e8 by default.
-   * @returns A prepared transaction. ()
+   * @returns A prepared transaction.
    */
   async prepareTransaction(tx: TransactionJson): Promise<TransactionJson> {
     if (!tx.header) {
