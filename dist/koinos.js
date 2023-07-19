@@ -22702,6 +22702,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Contract = void 0;
 const Serializer_1 = __webpack_require__(7187);
 const utils_1 = __webpack_require__(8593);
+const Transaction_1 = __webpack_require__(7592);
 /**
  * The contract class contains the contract ID and contract entries
  * definition needed to encode/decode operations during the
@@ -22838,6 +22839,7 @@ class Contract {
             return false;
         Object.keys(this.abi.methods).forEach((name) => {
             this.functions[name] = async (argu = {}, options) => {
+                var _a;
                 if (!this.provider)
                     throw new Error("provider not found");
                 if (!this.abi || !this.abi.methods)
@@ -22877,7 +22879,7 @@ class Contract {
                 // write contract (sign and send)
                 if (!this.signer)
                     throw new Error("signer not found");
-                let tx = await this.signer.prepareTransaction({
+                let tx = await Transaction_1.Transaction.prepareTransaction({
                     header: {
                         ...(opts.chainId && { chain_id: opts.chainId }),
                         ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
@@ -22890,7 +22892,7 @@ class Contract {
                         operation,
                         ...(opts.nextOperations ? opts.nextOperations : []),
                     ],
-                });
+                }, this.provider, (_a = this.signer) === null || _a === void 0 ? void 0 : _a.getAddress());
                 if (opts.sendAbis) {
                     if (!opts.abis)
                         opts.abis = {};
@@ -22958,6 +22960,7 @@ class Contract {
      * ```
      */
     async deploy(options) {
+        var _a;
         if (!this.signer)
             throw new Error("signer not found");
         if (!this.bytecode)
@@ -22986,7 +22989,7 @@ class Contract {
         if (opts.onlyOperation) {
             return { operation };
         }
-        let tx = await this.signer.prepareTransaction({
+        let tx = await Transaction_1.Transaction.prepareTransaction({
             header: {
                 ...(opts.chainId && { chain_id: opts.chainId }),
                 ...(opts.rcLimit && { rc_limit: opts.rcLimit }),
@@ -22999,7 +23002,7 @@ class Contract {
                 operation,
                 ...(opts.nextOperations ? opts.nextOperations : []),
             ],
-        });
+        }, this.provider, (_a = this.signer) === null || _a === void 0 ? void 0 : _a.getAddress());
         // return result if the transaction will not be broadcasted
         if (!opts.sendTransaction) {
             const noWait = () => {
@@ -24318,9 +24321,10 @@ class Signer {
     }
     /**
      * Function to prepare a transaction
+     * @deprecated - Use [[Transaction.prepareTransaction]] instead.
      * @param tx - Do not set the nonce to get it from the blockchain
      * using the provider. The rc_limit is 1e8 by default.
-     * @returns A prepared transaction. ()
+     * @returns A prepared transaction.
      */
     async prepareTransaction(tx) {
         var _a, _b;
@@ -24470,12 +24474,72 @@ exports["default"] = Signer;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Transaction = void 0;
-const Signer_1 = __webpack_require__(6991);
+/* eslint-disable no-param-reassign, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+const sha256_1 = __webpack_require__(3061);
+const utils_1 = __webpack_require__(8593);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const protocol_proto_js_1 = __webpack_require__(9104);
+const btypeTransactionHeader = {
+    chain_id: { type: "bytes" },
+    rc_limit: { type: "uint64" },
+    nonce: { type: "bytes" },
+    operation_merkle_root: { type: "bytes" },
+    payer: { type: "bytes", btype: "ADDRESS" },
+    payee: { type: "bytes", btype: "ADDRESS" },
+};
+const btypesOperation = {
+    upload_contract: {
+        type: "object",
+        subtypes: {
+            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+            bytecode: { type: "bytes" },
+            abi: { type: "string" },
+            authorizes_call_contract: { type: "bool" },
+            authorizes_transaction_application: { type: "bool" },
+            authorizes_upload_contract: { type: "bool" },
+        },
+    },
+    call_contract: {
+        type: "object",
+        subtypes: {
+            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+            entry_point: { type: "uint32" },
+            args: { type: "bytes" },
+        },
+    },
+    set_system_call: {
+        type: "object",
+        subtypes: {
+            call_id: { type: "uint32" },
+            target: {
+                type: "object",
+                subtypes: {
+                    thunk_id: { type: "uint32" },
+                    system_call_bundle: {
+                        type: "object",
+                        subtypes: {
+                            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+                            entry_point: { type: "uint32" },
+                        },
+                    },
+                },
+            },
+        },
+    },
+    set_system_contract: {
+        type: "object",
+        subtypes: {
+            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
+            system_contract: { type: "bool" },
+        },
+    },
+};
 class Transaction {
     constructor(c) {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f;
         this.signer = c === null || c === void 0 ? void 0 : c.signer;
-        this.provider = c === null || c === void 0 ? void 0 : c.provider;
+        this.provider = (c === null || c === void 0 ? void 0 : c.provider) || ((_a = c === null || c === void 0 ? void 0 : c.signer) === null || _a === void 0 ? void 0 : _a.provider);
         this.options = {
             broadcast: true,
             sendAbis: true,
@@ -24483,11 +24547,11 @@ class Transaction {
         };
         this.transaction = {
             header: {
-                ...(((_a = c === null || c === void 0 ? void 0 : c.options) === null || _a === void 0 ? void 0 : _a.chainId) && { chain_id: c.options.chainId }),
-                ...(((_b = c === null || c === void 0 ? void 0 : c.options) === null || _b === void 0 ? void 0 : _b.rcLimit) && { rc_limit: c.options.rcLimit }),
-                ...(((_c = c === null || c === void 0 ? void 0 : c.options) === null || _c === void 0 ? void 0 : _c.nonce) && { nonce: c.options.nonce }),
-                ...(((_d = c === null || c === void 0 ? void 0 : c.options) === null || _d === void 0 ? void 0 : _d.payer) && { payer: c.options.payer }),
-                ...(((_e = c === null || c === void 0 ? void 0 : c.options) === null || _e === void 0 ? void 0 : _e.payee) && { payee: c.options.payee }),
+                ...(((_b = c === null || c === void 0 ? void 0 : c.options) === null || _b === void 0 ? void 0 : _b.chainId) && { chain_id: c.options.chainId }),
+                ...(((_c = c === null || c === void 0 ? void 0 : c.options) === null || _c === void 0 ? void 0 : _c.rcLimit) && { rc_limit: c.options.rcLimit }),
+                ...(((_d = c === null || c === void 0 ? void 0 : c.options) === null || _d === void 0 ? void 0 : _d.nonce) && { nonce: c.options.nonce }),
+                ...(((_e = c === null || c === void 0 ? void 0 : c.options) === null || _e === void 0 ? void 0 : _e.payer) && { payer: c.options.payer }),
+                ...(((_f = c === null || c === void 0 ? void 0 : c.options) === null || _f === void 0 ? void 0 : _f.payee) && { payee: c.options.payee }),
             },
             operations: [],
         };
@@ -24574,10 +24638,89 @@ class Transaction {
         this.transaction.operations.push(operation);
     }
     /**
+     * Function to prepare a transaction
+     * @param tx - Do not set the nonce to get it from the blockchain
+     * using the provider. The rc_limit is 1e8 by default.
+     * @param provider - Provider
+     * @param payer - payer to be used in case it is not defined in the transaction
+     * @returns A prepared transaction.
+     */
+    static async prepareTransaction(tx, provider, payer) {
+        var _a;
+        if (!tx.header) {
+            tx.header = {};
+        }
+        const { payer: payerHeader, payee } = tx.header;
+        if (!payerHeader)
+            tx.header.payer = payer;
+        payer = tx.header.payer;
+        if (!payer)
+            throw new Error("payer is undefined");
+        let nonce;
+        if (tx.header.nonce === undefined) {
+            if (!provider)
+                throw new Error("Cannot get the nonce because provider is undefined. To skip this call set a nonce in the transaction header");
+            nonce = await provider.getNextNonce(payee || payer);
+        }
+        else {
+            nonce = tx.header.nonce;
+        }
+        let rcLimit;
+        if (tx.header.rc_limit === undefined) {
+            if (!provider)
+                throw new Error("Cannot get the rc_limit because provider is undefined. To skip this call set a rc_limit in the transaction header");
+            rcLimit = await provider.getAccountRc(payer);
+        }
+        else {
+            rcLimit = tx.header.rc_limit;
+        }
+        if (!tx.header.chain_id) {
+            if (!provider)
+                throw new Error("Cannot get the chain_id because provider is undefined. To skip this call set a chain_id");
+            tx.header.chain_id = await provider.getChainId();
+        }
+        const operationsHashes = [];
+        if (tx.operations) {
+            for (let index = 0; index < ((_a = tx.operations) === null || _a === void 0 ? void 0 : _a.length); index += 1) {
+                const operationDecoded = (0, utils_1.btypeDecode)(tx.operations[index], btypesOperation, false);
+                const message = protocol_proto_js_1.koinos.protocol.operation.create(operationDecoded);
+                const operationEncoded = protocol_proto_js_1.koinos.protocol.operation
+                    .encode(message)
+                    .finish();
+                operationsHashes.push((0, sha256_1.sha256)(operationEncoded));
+            }
+        }
+        const operationMerkleRoot = (0, utils_1.encodeBase64url)(new Uint8Array([
+            // multihash sha256: 18, 32
+            18,
+            32,
+            ...(0, utils_1.calculateMerkleRoot)(operationsHashes),
+        ]));
+        tx.header = {
+            chain_id: tx.header.chain_id,
+            rc_limit: rcLimit,
+            nonce,
+            operation_merkle_root: operationMerkleRoot,
+            payer,
+            ...(payee && { payee }),
+            // TODO: Option to resolve names (payer, payee)
+        };
+        const headerDecoded = (0, utils_1.btypeDecode)(tx.header, btypeTransactionHeader, false);
+        const message = protocol_proto_js_1.koinos.protocol.transaction_header.create(headerDecoded);
+        const headerBytes = protocol_proto_js_1.koinos.protocol.transaction_header
+            .encode(message)
+            .finish();
+        const hash = (0, sha256_1.sha256)(headerBytes);
+        // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
+        tx.id = `0x1220${(0, utils_1.toHexString)(hash)}`;
+        return tx;
+    }
+    /**
      * Functon to prepare the transaction (set headers, merkle
      * root, etc)
      */
     async prepare(options) {
+        var _a;
         if (options) {
             const header = {
                 ...((options === null || options === void 0 ? void 0 : options.chainId) && { chain_id: options.chainId }),
@@ -24591,17 +24734,7 @@ class Transaction {
                 ...header,
             };
         }
-        if (this.signer) {
-            this.transaction = await this.signer.prepareTransaction(this.transaction);
-        }
-        else {
-            if (!this.transaction.header || !this.transaction.header.payer) {
-                throw new Error("no payer defined");
-            }
-            const signer = Signer_1.Signer.fromSeed("0");
-            signer.provider = this.provider;
-            this.transaction = await signer.prepareTransaction(this.transaction);
-        }
+        this.transaction = await Transaction.prepareTransaction(this.transaction, this.provider, (_a = this.signer) === null || _a === void 0 ? void 0 : _a.getAddress());
         return this.transaction;
     }
     /**

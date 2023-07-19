@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v5.6.0](https://github.com/joticajulian/koilib/releases/tag/v5.6.0) (2023-07-20)
+
+### 🚀 Features
+
+- The prepareTransaction function of the Signer has been marked as deprecated. Now
+this function has been moved to the Transaction Class. The motivation of this change
+is to avoid multiple calls and permissions to the wallets that manage the Signers.
+- The Contract Class and Transaction Class now use the new prepareTransaction
+function instead of the one from the Signer Class.
+
 ## [v5.5.6](https://github.com/joticajulian/koilib/releases/tag/v5.5.6) (2023-05-08)
 
 ### 🐛 Bug Fixes
