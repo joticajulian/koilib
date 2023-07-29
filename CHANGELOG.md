@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v5.6.1](https://github.com/joticajulian/koilib/releases/tag/v5.6.1) (2023-07-29)
+
+### 🚀 Features
+
+- Bump libraries
+
 ## [v5.6.0](https://github.com/joticajulian/koilib/releases/tag/v5.6.0) (2023-07-20)
 
 ### 🚀 Features
