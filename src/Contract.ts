@@ -256,7 +256,6 @@ export class Contract {
         result?: T;
         receipt?: TransactionReceipt;
       }> => {
-        if (!this.provider) throw new Error("provider not found");
         if (!this.abi || !this.abi.methods)
           throw new Error("Methods are not defined");
         if (!this.abi.methods[name])
@@ -285,6 +284,8 @@ export class Contract {
         if (opts.onlyOperation) {
           return { operation };
         }
+
+        if (!this.provider) throw new Error("provider not found");
 
         if (readOnly) {
           if (!output) throw new Error(`No output defined for ${name}`);
