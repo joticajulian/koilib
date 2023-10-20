@@ -32,10 +32,7 @@ export class Provider {
    *
    * @example
    * ```ts
-   * const provider = new Provider([
-   *   "http://45.56.104.152:8080",
-   *   "http://159.203.119.0:8080"
-   * ]);
+   * const provider = new Provider(["https://api.koinos.io"]);
    *
    * provider.onError = (error, node, newNode) => {
    *   console.log(`Error from node ${node}: ${error.message}`);
