@@ -482,7 +482,7 @@ export class Contract {
    * @returns Operation encoded
    * @example
    * ```ts
-   * const opEncoded = contract.encodeOperation({
+   * const opEncoded = await contract.encodeOperation({
    *   name: "transfer",
    *   args: {
    *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
@@ -530,7 +530,7 @@ export class Contract {
    * Decodes a contract operation to be human readable
    * @example
    * ```ts
-   * const opDecoded = contract.decodeOperation({
+   * const opDecoded = await contract.decodeOperation({
    *   call_contract: {
    *     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
    *     entry_point: 0x27f576ca,
