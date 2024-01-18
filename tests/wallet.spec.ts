@@ -329,33 +329,33 @@ describe("Signer", () => {
   it("should get private key", () => {
     expect.assertions(18);
     const signer1 = Signer.fromWif(wif);
-    expect(signer1.getPrivateKey("wif")).toBe(wif);
+    expect(signer1.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer1.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer1.getPrivateKey("hex")).toBe(privateKey);
 
     const signer2 = Signer.fromWif(wifCompressed);
-    expect(signer2.getPrivateKey("wif")).toBe(wif);
+    expect(signer2.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer2.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer2.getPrivateKey("hex")).toBe(privateKey);
 
     const signer3 = new Signer({ privateKey });
-    expect(signer3.getPrivateKey("wif")).toBe(wif);
+    expect(signer3.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer3.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer3.getPrivateKey("hex")).toBe(privateKey);
 
     const signer4 = new Signer({ privateKey, compressed: false });
-    expect(signer4.getPrivateKey("wif")).toBe(wif);
+    expect(signer4.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer4.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer4.getPrivateKey("hex")).toBe(privateKey);
 
     const signer5 = Signer.fromSeed(seed);
-    expect(signer5.getPrivateKey("wif")).toBe(wif);
+    expect(signer5.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer5.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer5.getPrivateKey("hex")).toBe(privateKey);
 
     const signer6 = Signer.fromSeed(seed, false);
     expect(signer6.getPrivateKey("wif", true)).toBe(wifCompressed);
-    expect(signer6.getPrivateKey("wif")).toBe(wif);
+    expect(signer6.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer6.getPrivateKey("hex")).toBe(privateKey);
   });
 
