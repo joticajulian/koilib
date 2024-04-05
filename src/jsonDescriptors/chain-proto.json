@@ -2,7 +2,7 @@
   "nested": {
     "koinos": {
       "options": {
-        "go_package": "github.com/koinos/koinos-proto-golang/koinos"
+        "go_package": "github.com/koinos/koinos-proto-golang/v2/koinos"
       },
       "nested": {
         "block_topology": {
@@ -32,9 +32,25 @@
         },
         "protocol": {
           "options": {
-            "go_package": "github.com/koinos/koinos-proto-golang/koinos/protocol"
+            "go_package": "github.com/koinos/koinos-proto-golang/v2/koinos/protocol"
           },
           "nested": {
+            "object_space": {
+              "fields": {
+                "system": {
+                  "type": "bool",
+                  "id": 1
+                },
+                "zone": {
+                  "type": "bytes",
+                  "id": 2
+                },
+                "id": {
+                  "type": "uint32",
+                  "id": 3
+                }
+              }
+            },
             "event_data": {
               "fields": {
                 "sequence": {
@@ -84,7 +100,10 @@
             "system_call_target": {
               "oneofs": {
                 "target": {
-                  "oneof": ["thunk_id", "system_call_bundle"]
+                  "oneof": [
+                    "thunk_id",
+                    "system_call_bundle"
+                  ]
                 }
               },
               "fields": {
@@ -338,6 +357,11 @@
                   "rule": "repeated",
                   "type": "string",
                   "id": 11
+                },
+                "state_delta_entries": {
+                  "rule": "repeated",
+                  "type": "state_delta_entry",
+                  "id": 12
                 }
               }
             },
@@ -468,6 +492,58 @@
                   "rule": "repeated",
                   "type": "string",
                   "id": 9
+                },
+                "disk_storage_charged": {
+                  "type": "uint64",
+                  "id": 10,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "network_bandwidth_charged": {
+                  "type": "uint64",
+                  "id": 11,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "compute_bandwidth_charged": {
+                  "type": "uint64",
+                  "id": 12,
+                  "options": {
+                    "jstype": "JS_STRING"
+                  }
+                },
+                "state_delta_entries": {
+                  "rule": "repeated",
+                  "type": "state_delta_entry",
+                  "id": 13
+                }
+              }
+            },
+            "state_delta_entry": {
+              "oneofs": {
+                "_value": {
+                  "oneof": [
+                    "value"
+                  ]
+                }
+              },
+              "fields": {
+                "object_space": {
+                  "type": "object_space",
+                  "id": 1
+                },
+                "key": {
+                  "type": "bytes",
+                  "id": 2
+                },
+                "value": {
+                  "type": "bytes",
+                  "id": 3,
+                  "options": {
+                    "proto3_optional": true
+                  }
                 }
               }
             }
@@ -475,7 +551,7 @@
         },
         "chain": {
           "options": {
-            "go_package": "github.com/koinos/koinos-proto-golang/koinos/chain"
+            "go_package": "github.com/koinos/koinos-proto-golang/v2/koinos/chain"
           },
           "nested": {
             "error_data": {
@@ -489,7 +565,10 @@
             "result": {
               "oneofs": {
                 "value": {
-                  "oneof": ["object", "error"]
+                  "oneof": [
+                    "object",
+                    "error"
+                  ]
                 }
               },
               "fields": {

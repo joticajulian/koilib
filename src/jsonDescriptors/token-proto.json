@@ -6,7 +6,7 @@
           "nested": {
             "token": {
               "options": {
-                "go_package": "github.com/koinos/koinos-proto-golang/koinos/contracts/token"
+                "go_package": "github.com/koinos/koinos-proto-golang/v2/koinos/contracts/token"
               },
               "nested": {
                 "name_arguments": {
@@ -100,6 +100,10 @@
                       "options": {
                         "jstype": "JS_STRING"
                       }
+                    },
+                    "memo": {
+                      "type": "string",
+                      "id": 4
                     }
                   }
                 },
@@ -153,31 +157,6 @@
                     "value": {
                       "type": "uint64",
                       "id": 1,
-                      "options": {
-                        "jstype": "JS_STRING"
-                      }
-                    }
-                  }
-                },
-                "mana_balance_object": {
-                  "fields": {
-                    "balance": {
-                      "type": "uint64",
-                      "id": 1,
-                      "options": {
-                        "jstype": "JS_STRING"
-                      }
-                    },
-                    "mana": {
-                      "type": "uint64",
-                      "id": 2,
-                      "options": {
-                        "jstype": "JS_STRING"
-                      }
-                    },
-                    "last_mana_update": {
-                      "type": "uint64",
-                      "id": 3,
                       "options": {
                         "jstype": "JS_STRING"
                       }
