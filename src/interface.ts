@@ -308,7 +308,7 @@ export interface TransactionOptions extends SendTransactionOptions {
    * is not set it will be taken by querying the
    * actual mana of the payer
    */
-  rcLimit?: string;
+  rcLimit?: string | number;
 
   /**
    * Transaction nonce
@@ -662,7 +662,7 @@ export interface TransactionHeaderJson {
   /**
    * Resource credits limit
    */
-  rc_limit?: string;
+  rc_limit?: string | number;
 
   /**
    * Account nonce

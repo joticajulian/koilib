@@ -249,7 +249,7 @@ export class Transaction {
       nonce = tx.header.nonce;
     }
 
-    let rcLimit: string;
+    let rcLimit: string | number;
     if (tx.header.rc_limit === undefined) {
       if (!provider)
         throw new Error(
