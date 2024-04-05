@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop */
-import { Signer, SignerInterface } from "./Signer";
+import { SignerInterface } from "./Signer";
 import { Provider } from "./Provider";
 import { Serializer } from "./Serializer";
 import {
@@ -158,7 +158,7 @@ export class Contract {
     abi?: Abi;
     bytecode?: Uint8Array;
     options?: CallContractOptions;
-    signer?: Signer;
+    signer?: SignerInterface;
     provider?: Provider;
     /**
      * Set this option if you can not use _eval_ functions

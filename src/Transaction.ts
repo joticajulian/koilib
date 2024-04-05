@@ -2,7 +2,7 @@
 import { sha256 } from "@noble/hashes/sha256";
 import { Contract } from "./Contract";
 import { Provider } from "./Provider";
-import { Signer } from "./Signer";
+import { SignerInterface } from "./Signer";
 import {
   Abi,
   OperationJson,
@@ -84,7 +84,7 @@ export class Transaction {
   /**
    * Signer interacting with the smart contracts
    */
-  signer?: Signer;
+  signer?: SignerInterface;
 
   /**
    * Provider to connect with the blockchain
@@ -107,7 +107,7 @@ export class Transaction {
   options: TransactionOptions;
 
   constructor(c?: {
-    signer?: Signer;
+    signer?: SignerInterface;
     provider?: Provider;
     options?: TransactionOptions;
   }) {
