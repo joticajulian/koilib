@@ -10,6 +10,7 @@ import {
 // @ts-ignore
 import { koinos } from "./protoModules/protocol-proto.js";
 import { decodeBase64url, encodeBase64url } from "./utils";
+import { Serializer } from "./Serializer";
 
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 
@@ -503,6 +504,38 @@ export class Provider {
     logs: string;
   }> {
     return this.call("chain.read_contract", operation);
+  }
+
+  async invokeSystemCall<T = Record<string, unknown>>(
+    serializer: Serializer,
+    nameOrId: string | number,
+    args: Record<string, unknown>,
+    callerData?: { caller: string; caller_privilege: number }
+  ): Promise<T> {
+    if (!serializer.argumentsTypeName)
+      throw new Error("argumentsTypeName not defined");
+    if (!serializer.returnTypeName)
+      throw new Error("returnTypeName not defined");
+    const argsEncoded = await serializer.serialize(
+      args,
+      serializer.argumentsTypeName
+    );
+    const response = await this.call<{ value: string }>(
+      "chain.invoke_system_call",
+      {
+        ...(typeof nameOrId === "number" && { id: nameOrId }),
+        ...(typeof nameOrId === "string" && { name: nameOrId }),
+        args: encodeBase64url(argsEncoded),
+        caller_data: callerData,
+      }
+    );
+    if (!response || !response.value)
+      throw new Error("no value in the response");
+    const result = await serializer.deserialize(
+      response.value,
+      serializer.returnTypeName
+    );
+    return result as T;
   }
 }
 
