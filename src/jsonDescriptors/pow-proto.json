@@ -6,7 +6,7 @@
           "nested": {
             "pow": {
               "options": {
-                "go_package": "github.com/koinos/koinos-proto-golang/koinos/contracts/pow"
+                "go_package": "github.com/koinos/koinos-proto-golang/v2/koinos/contracts/pow"
               },
               "nested": {
                 "difficulty_metadata": {

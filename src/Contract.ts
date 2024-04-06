@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop */
-import { Signer, SignerInterface } from "./Signer";
+import { SignerInterface } from "./Signer";
 import { Provider } from "./Provider";
 import { Serializer } from "./Serializer";
 import {
@@ -158,7 +158,7 @@ export class Contract {
     abi?: Abi;
     bytecode?: Uint8Array;
     options?: CallContractOptions;
-    signer?: Signer;
+    signer?: SignerInterface;
     provider?: Provider;
     /**
      * Set this option if you can not use _eval_ functions
@@ -256,7 +256,6 @@ export class Contract {
         result?: T;
         receipt?: TransactionReceipt;
       }> => {
-        if (!this.provider) throw new Error("provider not found");
         if (!this.abi || !this.abi.methods)
           throw new Error("Methods are not defined");
         if (!this.abi.methods[name])
@@ -285,6 +284,8 @@ export class Contract {
         if (opts.onlyOperation) {
           return { operation };
         }
+
+        if (!this.provider) throw new Error("provider not found");
 
         if (readOnly) {
           if (!output) throw new Error(`No output defined for ${name}`);
@@ -481,7 +482,7 @@ export class Contract {
    * @returns Operation encoded
    * @example
    * ```ts
-   * const opEncoded = contract.encodeOperation({
+   * const opEncoded = await contract.encodeOperation({
    *   name: "transfer",
    *   args: {
    *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
@@ -529,7 +530,7 @@ export class Contract {
    * Decodes a contract operation to be human readable
    * @example
    * ```ts
-   * const opDecoded = contract.decodeOperation({
+   * const opDecoded = await contract.decodeOperation({
    *   call_contract: {
    *     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
    *     entry_point: 0x27f576ca,

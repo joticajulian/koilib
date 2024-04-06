@@ -104,6 +104,18 @@ export class Serializer {
   defaultType?: Type;
 
   /**
+   * Type name for arguments when using
+   * [[Provider.invokeSystemCall]]
+   */
+  argumentsTypeName?: string;
+
+  /**
+   * Type name for the output when using
+   * [[Provider.invokeSystemCall]]
+   */
+  returnTypeName?: string;
+
+  /**
    * Preformat bytes for base64url, base58 or hex string
    */
   bytesConversion = true;
@@ -127,6 +139,18 @@ export class Serializer {
       defaultTypeName?: string;
 
       /**
+       * Type name for arguments when using
+       * [[Provider.invokeSystemCall]]
+       */
+      argumentsTypeName?: string;
+
+      /**
+       * Type name for the output when using
+       * [[Provider.invokeSystemCall]]
+       */
+      returnTypeName?: string;
+
+      /**
        * Bytes conversion. Option to preformat bytes
        * when "(koinos_bytes_type)" is defined in the type
        * definitions. By default it is true.
@@ -146,6 +170,9 @@ export class Serializer {
     }
     if (opts?.defaultTypeName)
       this.defaultType = this.root.lookupType(opts.defaultTypeName);
+    if (opts?.argumentsTypeName)
+      this.argumentsTypeName = opts.argumentsTypeName;
+    if (opts?.returnTypeName) this.returnTypeName = opts.returnTypeName;
     if (opts && typeof opts.bytesConversion !== "undefined")
       this.bytesConversion = opts.bytesConversion;
   }

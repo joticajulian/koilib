@@ -22840,8 +22840,6 @@ class Contract {
         Object.keys(this.abi.methods).forEach((name) => {
             this.functions[name] = async (argu = {}, options) => {
                 var _a;
-                if (!this.provider)
-                    throw new Error("provider not found");
                 if (!this.abi || !this.abi.methods)
                     throw new Error("Methods are not defined");
                 if (!this.abi.methods[name])
@@ -22862,6 +22860,8 @@ class Contract {
                 if (opts.onlyOperation) {
                     return { operation };
                 }
+                if (!this.provider)
+                    throw new Error("provider not found");
                 if (readOnly) {
                     if (!output)
                         throw new Error(`No output defined for ${name}`);
@@ -23022,7 +23022,7 @@ class Contract {
      * @returns Operation encoded
      * @example
      * ```ts
-     * const opEncoded = contract.encodeOperation({
+     * const opEncoded = await contract.encodeOperation({
      *   name: "transfer",
      *   args: {
      *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
@@ -23065,7 +23065,7 @@ class Contract {
      * Decodes a contract operation to be human readable
      * @example
      * ```ts
-     * const opDecoded = contract.decodeOperation({
+     * const opDecoded = await contract.decodeOperation({
      *   call_contract: {
      *     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
      *     entry_point: 0x27f576ca,
@@ -23167,6 +23167,7 @@ exports.Provider = void 0;
 // @ts-ignore
 const protocol_proto_js_1 = __webpack_require__(9104);
 const utils_1 = __webpack_require__(8593);
+const Serializer_1 = __webpack_require__(7187);
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 async function sleep(ms) {
     return new Promise((r) => setTimeout(r, ms));
@@ -23306,11 +23307,11 @@ class Provider {
             transaction_ids: transactionIds,
         });
     }
-    async getBlocksById(blockIds) {
+    async getBlocksById(blockIds, opts) {
         return this.call("block_store.get_blocks_by_id", {
             block_ids: blockIds,
-            return_block: true,
-            return_receipt: false,
+            return_block: opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
+            return_receipt: opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
         });
     }
     /**
@@ -23334,7 +23335,7 @@ class Provider {
      * This ID must be from a greater block height. By default it
      * gets the ID from the block head.
      */
-    async getBlocks(height, numBlocks = 1, idRef) {
+    async getBlocks(height, numBlocks = 1, idRef, opts) {
         let blockIdRef = idRef;
         if (!blockIdRef) {
             const head = await this.getHeadInfo();
@@ -23344,8 +23345,8 @@ class Provider {
             head_block_id: blockIdRef,
             ancestor_start_height: height,
             num_blocks: numBlocks,
-            return_block: true,
-            return_receipt: false,
+            return_block: opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
+            return_receipt: opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
         })).block_items;
     }
     /**
@@ -23484,6 +23485,98 @@ class Provider {
      */
     async readContract(operation) {
         return this.call("chain.read_contract", operation);
+    }
+    /**
+     * Function to call "chain.get_fork_heads" to get fork heads
+     */
+    async getForkHeads() {
+        return this.call("chain.get_fork_heads", {});
+    }
+    /**
+     * Funciont to call "chain.get_resource_limits" to get
+     * resource limits
+     */
+    async getResourceLimits() {
+        return this.call("chain.get_resource_limits", {});
+    }
+    /**
+     * Function to call "chain.invoke_system_call" to invoke a system
+     * call.
+     */
+    async invokeSystemCall(serializer, nameOrId, args, callerData) {
+        if (!serializer.argumentsTypeName)
+            throw new Error("argumentsTypeName not defined");
+        if (!serializer.returnTypeName)
+            throw new Error("returnTypeName not defined");
+        const argsEncoded = await serializer.serialize(args, serializer.argumentsTypeName);
+        const response = await this.call("chain.invoke_system_call", {
+            ...(typeof nameOrId === "number" && { id: nameOrId }),
+            ...(typeof nameOrId === "string" && { name: nameOrId }),
+            args: (0, utils_1.encodeBase64url)(argsEncoded),
+            caller_data: callerData,
+        });
+        if (!response || !response.value)
+            throw new Error("no value in the response");
+        const result = await serializer.deserialize(response.value, serializer.returnTypeName);
+        return result;
+    }
+    async invokeGetContractMetadata(contractId) {
+        const serializer = new Serializer_1.Serializer({
+            nested: {
+                get_contract_metadata_arguments: {
+                    fields: {
+                        contract_id: {
+                            type: "bytes",
+                            id: 1,
+                            options: {
+                                "(koinos.btype)": "CONTRACT_ID",
+                            },
+                        },
+                    },
+                },
+                get_contract_metadata_result: {
+                    fields: {
+                        value: {
+                            type: "contract_metadata_object",
+                            id: 1,
+                        },
+                    },
+                },
+                contract_metadata_object: {
+                    fields: {
+                        hash: {
+                            type: "bytes",
+                            id: 1,
+                            options: {
+                                "(koinos.btype)": "HEX",
+                            },
+                        },
+                        system: {
+                            type: "bool",
+                            id: 2,
+                        },
+                        authorizes_call_contract: {
+                            type: "bool",
+                            id: 3,
+                        },
+                        authorizes_transaction_application: {
+                            type: "bool",
+                            id: 4,
+                        },
+                        authorizes_upload_contract: {
+                            type: "bool",
+                            id: 5,
+                        },
+                    },
+                },
+            },
+        }, {
+            argumentsTypeName: "get_contract_metadata_arguments",
+            returnTypeName: "get_contract_metadata_result",
+        });
+        return this.invokeSystemCall(serializer, "get_contract_metadata", {
+            contract_id: contractId,
+        });
     }
 }
 exports.Provider = Provider;
@@ -23628,6 +23721,10 @@ class Serializer {
         }
         if (opts === null || opts === void 0 ? void 0 : opts.defaultTypeName)
             this.defaultType = this.root.lookupType(opts.defaultTypeName);
+        if (opts === null || opts === void 0 ? void 0 : opts.argumentsTypeName)
+            this.argumentsTypeName = opts.argumentsTypeName;
+        if (opts === null || opts === void 0 ? void 0 : opts.returnTypeName)
+            this.returnTypeName = opts.returnTypeName;
         if (opts && typeof opts.bytesConversion !== "undefined")
             this.bytesConversion = opts.bytesConversion;
     }
@@ -23847,53 +23944,6 @@ const btypeTransactionHeader = {
     payer: { type: "bytes", btype: "ADDRESS" },
     payee: { type: "bytes", btype: "ADDRESS" },
 };
-const btypesOperation = {
-    upload_contract: {
-        type: "object",
-        subtypes: {
-            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-            bytecode: { type: "bytes" },
-            abi: { type: "string" },
-            authorizes_call_contract: { type: "bool" },
-            authorizes_transaction_application: { type: "bool" },
-            authorizes_upload_contract: { type: "bool" },
-        },
-    },
-    call_contract: {
-        type: "object",
-        subtypes: {
-            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-            entry_point: { type: "uint32" },
-            args: { type: "bytes" },
-        },
-    },
-    set_system_call: {
-        type: "object",
-        subtypes: {
-            call_id: { type: "uint32" },
-            target: {
-                type: "object",
-                subtypes: {
-                    thunk_id: { type: "uint32" },
-                    system_call_bundle: {
-                        type: "object",
-                        subtypes: {
-                            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-                            entry_point: { type: "uint32" },
-                        },
-                    },
-                },
-            },
-        },
-    },
-    set_system_contract: {
-        type: "object",
-        subtypes: {
-            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-            system_contract: { type: "bool" },
-        },
-    },
-};
 /**
  * The Signer Class contains the private key needed to sign transactions.
  * It can be created using the seed, wif, or private key
@@ -24054,7 +24104,7 @@ class Signer {
      * // 5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd
      * ```
      */
-    getPrivateKey(format = "hex", compressed = false) {
+    getPrivateKey(format = "hex", compressed = true) {
         let stringPrivateKey;
         if (this.privateKey instanceof Uint8Array) {
             stringPrivateKey = (0, utils_1.toHexString)(this.privateKey);
@@ -24318,81 +24368,6 @@ class Signer {
     async recoverAddresses(txOrBlock, opts) {
         const publicKeys = await this.recoverPublicKeys(txOrBlock, opts);
         return publicKeys.map((publicKey) => (0, utils_1.bitcoinAddress)((0, utils_1.toUint8Array)(publicKey)));
-    }
-    /**
-     * Function to prepare a transaction
-     * @deprecated - Use [[Transaction.prepareTransaction]] instead.
-     * @param tx - Do not set the nonce to get it from the blockchain
-     * using the provider. The rc_limit is 1e8 by default.
-     * @returns A prepared transaction.
-     */
-    async prepareTransaction(tx) {
-        var _a, _b;
-        if (!tx.header) {
-            tx.header = {};
-        }
-        const payer = (_a = tx.header.payer) !== null && _a !== void 0 ? _a : this.address;
-        const { payee } = tx.header;
-        let nonce;
-        if (tx.header.nonce === undefined) {
-            if (!this.provider)
-                throw new Error("Cannot get the nonce because provider is undefined. To skip this call set a nonce in the transaction header");
-            nonce = await this.provider.getNextNonce(payee || payer);
-        }
-        else {
-            nonce = tx.header.nonce;
-        }
-        let rcLimit;
-        if (tx.header.rc_limit === undefined) {
-            if (!this.provider)
-                throw new Error("Cannot get the rc_limit because provider is undefined. To skip this call set a rc_limit in the transaction header");
-            rcLimit = await this.provider.getAccountRc(payer);
-        }
-        else {
-            rcLimit = tx.header.rc_limit;
-        }
-        let chainId = tx.header.chain_id || this.chainId;
-        if (!chainId) {
-            if (!this.provider)
-                throw new Error("Cannot get the chain_id because provider is undefined. To skip this call set a chain_id in the Signer");
-            chainId = await this.provider.getChainId();
-            this.chainId = chainId;
-        }
-        const operationsHashes = [];
-        if (tx.operations) {
-            for (let index = 0; index < ((_b = tx.operations) === null || _b === void 0 ? void 0 : _b.length); index += 1) {
-                const operationDecoded = (0, utils_1.btypeDecode)(tx.operations[index], btypesOperation, false);
-                const message = protocol_proto_js_1.koinos.protocol.operation.create(operationDecoded);
-                const operationEncoded = protocol_proto_js_1.koinos.protocol.operation
-                    .encode(message)
-                    .finish();
-                operationsHashes.push((0, sha256_1.sha256)(operationEncoded));
-            }
-        }
-        const operationMerkleRoot = (0, utils_1.encodeBase64url)(new Uint8Array([
-            // multihash sha256: 18, 32
-            18,
-            32,
-            ...(0, utils_1.calculateMerkleRoot)(operationsHashes),
-        ]));
-        tx.header = {
-            chain_id: chainId,
-            rc_limit: rcLimit,
-            nonce,
-            operation_merkle_root: operationMerkleRoot,
-            payer,
-            ...(payee && { payee }),
-            // TODO: Option to resolve names (payer, payee)
-        };
-        const headerDecoded = (0, utils_1.btypeDecode)(tx.header, btypeTransactionHeader, false);
-        const message = protocol_proto_js_1.koinos.protocol.transaction_header.create(headerDecoded);
-        const headerBytes = protocol_proto_js_1.koinos.protocol.transaction_header
-            .encode(message)
-            .finish();
-        const hash = (0, sha256_1.sha256)(headerBytes);
-        // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
-        tx.id = `0x1220${(0, utils_1.toHexString)(hash)}`;
-        return tx;
     }
     /**
      * Function to prepare a block
@@ -24757,7 +24732,10 @@ class Transaction {
         };
         if (!this.transaction.id)
             await this.prepare();
-        if (this.signer && this.signer.provider) {
+        if (!this.transaction.signatures || !this.transaction.signatures.length) {
+            if (!this.signer) {
+                throw new Error("transaction without signatures and no signer defined");
+            }
             const { transaction: tx, receipt } = await this.signer.sendTransaction(this.transaction, opts);
             this.transaction = tx;
             this.waitFunction = tx.wait;
@@ -24765,9 +24743,6 @@ class Transaction {
         }
         if (!this.provider)
             throw new Error("provider not defined");
-        if (!this.transaction.signatures || !this.transaction.signatures.length) {
-            throw new Error("transaction without signatures and no signer defined");
-        }
         if (opts.beforeSend) {
             await opts.beforeSend(this.transaction, opts);
         }
@@ -25389,6 +25364,285 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
        * @namespace
        */
       var protocol = {};
+
+      protocol.object_space = (function () {
+        /**
+         * Properties of an object_space.
+         * @memberof koinos.protocol
+         * @interface Iobject_space
+         * @property {boolean|null} [system] object_space system
+         * @property {Uint8Array|null} [zone] object_space zone
+         * @property {number|null} [id] object_space id
+         */
+
+        /**
+         * Constructs a new object_space.
+         * @memberof koinos.protocol
+         * @classdesc Represents an object_space.
+         * @implements Iobject_space
+         * @constructor
+         * @param {koinos.protocol.Iobject_space=} [properties] Properties to set
+         */
+        function object_space(properties) {
+          if (properties)
+            for (
+              var keys = Object.keys(properties), i = 0;
+              i < keys.length;
+              ++i
+            )
+              if (properties[keys[i]] != null)
+                this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * object_space system.
+         * @member {boolean} system
+         * @memberof koinos.protocol.object_space
+         * @instance
+         */
+        object_space.prototype.system = false;
+
+        /**
+         * object_space zone.
+         * @member {Uint8Array} zone
+         * @memberof koinos.protocol.object_space
+         * @instance
+         */
+        object_space.prototype.zone = $util.newBuffer([]);
+
+        /**
+         * object_space id.
+         * @member {number} id
+         * @memberof koinos.protocol.object_space
+         * @instance
+         */
+        object_space.prototype.id = 0;
+
+        /**
+         * Creates a new object_space instance using the specified properties.
+         * @function create
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {koinos.protocol.Iobject_space=} [properties] Properties to set
+         * @returns {koinos.protocol.object_space} object_space instance
+         */
+        object_space.create = function create(properties) {
+          return new object_space(properties);
+        };
+
+        /**
+         * Encodes the specified object_space message. Does not implicitly {@link koinos.protocol.object_space.verify|verify} messages.
+         * @function encode
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {koinos.protocol.Iobject_space} message object_space message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        object_space.encode = function encode(message, writer) {
+          if (!writer) writer = $Writer.create();
+          if (
+            message.system != null &&
+            Object.hasOwnProperty.call(message, "system")
+          )
+            writer.uint32(/* id 1, wireType 0 =*/ 8).bool(message.system);
+          if (
+            message.zone != null &&
+            Object.hasOwnProperty.call(message, "zone")
+          )
+            writer.uint32(/* id 2, wireType 2 =*/ 18).bytes(message.zone);
+          if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+            writer.uint32(/* id 3, wireType 0 =*/ 24).uint32(message.id);
+          return writer;
+        };
+
+        /**
+         * Encodes the specified object_space message, length delimited. Does not implicitly {@link koinos.protocol.object_space.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {koinos.protocol.Iobject_space} message object_space message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        object_space.encodeDelimited = function encodeDelimited(
+          message,
+          writer
+        ) {
+          return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an object_space message from the specified reader or buffer.
+         * @function decode
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {koinos.protocol.object_space} object_space
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        object_space.decode = function decode(reader, length) {
+          if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
+          var end = length === undefined ? reader.len : reader.pos + length,
+            message = new $root.koinos.protocol.object_space();
+          while (reader.pos < end) {
+            var tag = reader.uint32();
+            switch (tag >>> 3) {
+              case 1: {
+                message.system = reader.bool();
+                break;
+              }
+              case 2: {
+                message.zone = reader.bytes();
+                break;
+              }
+              case 3: {
+                message.id = reader.uint32();
+                break;
+              }
+              default:
+                reader.skipType(tag & 7);
+                break;
+            }
+          }
+          return message;
+        };
+
+        /**
+         * Decodes an object_space message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {koinos.protocol.object_space} object_space
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        object_space.decodeDelimited = function decodeDelimited(reader) {
+          if (!(reader instanceof $Reader)) reader = new $Reader(reader);
+          return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an object_space message.
+         * @function verify
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        object_space.verify = function verify(message) {
+          if (typeof message !== "object" || message === null)
+            return "object expected";
+          if (message.system != null && message.hasOwnProperty("system"))
+            if (typeof message.system !== "boolean")
+              return "system: boolean expected";
+          if (message.zone != null && message.hasOwnProperty("zone"))
+            if (
+              !(
+                (message.zone && typeof message.zone.length === "number") ||
+                $util.isString(message.zone)
+              )
+            )
+              return "zone: buffer expected";
+          if (message.id != null && message.hasOwnProperty("id"))
+            if (!$util.isInteger(message.id)) return "id: integer expected";
+          return null;
+        };
+
+        /**
+         * Creates an object_space message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {koinos.protocol.object_space} object_space
+         */
+        object_space.fromObject = function fromObject(object) {
+          if (object instanceof $root.koinos.protocol.object_space)
+            return object;
+          var message = new $root.koinos.protocol.object_space();
+          if (object.system != null) message.system = Boolean(object.system);
+          if (object.zone != null)
+            if (typeof object.zone === "string")
+              $util.base64.decode(
+                object.zone,
+                (message.zone = $util.newBuffer(
+                  $util.base64.length(object.zone)
+                )),
+                0
+              );
+            else if (object.zone.length >= 0) message.zone = object.zone;
+          if (object.id != null) message.id = object.id >>> 0;
+          return message;
+        };
+
+        /**
+         * Creates a plain object from an object_space message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {koinos.protocol.object_space} message object_space
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        object_space.toObject = function toObject(message, options) {
+          if (!options) options = {};
+          var object = {};
+          if (options.defaults) {
+            object.system = false;
+            if (options.bytes === String) object.zone = "";
+            else {
+              object.zone = [];
+              if (options.bytes !== Array)
+                object.zone = $util.newBuffer(object.zone);
+            }
+            object.id = 0;
+          }
+          if (message.system != null && message.hasOwnProperty("system"))
+            object.system = message.system;
+          if (message.zone != null && message.hasOwnProperty("zone"))
+            object.zone =
+              options.bytes === String
+                ? $util.base64.encode(message.zone, 0, message.zone.length)
+                : options.bytes === Array
+                ? Array.prototype.slice.call(message.zone)
+                : message.zone;
+          if (message.id != null && message.hasOwnProperty("id"))
+            object.id = message.id;
+          return object;
+        };
+
+        /**
+         * Converts this object_space to JSON.
+         * @function toJSON
+         * @memberof koinos.protocol.object_space
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        object_space.prototype.toJSON = function toJSON() {
+          return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for object_space
+         * @function getTypeUrl
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        object_space.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.object_space";
+        };
+
+        return object_space;
+      })();
 
       protocol.event_data = (function () {
         /**
@@ -29094,6 +29348,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          * @property {boolean|null} [reverted] transaction_receipt reverted
          * @property {Array.<koinos.protocol.Ievent_data>|null} [events] transaction_receipt events
          * @property {Array.<string>|null} [logs] transaction_receipt logs
+         * @property {Array.<koinos.protocol.Istate_delta_entry>|null} [state_delta_entries] transaction_receipt state_delta_entries
          */
 
         /**
@@ -29107,6 +29362,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
         function transaction_receipt(properties) {
           this.events = [];
           this.logs = [];
+          this.state_delta_entries = [];
           if (properties)
             for (
               var keys = Object.keys(properties), i = 0;
@@ -29218,6 +29474,14 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
         transaction_receipt.prototype.logs = $util.emptyArray;
 
         /**
+         * transaction_receipt state_delta_entries.
+         * @member {Array.<koinos.protocol.Istate_delta_entry>} state_delta_entries
+         * @memberof koinos.protocol.transaction_receipt
+         * @instance
+         */
+        transaction_receipt.prototype.state_delta_entries = $util.emptyArray;
+
+        /**
          * Creates a new transaction_receipt instance using the specified properties.
          * @function create
          * @memberof koinos.protocol.transaction_receipt
@@ -29303,6 +29567,17 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
               writer
                 .uint32(/* id 11, wireType 2 =*/ 90)
                 .string(message.logs[i]);
+          if (
+            message.state_delta_entries != null &&
+            message.state_delta_entries.length
+          )
+            for (var i = 0; i < message.state_delta_entries.length; ++i)
+              $root.koinos.protocol.state_delta_entry
+                .encode(
+                  message.state_delta_entries[i],
+                  writer.uint32(/* id 12, wireType 2 =*/ 98).fork()
+                )
+                .ldelim();
           return writer;
         };
 
@@ -29390,6 +29665,22 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
               case 11: {
                 if (!(message.logs && message.logs.length)) message.logs = [];
                 message.logs.push(reader.string());
+                break;
+              }
+              case 12: {
+                if (
+                  !(
+                    message.state_delta_entries &&
+                    message.state_delta_entries.length
+                  )
+                )
+                  message.state_delta_entries = [];
+                message.state_delta_entries.push(
+                  $root.koinos.protocol.state_delta_entry.decode(
+                    reader,
+                    reader.uint32()
+                  )
+                );
                 break;
               }
               default:
@@ -29531,6 +29822,19 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             for (var i = 0; i < message.logs.length; ++i)
               if (!$util.isString(message.logs[i]))
                 return "logs: string[] expected";
+          }
+          if (
+            message.state_delta_entries != null &&
+            message.hasOwnProperty("state_delta_entries")
+          ) {
+            if (!Array.isArray(message.state_delta_entries))
+              return "state_delta_entries: array expected";
+            for (var i = 0; i < message.state_delta_entries.length; ++i) {
+              var error = $root.koinos.protocol.state_delta_entry.verify(
+                message.state_delta_entries[i]
+              );
+              if (error) return "state_delta_entries." + error;
+            }
           }
           return null;
         };
@@ -29685,6 +29989,23 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             for (var i = 0; i < object.logs.length; ++i)
               message.logs[i] = String(object.logs[i]);
           }
+          if (object.state_delta_entries) {
+            if (!Array.isArray(object.state_delta_entries))
+              throw TypeError(
+                ".koinos.protocol.transaction_receipt.state_delta_entries: array expected"
+              );
+            message.state_delta_entries = [];
+            for (var i = 0; i < object.state_delta_entries.length; ++i) {
+              if (typeof object.state_delta_entries[i] !== "object")
+                throw TypeError(
+                  ".koinos.protocol.transaction_receipt.state_delta_entries: object expected"
+                );
+              message.state_delta_entries[i] =
+                $root.koinos.protocol.state_delta_entry.fromObject(
+                  object.state_delta_entries[i]
+                );
+            }
+          }
           return message;
         };
 
@@ -29703,6 +30024,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           if (options.arrays || options.defaults) {
             object.events = [];
             object.logs = [];
+            object.state_delta_entries = [];
           }
           if (options.defaults) {
             if (options.bytes === String) object.id = "";
@@ -29920,6 +30242,18 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             object.logs = [];
             for (var j = 0; j < message.logs.length; ++j)
               object.logs[j] = message.logs[j];
+          }
+          if (
+            message.state_delta_entries &&
+            message.state_delta_entries.length
+          ) {
+            object.state_delta_entries = [];
+            for (var j = 0; j < message.state_delta_entries.length; ++j)
+              object.state_delta_entries[j] =
+                $root.koinos.protocol.state_delta_entry.toObject(
+                  message.state_delta_entries[j],
+                  options
+                );
           }
           return object;
         };
@@ -30998,6 +31332,10 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          * @property {Array.<koinos.protocol.Ievent_data>|null} [events] block_receipt events
          * @property {Array.<koinos.protocol.Itransaction_receipt>|null} [transaction_receipts] block_receipt transaction_receipts
          * @property {Array.<string>|null} [logs] block_receipt logs
+         * @property {number|Long|null} [disk_storage_charged] block_receipt disk_storage_charged
+         * @property {number|Long|null} [network_bandwidth_charged] block_receipt network_bandwidth_charged
+         * @property {number|Long|null} [compute_bandwidth_charged] block_receipt compute_bandwidth_charged
+         * @property {Array.<koinos.protocol.Istate_delta_entry>|null} [state_delta_entries] block_receipt state_delta_entries
          */
 
         /**
@@ -31012,6 +31350,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           this.events = [];
           this.transaction_receipts = [];
           this.logs = [];
+          this.state_delta_entries = [];
           if (properties)
             for (
               var keys = Object.keys(properties), i = 0;
@@ -31103,6 +31442,44 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
         block_receipt.prototype.logs = $util.emptyArray;
 
         /**
+         * block_receipt disk_storage_charged.
+         * @member {number|Long} disk_storage_charged
+         * @memberof koinos.protocol.block_receipt
+         * @instance
+         */
+        block_receipt.prototype.disk_storage_charged = $util.Long
+          ? $util.Long.fromBits(0, 0, true)
+          : 0;
+
+        /**
+         * block_receipt network_bandwidth_charged.
+         * @member {number|Long} network_bandwidth_charged
+         * @memberof koinos.protocol.block_receipt
+         * @instance
+         */
+        block_receipt.prototype.network_bandwidth_charged = $util.Long
+          ? $util.Long.fromBits(0, 0, true)
+          : 0;
+
+        /**
+         * block_receipt compute_bandwidth_charged.
+         * @member {number|Long} compute_bandwidth_charged
+         * @memberof koinos.protocol.block_receipt
+         * @instance
+         */
+        block_receipt.prototype.compute_bandwidth_charged = $util.Long
+          ? $util.Long.fromBits(0, 0, true)
+          : 0;
+
+        /**
+         * block_receipt state_delta_entries.
+         * @member {Array.<koinos.protocol.Istate_delta_entry>} state_delta_entries
+         * @memberof koinos.protocol.block_receipt
+         * @instance
+         */
+        block_receipt.prototype.state_delta_entries = $util.emptyArray;
+
+        /**
          * Creates a new block_receipt instance using the specified properties.
          * @function create
          * @memberof koinos.protocol.block_receipt
@@ -31182,6 +31559,38 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           if (message.logs != null && message.logs.length)
             for (var i = 0; i < message.logs.length; ++i)
               writer.uint32(/* id 9, wireType 2 =*/ 74).string(message.logs[i]);
+          if (
+            message.disk_storage_charged != null &&
+            Object.hasOwnProperty.call(message, "disk_storage_charged")
+          )
+            writer
+              .uint32(/* id 10, wireType 0 =*/ 80)
+              .uint64(message.disk_storage_charged);
+          if (
+            message.network_bandwidth_charged != null &&
+            Object.hasOwnProperty.call(message, "network_bandwidth_charged")
+          )
+            writer
+              .uint32(/* id 11, wireType 0 =*/ 88)
+              .uint64(message.network_bandwidth_charged);
+          if (
+            message.compute_bandwidth_charged != null &&
+            Object.hasOwnProperty.call(message, "compute_bandwidth_charged")
+          )
+            writer
+              .uint32(/* id 12, wireType 0 =*/ 96)
+              .uint64(message.compute_bandwidth_charged);
+          if (
+            message.state_delta_entries != null &&
+            message.state_delta_entries.length
+          )
+            for (var i = 0; i < message.state_delta_entries.length; ++i)
+              $root.koinos.protocol.state_delta_entry
+                .encode(
+                  message.state_delta_entries[i],
+                  writer.uint32(/* id 13, wireType 2 =*/ 106).fork()
+                )
+                .ldelim();
           return writer;
         };
 
@@ -31273,6 +31682,34 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
               case 9: {
                 if (!(message.logs && message.logs.length)) message.logs = [];
                 message.logs.push(reader.string());
+                break;
+              }
+              case 10: {
+                message.disk_storage_charged = reader.uint64();
+                break;
+              }
+              case 11: {
+                message.network_bandwidth_charged = reader.uint64();
+                break;
+              }
+              case 12: {
+                message.compute_bandwidth_charged = reader.uint64();
+                break;
+              }
+              case 13: {
+                if (
+                  !(
+                    message.state_delta_entries &&
+                    message.state_delta_entries.length
+                  )
+                )
+                  message.state_delta_entries = [];
+                message.state_delta_entries.push(
+                  $root.koinos.protocol.state_delta_entry.decode(
+                    reader,
+                    reader.uint32()
+                  )
+                );
                 break;
               }
               default:
@@ -31405,6 +31842,58 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             for (var i = 0; i < message.logs.length; ++i)
               if (!$util.isString(message.logs[i]))
                 return "logs: string[] expected";
+          }
+          if (
+            message.disk_storage_charged != null &&
+            message.hasOwnProperty("disk_storage_charged")
+          )
+            if (
+              !$util.isInteger(message.disk_storage_charged) &&
+              !(
+                message.disk_storage_charged &&
+                $util.isInteger(message.disk_storage_charged.low) &&
+                $util.isInteger(message.disk_storage_charged.high)
+              )
+            )
+              return "disk_storage_charged: integer|Long expected";
+          if (
+            message.network_bandwidth_charged != null &&
+            message.hasOwnProperty("network_bandwidth_charged")
+          )
+            if (
+              !$util.isInteger(message.network_bandwidth_charged) &&
+              !(
+                message.network_bandwidth_charged &&
+                $util.isInteger(message.network_bandwidth_charged.low) &&
+                $util.isInteger(message.network_bandwidth_charged.high)
+              )
+            )
+              return "network_bandwidth_charged: integer|Long expected";
+          if (
+            message.compute_bandwidth_charged != null &&
+            message.hasOwnProperty("compute_bandwidth_charged")
+          )
+            if (
+              !$util.isInteger(message.compute_bandwidth_charged) &&
+              !(
+                message.compute_bandwidth_charged &&
+                $util.isInteger(message.compute_bandwidth_charged.low) &&
+                $util.isInteger(message.compute_bandwidth_charged.high)
+              )
+            )
+              return "compute_bandwidth_charged: integer|Long expected";
+          if (
+            message.state_delta_entries != null &&
+            message.hasOwnProperty("state_delta_entries")
+          ) {
+            if (!Array.isArray(message.state_delta_entries))
+              return "state_delta_entries: array expected";
+            for (var i = 0; i < message.state_delta_entries.length; ++i) {
+              var error = $root.koinos.protocol.state_delta_entry.verify(
+                message.state_delta_entries[i]
+              );
+              if (error) return "state_delta_entries." + error;
+            }
           }
           return null;
         };
@@ -31547,6 +32036,76 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             for (var i = 0; i < object.logs.length; ++i)
               message.logs[i] = String(object.logs[i]);
           }
+          if (object.disk_storage_charged != null)
+            if ($util.Long)
+              (message.disk_storage_charged = $util.Long.fromValue(
+                object.disk_storage_charged
+              )).unsigned = true;
+            else if (typeof object.disk_storage_charged === "string")
+              message.disk_storage_charged = parseInt(
+                object.disk_storage_charged,
+                10
+              );
+            else if (typeof object.disk_storage_charged === "number")
+              message.disk_storage_charged = object.disk_storage_charged;
+            else if (typeof object.disk_storage_charged === "object")
+              message.disk_storage_charged = new $util.LongBits(
+                object.disk_storage_charged.low >>> 0,
+                object.disk_storage_charged.high >>> 0
+              ).toNumber(true);
+          if (object.network_bandwidth_charged != null)
+            if ($util.Long)
+              (message.network_bandwidth_charged = $util.Long.fromValue(
+                object.network_bandwidth_charged
+              )).unsigned = true;
+            else if (typeof object.network_bandwidth_charged === "string")
+              message.network_bandwidth_charged = parseInt(
+                object.network_bandwidth_charged,
+                10
+              );
+            else if (typeof object.network_bandwidth_charged === "number")
+              message.network_bandwidth_charged =
+                object.network_bandwidth_charged;
+            else if (typeof object.network_bandwidth_charged === "object")
+              message.network_bandwidth_charged = new $util.LongBits(
+                object.network_bandwidth_charged.low >>> 0,
+                object.network_bandwidth_charged.high >>> 0
+              ).toNumber(true);
+          if (object.compute_bandwidth_charged != null)
+            if ($util.Long)
+              (message.compute_bandwidth_charged = $util.Long.fromValue(
+                object.compute_bandwidth_charged
+              )).unsigned = true;
+            else if (typeof object.compute_bandwidth_charged === "string")
+              message.compute_bandwidth_charged = parseInt(
+                object.compute_bandwidth_charged,
+                10
+              );
+            else if (typeof object.compute_bandwidth_charged === "number")
+              message.compute_bandwidth_charged =
+                object.compute_bandwidth_charged;
+            else if (typeof object.compute_bandwidth_charged === "object")
+              message.compute_bandwidth_charged = new $util.LongBits(
+                object.compute_bandwidth_charged.low >>> 0,
+                object.compute_bandwidth_charged.high >>> 0
+              ).toNumber(true);
+          if (object.state_delta_entries) {
+            if (!Array.isArray(object.state_delta_entries))
+              throw TypeError(
+                ".koinos.protocol.block_receipt.state_delta_entries: array expected"
+              );
+            message.state_delta_entries = [];
+            for (var i = 0; i < object.state_delta_entries.length; ++i) {
+              if (typeof object.state_delta_entries[i] !== "object")
+                throw TypeError(
+                  ".koinos.protocol.block_receipt.state_delta_entries: object expected"
+                );
+              message.state_delta_entries[i] =
+                $root.koinos.protocol.state_delta_entry.fromObject(
+                  object.state_delta_entries[i]
+                );
+            }
+          }
           return message;
         };
 
@@ -31566,6 +32125,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             object.events = [];
             object.transaction_receipts = [];
             object.logs = [];
+            object.state_delta_entries = [];
           }
           if (options.defaults) {
             if (options.bytes === String) object.id = "";
@@ -31623,6 +32183,38 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                   object.state_merkle_root
                 );
             }
+            if ($util.Long) {
+              var long = new $util.Long(0, 0, true);
+              object.disk_storage_charged =
+                options.longs === String
+                  ? long.toString()
+                  : options.longs === Number
+                  ? long.toNumber()
+                  : long;
+            } else
+              object.disk_storage_charged = options.longs === String ? "0" : 0;
+            if ($util.Long) {
+              var long = new $util.Long(0, 0, true);
+              object.network_bandwidth_charged =
+                options.longs === String
+                  ? long.toString()
+                  : options.longs === Number
+                  ? long.toNumber()
+                  : long;
+            } else
+              object.network_bandwidth_charged =
+                options.longs === String ? "0" : 0;
+            if ($util.Long) {
+              var long = new $util.Long(0, 0, true);
+              object.compute_bandwidth_charged =
+                options.longs === String
+                  ? long.toString()
+                  : options.longs === Number
+                  ? long.toNumber()
+                  : long;
+            } else
+              object.compute_bandwidth_charged =
+                options.longs === String ? "0" : 0;
           }
           if (message.id != null && message.hasOwnProperty("id"))
             object.id =
@@ -31749,6 +32341,81 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             for (var j = 0; j < message.logs.length; ++j)
               object.logs[j] = message.logs[j];
           }
+          if (
+            message.disk_storage_charged != null &&
+            message.hasOwnProperty("disk_storage_charged")
+          )
+            if (typeof message.disk_storage_charged === "number")
+              object.disk_storage_charged =
+                options.longs === String
+                  ? String(message.disk_storage_charged)
+                  : message.disk_storage_charged;
+            else
+              object.disk_storage_charged =
+                options.longs === String
+                  ? $util.Long.prototype.toString.call(
+                      message.disk_storage_charged
+                    )
+                  : options.longs === Number
+                  ? new $util.LongBits(
+                      message.disk_storage_charged.low >>> 0,
+                      message.disk_storage_charged.high >>> 0
+                    ).toNumber(true)
+                  : message.disk_storage_charged;
+          if (
+            message.network_bandwidth_charged != null &&
+            message.hasOwnProperty("network_bandwidth_charged")
+          )
+            if (typeof message.network_bandwidth_charged === "number")
+              object.network_bandwidth_charged =
+                options.longs === String
+                  ? String(message.network_bandwidth_charged)
+                  : message.network_bandwidth_charged;
+            else
+              object.network_bandwidth_charged =
+                options.longs === String
+                  ? $util.Long.prototype.toString.call(
+                      message.network_bandwidth_charged
+                    )
+                  : options.longs === Number
+                  ? new $util.LongBits(
+                      message.network_bandwidth_charged.low >>> 0,
+                      message.network_bandwidth_charged.high >>> 0
+                    ).toNumber(true)
+                  : message.network_bandwidth_charged;
+          if (
+            message.compute_bandwidth_charged != null &&
+            message.hasOwnProperty("compute_bandwidth_charged")
+          )
+            if (typeof message.compute_bandwidth_charged === "number")
+              object.compute_bandwidth_charged =
+                options.longs === String
+                  ? String(message.compute_bandwidth_charged)
+                  : message.compute_bandwidth_charged;
+            else
+              object.compute_bandwidth_charged =
+                options.longs === String
+                  ? $util.Long.prototype.toString.call(
+                      message.compute_bandwidth_charged
+                    )
+                  : options.longs === Number
+                  ? new $util.LongBits(
+                      message.compute_bandwidth_charged.low >>> 0,
+                      message.compute_bandwidth_charged.high >>> 0
+                    ).toNumber(true)
+                  : message.compute_bandwidth_charged;
+          if (
+            message.state_delta_entries &&
+            message.state_delta_entries.length
+          ) {
+            object.state_delta_entries = [];
+            for (var j = 0; j < message.state_delta_entries.length; ++j)
+              object.state_delta_entries[j] =
+                $root.koinos.protocol.state_delta_entry.toObject(
+                  message.state_delta_entries[j],
+                  options
+                );
+          }
           return object;
         };
 
@@ -31779,6 +32446,353 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
         };
 
         return block_receipt;
+      })();
+
+      protocol.state_delta_entry = (function () {
+        /**
+         * Properties of a state_delta_entry.
+         * @memberof koinos.protocol
+         * @interface Istate_delta_entry
+         * @property {koinos.protocol.Iobject_space|null} [object_space] state_delta_entry object_space
+         * @property {Uint8Array|null} [key] state_delta_entry key
+         * @property {Uint8Array|null} [value] state_delta_entry value
+         */
+
+        /**
+         * Constructs a new state_delta_entry.
+         * @memberof koinos.protocol
+         * @classdesc Represents a state_delta_entry.
+         * @implements Istate_delta_entry
+         * @constructor
+         * @param {koinos.protocol.Istate_delta_entry=} [properties] Properties to set
+         */
+        function state_delta_entry(properties) {
+          if (properties)
+            for (
+              var keys = Object.keys(properties), i = 0;
+              i < keys.length;
+              ++i
+            )
+              if (properties[keys[i]] != null)
+                this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * state_delta_entry object_space.
+         * @member {koinos.protocol.Iobject_space|null|undefined} object_space
+         * @memberof koinos.protocol.state_delta_entry
+         * @instance
+         */
+        state_delta_entry.prototype.object_space = null;
+
+        /**
+         * state_delta_entry key.
+         * @member {Uint8Array} key
+         * @memberof koinos.protocol.state_delta_entry
+         * @instance
+         */
+        state_delta_entry.prototype.key = $util.newBuffer([]);
+
+        /**
+         * state_delta_entry value.
+         * @member {Uint8Array|null|undefined} value
+         * @memberof koinos.protocol.state_delta_entry
+         * @instance
+         */
+        state_delta_entry.prototype.value = null;
+
+        // OneOf field names bound to virtual getters and setters
+        var $oneOfFields;
+
+        /**
+         * state_delta_entry _value.
+         * @member {"value"|undefined} _value
+         * @memberof koinos.protocol.state_delta_entry
+         * @instance
+         */
+        Object.defineProperty(state_delta_entry.prototype, "_value", {
+          get: $util.oneOfGetter(($oneOfFields = ["value"])),
+          set: $util.oneOfSetter($oneOfFields),
+        });
+
+        /**
+         * Creates a new state_delta_entry instance using the specified properties.
+         * @function create
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {koinos.protocol.Istate_delta_entry=} [properties] Properties to set
+         * @returns {koinos.protocol.state_delta_entry} state_delta_entry instance
+         */
+        state_delta_entry.create = function create(properties) {
+          return new state_delta_entry(properties);
+        };
+
+        /**
+         * Encodes the specified state_delta_entry message. Does not implicitly {@link koinos.protocol.state_delta_entry.verify|verify} messages.
+         * @function encode
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {koinos.protocol.Istate_delta_entry} message state_delta_entry message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        state_delta_entry.encode = function encode(message, writer) {
+          if (!writer) writer = $Writer.create();
+          if (
+            message.object_space != null &&
+            Object.hasOwnProperty.call(message, "object_space")
+          )
+            $root.koinos.protocol.object_space
+              .encode(
+                message.object_space,
+                writer.uint32(/* id 1, wireType 2 =*/ 10).fork()
+              )
+              .ldelim();
+          if (message.key != null && Object.hasOwnProperty.call(message, "key"))
+            writer.uint32(/* id 2, wireType 2 =*/ 18).bytes(message.key);
+          if (
+            message.value != null &&
+            Object.hasOwnProperty.call(message, "value")
+          )
+            writer.uint32(/* id 3, wireType 2 =*/ 26).bytes(message.value);
+          return writer;
+        };
+
+        /**
+         * Encodes the specified state_delta_entry message, length delimited. Does not implicitly {@link koinos.protocol.state_delta_entry.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {koinos.protocol.Istate_delta_entry} message state_delta_entry message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        state_delta_entry.encodeDelimited = function encodeDelimited(
+          message,
+          writer
+        ) {
+          return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a state_delta_entry message from the specified reader or buffer.
+         * @function decode
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {koinos.protocol.state_delta_entry} state_delta_entry
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        state_delta_entry.decode = function decode(reader, length) {
+          if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
+          var end = length === undefined ? reader.len : reader.pos + length,
+            message = new $root.koinos.protocol.state_delta_entry();
+          while (reader.pos < end) {
+            var tag = reader.uint32();
+            switch (tag >>> 3) {
+              case 1: {
+                message.object_space =
+                  $root.koinos.protocol.object_space.decode(
+                    reader,
+                    reader.uint32()
+                  );
+                break;
+              }
+              case 2: {
+                message.key = reader.bytes();
+                break;
+              }
+              case 3: {
+                message.value = reader.bytes();
+                break;
+              }
+              default:
+                reader.skipType(tag & 7);
+                break;
+            }
+          }
+          return message;
+        };
+
+        /**
+         * Decodes a state_delta_entry message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {koinos.protocol.state_delta_entry} state_delta_entry
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        state_delta_entry.decodeDelimited = function decodeDelimited(reader) {
+          if (!(reader instanceof $Reader)) reader = new $Reader(reader);
+          return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a state_delta_entry message.
+         * @function verify
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        state_delta_entry.verify = function verify(message) {
+          if (typeof message !== "object" || message === null)
+            return "object expected";
+          var properties = {};
+          if (
+            message.object_space != null &&
+            message.hasOwnProperty("object_space")
+          ) {
+            var error = $root.koinos.protocol.object_space.verify(
+              message.object_space
+            );
+            if (error) return "object_space." + error;
+          }
+          if (message.key != null && message.hasOwnProperty("key"))
+            if (
+              !(
+                (message.key && typeof message.key.length === "number") ||
+                $util.isString(message.key)
+              )
+            )
+              return "key: buffer expected";
+          if (message.value != null && message.hasOwnProperty("value")) {
+            properties._value = 1;
+            if (
+              !(
+                (message.value && typeof message.value.length === "number") ||
+                $util.isString(message.value)
+              )
+            )
+              return "value: buffer expected";
+          }
+          return null;
+        };
+
+        /**
+         * Creates a state_delta_entry message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {koinos.protocol.state_delta_entry} state_delta_entry
+         */
+        state_delta_entry.fromObject = function fromObject(object) {
+          if (object instanceof $root.koinos.protocol.state_delta_entry)
+            return object;
+          var message = new $root.koinos.protocol.state_delta_entry();
+          if (object.object_space != null) {
+            if (typeof object.object_space !== "object")
+              throw TypeError(
+                ".koinos.protocol.state_delta_entry.object_space: object expected"
+              );
+            message.object_space =
+              $root.koinos.protocol.object_space.fromObject(
+                object.object_space
+              );
+          }
+          if (object.key != null)
+            if (typeof object.key === "string")
+              $util.base64.decode(
+                object.key,
+                (message.key = $util.newBuffer(
+                  $util.base64.length(object.key)
+                )),
+                0
+              );
+            else if (object.key.length >= 0) message.key = object.key;
+          if (object.value != null)
+            if (typeof object.value === "string")
+              $util.base64.decode(
+                object.value,
+                (message.value = $util.newBuffer(
+                  $util.base64.length(object.value)
+                )),
+                0
+              );
+            else if (object.value.length >= 0) message.value = object.value;
+          return message;
+        };
+
+        /**
+         * Creates a plain object from a state_delta_entry message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {koinos.protocol.state_delta_entry} message state_delta_entry
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        state_delta_entry.toObject = function toObject(message, options) {
+          if (!options) options = {};
+          var object = {};
+          if (options.defaults) {
+            object.object_space = null;
+            if (options.bytes === String) object.key = "";
+            else {
+              object.key = [];
+              if (options.bytes !== Array)
+                object.key = $util.newBuffer(object.key);
+            }
+          }
+          if (
+            message.object_space != null &&
+            message.hasOwnProperty("object_space")
+          )
+            object.object_space = $root.koinos.protocol.object_space.toObject(
+              message.object_space,
+              options
+            );
+          if (message.key != null && message.hasOwnProperty("key"))
+            object.key =
+              options.bytes === String
+                ? $util.base64.encode(message.key, 0, message.key.length)
+                : options.bytes === Array
+                ? Array.prototype.slice.call(message.key)
+                : message.key;
+          if (message.value != null && message.hasOwnProperty("value")) {
+            object.value =
+              options.bytes === String
+                ? $util.base64.encode(message.value, 0, message.value.length)
+                : options.bytes === Array
+                ? Array.prototype.slice.call(message.value)
+                : message.value;
+            if (options.oneofs) object._value = "value";
+          }
+          return object;
+        };
+
+        /**
+         * Converts this state_delta_entry to JSON.
+         * @function toJSON
+         * @memberof koinos.protocol.state_delta_entry
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        state_delta_entry.prototype.toJSON = function toJSON() {
+          return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for state_delta_entry
+         * @function getTypeUrl
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        state_delta_entry.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.state_delta_entry";
+        };
+
+        return state_delta_entry;
       })();
 
       return protocol;
@@ -33503,7 +34517,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested":{"token":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/contracts/token"},"nested":{"name_arguments":{"fields":{}},"name_result":{"fields":{"value":{"type":"string","id":1}}},"symbol_arguments":{"fields":{}},"symbol_result":{"fields":{"value":{"type":"string","id":1}}},"decimals_arguments":{"fields":{}},"decimals_result":{"fields":{"value":{"type":"uint32","id":1}}},"total_supply_arguments":{"fields":{}},"total_supply_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"balance_of_arguments":{"fields":{"owner":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}}}},"balance_of_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"transfer_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"transfer_result":{"fields":{}},"mint_arguments":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_result":{"fields":{}},"burn_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"burn_result":{"fields":{}},"balance_object":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"mana_balance_object":{"fields":{"balance":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"mana":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"last_mana_update":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"burn_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_event":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"transfer_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}}}}}}}}}}');
+module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested":{"token":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/v2/koinos/contracts/token"},"nested":{"name_arguments":{"fields":{}},"name_result":{"fields":{"value":{"type":"string","id":1}}},"symbol_arguments":{"fields":{}},"symbol_result":{"fields":{"value":{"type":"string","id":1}}},"decimals_arguments":{"fields":{}},"decimals_result":{"fields":{"value":{"type":"uint32","id":1}}},"total_supply_arguments":{"fields":{}},"total_supply_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"balance_of_arguments":{"fields":{"owner":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}}}},"balance_of_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"transfer_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}},"memo":{"type":"string","id":4}}},"transfer_result":{"fields":{}},"mint_arguments":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_result":{"fields":{}},"burn_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"burn_result":{"fields":{}},"balance_object":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"burn_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_event":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"transfer_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}}}}}}}}}}');
 
 /***/ })
 

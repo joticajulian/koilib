@@ -5,11 +5,13 @@ import {
   CallContractOperationJson,
   TransactionReceipt,
   TransactionJsonWait,
+  BlockTopology,
 } from "./interface";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { koinos } from "./protoModules/protocol-proto.js";
 import { decodeBase64url, encodeBase64url } from "./utils";
+import { Serializer } from "./Serializer";
 
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 
@@ -32,10 +34,7 @@ export class Provider {
    *
    * @example
    * ```ts
-   * const provider = new Provider([
-   *   "http://45.56.104.152:8080",
-   *   "http://159.203.119.0:8080"
-   * ]);
+   * const provider = new Provider(["https://api.koinos.io"]);
    *
    * provider.onError = (error, node, newNode) => {
    *   console.log(`Error from node ${node}: ${error.message}`);
@@ -219,7 +218,13 @@ export class Provider {
     });
   }
 
-  async getBlocksById(blockIds: string[]): Promise<{
+  async getBlocksById(
+    blockIds: string[],
+    opts?: {
+      returnBlock: boolean;
+      returnReceipt: boolean;
+    }
+  ): Promise<{
     block_items: {
       block_id: string;
       block_height: string;
@@ -228,8 +233,10 @@ export class Provider {
   }> {
     return this.call("block_store.get_blocks_by_id", {
       block_ids: blockIds,
-      return_block: true,
-      return_receipt: false,
+      return_block:
+        opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
+      return_receipt:
+        opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
     });
   }
 
@@ -238,21 +245,13 @@ export class Provider {
    */
   async getHeadInfo(): Promise<{
     head_block_time: string;
-    head_topology: {
-      id: string;
-      height: string;
-      previous: string;
-    };
+    head_topology: BlockTopology;
     head_state_merkle_root: string;
     last_irreversible_block: string;
   }> {
     return this.call<{
       head_block_time: string;
-      head_topology: {
-        id: string;
-        height: string;
-        previous: string;
-      };
+      head_topology: BlockTopology;
       head_state_merkle_root: string;
       last_irreversible_block: string;
     }>("chain.get_head_info", {});
@@ -280,7 +279,11 @@ export class Provider {
   async getBlocks(
     height: number,
     numBlocks = 1,
-    idRef?: string
+    idRef?: string,
+    opts?: {
+      returnBlock: boolean;
+      returnReceipt: boolean;
+    }
   ): Promise<
     {
       block_id: string;
@@ -310,8 +313,10 @@ export class Provider {
         head_block_id: blockIdRef,
         ancestor_start_height: height,
         num_blocks: numBlocks,
-        return_block: true,
-        return_receipt: false,
+        return_block:
+          opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
+        return_receipt:
+          opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
       })
     ).block_items;
   }
@@ -506,6 +511,131 @@ export class Provider {
     logs: string;
   }> {
     return this.call("chain.read_contract", operation);
+  }
+
+  /**
+   * Function to call "chain.get_fork_heads" to get fork heads
+   */
+  async getForkHeads(): Promise<{
+    last_irreversible_block: BlockTopology;
+    fork_heads: BlockTopology[];
+  }> {
+    return this.call("chain.get_fork_heads", {});
+  }
+
+  /**
+   * Funciont to call "chain.get_resource_limits" to get
+   * resource limits
+   */
+  async getResourceLimits(): Promise<{
+    resource_limit_data: {
+      disk_storage_limit: string;
+      disk_storage_cost: string;
+      network_bandwidth_limit: string;
+      network_bandwidth_cost: string;
+      compute_bandwidth_limit: string;
+      compute_bandwidth_cost: string;
+    };
+  }> {
+    return this.call("chain.get_resource_limits", {});
+  }
+
+  /**
+   * Function to call "chain.invoke_system_call" to invoke a system
+   * call.
+   */
+  async invokeSystemCall<T = Record<string, unknown>>(
+    serializer: Serializer,
+    nameOrId: string | number,
+    args: Record<string, unknown>,
+    callerData?: { caller: string; caller_privilege: number }
+  ): Promise<T> {
+    if (!serializer.argumentsTypeName)
+      throw new Error("argumentsTypeName not defined");
+    if (!serializer.returnTypeName)
+      throw new Error("returnTypeName not defined");
+    const argsEncoded = await serializer.serialize(
+      args,
+      serializer.argumentsTypeName
+    );
+    const response = await this.call<{ value: string }>(
+      "chain.invoke_system_call",
+      {
+        ...(typeof nameOrId === "number" && { id: nameOrId }),
+        ...(typeof nameOrId === "string" && { name: nameOrId }),
+        args: encodeBase64url(argsEncoded),
+        caller_data: callerData,
+      }
+    );
+    if (!response || !response.value)
+      throw new Error("no value in the response");
+    const result = await serializer.deserialize(
+      response.value,
+      serializer.returnTypeName
+    );
+    return result as T;
+  }
+
+  async invokeGetContractMetadata(contractId: string) {
+    const serializer = new Serializer(
+      {
+        nested: {
+          get_contract_metadata_arguments: {
+            fields: {
+              contract_id: {
+                type: "bytes",
+                id: 1,
+                options: {
+                  "(koinos.btype)": "CONTRACT_ID",
+                },
+              },
+            },
+          },
+          get_contract_metadata_result: {
+            fields: {
+              value: {
+                type: "contract_metadata_object",
+                id: 1,
+              },
+            },
+          },
+          contract_metadata_object: {
+            fields: {
+              hash: {
+                type: "bytes",
+                id: 1,
+                options: {
+                  "(koinos.btype)": "HEX",
+                },
+              },
+              system: {
+                type: "bool",
+                id: 2,
+              },
+              authorizes_call_contract: {
+                type: "bool",
+                id: 3,
+              },
+              authorizes_transaction_application: {
+                type: "bool",
+                id: 4,
+              },
+              authorizes_upload_contract: {
+                type: "bool",
+                id: 5,
+              },
+            },
+          },
+        },
+      },
+      {
+        argumentsTypeName: "get_contract_metadata_arguments",
+        returnTypeName: "get_contract_metadata_result",
+      }
+    );
+    return this.invokeSystemCall(serializer, "get_contract_metadata", {
+      contract_id: contractId,
+    });
   }
 }
 

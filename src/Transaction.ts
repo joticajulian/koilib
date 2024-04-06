@@ -2,7 +2,7 @@
 import { sha256 } from "@noble/hashes/sha256";
 import { Contract } from "./Contract";
 import { Provider } from "./Provider";
-import { Signer } from "./Signer";
+import { SignerInterface } from "./Signer";
 import {
   Abi,
   OperationJson,
@@ -84,7 +84,7 @@ export class Transaction {
   /**
    * Signer interacting with the smart contracts
    */
-  signer?: Signer;
+  signer?: SignerInterface;
 
   /**
    * Provider to connect with the blockchain
@@ -107,7 +107,7 @@ export class Transaction {
   options: TransactionOptions;
 
   constructor(c?: {
-    signer?: Signer;
+    signer?: SignerInterface;
     provider?: Provider;
     options?: TransactionOptions;
   }) {
@@ -249,7 +249,7 @@ export class Transaction {
       nonce = tx.header.nonce;
     }
 
-    let rcLimit: string;
+    let rcLimit: string | number;
     if (tx.header.rc_limit === undefined) {
       if (!provider)
         throw new Error(
@@ -368,7 +368,10 @@ export class Transaction {
     };
     if (!this.transaction.id) await this.prepare();
 
-    if (this.signer && this.signer.provider) {
+    if (!this.transaction.signatures || !this.transaction.signatures.length) {
+      if (!this.signer) {
+        throw new Error("transaction without signatures and no signer defined");
+      }
       const { transaction: tx, receipt } = await this.signer.sendTransaction(
         this.transaction,
         opts
@@ -379,9 +382,6 @@ export class Transaction {
     }
 
     if (!this.provider) throw new Error("provider not defined");
-    if (!this.transaction.signatures || !this.transaction.signatures.length) {
-      throw new Error("transaction without signatures and no signer defined");
-    }
 
     if (opts.beforeSend) {
       await opts.beforeSend(this.transaction, opts);

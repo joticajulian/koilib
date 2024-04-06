@@ -329,33 +329,33 @@ describe("Signer", () => {
   it("should get private key", () => {
     expect.assertions(18);
     const signer1 = Signer.fromWif(wif);
-    expect(signer1.getPrivateKey("wif")).toBe(wif);
+    expect(signer1.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer1.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer1.getPrivateKey("hex")).toBe(privateKey);
 
     const signer2 = Signer.fromWif(wifCompressed);
-    expect(signer2.getPrivateKey("wif")).toBe(wif);
+    expect(signer2.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer2.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer2.getPrivateKey("hex")).toBe(privateKey);
 
     const signer3 = new Signer({ privateKey });
-    expect(signer3.getPrivateKey("wif")).toBe(wif);
+    expect(signer3.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer3.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer3.getPrivateKey("hex")).toBe(privateKey);
 
     const signer4 = new Signer({ privateKey, compressed: false });
-    expect(signer4.getPrivateKey("wif")).toBe(wif);
+    expect(signer4.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer4.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer4.getPrivateKey("hex")).toBe(privateKey);
 
     const signer5 = Signer.fromSeed(seed);
-    expect(signer5.getPrivateKey("wif")).toBe(wif);
+    expect(signer5.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer5.getPrivateKey("wif", true)).toBe(wifCompressed);
     expect(signer5.getPrivateKey("hex")).toBe(privateKey);
 
     const signer6 = Signer.fromSeed(seed, false);
     expect(signer6.getPrivateKey("wif", true)).toBe(wifCompressed);
-    expect(signer6.getPrivateKey("wif")).toBe(wif);
+    expect(signer6.getPrivateKey("wif")).toBe(wifCompressed);
     expect(signer6.getPrivateKey("hex")).toBe(privateKey);
   });
 
@@ -592,6 +592,33 @@ describe("Serializer", () => {
     const deser = await serializer1.deserialize(ser1);
     expect(deser).toStrictEqual(value);
     expect(encodeBase64url(ser1)).toBe(encodeBase64url(ser2));
+  });
+
+  it("should accept number or string for uint64", async () => {
+    expect.assertions(1);
+    const serializer1 = new Serializer({
+      nested: {
+        my_data: {
+          fields: {
+            val1: {
+              type: "uint64",
+              id: 1,
+              options: {
+                jstype: "JS_STRING",
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // max safe integer for Javascript: 2^53 - 1
+    const valueAsNumber = { val1: 9007199254740991 };
+    const valueAsString = { val1: "9007199254740991" };
+
+    const serN = await serializer1.serialize(valueAsNumber, "my_data");
+    const serS = await serializer1.serialize(valueAsString, "my_data");
+    expect(toHexString(serN)).toStrictEqual(toHexString(serS));
   });
 
   it("should support descriptor types", async () => {

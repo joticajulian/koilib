@@ -30,12 +30,10 @@ import { koinos } from "./protoModules/protocol-proto.js";
 export interface SignerInterface {
   provider?: Provider;
   getAddress: (compressed?: boolean) => string;
-  getPrivateKey: (format: "wif" | "hex", compressed?: boolean) => string;
   signHash: (hash: Uint8Array) => Promise<Uint8Array>;
   signMessage: (message: string | Uint8Array) => Promise<Uint8Array>;
 
   // Transaction
-  prepareTransaction: (tx: TransactionJson) => Promise<TransactionJson>;
   signTransaction: (
     transaction: TransactionJson | TransactionJsonWait,
     abis?: Record<string, Abi>
@@ -69,54 +67,6 @@ const btypeTransactionHeader: TypeField["subtypes"] = {
   operation_merkle_root: { type: "bytes" },
   payer: { type: "bytes", btype: "ADDRESS" },
   payee: { type: "bytes", btype: "ADDRESS" },
-};
-
-const btypesOperation: TypeField["subtypes"] = {
-  upload_contract: {
-    type: "object",
-    subtypes: {
-      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-      bytecode: { type: "bytes" },
-      abi: { type: "string" },
-      authorizes_call_contract: { type: "bool" },
-      authorizes_transaction_application: { type: "bool" },
-      authorizes_upload_contract: { type: "bool" },
-    },
-  },
-  call_contract: {
-    type: "object",
-    subtypes: {
-      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-      entry_point: { type: "uint32" },
-      args: { type: "bytes" },
-    },
-  },
-  set_system_call: {
-    type: "object",
-    subtypes: {
-      call_id: { type: "uint32" },
-      target: {
-        type: "object",
-        subtypes: {
-          thunk_id: { type: "uint32" },
-          system_call_bundle: {
-            type: "object",
-            subtypes: {
-              contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-              entry_point: { type: "uint32" },
-            },
-          },
-        },
-      },
-    },
-  },
-  set_system_contract: {
-    type: "object",
-    subtypes: {
-      contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-      system_contract: { type: "bool" },
-    },
-  },
 };
 
 /**
@@ -315,7 +265,7 @@ export class Signer implements SignerInterface {
    * // 5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd
    * ```
    */
-  getPrivateKey(format: "wif" | "hex" = "hex", compressed = false): string {
+  getPrivateKey(format: "wif" | "hex" = "hex", compressed = true): string {
     let stringPrivateKey: string;
     if (this.privateKey instanceof Uint8Array) {
       stringPrivateKey = toHexString(this.privateKey);
@@ -635,105 +585,6 @@ export class Signer implements SignerInterface {
     return publicKeys.map((publicKey) =>
       bitcoinAddress(toUint8Array(publicKey))
     );
-  }
-
-  /**
-   * Function to prepare a transaction
-   * @deprecated - Use [[Transaction.prepareTransaction]] instead.
-   * @param tx - Do not set the nonce to get it from the blockchain
-   * using the provider. The rc_limit is 1e8 by default.
-   * @returns A prepared transaction.
-   */
-  async prepareTransaction(tx: TransactionJson): Promise<TransactionJson> {
-    if (!tx.header) {
-      tx.header = {};
-    }
-
-    const payer = tx.header.payer ?? this.address;
-    const { payee } = tx.header;
-
-    let nonce;
-    if (tx.header.nonce === undefined) {
-      if (!this.provider)
-        throw new Error(
-          "Cannot get the nonce because provider is undefined. To skip this call set a nonce in the transaction header"
-        );
-      nonce = await this.provider.getNextNonce(payee || payer);
-    } else {
-      nonce = tx.header.nonce;
-    }
-
-    let rcLimit;
-    if (tx.header.rc_limit === undefined) {
-      if (!this.provider)
-        throw new Error(
-          "Cannot get the rc_limit because provider is undefined. To skip this call set a rc_limit in the transaction header"
-        );
-      rcLimit = await this.provider.getAccountRc(payer);
-    } else {
-      rcLimit = tx.header.rc_limit;
-    }
-
-    let chainId = tx.header.chain_id || this.chainId;
-    if (!chainId) {
-      if (!this.provider)
-        throw new Error(
-          "Cannot get the chain_id because provider is undefined. To skip this call set a chain_id in the Signer"
-        );
-      chainId = await this.provider.getChainId();
-      this.chainId = chainId;
-    }
-
-    const operationsHashes: Uint8Array[] = [];
-
-    if (tx.operations) {
-      for (let index = 0; index < tx.operations?.length; index += 1) {
-        const operationDecoded = btypeDecode(
-          tx.operations[index],
-          btypesOperation!,
-          false
-        );
-        const message = koinos.protocol.operation.create(operationDecoded);
-        const operationEncoded = koinos.protocol.operation
-          .encode(message)
-          .finish() as Uint8Array;
-        operationsHashes.push(sha256(operationEncoded));
-      }
-    }
-    const operationMerkleRoot = encodeBase64url(
-      new Uint8Array([
-        // multihash sha256: 18, 32
-        18,
-        32,
-        ...calculateMerkleRoot(operationsHashes),
-      ])
-    );
-
-    tx.header = {
-      chain_id: chainId,
-      rc_limit: rcLimit,
-      nonce,
-      operation_merkle_root: operationMerkleRoot,
-      payer,
-      ...(payee && { payee }),
-      // TODO: Option to resolve names (payer, payee)
-    };
-
-    const headerDecoded = btypeDecode(
-      tx.header,
-      btypeTransactionHeader!,
-      false
-    );
-    const message = koinos.protocol.transaction_header.create(headerDecoded);
-    const headerBytes = koinos.protocol.transaction_header
-      .encode(message)
-      .finish() as Uint8Array;
-
-    const hash = sha256(headerBytes);
-
-    // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
-    tx.id = `0x1220${toHexString(hash)}`;
-    return tx;
   }
 
   /**

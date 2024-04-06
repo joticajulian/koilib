@@ -308,7 +308,7 @@ export interface TransactionOptions extends SendTransactionOptions {
    * is not set it will be taken by querying the
    * actual mana of the payer
    */
-  rcLimit?: string;
+  rcLimit?: string | number;
 
   /**
    * Transaction nonce
@@ -662,7 +662,7 @@ export interface TransactionHeaderJson {
   /**
    * Resource credits limit
    */
-  rc_limit?: string;
+  rc_limit?: string | number;
 
   /**
    * Account nonce
@@ -735,6 +735,12 @@ export interface BlockJson {
   [x: string]: unknown;
 }
 
+export interface BlockTopology {
+  id: string;
+  height: string;
+  previous: string;
+}
+
 export interface ValueType {
   uint64_value?: string;
   [x: string]: unknown;
@@ -752,6 +758,16 @@ export interface DecodedEventData extends EventData {
   args: Record<string, unknown>;
 }
 
+export interface StateDeltaEntry {
+  object_space: {
+    system: boolean;
+    zone: string;
+    id: number;
+  };
+  key: string;
+  value: string;
+}
+
 export interface TransactionReceipt {
   id: string;
   payer: string;
@@ -763,5 +779,6 @@ export interface TransactionReceipt {
   compute_bandwidth_used: string;
   reverted: boolean;
   events: EventData[];
+  state_delta_entries: StateDeltaEntry[];
   logs: string[];
 }
