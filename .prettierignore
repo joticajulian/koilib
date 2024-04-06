@@ -3,3 +3,4 @@ lib
 dist
 koinos-proto
 local
+src/protoModules

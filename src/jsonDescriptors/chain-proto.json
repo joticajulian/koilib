@@ -100,10 +100,7 @@
             "system_call_target": {
               "oneofs": {
                 "target": {
-                  "oneof": [
-                    "thunk_id",
-                    "system_call_bundle"
-                  ]
+                  "oneof": ["thunk_id", "system_call_bundle"]
                 }
               },
               "fields": {
@@ -524,9 +521,7 @@
             "state_delta_entry": {
               "oneofs": {
                 "_value": {
-                  "oneof": [
-                    "value"
-                  ]
+                  "oneof": ["value"]
                 }
               },
               "fields": {
@@ -565,10 +560,7 @@
             "result": {
               "oneofs": {
                 "value": {
-                  "oneof": [
-                    "object",
-                    "error"
-                  ]
+                  "oneof": ["object", "error"]
                 }
               },
               "fields": {
