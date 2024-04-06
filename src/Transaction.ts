@@ -368,7 +368,10 @@ export class Transaction {
     };
     if (!this.transaction.id) await this.prepare();
 
-    if (this.signer && this.signer.provider) {
+    if (!this.transaction.signatures || !this.transaction.signatures.length) {
+      if (!this.signer) {
+        throw new Error("transaction without signatures and no signer defined");
+      }
       const { transaction: tx, receipt } = await this.signer.sendTransaction(
         this.transaction,
         opts
@@ -379,9 +382,6 @@ export class Transaction {
     }
 
     if (!this.provider) throw new Error("provider not defined");
-    if (!this.transaction.signatures || !this.transaction.signatures.length) {
-      throw new Error("transaction without signatures and no signer defined");
-    }
 
     if (opts.beforeSend) {
       await opts.beforeSend(this.transaction, opts);
