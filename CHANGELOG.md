@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v5.7.0](https://github.com/joticajulian/koilib/releases/tag/v5.7.0) (2024-04-06)
+
+### 🚀 Features
+
+- Updates in Provider Class:
+  - new invokeSystemCall function
+  - new getForkHeads function
+  - new getResourceLimits function
+  - new invokeGetContractMetadata
+- Updates in SignerInferface:
+  - getPrivateKey function was removed
+  - prepareTransaction function was removed
+- Use SignerInterface instead of Signer in args
+- Accept string or number in rclimit
+- Update protos
+
+### 🐛 Bug Fixes
+
+- Contract class - do not require provider when using onlyOperation
+- Fix docs for decode/encode operation
+- Update docs provider
+- getPrivateKey with compressed true by default
+- Fix send function in transaction class: Use signer only when it is not signed
+- Fix export of interfaces
+
 ## [v5.6.1](https://github.com/joticajulian/koilib/releases/tag/v5.6.1) (2023-07-29)
 
 ### 🚀 Features

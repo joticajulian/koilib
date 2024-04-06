@@ -153,9 +153,9 @@ function bool(b) {
 exports.bool = bool;
 function bytes(b, ...lengths) {
     if (!(b instanceof Uint8Array))
-        throw new Error('Expected Uint8Array');
+        throw new TypeError('Expected Uint8Array');
     if (lengths.length > 0 && !lengths.includes(b.length))
-        throw new Error(`Expected Uint8Array of length ${lengths}, not of length=${b.length}`);
+        throw new TypeError(`Expected Uint8Array of length ${lengths}, not of length=${b.length}`);
 }
 exports.bytes = bytes;
 function hash(hash) {
@@ -189,7 +189,7 @@ const assert = {
     output,
 };
 exports["default"] = assert;
-//# sourceMappingURL=_assert.js.map
+
 
 /***/ }),
 
@@ -282,16 +282,7 @@ class SHA2 extends utils_js_1.Hash {
         setBigUint64(view, blockLen - 8, BigInt(this.length * 8), isLE);
         this.process(view, 0);
         const oview = (0, utils_js_1.createView)(out);
-        const len = this.outputLen;
-        // NOTE: we do division by 4 later, which should be fused in single op with modulo by JIT
-        if (len % 4)
-            throw new Error('_sha2: outputLen should be aligned to 32bit');
-        const outLen = len / 4;
-        const state = this.get();
-        if (outLen > state.length)
-            throw new Error('_sha2: outputLen bigger than state');
-        for (let i = 0; i < outLen; i++)
-            oview.setUint32(4 * i, state[i], isLE);
+        this.get().forEach((v, i) => oview.setUint32(4 * i, v, isLE));
     }
     digest() {
         const { buffer, outputLen } = this;
@@ -314,19 +305,22 @@ class SHA2 extends utils_js_1.Hash {
     }
 }
 exports.SHA2 = SHA2;
-//# sourceMappingURL=_sha2.js.map
+
 
 /***/ }),
 
-/***/ 1945:
+/***/ 4421:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.crypto = void 0;
-exports.crypto = typeof globalThis === 'object' && 'crypto' in globalThis ? globalThis.crypto : undefined;
-//# sourceMappingURL=crypto.js.map
+exports.crypto = {
+    node: undefined,
+    web: typeof self === 'object' && 'crypto' in self ? self.crypto : undefined,
+};
+
 
 /***/ }),
 
@@ -437,7 +431,7 @@ exports.RIPEMD160 = RIPEMD160;
  * @param message - msg that would be hashed
  */
 exports.ripemd160 = (0, utils_js_1.wrapConstructor)(() => new RIPEMD160());
-//# sourceMappingURL=ripemd160.js.map
+
 
 /***/ }),
 
@@ -447,7 +441,7 @@ exports.ripemd160 = (0, utils_js_1.wrapConstructor)(() => new RIPEMD160());
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.sha224 = exports.sha256 = void 0;
+exports.sha256 = void 0;
 const _sha2_js_1 = __webpack_require__(7505);
 const utils_js_1 = __webpack_require__(8089);
 // Choice: a ? b : c
@@ -550,28 +544,12 @@ class SHA256 extends _sha2_js_1.SHA2 {
         this.buffer.fill(0);
     }
 }
-// Constants from https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
-class SHA224 extends SHA256 {
-    constructor() {
-        super();
-        this.A = 0xc1059ed8 | 0;
-        this.B = 0x367cd507 | 0;
-        this.C = 0x3070dd17 | 0;
-        this.D = 0xf70e5939 | 0;
-        this.E = 0xffc00b31 | 0;
-        this.F = 0x68581511 | 0;
-        this.G = 0x64f98fa7 | 0;
-        this.H = 0xbefa4fa4 | 0;
-        this.outputLen = 28;
-    }
-}
 /**
  * SHA2-256 hash function
  * @param message - data that would be hashed
  */
 exports.sha256 = (0, utils_js_1.wrapConstructor)(() => new SHA256());
-exports.sha224 = (0, utils_js_1.wrapConstructor)(() => new SHA224());
-//# sourceMappingURL=sha256.js.map
+
 
 /***/ }),
 
@@ -582,15 +560,10 @@ exports.sha224 = (0, utils_js_1.wrapConstructor)(() => new SHA224());
 
 /*! noble-hashes - MIT License (c) 2022 Paul Miller (paulmillr.com) */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.randomBytes = exports.wrapXOFConstructorWithOpts = exports.wrapConstructorWithOpts = exports.wrapConstructor = exports.checkOpts = exports.Hash = exports.concatBytes = exports.toBytes = exports.utf8ToBytes = exports.asyncLoop = exports.nextTick = exports.hexToBytes = exports.bytesToHex = exports.isLE = exports.rotr = exports.createView = exports.u32 = exports.u8 = void 0;
-// We use WebCrypto aka globalThis.crypto, which exists in browsers and node.js 16+.
-// node.js versions earlier than v19 don't declare it in global scope.
-// For node.js, package.json#exports field mapping rewrites import
-// from `crypto` to `cryptoNode`, which imports native module.
-// Makes the utils un-importable in browsers without a bundler.
-// Once node.js 18 is deprecated, we can just drop the import.
-const crypto_1 = __webpack_require__(1945);
-const u8a = (a) => a instanceof Uint8Array;
+exports.randomBytes = exports.wrapConstructorWithOpts = exports.wrapConstructor = exports.checkOpts = exports.Hash = exports.concatBytes = exports.toBytes = exports.utf8ToBytes = exports.asyncLoop = exports.nextTick = exports.hexToBytes = exports.bytesToHex = exports.isLE = exports.rotr = exports.createView = exports.u32 = exports.u8 = void 0;
+// The import here is via the package name. This is to ensure
+// that exports mapping/resolution does fall into place.
+const crypto_1 = __webpack_require__(4421);
 // Cast array to different type
 const u8 = (arr) => new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
 exports.u8 = u8;
@@ -602,36 +575,36 @@ exports.createView = createView;
 // The rotate right (circular right shift) operation for uint32
 const rotr = (word, shift) => (word << (32 - shift)) | (word >>> shift);
 exports.rotr = rotr;
-// big-endian hardware is rare. Just in case someone still decides to run hashes:
-// early-throw an error because we don't support BE yet.
 exports.isLE = new Uint8Array(new Uint32Array([0x11223344]).buffer)[0] === 0x44;
+// There is almost no big endian hardware, but js typed arrays uses platform specific endianness.
+// So, just to be sure not to corrupt anything.
 if (!exports.isLE)
     throw new Error('Non little-endian hardware is not supported');
 const hexes = Array.from({ length: 256 }, (v, i) => i.toString(16).padStart(2, '0'));
 /**
- * @example bytesToHex(Uint8Array.from([0xca, 0xfe, 0x01, 0x23])) // 'cafe0123'
+ * @example bytesToHex(Uint8Array.from([0xde, 0xad, 0xbe, 0xef]))
  */
-function bytesToHex(bytes) {
-    if (!u8a(bytes))
-        throw new Error('Uint8Array expected');
+function bytesToHex(uint8a) {
     // pre-caching improves the speed 6x
+    if (!(uint8a instanceof Uint8Array))
+        throw new Error('Uint8Array expected');
     let hex = '';
-    for (let i = 0; i < bytes.length; i++) {
-        hex += hexes[bytes[i]];
+    for (let i = 0; i < uint8a.length; i++) {
+        hex += hexes[uint8a[i]];
     }
     return hex;
 }
 exports.bytesToHex = bytesToHex;
 /**
- * @example hexToBytes('cafe0123') // Uint8Array.from([0xca, 0xfe, 0x01, 0x23])
+ * @example hexToBytes('deadbeef')
  */
 function hexToBytes(hex) {
-    if (typeof hex !== 'string')
-        throw new Error('hex string expected, got ' + typeof hex);
-    const len = hex.length;
-    if (len % 2)
-        throw new Error('padded hex string expected, got unpadded hex of length ' + len);
-    const array = new Uint8Array(len / 2);
+    if (typeof hex !== 'string') {
+        throw new TypeError('hexToBytes: expected string, got ' + typeof hex);
+    }
+    if (hex.length % 2)
+        throw new Error('hexToBytes: received invalid unpadded hex');
+    const array = new Uint8Array(hex.length / 2);
     for (let i = 0; i < array.length; i++) {
         const j = i * 2;
         const hexByte = hex.slice(j, j + 2);
@@ -643,9 +616,8 @@ function hexToBytes(hex) {
     return array;
 }
 exports.hexToBytes = hexToBytes;
-// There is no setImmediate in browser and setTimeout is slow.
-// call of async fn will return Promise, which will be fullfiled only on
-// next scheduler queue processing step and this is exactly what we need.
+// There is no setImmediate in browser and setTimeout is slow. However, call to async function will return Promise
+// which will be fullfiled only on next scheduler queue processing step and this is exactly what we need.
 const nextTick = async () => { };
 exports.nextTick = nextTick;
 // Returns control to thread each 'tick' ms to avoid blocking
@@ -662,41 +634,38 @@ async function asyncLoop(iters, tick, cb) {
     }
 }
 exports.asyncLoop = asyncLoop;
-/**
- * @example utf8ToBytes('abc') // new Uint8Array([97, 98, 99])
- */
 function utf8ToBytes(str) {
-    if (typeof str !== 'string')
-        throw new Error(`utf8ToBytes expected string, got ${typeof str}`);
-    return new Uint8Array(new TextEncoder().encode(str)); // https://bugzil.la/1681809
+    if (typeof str !== 'string') {
+        throw new TypeError(`utf8ToBytes expected string, got ${typeof str}`);
+    }
+    return new TextEncoder().encode(str);
 }
 exports.utf8ToBytes = utf8ToBytes;
-/**
- * Normalizes (non-hex) string or Uint8Array to Uint8Array.
- * Warning: when Uint8Array is passed, it would NOT get copied.
- * Keep in mind for future mutable operations.
- */
 function toBytes(data) {
     if (typeof data === 'string')
         data = utf8ToBytes(data);
-    if (!u8a(data))
-        throw new Error(`expected Uint8Array, got ${typeof data}`);
+    if (!(data instanceof Uint8Array))
+        throw new TypeError(`Expected input type is Uint8Array (got ${typeof data})`);
     return data;
 }
 exports.toBytes = toBytes;
 /**
- * Copies several Uint8Arrays into one.
+ * Concats Uint8Array-s into one; like `Buffer.concat([buf1, buf2])`
+ * @example concatBytes(buf1, buf2)
  */
 function concatBytes(...arrays) {
-    const r = new Uint8Array(arrays.reduce((sum, a) => sum + a.length, 0));
-    let pad = 0; // walk through each item, ensure they have proper type
-    arrays.forEach((a) => {
-        if (!u8a(a))
-            throw new Error('Uint8Array expected');
-        r.set(a, pad);
-        pad += a.length;
-    });
-    return r;
+    if (!arrays.every((a) => a instanceof Uint8Array))
+        throw new Error('Uint8Array list expected');
+    if (arrays.length === 1)
+        return arrays[0];
+    const length = arrays.reduce((a, arr) => a + arr.length, 0);
+    const result = new Uint8Array(length);
+    for (let i = 0, pad = 0; i < arrays.length; i++) {
+        const arr = arrays[i];
+        result.set(arr, pad);
+        pad += arr.length;
+    }
+    return result;
 }
 exports.concatBytes = concatBytes;
 // For runtime check if class implements interface
@@ -711,17 +680,17 @@ exports.Hash = Hash;
 const isPlainObject = (obj) => Object.prototype.toString.call(obj) === '[object Object]' && obj.constructor === Object;
 function checkOpts(defaults, opts) {
     if (opts !== undefined && (typeof opts !== 'object' || !isPlainObject(opts)))
-        throw new Error('Options should be object or undefined');
+        throw new TypeError('Options should be object or undefined');
     const merged = Object.assign(defaults, opts);
     return merged;
 }
 exports.checkOpts = checkOpts;
-function wrapConstructor(hashCons) {
-    const hashC = (msg) => hashCons().update(toBytes(msg)).digest();
-    const tmp = hashCons();
+function wrapConstructor(hashConstructor) {
+    const hashC = (message) => hashConstructor().update(toBytes(message)).digest();
+    const tmp = hashConstructor();
     hashC.outputLen = tmp.outputLen;
     hashC.blockLen = tmp.blockLen;
-    hashC.create = () => hashCons();
+    hashC.create = () => hashConstructor();
     return hashC;
 }
 exports.wrapConstructor = wrapConstructor;
@@ -734,26 +703,22 @@ function wrapConstructorWithOpts(hashCons) {
     return hashC;
 }
 exports.wrapConstructorWithOpts = wrapConstructorWithOpts;
-function wrapXOFConstructorWithOpts(hashCons) {
-    const hashC = (msg, opts) => hashCons(opts).update(toBytes(msg)).digest();
-    const tmp = hashCons({});
-    hashC.outputLen = tmp.outputLen;
-    hashC.blockLen = tmp.blockLen;
-    hashC.create = (opts) => hashCons(opts);
-    return hashC;
-}
-exports.wrapXOFConstructorWithOpts = wrapXOFConstructorWithOpts;
 /**
- * Secure PRNG. Uses `crypto.getRandomValues`, which defers to OS.
+ * Secure PRNG
  */
 function randomBytes(bytesLength = 32) {
-    if (crypto_1.crypto && typeof crypto_1.crypto.getRandomValues === 'function') {
-        return crypto_1.crypto.getRandomValues(new Uint8Array(bytesLength));
+    if (crypto_1.crypto.web) {
+        return crypto_1.crypto.web.getRandomValues(new Uint8Array(bytesLength));
     }
-    throw new Error('crypto.getRandomValues must be defined');
+    else if (crypto_1.crypto.node) {
+        return new Uint8Array(crypto_1.crypto.node.randomBytes(bytesLength).buffer);
+    }
+    else {
+        throw new Error("The environment doesn't have randomBytes function");
+    }
 }
 exports.randomBytes = randomBytes;
-//# sourceMappingURL=utils.js.map
+
 
 /***/ }),
 
@@ -771,64 +736,25 @@ const _1n = BigInt(1);
 const _2n = BigInt(2);
 const _3n = BigInt(3);
 const _8n = BigInt(8);
-const CURVE = Object.freeze({
+const POW_2_256 = _2n ** BigInt(256);
+const CURVE = {
     a: _0n,
     b: BigInt(7),
-    P: BigInt('0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f'),
-    n: BigInt('0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141'),
+    P: POW_2_256 - _2n ** BigInt(32) - BigInt(977),
+    n: POW_2_256 - BigInt('432420386565659656852420866394968145599'),
     h: _1n,
     Gx: BigInt('55066263022277343669578718895168534326250603453777594175500187360389116729240'),
     Gy: BigInt('32670510020758816978083085130507043184471273380659243275938904335757337482424'),
     beta: BigInt('0x7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee'),
-});
-exports.CURVE = CURVE;
-const divNearest = (a, b) => (a + b / _2n) / b;
-const endo = {
-    beta: BigInt('0x7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee'),
-    splitScalar(k) {
-        const { n } = CURVE;
-        const a1 = BigInt('0x3086d221a7d46bcde86c90e49284eb15');
-        const b1 = -_1n * BigInt('0xe4437ed6010e88286f547fa90abfe4c3');
-        const a2 = BigInt('0x114ca50f7a8e2f3f657c1108d9d44cfd8');
-        const b2 = a1;
-        const POW_2_128 = BigInt('0x100000000000000000000000000000000');
-        const c1 = divNearest(b2 * k, n);
-        const c2 = divNearest(-b1 * k, n);
-        let k1 = mod(k - c1 * a1 - c2 * a2, n);
-        let k2 = mod(-c1 * b1 - c2 * b2, n);
-        const k1neg = k1 > POW_2_128;
-        const k2neg = k2 > POW_2_128;
-        if (k1neg)
-            k1 = n - k1;
-        if (k2neg)
-            k2 = n - k2;
-        if (k1 > POW_2_128 || k2 > POW_2_128) {
-            throw new Error('splitScalarEndo: Endomorphism failed, k=' + k);
-        }
-        return { k1neg, k1, k2neg, k2 };
-    },
 };
-const fieldLen = 32;
-const groupLen = 32;
-const hashLen = 32;
-const compressedLen = fieldLen + 1;
-const uncompressedLen = 2 * fieldLen + 1;
-function weierstrass(x) {
+exports.CURVE = CURVE;
+function weistrass(x) {
     const { a, b } = CURVE;
     const x2 = mod(x * x);
     const x3 = mod(x2 * x);
     return mod(x3 + a * x + b);
 }
 const USE_ENDOMORPHISM = CURVE.a === _0n;
-class ShaError extends Error {
-    constructor(message) {
-        super(message);
-    }
-}
-function assertJacPoint(other) {
-    if (!(other instanceof JacobianPoint))
-        throw new TypeError('JacobianPoint expected');
-}
 class JacobianPoint {
     constructor(x, y, z) {
         this.x = x;
@@ -839,8 +765,6 @@ class JacobianPoint {
         if (!(p instanceof Point)) {
             throw new TypeError('JacobianPoint#fromAffine: expected Point');
         }
-        if (p.equals(Point.ZERO))
-            return JacobianPoint.ZERO;
         return new JacobianPoint(p.x, p.y, _1n);
     }
     static toAffineBatch(points) {
@@ -851,11 +775,12 @@ class JacobianPoint {
         return JacobianPoint.toAffineBatch(points).map(JacobianPoint.fromAffine);
     }
     equals(other) {
-        assertJacPoint(other);
+        if (!(other instanceof JacobianPoint))
+            throw new TypeError('JacobianPoint expected');
         const { x: X1, y: Y1, z: Z1 } = this;
         const { x: X2, y: Y2, z: Z2 } = other;
-        const Z1Z1 = mod(Z1 * Z1);
-        const Z2Z2 = mod(Z2 * Z2);
+        const Z1Z1 = mod(Z1 ** _2n);
+        const Z2Z2 = mod(Z2 ** _2n);
         const U1 = mod(X1 * Z2Z2);
         const U2 = mod(X2 * Z1Z1);
         const S1 = mod(mod(Y1 * Z2) * Z2Z2);
@@ -867,28 +792,28 @@ class JacobianPoint {
     }
     double() {
         const { x: X1, y: Y1, z: Z1 } = this;
-        const A = mod(X1 * X1);
-        const B = mod(Y1 * Y1);
-        const C = mod(B * B);
-        const x1b = X1 + B;
-        const D = mod(_2n * (mod(x1b * x1b) - A - C));
+        const A = mod(X1 ** _2n);
+        const B = mod(Y1 ** _2n);
+        const C = mod(B ** _2n);
+        const D = mod(_2n * (mod((X1 + B) ** _2n) - A - C));
         const E = mod(_3n * A);
-        const F = mod(E * E);
+        const F = mod(E ** _2n);
         const X3 = mod(F - _2n * D);
         const Y3 = mod(E * (D - X3) - _8n * C);
         const Z3 = mod(_2n * Y1 * Z1);
         return new JacobianPoint(X3, Y3, Z3);
     }
     add(other) {
-        assertJacPoint(other);
+        if (!(other instanceof JacobianPoint))
+            throw new TypeError('JacobianPoint expected');
         const { x: X1, y: Y1, z: Z1 } = this;
         const { x: X2, y: Y2, z: Z2 } = other;
         if (X2 === _0n || Y2 === _0n)
             return this;
         if (X1 === _0n || Y1 === _0n)
             return other;
-        const Z1Z1 = mod(Z1 * Z1);
-        const Z2Z2 = mod(Z2 * Z2);
+        const Z1Z1 = mod(Z1 ** _2n);
+        const Z2Z2 = mod(Z2 ** _2n);
         const U1 = mod(X1 * Z2Z2);
         const U2 = mod(X2 * Z1Z1);
         const S1 = mod(mod(Y1 * Z2) * Z2Z2);
@@ -903,10 +828,10 @@ class JacobianPoint {
                 return JacobianPoint.ZERO;
             }
         }
-        const HH = mod(H * H);
+        const HH = mod(H ** _2n);
         const HHH = mod(H * HH);
         const V = mod(U1 * HH);
-        const X3 = mod(r * r - HHH - _2n * V);
+        const X3 = mod(r ** _2n - HHH - _2n * V);
         const Y3 = mod(r * (V - X3) - S1 * HHH);
         const Z3 = mod(Z1 * Z2 * H);
         return new JacobianPoint(X3, Y3, Z3);
@@ -932,7 +857,7 @@ class JacobianPoint {
             }
             return p;
         }
-        let { k1neg, k1, k2neg, k2 } = endo.splitScalar(n);
+        let { k1neg, k1, k2neg, k2 } = splitScalarEndo(n);
         let k1p = P0;
         let k2p = P0;
         let d = this;
@@ -949,7 +874,7 @@ class JacobianPoint {
             k1p = k1p.negate();
         if (k2neg)
             k2p = k2p.negate();
-        k2p = new JacobianPoint(mod(k2p.x * endo.beta), k2p.y, k2p.z);
+        k2p = new JacobianPoint(mod(k2p.x * CURVE.beta), k2p.y, k2p.z);
         return k1p.add(k2p);
     }
     precomputeWindow(W) {
@@ -984,7 +909,7 @@ class JacobianPoint {
             }
         }
         let p = JacobianPoint.ZERO;
-        let f = JacobianPoint.BASE;
+        let f = JacobianPoint.ZERO;
         const windows = 1 + (USE_ENDOMORPHISM ? 128 / W : 256 / W);
         const windowSize = 2 ** (W - 1);
         const mask = BigInt(2 ** W - 1);
@@ -998,15 +923,17 @@ class JacobianPoint {
                 wbits -= maxNumber;
                 n += _1n;
             }
-            const offset1 = offset;
-            const offset2 = offset + Math.abs(wbits) - 1;
-            const cond1 = window % 2 !== 0;
-            const cond2 = wbits < 0;
             if (wbits === 0) {
-                f = f.add(constTimeNegate(cond1, precomputes[offset1]));
+                let pr = precomputes[offset];
+                if (window % 2)
+                    pr = pr.negate();
+                f = f.add(pr);
             }
             else {
-                p = p.add(constTimeNegate(cond2, precomputes[offset2]));
+                let cached = precomputes[offset + Math.abs(wbits) - 1];
+                if (wbits < 0)
+                    cached = cached.negate();
+                p = p.add(cached);
             }
         }
         return { p, f };
@@ -1016,12 +943,14 @@ class JacobianPoint {
         let point;
         let fake;
         if (USE_ENDOMORPHISM) {
-            const { k1neg, k1, k2neg, k2 } = endo.splitScalar(n);
+            const { k1neg, k1, k2neg, k2 } = splitScalarEndo(n);
             let { p: k1p, f: f1p } = this.wNAF(k1, affinePoint);
             let { p: k2p, f: f2p } = this.wNAF(k2, affinePoint);
-            k1p = constTimeNegate(k1neg, k1p);
-            k2p = constTimeNegate(k2neg, k2p);
-            k2p = new JacobianPoint(mod(k2p.x * endo.beta), k2p.y, k2p.z);
+            if (k1neg)
+                k1p = k1p.negate();
+            if (k2neg)
+                k2p = k2p.negate();
+            k2p = new JacobianPoint(mod(k2p.x * CURVE.beta), k2p.y, k2p.z);
             point = k1p.add(k2p);
             fake = f1p.add(f2p);
         }
@@ -1032,19 +961,14 @@ class JacobianPoint {
         }
         return JacobianPoint.normalizeZ([point, fake])[0];
     }
-    toAffine(invZ) {
+    toAffine(invZ = invert(this.z)) {
         const { x, y, z } = this;
-        const is0 = this.equals(JacobianPoint.ZERO);
-        if (invZ == null)
-            invZ = is0 ? _8n : invert(z);
         const iz1 = invZ;
         const iz2 = mod(iz1 * iz1);
         const iz3 = mod(iz2 * iz1);
         const ax = mod(x * iz2);
         const ay = mod(y * iz3);
         const zz = mod(z * iz1);
-        if (is0)
-            return Point.ZERO;
         if (zz !== _1n)
             throw new Error('invZ was invalid');
         return new Point(ax, ay);
@@ -1052,10 +976,6 @@ class JacobianPoint {
 }
 JacobianPoint.BASE = new JacobianPoint(CURVE.Gx, CURVE.Gy, _1n);
 JacobianPoint.ZERO = new JacobianPoint(_0n, _1n, _0n);
-function constTimeNegate(condition, item) {
-    const neg = item.negate();
-    return condition ? neg : item;
-}
 const pointPrecomputes = new WeakMap();
 class Point {
     constructor(x, y) {
@@ -1066,15 +986,12 @@ class Point {
         this._WINDOW_SIZE = windowSize;
         pointPrecomputes.delete(this);
     }
-    hasEvenY() {
-        return this.y % _2n === _0n;
-    }
     static fromCompressedHex(bytes) {
         const isShort = bytes.length === 32;
         const x = bytesToNumber(isShort ? bytes : bytes.subarray(1));
         if (!isValidFieldElement(x))
             throw new Error('Point is not on curve');
-        const y2 = weierstrass(x);
+        const y2 = weistrass(x);
         let y = sqrtMod(y2);
         const isYOdd = (y & _1n) === _1n;
         if (isShort) {
@@ -1091,8 +1008,8 @@ class Point {
         return point;
     }
     static fromUncompressedHex(bytes) {
-        const x = bytesToNumber(bytes.subarray(1, fieldLen + 1));
-        const y = bytesToNumber(bytes.subarray(fieldLen + 1, fieldLen * 2 + 1));
+        const x = bytesToNumber(bytes.subarray(1, 33));
+        const y = bytesToNumber(bytes.subarray(33, 65));
         const point = new Point(x, y);
         point.assertValidity();
         return point;
@@ -1101,30 +1018,29 @@ class Point {
         const bytes = ensureBytes(hex);
         const len = bytes.length;
         const header = bytes[0];
-        if (len === fieldLen)
-            return this.fromCompressedHex(bytes);
-        if (len === compressedLen && (header === 0x02 || header === 0x03)) {
+        if (len === 32 || (len === 33 && (header === 0x02 || header === 0x03))) {
             return this.fromCompressedHex(bytes);
         }
-        if (len === uncompressedLen && header === 0x04)
+        if (len === 65 && header === 0x04)
             return this.fromUncompressedHex(bytes);
-        throw new Error(`Point.fromHex: received invalid point. Expected 32-${compressedLen} compressed bytes or ${uncompressedLen} uncompressed bytes, not ${len}`);
+        throw new Error(`Point.fromHex: received invalid point. Expected 32-33 compressed bytes or 65 uncompressed bytes, not ${len}`);
     }
     static fromPrivateKey(privateKey) {
         return Point.BASE.multiply(normalizePrivateKey(privateKey));
     }
     static fromSignature(msgHash, signature, recovery) {
+        msgHash = ensureBytes(msgHash);
+        const h = truncateHash(msgHash);
         const { r, s } = normalizeSignature(signature);
-        if (![0, 1, 2, 3].includes(recovery))
-            throw new Error('Cannot recover: invalid recovery bit');
-        const h = truncateHash(ensureBytes(msgHash));
+        if (recovery !== 0 && recovery !== 1) {
+            throw new Error('Cannot recover signature: invalid recovery bit');
+        }
+        const prefix = recovery & 1 ? '03' : '02';
+        const R = Point.fromHex(prefix + numTo32bStr(r));
         const { n } = CURVE;
-        const radj = recovery === 2 || recovery === 3 ? r + n : r;
-        const rinv = invert(radj, n);
+        const rinv = invert(r, n);
         const u1 = mod(-h * rinv, n);
         const u2 = mod(s * rinv, n);
-        const prefix = recovery & 1 ? '03' : '02';
-        const R = Point.fromHex(prefix + numTo32bStr(radj));
         const Q = Point.BASE.multiplyAndAddUnsafe(R, u1, u2);
         if (!Q)
             throw new Error('Cannot recover signature: point at infinify');
@@ -1137,7 +1053,7 @@ class Point {
     toHex(isCompressed = false) {
         const x = numTo32bStr(this.x);
         if (isCompressed) {
-            const prefix = this.hasEvenY() ? '02' : '03';
+            const prefix = this.y & _1n ? '03' : '02';
             return `${prefix}${x}`;
         }
         else {
@@ -1156,7 +1072,7 @@ class Point {
         if (!isValidFieldElement(x) || !isValidFieldElement(y))
             throw new Error(msg);
         const left = mod(y * y);
-        const right = weierstrass(x);
+        const right = weistrass(x);
         if (mod(left - right) !== _0n)
             throw new Error(msg);
     }
@@ -1227,7 +1143,7 @@ class Signature {
         this.assertValidity();
     }
     static fromCompact(hex) {
-        const arr = hex instanceof Uint8Array;
+        const arr = isUint8a(hex);
         const name = 'Signature.fromCompact';
         if (typeof hex !== 'string' && !arr)
             throw new TypeError(`${name}: Expected string or Uint8Array`);
@@ -1237,7 +1153,7 @@ class Signature {
         return new Signature(hexToNumber(str.slice(0, 64)), hexToNumber(str.slice(64, 128)));
     }
     static fromDER(hex) {
-        const arr = hex instanceof Uint8Array;
+        const arr = isUint8a(hex);
         if (typeof hex !== 'string' && !arr)
             throw new TypeError(`Signature.fromDER: Expected string or Uint8Array`);
         const { r, s } = parseDERSignature(arr ? hex : hexToBytes(hex));
@@ -1258,19 +1174,19 @@ class Signature {
         return this.s > HALF;
     }
     normalizeS() {
-        return this.hasHighS() ? new Signature(this.r, mod(-this.s, CURVE.n)) : this;
+        return this.hasHighS() ? new Signature(this.r, CURVE.n - this.s) : this;
     }
-    toDERRawBytes() {
-        return hexToBytes(this.toDERHex());
+    toDERRawBytes(isCompressed = false) {
+        return hexToBytes(this.toDERHex(isCompressed));
     }
-    toDERHex() {
+    toDERHex(isCompressed = false) {
         const sHex = sliceDER(numberToHexUnpadded(this.s));
+        if (isCompressed)
+            return sHex;
         const rHex = sliceDER(numberToHexUnpadded(this.r));
-        const sHexL = sHex.length / 2;
-        const rHexL = rHex.length / 2;
-        const sLen = numberToHexUnpadded(sHexL);
-        const rLen = numberToHexUnpadded(rHexL);
-        const length = numberToHexUnpadded(rHexL + sHexL + 4);
+        const rLen = numberToHexUnpadded(rHex.length / 2);
+        const sLen = numberToHexUnpadded(sHex.length / 2);
+        const length = numberToHexUnpadded(rHex.length / 2 + sHex.length / 2 + 4);
         return `30${length}02${rLen}${rHex}02${sLen}${sHex}`;
     }
     toRawBytes() {
@@ -1288,7 +1204,7 @@ class Signature {
 }
 exports.Signature = Signature;
 function concatBytes(...arrays) {
-    if (!arrays.every((b) => b instanceof Uint8Array))
+    if (!arrays.every(isUint8a))
         throw new Error('Uint8Array list expected');
     if (arrays.length === 1)
         return arrays[0];
@@ -1301,6 +1217,9 @@ function concatBytes(...arrays) {
     }
     return result;
 }
+function isUint8a(bytes) {
+    return bytes instanceof Uint8Array;
+}
 const hexes = Array.from({ length: 256 }, (v, i) => i.toString(16).padStart(2, '0'));
 function bytesToHex(uint8a) {
     if (!(uint8a instanceof Uint8Array))
@@ -1311,19 +1230,13 @@ function bytesToHex(uint8a) {
     }
     return hex;
 }
-const POW_2_256 = BigInt('0x10000000000000000000000000000000000000000000000000000000000000000');
 function numTo32bStr(num) {
-    if (typeof num !== 'bigint')
-        throw new Error('Expected bigint');
-    if (!(_0n <= num && num < POW_2_256))
-        throw new Error('Expected number 0 <= n < 2^256');
+    if (num > POW_2_256)
+        throw new Error('Expected number < 2^256');
     return num.toString(16).padStart(64, '0');
 }
 function numTo32b(num) {
-    const b = hexToBytes(numTo32bStr(num));
-    if (b.length !== 32)
-        throw new Error('Error: expected 32 bytes');
-    return b;
+    return hexToBytes(numTo32bStr(num));
 }
 function numberToHexUnpadded(num) {
     const hex = num.toString(16);
@@ -1399,11 +1312,7 @@ function sqrtMod(x) {
     const b223 = (pow2(b220, _3n) * b3) % P;
     const t1 = (pow2(b223, _23n) * b22) % P;
     const t2 = (pow2(t1, _6n) * b2) % P;
-    const rt = pow2(t2, _2n);
-    const xc = (rt * rt) % P;
-    if (xc !== x)
-        throw new Error('Cannot find square root');
-    return rt;
+    return pow2(t2, _2n);
 }
 function invert(number, modulo = CURVE.P) {
     if (number === _0n || modulo <= _0n) {
@@ -1441,45 +1350,61 @@ function invertBatch(nums, p = CURVE.P) {
     }, inverted);
     return scratch;
 }
-function bits2int_2(bytes) {
-    const delta = bytes.length * 8 - groupLen * 8;
-    const num = bytesToNumber(bytes);
-    return delta > 0 ? num >> BigInt(delta) : num;
-}
-function truncateHash(hash, truncateOnly = false) {
-    const h = bits2int_2(hash);
-    if (truncateOnly)
-        return h;
+const divNearest = (a, b) => (a + b / _2n) / b;
+const POW_2_128 = _2n ** BigInt(128);
+function splitScalarEndo(k) {
     const { n } = CURVE;
-    return h >= n ? h - n : h;
+    const a1 = BigInt('0x3086d221a7d46bcde86c90e49284eb15');
+    const b1 = -_1n * BigInt('0xe4437ed6010e88286f547fa90abfe4c3');
+    const a2 = BigInt('0x114ca50f7a8e2f3f657c1108d9d44cfd8');
+    const b2 = a1;
+    const c1 = divNearest(b2 * k, n);
+    const c2 = divNearest(-b1 * k, n);
+    let k1 = mod(k - c1 * a1 - c2 * a2, n);
+    let k2 = mod(-c1 * b1 - c2 * b2, n);
+    const k1neg = k1 > POW_2_128;
+    const k2neg = k2 > POW_2_128;
+    if (k1neg)
+        k1 = n - k1;
+    if (k2neg)
+        k2 = n - k2;
+    if (k1 > POW_2_128 || k2 > POW_2_128) {
+        throw new Error('splitScalarEndo: Endomorphism failed, k=' + k);
+    }
+    return { k1neg, k1, k2neg, k2 };
 }
-let _sha256Sync;
-let _hmacSha256Sync;
+function truncateHash(hash) {
+    const { n } = CURVE;
+    const byteLength = hash.length;
+    const delta = byteLength * 8 - 256;
+    let h = bytesToNumber(hash);
+    if (delta > 0)
+        h = h >> BigInt(delta);
+    if (h >= n)
+        h -= n;
+    return h;
+}
 class HmacDrbg {
-    constructor(hashLen, qByteLen) {
-        this.hashLen = hashLen;
-        this.qByteLen = qByteLen;
-        if (typeof hashLen !== 'number' || hashLen < 2)
-            throw new Error('hashLen must be a number');
-        if (typeof qByteLen !== 'number' || qByteLen < 2)
-            throw new Error('qByteLen must be a number');
-        this.v = new Uint8Array(hashLen).fill(1);
-        this.k = new Uint8Array(hashLen).fill(0);
+    constructor() {
+        this.v = new Uint8Array(32).fill(1);
+        this.k = new Uint8Array(32).fill(0);
         this.counter = 0;
     }
     hmac(...values) {
         return exports.utils.hmacSha256(this.k, ...values);
     }
     hmacSync(...values) {
-        return _hmacSha256Sync(this.k, ...values);
-    }
-    checkSync() {
-        if (typeof _hmacSha256Sync !== 'function')
-            throw new ShaError('hmacSha256Sync needs to be set');
+        if (typeof exports.utils.hmacSha256Sync !== 'function')
+            throw new Error('utils.hmacSha256Sync is undefined, you need to set it');
+        const res = exports.utils.hmacSha256Sync(this.k, ...values);
+        if (res instanceof Promise)
+            throw new Error('To use sync sign(), ensure utils.hmacSha256 is sync');
+        return res;
     }
     incr() {
-        if (this.counter >= 1000)
+        if (this.counter >= 1000) {
             throw new Error('Tried 1,000 k values for sign(), all were invalid');
+        }
         this.counter += 1;
     }
     async reseed(seed = new Uint8Array()) {
@@ -1491,7 +1416,6 @@ class HmacDrbg {
         this.v = await this.hmac(this.v);
     }
     reseedSync(seed = new Uint8Array()) {
-        this.checkSync();
         this.k = this.hmacSync(this.v, Uint8Array.from([0x00]), seed);
         this.v = this.hmacSync(this.v);
         if (seed.length === 0)
@@ -1501,28 +1425,13 @@ class HmacDrbg {
     }
     async generate() {
         this.incr();
-        let len = 0;
-        const out = [];
-        while (len < this.qByteLen) {
-            this.v = await this.hmac(this.v);
-            const sl = this.v.slice();
-            out.push(sl);
-            len += this.v.length;
-        }
-        return concatBytes(...out);
+        this.v = await this.hmac(this.v);
+        return this.v;
     }
     generateSync() {
-        this.checkSync();
         this.incr();
-        let len = 0;
-        const out = [];
-        while (len < this.qByteLen) {
-            this.v = this.hmacSync(this.v);
-            const sl = this.v.slice();
-            out.push(sl);
-            len += this.v.length;
-        }
-        return concatBytes(...out);
+        this.v = this.hmacSync(this.v);
+        return this.v;
     }
 }
 function isWithinCurveOrder(num) {
@@ -1531,25 +1440,20 @@ function isWithinCurveOrder(num) {
 function isValidFieldElement(num) {
     return _0n < num && num < CURVE.P;
 }
-function kmdToSig(kBytes, m, d, lowS = true) {
-    const { n } = CURVE;
-    const k = truncateHash(kBytes, true);
+function kmdToSig(kBytes, m, d) {
+    const k = bytesToNumber(kBytes);
     if (!isWithinCurveOrder(k))
         return;
-    const kinv = invert(k, n);
+    const { n } = CURVE;
     const q = Point.BASE.multiply(k);
     const r = mod(q.x, n);
     if (r === _0n)
         return;
-    const s = mod(kinv * mod(m + d * r, n), n);
+    const s = mod(invert(k, n) * mod(m + d * r, n), n);
     if (s === _0n)
         return;
-    let sig = new Signature(r, s);
-    let recovery = (q.x === sig.r ? 0 : 2) | Number(q.y & _1n);
-    if (lowS && sig.hasHighS()) {
-        sig = sig.normalizeS();
-        recovery ^= 1;
-    }
+    const sig = new Signature(r, s);
+    const recovery = (q.x === sig.r ? 0 : 2) | Number(q.y & _1n);
     return { sig, recovery };
 }
 function normalizePrivateKey(key) {
@@ -1561,12 +1465,12 @@ function normalizePrivateKey(key) {
         num = BigInt(key);
     }
     else if (typeof key === 'string') {
-        if (key.length !== 2 * groupLen)
+        if (key.length !== 64)
             throw new Error('Expected 32 bytes of private key');
         num = hexToNumber(key);
     }
-    else if (key instanceof Uint8Array) {
-        if (key.length !== groupLen)
+    else if (isUint8a(key)) {
+        if (key.length !== 32)
             throw new Error('Expected 32 bytes of private key');
         num = bytesToNumber(key);
     }
@@ -1606,22 +1510,22 @@ function recoverPublicKey(msgHash, signature, recovery, isCompressed = false) {
     return Point.fromSignature(msgHash, signature, recovery).toRawBytes(isCompressed);
 }
 exports.recoverPublicKey = recoverPublicKey;
-function isProbPub(item) {
-    const arr = item instanceof Uint8Array;
+function isPub(item) {
+    const arr = isUint8a(item);
     const str = typeof item === 'string';
     const len = (arr || str) && item.length;
     if (arr)
-        return len === compressedLen || len === uncompressedLen;
+        return len === 33 || len === 65;
     if (str)
-        return len === compressedLen * 2 || len === uncompressedLen * 2;
+        return len === 66 || len === 130;
     if (item instanceof Point)
         return true;
     return false;
 }
 function getSharedSecret(privateA, publicB, isCompressed = false) {
-    if (isProbPub(privateA))
+    if (isPub(privateA))
         throw new TypeError('getSharedSecret: first arg must be private key');
-    if (!isProbPub(publicB))
+    if (!isPub(publicB))
         throw new TypeError('getSharedSecret: second arg must be public key');
     const b = normalizePublicKey(publicB);
     b.assertValidity();
@@ -1629,7 +1533,7 @@ function getSharedSecret(privateA, publicB, isCompressed = false) {
 }
 exports.getSharedSecret = getSharedSecret;
 function bits2int(bytes) {
-    const slice = bytes.length > fieldLen ? bytes.slice(0, fieldLen) : bytes;
+    const slice = bytes.length > 32 ? bytes.slice(0, 32) : bytes;
     return bytesToNumber(slice);
 }
 function bits2octets(bytes) {
@@ -1638,7 +1542,10 @@ function bits2octets(bytes) {
     return int2octets(z2 < _0n ? z1 : z2);
 }
 function int2octets(num) {
-    return numTo32b(num);
+    if (typeof num !== 'bigint')
+        throw new Error('Expected bigint');
+    const hex = numTo32bStr(num);
+    return hexToBytes(hex);
 }
 function initSigArgs(msgHash, privateKey, extraEntropy) {
     if (msgHash == null)
@@ -1648,10 +1555,10 @@ function initSigArgs(msgHash, privateKey, extraEntropy) {
     const seedArgs = [int2octets(d), bits2octets(h1)];
     if (extraEntropy != null) {
         if (extraEntropy === true)
-            extraEntropy = exports.utils.randomBytes(fieldLen);
+            extraEntropy = exports.utils.randomBytes(32);
         const e = ensureBytes(extraEntropy);
-        if (e.length !== fieldLen)
-            throw new Error(`sign: Expected ${fieldLen} bytes of extra data`);
+        if (e.length !== 32)
+            throw new Error('sign: Expected 32 bytes of extra data');
         seedArgs.push(e);
     }
     const seed = concatBytes(...seedArgs);
@@ -1659,27 +1566,31 @@ function initSigArgs(msgHash, privateKey, extraEntropy) {
     return { seed, m, d };
 }
 function finalizeSig(recSig, opts) {
-    const { sig, recovery } = recSig;
-    const { der, recovered } = Object.assign({ canonical: true, der: true }, opts);
+    let { sig, recovery } = recSig;
+    const { canonical, der, recovered } = Object.assign({ canonical: true, der: true }, opts);
+    if (canonical && sig.hasHighS()) {
+        sig = sig.normalizeS();
+        recovery ^= 1;
+    }
     const hashed = der ? sig.toDERRawBytes() : sig.toCompactRawBytes();
     return recovered ? [hashed, recovery] : hashed;
 }
 async function sign(msgHash, privKey, opts = {}) {
     const { seed, m, d } = initSigArgs(msgHash, privKey, opts.extraEntropy);
-    const drbg = new HmacDrbg(hashLen, groupLen);
-    await drbg.reseed(seed);
     let sig;
-    while (!(sig = kmdToSig(await drbg.generate(), m, d, opts.canonical)))
+    const drbg = new HmacDrbg();
+    await drbg.reseed(seed);
+    while (!(sig = kmdToSig(await drbg.generate(), m, d)))
         await drbg.reseed();
     return finalizeSig(sig, opts);
 }
 exports.sign = sign;
 function signSync(msgHash, privKey, opts = {}) {
     const { seed, m, d } = initSigArgs(msgHash, privKey, opts.extraEntropy);
-    const drbg = new HmacDrbg(hashLen, groupLen);
-    drbg.reseedSync(seed);
     let sig;
-    while (!(sig = kmdToSig(drbg.generateSync(), m, d, opts.canonical)))
+    const drbg = new HmacDrbg();
+    drbg.reseedSync(seed);
+    while (!(sig = kmdToSig(drbg.generateSync(), m, d)))
         drbg.reseedSync();
     return finalizeSig(sig, opts);
 }
@@ -1716,8 +1627,11 @@ function verify(signature, msgHash, publicKey, opts = vopts) {
     return v === r;
 }
 exports.verify = verify;
-function schnorrChallengeFinalize(ch) {
+function finalizeSchnorrChallenge(ch) {
     return mod(bytesToNumber(ch), CURVE.n);
+}
+function hasEvenY(point) {
+    return (point.y & _1n) === _0n;
 }
 class SchnorrSignature {
     constructor(r, s) {
@@ -1748,67 +1662,55 @@ class SchnorrSignature {
 function schnorrGetPublicKey(privateKey) {
     return Point.fromPrivateKey(privateKey).toRawX();
 }
-class InternalSchnorrSignature {
-    constructor(message, privateKey, auxRand = exports.utils.randomBytes()) {
-        if (message == null)
-            throw new TypeError(`sign: Expected valid message, not "${message}"`);
-        this.m = ensureBytes(message);
-        const { x, scalar } = this.getScalar(normalizePrivateKey(privateKey));
-        this.px = x;
-        this.d = scalar;
-        this.rand = ensureBytes(auxRand);
-        if (this.rand.length !== 32)
-            throw new TypeError('sign: Expected 32 bytes of aux randomness');
-    }
-    getScalar(priv) {
-        const point = Point.fromPrivateKey(priv);
-        const scalar = point.hasEvenY() ? priv : CURVE.n - priv;
-        return { point, scalar, x: point.toRawX() };
-    }
-    initNonce(d, t0h) {
-        return numTo32b(d ^ bytesToNumber(t0h));
-    }
-    finalizeNonce(k0h) {
-        const k0 = mod(bytesToNumber(k0h), CURVE.n);
-        if (k0 === _0n)
-            throw new Error('sign: Creation of signature failed. k is zero');
-        const { point: R, x: rx, scalar: k } = this.getScalar(k0);
-        return { R, rx, k };
-    }
-    finalizeSig(R, k, e, d) {
-        return new SchnorrSignature(R.x, mod(k + e * d, CURVE.n)).toRawBytes();
-    }
-    error() {
+function initSchnorrSigArgs(message, privateKey, auxRand) {
+    if (message == null)
+        throw new TypeError(`sign: Expected valid message, not "${message}"`);
+    const m = ensureBytes(message);
+    const d0 = normalizePrivateKey(privateKey);
+    const rand = ensureBytes(auxRand);
+    if (rand.length !== 32)
+        throw new TypeError('sign: Expected 32 bytes of aux randomness');
+    const P = Point.fromPrivateKey(d0);
+    const px = P.toRawX();
+    const d = hasEvenY(P) ? d0 : CURVE.n - d0;
+    return { m, P, px, d, rand };
+}
+function initSchnorrNonce(d, t0h) {
+    return numTo32b(d ^ bytesToNumber(t0h));
+}
+function finalizeSchnorrNonce(k0h) {
+    const k0 = mod(bytesToNumber(k0h), CURVE.n);
+    if (k0 === _0n)
+        throw new Error('sign: Creation of signature failed. k is zero');
+    const R = Point.fromPrivateKey(k0);
+    const rx = R.toRawX();
+    const k = hasEvenY(R) ? k0 : CURVE.n - k0;
+    return { R, rx, k };
+}
+function finalizeSchnorrSig(R, k, e, d) {
+    return new SchnorrSignature(R.x, mod(k + e * d, CURVE.n)).toRawBytes();
+}
+async function schnorrSign(message, privateKey, auxRand = exports.utils.randomBytes()) {
+    const { m, px, d, rand } = initSchnorrSigArgs(message, privateKey, auxRand);
+    const t = initSchnorrNonce(d, await exports.utils.taggedHash(TAGS.aux, rand));
+    const { R, rx, k } = finalizeSchnorrNonce(await exports.utils.taggedHash(TAGS.nonce, t, px, m));
+    const e = finalizeSchnorrChallenge(await exports.utils.taggedHash(TAGS.challenge, rx, px, m));
+    const sig = finalizeSchnorrSig(R, k, e, d);
+    const isValid = await schnorrVerify(sig, m, px);
+    if (!isValid)
         throw new Error('sign: Invalid signature produced');
-    }
-    async calc() {
-        const { m, d, px, rand } = this;
-        const tag = exports.utils.taggedHash;
-        const t = this.initNonce(d, await tag(TAGS.aux, rand));
-        const { R, rx, k } = this.finalizeNonce(await tag(TAGS.nonce, t, px, m));
-        const e = schnorrChallengeFinalize(await tag(TAGS.challenge, rx, px, m));
-        const sig = this.finalizeSig(R, k, e, d);
-        if (!(await schnorrVerify(sig, m, px)))
-            this.error();
-        return sig;
-    }
-    calcSync() {
-        const { m, d, px, rand } = this;
-        const tag = exports.utils.taggedHashSync;
-        const t = this.initNonce(d, tag(TAGS.aux, rand));
-        const { R, rx, k } = this.finalizeNonce(tag(TAGS.nonce, t, px, m));
-        const e = schnorrChallengeFinalize(tag(TAGS.challenge, rx, px, m));
-        const sig = this.finalizeSig(R, k, e, d);
-        if (!schnorrVerifySync(sig, m, px))
-            this.error();
-        return sig;
-    }
+    return sig;
 }
-async function schnorrSign(msg, privKey, auxRand) {
-    return new InternalSchnorrSignature(msg, privKey, auxRand).calc();
-}
-function schnorrSignSync(msg, privKey, auxRand) {
-    return new InternalSchnorrSignature(msg, privKey, auxRand).calcSync();
+function schnorrSignSync(message, privateKey, auxRand = exports.utils.randomBytes()) {
+    const { m, px, d, rand } = initSchnorrSigArgs(message, privateKey, auxRand);
+    const t = initSchnorrNonce(d, exports.utils.taggedHashSync(TAGS.aux, rand));
+    const { R, rx, k } = finalizeSchnorrNonce(exports.utils.taggedHashSync(TAGS.nonce, t, px, m));
+    const e = finalizeSchnorrChallenge(exports.utils.taggedHashSync(TAGS.challenge, rx, px, m));
+    const sig = finalizeSchnorrSig(R, k, e, d);
+    const isValid = schnorrVerifySync(sig, m, px);
+    if (!isValid)
+        throw new Error('sign: Invalid signature produced');
+    return sig;
 }
 function initSchnorrVerify(signature, message, publicKey) {
     const raw = signature instanceof SchnorrSignature;
@@ -1823,14 +1725,14 @@ function initSchnorrVerify(signature, message, publicKey) {
 }
 function finalizeSchnorrVerify(r, P, s, e) {
     const R = Point.BASE.multiplyAndAddUnsafe(P, normalizePrivateKey(s), mod(-e, CURVE.n));
-    if (!R || !R.hasEvenY() || R.x !== r)
+    if (!R || !hasEvenY(R) || R.x !== r)
         return false;
     return true;
 }
 async function schnorrVerify(signature, message, publicKey) {
     try {
         const { r, s, m, P } = initSchnorrVerify(signature, message, publicKey);
-        const e = schnorrChallengeFinalize(await exports.utils.taggedHash(TAGS.challenge, numTo32b(r), P.toRawX(), m));
+        const e = finalizeSchnorrChallenge(await exports.utils.taggedHash(TAGS.challenge, numTo32b(r), P.toRawX(), m));
         return finalizeSchnorrVerify(r, P, s, e);
     }
     catch (error) {
@@ -1840,12 +1742,10 @@ async function schnorrVerify(signature, message, publicKey) {
 function schnorrVerifySync(signature, message, publicKey) {
     try {
         const { r, s, m, P } = initSchnorrVerify(signature, message, publicKey);
-        const e = schnorrChallengeFinalize(exports.utils.taggedHashSync(TAGS.challenge, numTo32b(r), P.toRawX(), m));
+        const e = finalizeSchnorrChallenge(exports.utils.taggedHashSync(TAGS.challenge, numTo32b(r), P.toRawX(), m));
         return finalizeSchnorrVerify(r, P, s, e);
     }
     catch (error) {
-        if (error instanceof ShaError)
-            throw error;
         return false;
     }
 }
@@ -1869,11 +1769,6 @@ const TAGS = {
 };
 const TAGGED_HASH_PREFIXES = {};
 exports.utils = {
-    bytesToHex,
-    hexToBytes,
-    concatBytes,
-    mod,
-    invert,
     isValidPrivateKey(privateKey) {
         try {
             normalizePrivateKey(privateKey);
@@ -1883,14 +1778,32 @@ exports.utils = {
             return false;
         }
     },
-    _bigintTo32Bytes: numTo32b,
-    _normalizePrivateKey: normalizePrivateKey,
+    privateAdd: (privateKey, tweak) => {
+        const p = normalizePrivateKey(privateKey);
+        const t = normalizePrivateKey(tweak);
+        return numTo32b(mod(p + t, CURVE.n));
+    },
+    privateNegate: (privateKey) => {
+        const p = normalizePrivateKey(privateKey);
+        return numTo32b(CURVE.n - p);
+    },
+    pointAddScalar: (p, tweak, isCompressed) => {
+        const P = Point.fromHex(p);
+        const t = normalizePrivateKey(tweak);
+        const Q = Point.BASE.multiplyAndAddUnsafe(P, t, _1n);
+        if (!Q)
+            throw new Error('Tweaked point at infinity');
+        return Q.toRawBytes(isCompressed);
+    },
+    pointMultiply: (p, tweak, isCompressed) => {
+        const P = Point.fromHex(p);
+        const t = bytesToNumber(ensureBytes(tweak));
+        return P.multiply(t).toRawBytes(isCompressed);
+    },
     hashToPrivateKey: (hash) => {
         hash = ensureBytes(hash);
-        const minLen = groupLen + 8;
-        if (hash.length < minLen || hash.length > 1024) {
-            throw new Error(`Expected valid bytes of private key as per FIPS 186`);
-        }
+        if (hash.length < 40 || hash.length > 1024)
+            throw new Error('Expected 40-1024 bytes of private key as per FIPS 186');
         const num = mod(bytesToNumber(hash), CURVE.n - _1n) + _1n;
         return numTo32b(num);
     },
@@ -1906,13 +1819,14 @@ exports.utils = {
             throw new Error("The environment doesn't have randomBytes function");
         }
     },
-    randomPrivateKey: () => exports.utils.hashToPrivateKey(exports.utils.randomBytes(groupLen + 8)),
-    precompute(windowSize = 8, point = Point.BASE) {
-        const cached = point === Point.BASE ? point : new Point(point.x, point.y);
-        cached._setWindowSize(windowSize);
-        cached.multiply(_3n);
-        return cached;
+    randomPrivateKey: () => {
+        return exports.utils.hashToPrivateKey(exports.utils.randomBytes(40));
     },
+    bytesToHex,
+    hexToBytes,
+    concatBytes,
+    mod,
+    invert,
     sha256: async (...messages) => {
         if (crypto.web) {
             const buffer = await crypto.web.subtle.digest('SHA-256', concatBytes(...messages));
@@ -1957,40 +1871,23 @@ exports.utils = {
         return exports.utils.sha256(tagP, ...messages);
     },
     taggedHashSync: (tag, ...messages) => {
-        if (typeof _sha256Sync !== 'function')
-            throw new ShaError('sha256Sync is undefined, you need to set it');
+        if (typeof exports.utils.sha256Sync !== 'function')
+            throw new Error('utils.sha256Sync is undefined, you need to set it');
         let tagP = TAGGED_HASH_PREFIXES[tag];
         if (tagP === undefined) {
-            const tagH = _sha256Sync(Uint8Array.from(tag, (c) => c.charCodeAt(0)));
+            const tagH = exports.utils.sha256Sync(Uint8Array.from(tag, (c) => c.charCodeAt(0)));
             tagP = concatBytes(tagH, tagH);
             TAGGED_HASH_PREFIXES[tag] = tagP;
         }
-        return _sha256Sync(tagP, ...messages);
+        return exports.utils.sha256Sync(tagP, ...messages);
     },
-    _JacobianPoint: JacobianPoint,
+    precompute(windowSize = 8, point = Point.BASE) {
+        const cached = point === Point.BASE ? point : new Point(point.x, point.y);
+        cached._setWindowSize(windowSize);
+        cached.multiply(_3n);
+        return cached;
+    },
 };
-Object.defineProperties(exports.utils, {
-    sha256Sync: {
-        configurable: false,
-        get() {
-            return _sha256Sync;
-        },
-        set(val) {
-            if (!_sha256Sync)
-                _sha256Sync = val;
-        },
-    },
-    hmacSha256Sync: {
-        configurable: false,
-        get() {
-            return _hmacSha256Sync;
-        },
-        set(val) {
-            if (!_hmacSha256Sync)
-                _hmacSha256Sync = val;
-        },
-    },
-});
 
 
 /***/ }),
@@ -15116,21 +15013,13 @@ var Enum = __webpack_require__(7025),
  * @ignore
  */
 function genValuePartial_fromObject(gen, field, fieldIndex, prop) {
-    var defaultAlreadyEmitted = false;
     /* eslint-disable no-unexpected-multiline, block-scoped-var, no-redeclare */
     if (field.resolvedType) {
         if (field.resolvedType instanceof Enum) { gen
             ("switch(d%s){", prop);
             for (var values = field.resolvedType.values, keys = Object.keys(values), i = 0; i < keys.length; ++i) {
-                // enum unknown values passthrough
-                if (values[keys[i]] === field.typeDefault && !defaultAlreadyEmitted) { gen
-                    ("default:")
-                        ("if(typeof(d%s)===\"number\"){m%s=d%s;break}", prop, prop, prop);
-                    if (!field.repeated) gen // fallback to default value only for
-                                             // arrays, to avoid leaving holes.
-                        ("break");           // for non-repeated fields, just ignore
-                    defaultAlreadyEmitted = true;
-                }
+                if (field.repeated && values[keys[i]] === field.typeDefault) gen
+                ("default:");
                 gen
                 ("case%j:", keys[i])
                 ("case %i:", values[keys[i]])
@@ -15262,7 +15151,7 @@ function genValuePartial_toObject(gen, field, fieldIndex, prop) {
     /* eslint-disable no-unexpected-multiline, block-scoped-var, no-redeclare */
     if (field.resolvedType) {
         if (field.resolvedType instanceof Enum) gen
-            ("d%s=o.enums===String?(types[%i].values[m%s]===undefined?m%s:types[%i].values[m%s]):m%s", prop, fieldIndex, prop, prop, fieldIndex, prop, prop);
+            ("d%s=o.enums===String?types[%i].values[m%s]:m%s", prop, fieldIndex, prop, prop);
         else gen
             ("d%s=types[%i].toObject(m%s,o)", prop, fieldIndex, prop);
     } else {
@@ -15670,9 +15559,8 @@ var Namespace = __webpack_require__(9313),
  * @param {Object.<string,*>} [options] Declared options
  * @param {string} [comment] The comment for this enum
  * @param {Object.<string,string>} [comments] The value comments for this enum
- * @param {Object.<string,Object<string,*>>|undefined} [valuesOptions] The value options for this enum
  */
-function Enum(name, values, options, comment, comments, valuesOptions) {
+function Enum(name, values, options, comment, comments) {
     ReflectionObject.call(this, name, options);
 
     if (values && typeof values !== "object")
@@ -15701,12 +15589,6 @@ function Enum(name, values, options, comment, comments, valuesOptions) {
      * @type {Object.<string,string>}
      */
     this.comments = comments || {};
-
-    /**
-     * Values options, if any
-     * @type {Object<string, Object<string, *>>|undefined}
-     */
-    this.valuesOptions = valuesOptions;
 
     /**
      * Reserved ranges, if any.
@@ -15752,12 +15634,11 @@ Enum.fromJSON = function fromJSON(name, json) {
 Enum.prototype.toJSON = function toJSON(toJSONOptions) {
     var keepComments = toJSONOptions ? Boolean(toJSONOptions.keepComments) : false;
     return util.toObject([
-        "options"       , this.options,
-        "valuesOptions" , this.valuesOptions,
-        "values"        , this.values,
-        "reserved"      , this.reserved && this.reserved.length ? this.reserved : undefined,
-        "comment"       , keepComments ? this.comment : undefined,
-        "comments"      , keepComments ? this.comments : undefined
+        "options"  , this.options,
+        "values"   , this.values,
+        "reserved" , this.reserved && this.reserved.length ? this.reserved : undefined,
+        "comment"  , keepComments ? this.comment : undefined,
+        "comments" , keepComments ? this.comments : undefined
     ]);
 };
 
@@ -15766,12 +15647,11 @@ Enum.prototype.toJSON = function toJSON(toJSONOptions) {
  * @param {string} name Value name
  * @param {number} id Value id
  * @param {string} [comment] Comment, if any
- * @param {Object.<string, *>|undefined} [options] Options, if any
  * @returns {Enum} `this`
  * @throws {TypeError} If arguments are invalid
  * @throws {Error} If there is already a value with this name or id
  */
-Enum.prototype.add = function add(name, id, comment, options) {
+Enum.prototype.add = function add(name, id, comment) {
     // utilized by the parser but not by .fromJSON
 
     if (!util.isString(name))
@@ -15796,12 +15676,6 @@ Enum.prototype.add = function add(name, id, comment, options) {
     } else
         this.valuesById[this.values[name] = id] = name;
 
-    if (options) {
-        if (this.valuesOptions === undefined)
-            this.valuesOptions = {};
-        this.valuesOptions[name] = options || null;
-    }
-
     this.comments[name] = comment || null;
     return this;
 };
@@ -15825,8 +15699,6 @@ Enum.prototype.remove = function remove(name) {
     delete this.valuesById[val];
     delete this.values[name];
     delete this.comments[name];
-    if (this.valuesOptions)
-        delete this.valuesOptions[name];
 
     return this;
 };
@@ -16873,8 +16745,7 @@ var ReflectionObject = __webpack_require__(3243);
 ((Namespace.prototype = Object.create(ReflectionObject.prototype)).constructor = Namespace).className = "Namespace";
 
 var Field    = __webpack_require__(3548),
-    util     = __webpack_require__(9935),
-    OneOf    = __webpack_require__(7598);
+    util     = __webpack_require__(9935);
 
 var Type,    // cyclic
     Service,
@@ -17010,8 +16881,9 @@ Object.defineProperty(Namespace.prototype, "nestedArray", {
 /**
  * Any nested object descriptor.
  * @typedef AnyNestedObject
- * @type {IEnum|IType|IService|AnyExtensionField|INamespace|IOneOf}
+ * @type {IEnum|IType|IService|AnyExtensionField|INamespace}
  */
+// ^ BEWARE: VSCode hangs forever when using more than 5 types (that's why AnyExtensionField exists in the first place)
 
 /**
  * Converts this namespace to a namespace descriptor.
@@ -17084,7 +16956,7 @@ Namespace.prototype.getEnum = function getEnum(name) {
  */
 Namespace.prototype.add = function add(object) {
 
-    if (!(object instanceof Field && object.extend !== undefined || object instanceof Type  || object instanceof OneOf || object instanceof Enum || object instanceof Service || object instanceof Namespace))
+    if (!(object instanceof Field && object.extend !== undefined || object instanceof Type || object instanceof Enum || object instanceof Service || object instanceof Namespace))
         throw TypeError("object must be a valid nested object");
 
     if (!this.nested)
@@ -18130,16 +18002,6 @@ function parse(source, root, options) {
             parseGroup(parent, rule);
             return;
         }
-        // Type names can consume multiple tokens, in multiple variants:
-        //    package.subpackage   field       tokens: "package.subpackage" [TYPE NAME ENDS HERE] "field"
-        //    package . subpackage field       tokens: "package" "." "subpackage" [TYPE NAME ENDS HERE] "field"
-        //    package.  subpackage field       tokens: "package." "subpackage" [TYPE NAME ENDS HERE] "field"
-        //    package  .subpackage field       tokens: "package" ".subpackage" [TYPE NAME ENDS HERE] "field"
-        // Keep reading tokens until we get a type name with no period at the end,
-        // and the next token does not start with a period.
-        while (type.endsWith(".") || peek().startsWith(".")) {
-            type += next();
-        }
 
         /* istanbul ignore if */
         if (!typeRefRe.test(type))
@@ -18221,14 +18083,6 @@ function parse(source, root, options) {
                     } else {
                         parseField(type, "optional");
                     }
-                    break;
-
-                case "message":
-                    parseType(type, token);
-                    break;
-
-                case "enum":
-                    parseEnum(type, token);
                     break;
 
                 /* istanbul ignore next */
@@ -18331,14 +18185,7 @@ function parse(source, root, options) {
 
         skip("=");
         var value = parseId(next(), true),
-            dummy = {
-                options: undefined
-            };
-        dummy.setOption = function(name, value) {
-            if (this.options === undefined)
-                this.options = {};
-            this.options[name] = value;
-        };
+            dummy = {};
         ifBlock(dummy, function parseEnumValue_block(token) {
 
             /* istanbul ignore else */
@@ -18351,7 +18198,7 @@ function parse(source, root, options) {
         }, function parseEnumValue_line() {
             parseInlineOptions(dummy); // skip
         });
-        parent.add(token, value, dummy.comment, dummy.options);
+        parent.add(token, value, dummy.comment);
     }
 
     function parseOption(parent, token) {
@@ -19270,7 +19117,6 @@ Root.prototype.load = function load(filename, options, callback) {
 
     // Fetches a single file
     function fetch(filename, weak) {
-        filename = getBundledFileName(filename) || filename;
 
         // Skip if already loaded / attempted
         if (self.files.indexOf(filename) > -1)
@@ -19399,10 +19245,6 @@ function tryHandleExtension(root, field) {
     var extendedType = field.parent.lookup(field.extend);
     if (extendedType) {
         var sisterField = new Field(field.fullName, field.id, field.type, field.rule, undefined, field.options);
-        //do not allow to extend same field twice to prevent the error
-        if (extendedType.get(sisterField.name)) {
-            return true;
-        }
         sisterField.declaringField = field;
         field.extensionField = sisterField;
         extendedType.add(sisterField);
@@ -21299,7 +21141,7 @@ util.decorateEnum = function decorateEnum(object) {
 util.setProperty = function setProperty(dst, path, value) {
     function setProp(dst, path, value) {
         var part = path.shift();
-        if (part === "__proto__" || part === "prototype") {
+        if (part === "__proto__") {
           return dst;
         }
         if (path.length > 0) {
@@ -21337,7 +21179,7 @@ Object.defineProperty(util, "decorateRoot", {
 
 /***/ }),
 
-/***/ 2630:
+/***/ 1945:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 "use strict";
@@ -21574,7 +21416,7 @@ util.utf8 = __webpack_require__(4997);
 util.pool = __webpack_require__(6662);
 
 // utility to work with the low and high bits of a 64 bit value
-util.LongBits = __webpack_require__(2630);
+util.LongBits = __webpack_require__(1945);
 
 /**
  * Whether running within node or not.
@@ -21839,7 +21681,7 @@ function newError(name) {
             configurable: true,
         },
         name: {
-            get: function get() { return name; },
+            get() { return name; },
             set: undefined,
             enumerable: false,
             // configurable: false would accurately preserve the behavior of
@@ -21849,7 +21691,7 @@ function newError(name) {
             configurable: true,
         },
         toString: {
-            value: function value() { return this.name + ": " + this.message; },
+            value() { return this.name + ": " + this.message; },
             writable: true,
             enumerable: false,
             configurable: true,
@@ -22998,8 +22840,6 @@ class Contract {
         Object.keys(this.abi.methods).forEach((name) => {
             this.functions[name] = async (argu = {}, options) => {
                 var _a;
-                if (!this.provider)
-                    throw new Error("provider not found");
                 if (!this.abi || !this.abi.methods)
                     throw new Error("Methods are not defined");
                 if (!this.abi.methods[name])
@@ -23020,6 +22860,8 @@ class Contract {
                 if (opts.onlyOperation) {
                     return { operation };
                 }
+                if (!this.provider)
+                    throw new Error("provider not found");
                 if (readOnly) {
                     if (!output)
                         throw new Error(`No output defined for ${name}`);
@@ -23180,7 +23022,7 @@ class Contract {
      * @returns Operation encoded
      * @example
      * ```ts
-     * const opEncoded = contract.encodeOperation({
+     * const opEncoded = await contract.encodeOperation({
      *   name: "transfer",
      *   args: {
      *     from: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
@@ -23223,7 +23065,7 @@ class Contract {
      * Decodes a contract operation to be human readable
      * @example
      * ```ts
-     * const opDecoded = contract.decodeOperation({
+     * const opDecoded = await contract.decodeOperation({
      *   call_contract: {
      *     contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
      *     entry_point: 0x27f576ca,
@@ -23325,6 +23167,7 @@ exports.Provider = void 0;
 // @ts-ignore
 const protocol_proto_js_1 = __webpack_require__(9104);
 const utils_1 = __webpack_require__(8593);
+const Serializer_1 = __webpack_require__(7187);
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 async function sleep(ms) {
     return new Promise((r) => setTimeout(r, ms));
@@ -23464,11 +23307,11 @@ class Provider {
             transaction_ids: transactionIds,
         });
     }
-    async getBlocksById(blockIds) {
+    async getBlocksById(blockIds, opts) {
         return this.call("block_store.get_blocks_by_id", {
             block_ids: blockIds,
-            return_block: true,
-            return_receipt: false,
+            return_block: opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
+            return_receipt: opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
         });
     }
     /**
@@ -23492,7 +23335,7 @@ class Provider {
      * This ID must be from a greater block height. By default it
      * gets the ID from the block head.
      */
-    async getBlocks(height, numBlocks = 1, idRef) {
+    async getBlocks(height, numBlocks = 1, idRef, opts) {
         let blockIdRef = idRef;
         if (!blockIdRef) {
             const head = await this.getHeadInfo();
@@ -23502,8 +23345,8 @@ class Provider {
             head_block_id: blockIdRef,
             ancestor_start_height: height,
             num_blocks: numBlocks,
-            return_block: true,
-            return_receipt: false,
+            return_block: opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
+            return_receipt: opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
         })).block_items;
     }
     /**
@@ -23642,6 +23485,98 @@ class Provider {
      */
     async readContract(operation) {
         return this.call("chain.read_contract", operation);
+    }
+    /**
+     * Function to call "chain.get_fork_heads" to get fork heads
+     */
+    async getForkHeads() {
+        return this.call("chain.get_fork_heads", {});
+    }
+    /**
+     * Funciont to call "chain.get_resource_limits" to get
+     * resource limits
+     */
+    async getResourceLimits() {
+        return this.call("chain.get_resource_limits", {});
+    }
+    /**
+     * Function to call "chain.invoke_system_call" to invoke a system
+     * call.
+     */
+    async invokeSystemCall(serializer, nameOrId, args, callerData) {
+        if (!serializer.argumentsTypeName)
+            throw new Error("argumentsTypeName not defined");
+        if (!serializer.returnTypeName)
+            throw new Error("returnTypeName not defined");
+        const argsEncoded = await serializer.serialize(args, serializer.argumentsTypeName);
+        const response = await this.call("chain.invoke_system_call", {
+            ...(typeof nameOrId === "number" && { id: nameOrId }),
+            ...(typeof nameOrId === "string" && { name: nameOrId }),
+            args: (0, utils_1.encodeBase64url)(argsEncoded),
+            caller_data: callerData,
+        });
+        if (!response || !response.value)
+            throw new Error("no value in the response");
+        const result = await serializer.deserialize(response.value, serializer.returnTypeName);
+        return result;
+    }
+    async invokeGetContractMetadata(contractId) {
+        const serializer = new Serializer_1.Serializer({
+            nested: {
+                get_contract_metadata_arguments: {
+                    fields: {
+                        contract_id: {
+                            type: "bytes",
+                            id: 1,
+                            options: {
+                                "(koinos.btype)": "CONTRACT_ID",
+                            },
+                        },
+                    },
+                },
+                get_contract_metadata_result: {
+                    fields: {
+                        value: {
+                            type: "contract_metadata_object",
+                            id: 1,
+                        },
+                    },
+                },
+                contract_metadata_object: {
+                    fields: {
+                        hash: {
+                            type: "bytes",
+                            id: 1,
+                            options: {
+                                "(koinos.btype)": "HEX",
+                            },
+                        },
+                        system: {
+                            type: "bool",
+                            id: 2,
+                        },
+                        authorizes_call_contract: {
+                            type: "bool",
+                            id: 3,
+                        },
+                        authorizes_transaction_application: {
+                            type: "bool",
+                            id: 4,
+                        },
+                        authorizes_upload_contract: {
+                            type: "bool",
+                            id: 5,
+                        },
+                    },
+                },
+            },
+        }, {
+            argumentsTypeName: "get_contract_metadata_arguments",
+            returnTypeName: "get_contract_metadata_result",
+        });
+        return this.invokeSystemCall(serializer, "get_contract_metadata", {
+            contract_id: contractId,
+        });
     }
 }
 exports.Provider = Provider;
@@ -23786,6 +23721,10 @@ class Serializer {
         }
         if (opts === null || opts === void 0 ? void 0 : opts.defaultTypeName)
             this.defaultType = this.root.lookupType(opts.defaultTypeName);
+        if (opts === null || opts === void 0 ? void 0 : opts.argumentsTypeName)
+            this.argumentsTypeName = opts.argumentsTypeName;
+        if (opts === null || opts === void 0 ? void 0 : opts.returnTypeName)
+            this.returnTypeName = opts.returnTypeName;
         if (opts && typeof opts.bytesConversion !== "undefined")
             this.bytesConversion = opts.bytesConversion;
     }
@@ -24005,53 +23944,6 @@ const btypeTransactionHeader = {
     payer: { type: "bytes", btype: "ADDRESS" },
     payee: { type: "bytes", btype: "ADDRESS" },
 };
-const btypesOperation = {
-    upload_contract: {
-        type: "object",
-        subtypes: {
-            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-            bytecode: { type: "bytes" },
-            abi: { type: "string" },
-            authorizes_call_contract: { type: "bool" },
-            authorizes_transaction_application: { type: "bool" },
-            authorizes_upload_contract: { type: "bool" },
-        },
-    },
-    call_contract: {
-        type: "object",
-        subtypes: {
-            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-            entry_point: { type: "uint32" },
-            args: { type: "bytes" },
-        },
-    },
-    set_system_call: {
-        type: "object",
-        subtypes: {
-            call_id: { type: "uint32" },
-            target: {
-                type: "object",
-                subtypes: {
-                    thunk_id: { type: "uint32" },
-                    system_call_bundle: {
-                        type: "object",
-                        subtypes: {
-                            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-                            entry_point: { type: "uint32" },
-                        },
-                    },
-                },
-            },
-        },
-    },
-    set_system_contract: {
-        type: "object",
-        subtypes: {
-            contract_id: { type: "bytes", btype: "CONTRACT_ID" },
-            system_contract: { type: "bool" },
-        },
-    },
-};
 /**
  * The Signer Class contains the private key needed to sign transactions.
  * It can be created using the seed, wif, or private key
@@ -24212,7 +24104,7 @@ class Signer {
      * // 5KEX4TMHG66fT7cM9HMZLmdp4hVq4LC4X2Fkg6zeypM5UteWmtd
      * ```
      */
-    getPrivateKey(format = "hex", compressed = false) {
+    getPrivateKey(format = "hex", compressed = true) {
         let stringPrivateKey;
         if (this.privateKey instanceof Uint8Array) {
             stringPrivateKey = (0, utils_1.toHexString)(this.privateKey);
@@ -24476,81 +24368,6 @@ class Signer {
     async recoverAddresses(txOrBlock, opts) {
         const publicKeys = await this.recoverPublicKeys(txOrBlock, opts);
         return publicKeys.map((publicKey) => (0, utils_1.bitcoinAddress)((0, utils_1.toUint8Array)(publicKey)));
-    }
-    /**
-     * Function to prepare a transaction
-     * @deprecated - Use [[Transaction.prepareTransaction]] instead.
-     * @param tx - Do not set the nonce to get it from the blockchain
-     * using the provider. The rc_limit is 1e8 by default.
-     * @returns A prepared transaction.
-     */
-    async prepareTransaction(tx) {
-        var _a, _b;
-        if (!tx.header) {
-            tx.header = {};
-        }
-        const payer = (_a = tx.header.payer) !== null && _a !== void 0 ? _a : this.address;
-        const { payee } = tx.header;
-        let nonce;
-        if (tx.header.nonce === undefined) {
-            if (!this.provider)
-                throw new Error("Cannot get the nonce because provider is undefined. To skip this call set a nonce in the transaction header");
-            nonce = await this.provider.getNextNonce(payee || payer);
-        }
-        else {
-            nonce = tx.header.nonce;
-        }
-        let rcLimit;
-        if (tx.header.rc_limit === undefined) {
-            if (!this.provider)
-                throw new Error("Cannot get the rc_limit because provider is undefined. To skip this call set a rc_limit in the transaction header");
-            rcLimit = await this.provider.getAccountRc(payer);
-        }
-        else {
-            rcLimit = tx.header.rc_limit;
-        }
-        let chainId = tx.header.chain_id || this.chainId;
-        if (!chainId) {
-            if (!this.provider)
-                throw new Error("Cannot get the chain_id because provider is undefined. To skip this call set a chain_id in the Signer");
-            chainId = await this.provider.getChainId();
-            this.chainId = chainId;
-        }
-        const operationsHashes = [];
-        if (tx.operations) {
-            for (let index = 0; index < ((_b = tx.operations) === null || _b === void 0 ? void 0 : _b.length); index += 1) {
-                const operationDecoded = (0, utils_1.btypeDecode)(tx.operations[index], btypesOperation, false);
-                const message = protocol_proto_js_1.koinos.protocol.operation.create(operationDecoded);
-                const operationEncoded = protocol_proto_js_1.koinos.protocol.operation
-                    .encode(message)
-                    .finish();
-                operationsHashes.push((0, sha256_1.sha256)(operationEncoded));
-            }
-        }
-        const operationMerkleRoot = (0, utils_1.encodeBase64url)(new Uint8Array([
-            // multihash sha256: 18, 32
-            18,
-            32,
-            ...(0, utils_1.calculateMerkleRoot)(operationsHashes),
-        ]));
-        tx.header = {
-            chain_id: chainId,
-            rc_limit: rcLimit,
-            nonce,
-            operation_merkle_root: operationMerkleRoot,
-            payer,
-            ...(payee && { payee }),
-            // TODO: Option to resolve names (payer, payee)
-        };
-        const headerDecoded = (0, utils_1.btypeDecode)(tx.header, btypeTransactionHeader, false);
-        const message = protocol_proto_js_1.koinos.protocol.transaction_header.create(headerDecoded);
-        const headerBytes = protocol_proto_js_1.koinos.protocol.transaction_header
-            .encode(message)
-            .finish();
-        const hash = (0, sha256_1.sha256)(headerBytes);
-        // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
-        tx.id = `0x1220${(0, utils_1.toHexString)(hash)}`;
-        return tx;
     }
     /**
      * Function to prepare a block
@@ -24915,7 +24732,10 @@ class Transaction {
         };
         if (!this.transaction.id)
             await this.prepare();
-        if (this.signer && this.signer.provider) {
+        if (!this.transaction.signatures || !this.transaction.signatures.length) {
+            if (!this.signer) {
+                throw new Error("transaction without signatures and no signer defined");
+            }
             const { transaction: tx, receipt } = await this.signer.sendTransaction(this.transaction, opts);
             this.transaction = tx;
             this.waitFunction = tx.wait;
@@ -24923,9 +24743,6 @@ class Transaction {
         }
         if (!this.provider)
             throw new Error("provider not defined");
-        if (!this.transaction.signatures || !this.transaction.signatures.length) {
-            throw new Error("transaction without signatures and no signer defined");
-        }
         if (opts.beforeSend) {
             await opts.beforeSend(this.transaction, opts);
         }
@@ -25547,6 +25364,285 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
        * @namespace
        */
       var protocol = {};
+
+      protocol.object_space = (function () {
+        /**
+         * Properties of an object_space.
+         * @memberof koinos.protocol
+         * @interface Iobject_space
+         * @property {boolean|null} [system] object_space system
+         * @property {Uint8Array|null} [zone] object_space zone
+         * @property {number|null} [id] object_space id
+         */
+
+        /**
+         * Constructs a new object_space.
+         * @memberof koinos.protocol
+         * @classdesc Represents an object_space.
+         * @implements Iobject_space
+         * @constructor
+         * @param {koinos.protocol.Iobject_space=} [properties] Properties to set
+         */
+        function object_space(properties) {
+          if (properties)
+            for (
+              var keys = Object.keys(properties), i = 0;
+              i < keys.length;
+              ++i
+            )
+              if (properties[keys[i]] != null)
+                this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * object_space system.
+         * @member {boolean} system
+         * @memberof koinos.protocol.object_space
+         * @instance
+         */
+        object_space.prototype.system = false;
+
+        /**
+         * object_space zone.
+         * @member {Uint8Array} zone
+         * @memberof koinos.protocol.object_space
+         * @instance
+         */
+        object_space.prototype.zone = $util.newBuffer([]);
+
+        /**
+         * object_space id.
+         * @member {number} id
+         * @memberof koinos.protocol.object_space
+         * @instance
+         */
+        object_space.prototype.id = 0;
+
+        /**
+         * Creates a new object_space instance using the specified properties.
+         * @function create
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {koinos.protocol.Iobject_space=} [properties] Properties to set
+         * @returns {koinos.protocol.object_space} object_space instance
+         */
+        object_space.create = function create(properties) {
+          return new object_space(properties);
+        };
+
+        /**
+         * Encodes the specified object_space message. Does not implicitly {@link koinos.protocol.object_space.verify|verify} messages.
+         * @function encode
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {koinos.protocol.Iobject_space} message object_space message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        object_space.encode = function encode(message, writer) {
+          if (!writer) writer = $Writer.create();
+          if (
+            message.system != null &&
+            Object.hasOwnProperty.call(message, "system")
+          )
+            writer.uint32(/* id 1, wireType 0 =*/ 8).bool(message.system);
+          if (
+            message.zone != null &&
+            Object.hasOwnProperty.call(message, "zone")
+          )
+            writer.uint32(/* id 2, wireType 2 =*/ 18).bytes(message.zone);
+          if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+            writer.uint32(/* id 3, wireType 0 =*/ 24).uint32(message.id);
+          return writer;
+        };
+
+        /**
+         * Encodes the specified object_space message, length delimited. Does not implicitly {@link koinos.protocol.object_space.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {koinos.protocol.Iobject_space} message object_space message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        object_space.encodeDelimited = function encodeDelimited(
+          message,
+          writer
+        ) {
+          return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an object_space message from the specified reader or buffer.
+         * @function decode
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {koinos.protocol.object_space} object_space
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        object_space.decode = function decode(reader, length) {
+          if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
+          var end = length === undefined ? reader.len : reader.pos + length,
+            message = new $root.koinos.protocol.object_space();
+          while (reader.pos < end) {
+            var tag = reader.uint32();
+            switch (tag >>> 3) {
+              case 1: {
+                message.system = reader.bool();
+                break;
+              }
+              case 2: {
+                message.zone = reader.bytes();
+                break;
+              }
+              case 3: {
+                message.id = reader.uint32();
+                break;
+              }
+              default:
+                reader.skipType(tag & 7);
+                break;
+            }
+          }
+          return message;
+        };
+
+        /**
+         * Decodes an object_space message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {koinos.protocol.object_space} object_space
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        object_space.decodeDelimited = function decodeDelimited(reader) {
+          if (!(reader instanceof $Reader)) reader = new $Reader(reader);
+          return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an object_space message.
+         * @function verify
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        object_space.verify = function verify(message) {
+          if (typeof message !== "object" || message === null)
+            return "object expected";
+          if (message.system != null && message.hasOwnProperty("system"))
+            if (typeof message.system !== "boolean")
+              return "system: boolean expected";
+          if (message.zone != null && message.hasOwnProperty("zone"))
+            if (
+              !(
+                (message.zone && typeof message.zone.length === "number") ||
+                $util.isString(message.zone)
+              )
+            )
+              return "zone: buffer expected";
+          if (message.id != null && message.hasOwnProperty("id"))
+            if (!$util.isInteger(message.id)) return "id: integer expected";
+          return null;
+        };
+
+        /**
+         * Creates an object_space message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {koinos.protocol.object_space} object_space
+         */
+        object_space.fromObject = function fromObject(object) {
+          if (object instanceof $root.koinos.protocol.object_space)
+            return object;
+          var message = new $root.koinos.protocol.object_space();
+          if (object.system != null) message.system = Boolean(object.system);
+          if (object.zone != null)
+            if (typeof object.zone === "string")
+              $util.base64.decode(
+                object.zone,
+                (message.zone = $util.newBuffer(
+                  $util.base64.length(object.zone)
+                )),
+                0
+              );
+            else if (object.zone.length >= 0) message.zone = object.zone;
+          if (object.id != null) message.id = object.id >>> 0;
+          return message;
+        };
+
+        /**
+         * Creates a plain object from an object_space message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {koinos.protocol.object_space} message object_space
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        object_space.toObject = function toObject(message, options) {
+          if (!options) options = {};
+          var object = {};
+          if (options.defaults) {
+            object.system = false;
+            if (options.bytes === String) object.zone = "";
+            else {
+              object.zone = [];
+              if (options.bytes !== Array)
+                object.zone = $util.newBuffer(object.zone);
+            }
+            object.id = 0;
+          }
+          if (message.system != null && message.hasOwnProperty("system"))
+            object.system = message.system;
+          if (message.zone != null && message.hasOwnProperty("zone"))
+            object.zone =
+              options.bytes === String
+                ? $util.base64.encode(message.zone, 0, message.zone.length)
+                : options.bytes === Array
+                ? Array.prototype.slice.call(message.zone)
+                : message.zone;
+          if (message.id != null && message.hasOwnProperty("id"))
+            object.id = message.id;
+          return object;
+        };
+
+        /**
+         * Converts this object_space to JSON.
+         * @function toJSON
+         * @memberof koinos.protocol.object_space
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        object_space.prototype.toJSON = function toJSON() {
+          return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for object_space
+         * @function getTypeUrl
+         * @memberof koinos.protocol.object_space
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        object_space.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.object_space";
+        };
+
+        return object_space;
+      })();
 
       protocol.event_data = (function () {
         /**
@@ -29252,6 +29348,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          * @property {boolean|null} [reverted] transaction_receipt reverted
          * @property {Array.<koinos.protocol.Ievent_data>|null} [events] transaction_receipt events
          * @property {Array.<string>|null} [logs] transaction_receipt logs
+         * @property {Array.<koinos.protocol.Istate_delta_entry>|null} [state_delta_entries] transaction_receipt state_delta_entries
          */
 
         /**
@@ -29265,6 +29362,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
         function transaction_receipt(properties) {
           this.events = [];
           this.logs = [];
+          this.state_delta_entries = [];
           if (properties)
             for (
               var keys = Object.keys(properties), i = 0;
@@ -29376,6 +29474,14 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
         transaction_receipt.prototype.logs = $util.emptyArray;
 
         /**
+         * transaction_receipt state_delta_entries.
+         * @member {Array.<koinos.protocol.Istate_delta_entry>} state_delta_entries
+         * @memberof koinos.protocol.transaction_receipt
+         * @instance
+         */
+        transaction_receipt.prototype.state_delta_entries = $util.emptyArray;
+
+        /**
          * Creates a new transaction_receipt instance using the specified properties.
          * @function create
          * @memberof koinos.protocol.transaction_receipt
@@ -29461,6 +29567,17 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
               writer
                 .uint32(/* id 11, wireType 2 =*/ 90)
                 .string(message.logs[i]);
+          if (
+            message.state_delta_entries != null &&
+            message.state_delta_entries.length
+          )
+            for (var i = 0; i < message.state_delta_entries.length; ++i)
+              $root.koinos.protocol.state_delta_entry
+                .encode(
+                  message.state_delta_entries[i],
+                  writer.uint32(/* id 12, wireType 2 =*/ 98).fork()
+                )
+                .ldelim();
           return writer;
         };
 
@@ -29548,6 +29665,22 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
               case 11: {
                 if (!(message.logs && message.logs.length)) message.logs = [];
                 message.logs.push(reader.string());
+                break;
+              }
+              case 12: {
+                if (
+                  !(
+                    message.state_delta_entries &&
+                    message.state_delta_entries.length
+                  )
+                )
+                  message.state_delta_entries = [];
+                message.state_delta_entries.push(
+                  $root.koinos.protocol.state_delta_entry.decode(
+                    reader,
+                    reader.uint32()
+                  )
+                );
                 break;
               }
               default:
@@ -29689,6 +29822,19 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             for (var i = 0; i < message.logs.length; ++i)
               if (!$util.isString(message.logs[i]))
                 return "logs: string[] expected";
+          }
+          if (
+            message.state_delta_entries != null &&
+            message.hasOwnProperty("state_delta_entries")
+          ) {
+            if (!Array.isArray(message.state_delta_entries))
+              return "state_delta_entries: array expected";
+            for (var i = 0; i < message.state_delta_entries.length; ++i) {
+              var error = $root.koinos.protocol.state_delta_entry.verify(
+                message.state_delta_entries[i]
+              );
+              if (error) return "state_delta_entries." + error;
+            }
           }
           return null;
         };
@@ -29843,6 +29989,23 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             for (var i = 0; i < object.logs.length; ++i)
               message.logs[i] = String(object.logs[i]);
           }
+          if (object.state_delta_entries) {
+            if (!Array.isArray(object.state_delta_entries))
+              throw TypeError(
+                ".koinos.protocol.transaction_receipt.state_delta_entries: array expected"
+              );
+            message.state_delta_entries = [];
+            for (var i = 0; i < object.state_delta_entries.length; ++i) {
+              if (typeof object.state_delta_entries[i] !== "object")
+                throw TypeError(
+                  ".koinos.protocol.transaction_receipt.state_delta_entries: object expected"
+                );
+              message.state_delta_entries[i] =
+                $root.koinos.protocol.state_delta_entry.fromObject(
+                  object.state_delta_entries[i]
+                );
+            }
+          }
           return message;
         };
 
@@ -29861,6 +30024,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           if (options.arrays || options.defaults) {
             object.events = [];
             object.logs = [];
+            object.state_delta_entries = [];
           }
           if (options.defaults) {
             if (options.bytes === String) object.id = "";
@@ -30078,6 +30242,18 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             object.logs = [];
             for (var j = 0; j < message.logs.length; ++j)
               object.logs[j] = message.logs[j];
+          }
+          if (
+            message.state_delta_entries &&
+            message.state_delta_entries.length
+          ) {
+            object.state_delta_entries = [];
+            for (var j = 0; j < message.state_delta_entries.length; ++j)
+              object.state_delta_entries[j] =
+                $root.koinos.protocol.state_delta_entry.toObject(
+                  message.state_delta_entries[j],
+                  options
+                );
           }
           return object;
         };
@@ -31156,6 +31332,10 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
          * @property {Array.<koinos.protocol.Ievent_data>|null} [events] block_receipt events
          * @property {Array.<koinos.protocol.Itransaction_receipt>|null} [transaction_receipts] block_receipt transaction_receipts
          * @property {Array.<string>|null} [logs] block_receipt logs
+         * @property {number|Long|null} [disk_storage_charged] block_receipt disk_storage_charged
+         * @property {number|Long|null} [network_bandwidth_charged] block_receipt network_bandwidth_charged
+         * @property {number|Long|null} [compute_bandwidth_charged] block_receipt compute_bandwidth_charged
+         * @property {Array.<koinos.protocol.Istate_delta_entry>|null} [state_delta_entries] block_receipt state_delta_entries
          */
 
         /**
@@ -31170,6 +31350,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           this.events = [];
           this.transaction_receipts = [];
           this.logs = [];
+          this.state_delta_entries = [];
           if (properties)
             for (
               var keys = Object.keys(properties), i = 0;
@@ -31261,6 +31442,44 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
         block_receipt.prototype.logs = $util.emptyArray;
 
         /**
+         * block_receipt disk_storage_charged.
+         * @member {number|Long} disk_storage_charged
+         * @memberof koinos.protocol.block_receipt
+         * @instance
+         */
+        block_receipt.prototype.disk_storage_charged = $util.Long
+          ? $util.Long.fromBits(0, 0, true)
+          : 0;
+
+        /**
+         * block_receipt network_bandwidth_charged.
+         * @member {number|Long} network_bandwidth_charged
+         * @memberof koinos.protocol.block_receipt
+         * @instance
+         */
+        block_receipt.prototype.network_bandwidth_charged = $util.Long
+          ? $util.Long.fromBits(0, 0, true)
+          : 0;
+
+        /**
+         * block_receipt compute_bandwidth_charged.
+         * @member {number|Long} compute_bandwidth_charged
+         * @memberof koinos.protocol.block_receipt
+         * @instance
+         */
+        block_receipt.prototype.compute_bandwidth_charged = $util.Long
+          ? $util.Long.fromBits(0, 0, true)
+          : 0;
+
+        /**
+         * block_receipt state_delta_entries.
+         * @member {Array.<koinos.protocol.Istate_delta_entry>} state_delta_entries
+         * @memberof koinos.protocol.block_receipt
+         * @instance
+         */
+        block_receipt.prototype.state_delta_entries = $util.emptyArray;
+
+        /**
          * Creates a new block_receipt instance using the specified properties.
          * @function create
          * @memberof koinos.protocol.block_receipt
@@ -31340,6 +31559,38 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           if (message.logs != null && message.logs.length)
             for (var i = 0; i < message.logs.length; ++i)
               writer.uint32(/* id 9, wireType 2 =*/ 74).string(message.logs[i]);
+          if (
+            message.disk_storage_charged != null &&
+            Object.hasOwnProperty.call(message, "disk_storage_charged")
+          )
+            writer
+              .uint32(/* id 10, wireType 0 =*/ 80)
+              .uint64(message.disk_storage_charged);
+          if (
+            message.network_bandwidth_charged != null &&
+            Object.hasOwnProperty.call(message, "network_bandwidth_charged")
+          )
+            writer
+              .uint32(/* id 11, wireType 0 =*/ 88)
+              .uint64(message.network_bandwidth_charged);
+          if (
+            message.compute_bandwidth_charged != null &&
+            Object.hasOwnProperty.call(message, "compute_bandwidth_charged")
+          )
+            writer
+              .uint32(/* id 12, wireType 0 =*/ 96)
+              .uint64(message.compute_bandwidth_charged);
+          if (
+            message.state_delta_entries != null &&
+            message.state_delta_entries.length
+          )
+            for (var i = 0; i < message.state_delta_entries.length; ++i)
+              $root.koinos.protocol.state_delta_entry
+                .encode(
+                  message.state_delta_entries[i],
+                  writer.uint32(/* id 13, wireType 2 =*/ 106).fork()
+                )
+                .ldelim();
           return writer;
         };
 
@@ -31431,6 +31682,34 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
               case 9: {
                 if (!(message.logs && message.logs.length)) message.logs = [];
                 message.logs.push(reader.string());
+                break;
+              }
+              case 10: {
+                message.disk_storage_charged = reader.uint64();
+                break;
+              }
+              case 11: {
+                message.network_bandwidth_charged = reader.uint64();
+                break;
+              }
+              case 12: {
+                message.compute_bandwidth_charged = reader.uint64();
+                break;
+              }
+              case 13: {
+                if (
+                  !(
+                    message.state_delta_entries &&
+                    message.state_delta_entries.length
+                  )
+                )
+                  message.state_delta_entries = [];
+                message.state_delta_entries.push(
+                  $root.koinos.protocol.state_delta_entry.decode(
+                    reader,
+                    reader.uint32()
+                  )
+                );
                 break;
               }
               default:
@@ -31563,6 +31842,58 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             for (var i = 0; i < message.logs.length; ++i)
               if (!$util.isString(message.logs[i]))
                 return "logs: string[] expected";
+          }
+          if (
+            message.disk_storage_charged != null &&
+            message.hasOwnProperty("disk_storage_charged")
+          )
+            if (
+              !$util.isInteger(message.disk_storage_charged) &&
+              !(
+                message.disk_storage_charged &&
+                $util.isInteger(message.disk_storage_charged.low) &&
+                $util.isInteger(message.disk_storage_charged.high)
+              )
+            )
+              return "disk_storage_charged: integer|Long expected";
+          if (
+            message.network_bandwidth_charged != null &&
+            message.hasOwnProperty("network_bandwidth_charged")
+          )
+            if (
+              !$util.isInteger(message.network_bandwidth_charged) &&
+              !(
+                message.network_bandwidth_charged &&
+                $util.isInteger(message.network_bandwidth_charged.low) &&
+                $util.isInteger(message.network_bandwidth_charged.high)
+              )
+            )
+              return "network_bandwidth_charged: integer|Long expected";
+          if (
+            message.compute_bandwidth_charged != null &&
+            message.hasOwnProperty("compute_bandwidth_charged")
+          )
+            if (
+              !$util.isInteger(message.compute_bandwidth_charged) &&
+              !(
+                message.compute_bandwidth_charged &&
+                $util.isInteger(message.compute_bandwidth_charged.low) &&
+                $util.isInteger(message.compute_bandwidth_charged.high)
+              )
+            )
+              return "compute_bandwidth_charged: integer|Long expected";
+          if (
+            message.state_delta_entries != null &&
+            message.hasOwnProperty("state_delta_entries")
+          ) {
+            if (!Array.isArray(message.state_delta_entries))
+              return "state_delta_entries: array expected";
+            for (var i = 0; i < message.state_delta_entries.length; ++i) {
+              var error = $root.koinos.protocol.state_delta_entry.verify(
+                message.state_delta_entries[i]
+              );
+              if (error) return "state_delta_entries." + error;
+            }
           }
           return null;
         };
@@ -31705,6 +32036,76 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             for (var i = 0; i < object.logs.length; ++i)
               message.logs[i] = String(object.logs[i]);
           }
+          if (object.disk_storage_charged != null)
+            if ($util.Long)
+              (message.disk_storage_charged = $util.Long.fromValue(
+                object.disk_storage_charged
+              )).unsigned = true;
+            else if (typeof object.disk_storage_charged === "string")
+              message.disk_storage_charged = parseInt(
+                object.disk_storage_charged,
+                10
+              );
+            else if (typeof object.disk_storage_charged === "number")
+              message.disk_storage_charged = object.disk_storage_charged;
+            else if (typeof object.disk_storage_charged === "object")
+              message.disk_storage_charged = new $util.LongBits(
+                object.disk_storage_charged.low >>> 0,
+                object.disk_storage_charged.high >>> 0
+              ).toNumber(true);
+          if (object.network_bandwidth_charged != null)
+            if ($util.Long)
+              (message.network_bandwidth_charged = $util.Long.fromValue(
+                object.network_bandwidth_charged
+              )).unsigned = true;
+            else if (typeof object.network_bandwidth_charged === "string")
+              message.network_bandwidth_charged = parseInt(
+                object.network_bandwidth_charged,
+                10
+              );
+            else if (typeof object.network_bandwidth_charged === "number")
+              message.network_bandwidth_charged =
+                object.network_bandwidth_charged;
+            else if (typeof object.network_bandwidth_charged === "object")
+              message.network_bandwidth_charged = new $util.LongBits(
+                object.network_bandwidth_charged.low >>> 0,
+                object.network_bandwidth_charged.high >>> 0
+              ).toNumber(true);
+          if (object.compute_bandwidth_charged != null)
+            if ($util.Long)
+              (message.compute_bandwidth_charged = $util.Long.fromValue(
+                object.compute_bandwidth_charged
+              )).unsigned = true;
+            else if (typeof object.compute_bandwidth_charged === "string")
+              message.compute_bandwidth_charged = parseInt(
+                object.compute_bandwidth_charged,
+                10
+              );
+            else if (typeof object.compute_bandwidth_charged === "number")
+              message.compute_bandwidth_charged =
+                object.compute_bandwidth_charged;
+            else if (typeof object.compute_bandwidth_charged === "object")
+              message.compute_bandwidth_charged = new $util.LongBits(
+                object.compute_bandwidth_charged.low >>> 0,
+                object.compute_bandwidth_charged.high >>> 0
+              ).toNumber(true);
+          if (object.state_delta_entries) {
+            if (!Array.isArray(object.state_delta_entries))
+              throw TypeError(
+                ".koinos.protocol.block_receipt.state_delta_entries: array expected"
+              );
+            message.state_delta_entries = [];
+            for (var i = 0; i < object.state_delta_entries.length; ++i) {
+              if (typeof object.state_delta_entries[i] !== "object")
+                throw TypeError(
+                  ".koinos.protocol.block_receipt.state_delta_entries: object expected"
+                );
+              message.state_delta_entries[i] =
+                $root.koinos.protocol.state_delta_entry.fromObject(
+                  object.state_delta_entries[i]
+                );
+            }
+          }
           return message;
         };
 
@@ -31724,6 +32125,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             object.events = [];
             object.transaction_receipts = [];
             object.logs = [];
+            object.state_delta_entries = [];
           }
           if (options.defaults) {
             if (options.bytes === String) object.id = "";
@@ -31781,6 +32183,38 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
                   object.state_merkle_root
                 );
             }
+            if ($util.Long) {
+              var long = new $util.Long(0, 0, true);
+              object.disk_storage_charged =
+                options.longs === String
+                  ? long.toString()
+                  : options.longs === Number
+                  ? long.toNumber()
+                  : long;
+            } else
+              object.disk_storage_charged = options.longs === String ? "0" : 0;
+            if ($util.Long) {
+              var long = new $util.Long(0, 0, true);
+              object.network_bandwidth_charged =
+                options.longs === String
+                  ? long.toString()
+                  : options.longs === Number
+                  ? long.toNumber()
+                  : long;
+            } else
+              object.network_bandwidth_charged =
+                options.longs === String ? "0" : 0;
+            if ($util.Long) {
+              var long = new $util.Long(0, 0, true);
+              object.compute_bandwidth_charged =
+                options.longs === String
+                  ? long.toString()
+                  : options.longs === Number
+                  ? long.toNumber()
+                  : long;
+            } else
+              object.compute_bandwidth_charged =
+                options.longs === String ? "0" : 0;
           }
           if (message.id != null && message.hasOwnProperty("id"))
             object.id =
@@ -31907,6 +32341,81 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
             for (var j = 0; j < message.logs.length; ++j)
               object.logs[j] = message.logs[j];
           }
+          if (
+            message.disk_storage_charged != null &&
+            message.hasOwnProperty("disk_storage_charged")
+          )
+            if (typeof message.disk_storage_charged === "number")
+              object.disk_storage_charged =
+                options.longs === String
+                  ? String(message.disk_storage_charged)
+                  : message.disk_storage_charged;
+            else
+              object.disk_storage_charged =
+                options.longs === String
+                  ? $util.Long.prototype.toString.call(
+                      message.disk_storage_charged
+                    )
+                  : options.longs === Number
+                  ? new $util.LongBits(
+                      message.disk_storage_charged.low >>> 0,
+                      message.disk_storage_charged.high >>> 0
+                    ).toNumber(true)
+                  : message.disk_storage_charged;
+          if (
+            message.network_bandwidth_charged != null &&
+            message.hasOwnProperty("network_bandwidth_charged")
+          )
+            if (typeof message.network_bandwidth_charged === "number")
+              object.network_bandwidth_charged =
+                options.longs === String
+                  ? String(message.network_bandwidth_charged)
+                  : message.network_bandwidth_charged;
+            else
+              object.network_bandwidth_charged =
+                options.longs === String
+                  ? $util.Long.prototype.toString.call(
+                      message.network_bandwidth_charged
+                    )
+                  : options.longs === Number
+                  ? new $util.LongBits(
+                      message.network_bandwidth_charged.low >>> 0,
+                      message.network_bandwidth_charged.high >>> 0
+                    ).toNumber(true)
+                  : message.network_bandwidth_charged;
+          if (
+            message.compute_bandwidth_charged != null &&
+            message.hasOwnProperty("compute_bandwidth_charged")
+          )
+            if (typeof message.compute_bandwidth_charged === "number")
+              object.compute_bandwidth_charged =
+                options.longs === String
+                  ? String(message.compute_bandwidth_charged)
+                  : message.compute_bandwidth_charged;
+            else
+              object.compute_bandwidth_charged =
+                options.longs === String
+                  ? $util.Long.prototype.toString.call(
+                      message.compute_bandwidth_charged
+                    )
+                  : options.longs === Number
+                  ? new $util.LongBits(
+                      message.compute_bandwidth_charged.low >>> 0,
+                      message.compute_bandwidth_charged.high >>> 0
+                    ).toNumber(true)
+                  : message.compute_bandwidth_charged;
+          if (
+            message.state_delta_entries &&
+            message.state_delta_entries.length
+          ) {
+            object.state_delta_entries = [];
+            for (var j = 0; j < message.state_delta_entries.length; ++j)
+              object.state_delta_entries[j] =
+                $root.koinos.protocol.state_delta_entry.toObject(
+                  message.state_delta_entries[j],
+                  options
+                );
+          }
           return object;
         };
 
@@ -31937,6 +32446,353 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
         };
 
         return block_receipt;
+      })();
+
+      protocol.state_delta_entry = (function () {
+        /**
+         * Properties of a state_delta_entry.
+         * @memberof koinos.protocol
+         * @interface Istate_delta_entry
+         * @property {koinos.protocol.Iobject_space|null} [object_space] state_delta_entry object_space
+         * @property {Uint8Array|null} [key] state_delta_entry key
+         * @property {Uint8Array|null} [value] state_delta_entry value
+         */
+
+        /**
+         * Constructs a new state_delta_entry.
+         * @memberof koinos.protocol
+         * @classdesc Represents a state_delta_entry.
+         * @implements Istate_delta_entry
+         * @constructor
+         * @param {koinos.protocol.Istate_delta_entry=} [properties] Properties to set
+         */
+        function state_delta_entry(properties) {
+          if (properties)
+            for (
+              var keys = Object.keys(properties), i = 0;
+              i < keys.length;
+              ++i
+            )
+              if (properties[keys[i]] != null)
+                this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * state_delta_entry object_space.
+         * @member {koinos.protocol.Iobject_space|null|undefined} object_space
+         * @memberof koinos.protocol.state_delta_entry
+         * @instance
+         */
+        state_delta_entry.prototype.object_space = null;
+
+        /**
+         * state_delta_entry key.
+         * @member {Uint8Array} key
+         * @memberof koinos.protocol.state_delta_entry
+         * @instance
+         */
+        state_delta_entry.prototype.key = $util.newBuffer([]);
+
+        /**
+         * state_delta_entry value.
+         * @member {Uint8Array|null|undefined} value
+         * @memberof koinos.protocol.state_delta_entry
+         * @instance
+         */
+        state_delta_entry.prototype.value = null;
+
+        // OneOf field names bound to virtual getters and setters
+        var $oneOfFields;
+
+        /**
+         * state_delta_entry _value.
+         * @member {"value"|undefined} _value
+         * @memberof koinos.protocol.state_delta_entry
+         * @instance
+         */
+        Object.defineProperty(state_delta_entry.prototype, "_value", {
+          get: $util.oneOfGetter(($oneOfFields = ["value"])),
+          set: $util.oneOfSetter($oneOfFields),
+        });
+
+        /**
+         * Creates a new state_delta_entry instance using the specified properties.
+         * @function create
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {koinos.protocol.Istate_delta_entry=} [properties] Properties to set
+         * @returns {koinos.protocol.state_delta_entry} state_delta_entry instance
+         */
+        state_delta_entry.create = function create(properties) {
+          return new state_delta_entry(properties);
+        };
+
+        /**
+         * Encodes the specified state_delta_entry message. Does not implicitly {@link koinos.protocol.state_delta_entry.verify|verify} messages.
+         * @function encode
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {koinos.protocol.Istate_delta_entry} message state_delta_entry message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        state_delta_entry.encode = function encode(message, writer) {
+          if (!writer) writer = $Writer.create();
+          if (
+            message.object_space != null &&
+            Object.hasOwnProperty.call(message, "object_space")
+          )
+            $root.koinos.protocol.object_space
+              .encode(
+                message.object_space,
+                writer.uint32(/* id 1, wireType 2 =*/ 10).fork()
+              )
+              .ldelim();
+          if (message.key != null && Object.hasOwnProperty.call(message, "key"))
+            writer.uint32(/* id 2, wireType 2 =*/ 18).bytes(message.key);
+          if (
+            message.value != null &&
+            Object.hasOwnProperty.call(message, "value")
+          )
+            writer.uint32(/* id 3, wireType 2 =*/ 26).bytes(message.value);
+          return writer;
+        };
+
+        /**
+         * Encodes the specified state_delta_entry message, length delimited. Does not implicitly {@link koinos.protocol.state_delta_entry.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {koinos.protocol.Istate_delta_entry} message state_delta_entry message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        state_delta_entry.encodeDelimited = function encodeDelimited(
+          message,
+          writer
+        ) {
+          return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a state_delta_entry message from the specified reader or buffer.
+         * @function decode
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {koinos.protocol.state_delta_entry} state_delta_entry
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        state_delta_entry.decode = function decode(reader, length) {
+          if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
+          var end = length === undefined ? reader.len : reader.pos + length,
+            message = new $root.koinos.protocol.state_delta_entry();
+          while (reader.pos < end) {
+            var tag = reader.uint32();
+            switch (tag >>> 3) {
+              case 1: {
+                message.object_space =
+                  $root.koinos.protocol.object_space.decode(
+                    reader,
+                    reader.uint32()
+                  );
+                break;
+              }
+              case 2: {
+                message.key = reader.bytes();
+                break;
+              }
+              case 3: {
+                message.value = reader.bytes();
+                break;
+              }
+              default:
+                reader.skipType(tag & 7);
+                break;
+            }
+          }
+          return message;
+        };
+
+        /**
+         * Decodes a state_delta_entry message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {koinos.protocol.state_delta_entry} state_delta_entry
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        state_delta_entry.decodeDelimited = function decodeDelimited(reader) {
+          if (!(reader instanceof $Reader)) reader = new $Reader(reader);
+          return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a state_delta_entry message.
+         * @function verify
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        state_delta_entry.verify = function verify(message) {
+          if (typeof message !== "object" || message === null)
+            return "object expected";
+          var properties = {};
+          if (
+            message.object_space != null &&
+            message.hasOwnProperty("object_space")
+          ) {
+            var error = $root.koinos.protocol.object_space.verify(
+              message.object_space
+            );
+            if (error) return "object_space." + error;
+          }
+          if (message.key != null && message.hasOwnProperty("key"))
+            if (
+              !(
+                (message.key && typeof message.key.length === "number") ||
+                $util.isString(message.key)
+              )
+            )
+              return "key: buffer expected";
+          if (message.value != null && message.hasOwnProperty("value")) {
+            properties._value = 1;
+            if (
+              !(
+                (message.value && typeof message.value.length === "number") ||
+                $util.isString(message.value)
+              )
+            )
+              return "value: buffer expected";
+          }
+          return null;
+        };
+
+        /**
+         * Creates a state_delta_entry message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {koinos.protocol.state_delta_entry} state_delta_entry
+         */
+        state_delta_entry.fromObject = function fromObject(object) {
+          if (object instanceof $root.koinos.protocol.state_delta_entry)
+            return object;
+          var message = new $root.koinos.protocol.state_delta_entry();
+          if (object.object_space != null) {
+            if (typeof object.object_space !== "object")
+              throw TypeError(
+                ".koinos.protocol.state_delta_entry.object_space: object expected"
+              );
+            message.object_space =
+              $root.koinos.protocol.object_space.fromObject(
+                object.object_space
+              );
+          }
+          if (object.key != null)
+            if (typeof object.key === "string")
+              $util.base64.decode(
+                object.key,
+                (message.key = $util.newBuffer(
+                  $util.base64.length(object.key)
+                )),
+                0
+              );
+            else if (object.key.length >= 0) message.key = object.key;
+          if (object.value != null)
+            if (typeof object.value === "string")
+              $util.base64.decode(
+                object.value,
+                (message.value = $util.newBuffer(
+                  $util.base64.length(object.value)
+                )),
+                0
+              );
+            else if (object.value.length >= 0) message.value = object.value;
+          return message;
+        };
+
+        /**
+         * Creates a plain object from a state_delta_entry message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {koinos.protocol.state_delta_entry} message state_delta_entry
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        state_delta_entry.toObject = function toObject(message, options) {
+          if (!options) options = {};
+          var object = {};
+          if (options.defaults) {
+            object.object_space = null;
+            if (options.bytes === String) object.key = "";
+            else {
+              object.key = [];
+              if (options.bytes !== Array)
+                object.key = $util.newBuffer(object.key);
+            }
+          }
+          if (
+            message.object_space != null &&
+            message.hasOwnProperty("object_space")
+          )
+            object.object_space = $root.koinos.protocol.object_space.toObject(
+              message.object_space,
+              options
+            );
+          if (message.key != null && message.hasOwnProperty("key"))
+            object.key =
+              options.bytes === String
+                ? $util.base64.encode(message.key, 0, message.key.length)
+                : options.bytes === Array
+                ? Array.prototype.slice.call(message.key)
+                : message.key;
+          if (message.value != null && message.hasOwnProperty("value")) {
+            object.value =
+              options.bytes === String
+                ? $util.base64.encode(message.value, 0, message.value.length)
+                : options.bytes === Array
+                ? Array.prototype.slice.call(message.value)
+                : message.value;
+            if (options.oneofs) object._value = "value";
+          }
+          return object;
+        };
+
+        /**
+         * Converts this state_delta_entry to JSON.
+         * @function toJSON
+         * @memberof koinos.protocol.state_delta_entry
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        state_delta_entry.prototype.toJSON = function toJSON() {
+          return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for state_delta_entry
+         * @function getTypeUrl
+         * @memberof koinos.protocol.state_delta_entry
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        state_delta_entry.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+          if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+          }
+          return typeUrlPrefix + "/koinos.protocol.state_delta_entry";
+        };
+
+        return state_delta_entry;
       })();
 
       return protocol;
@@ -33661,7 +34517,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested":{"token":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/koinos/contracts/token"},"nested":{"name_arguments":{"fields":{}},"name_result":{"fields":{"value":{"type":"string","id":1}}},"symbol_arguments":{"fields":{}},"symbol_result":{"fields":{"value":{"type":"string","id":1}}},"decimals_arguments":{"fields":{}},"decimals_result":{"fields":{"value":{"type":"uint32","id":1}}},"total_supply_arguments":{"fields":{}},"total_supply_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"balance_of_arguments":{"fields":{"owner":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}}}},"balance_of_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"transfer_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"transfer_result":{"fields":{}},"mint_arguments":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_result":{"fields":{}},"burn_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"burn_result":{"fields":{}},"balance_object":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"mana_balance_object":{"fields":{"balance":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}},"mana":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}},"last_mana_update":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}},"burn_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_event":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"transfer_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}}}}}}}}}}');
+module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested":{"token":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/v2/koinos/contracts/token"},"nested":{"name_arguments":{"fields":{}},"name_result":{"fields":{"value":{"type":"string","id":1}}},"symbol_arguments":{"fields":{}},"symbol_result":{"fields":{"value":{"type":"string","id":1}}},"decimals_arguments":{"fields":{}},"decimals_result":{"fields":{"value":{"type":"uint32","id":1}}},"total_supply_arguments":{"fields":{}},"total_supply_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"balance_of_arguments":{"fields":{"owner":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}}}},"balance_of_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"transfer_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}},"memo":{"type":"string","id":4}}},"transfer_result":{"fields":{}},"mint_arguments":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_result":{"fields":{}},"burn_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"burn_result":{"fields":{}},"balance_object":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"burn_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_event":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"transfer_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}}}}}}}}}}');
 
 /***/ })
 
