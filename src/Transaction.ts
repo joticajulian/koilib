@@ -263,8 +263,14 @@ export class Transaction {
       nonce = tx.header.nonce;
     }
 
-    let rcLimit: string | number = 0;
-    if (tx.header.rc_limit) {
+    let rcLimit: string | number;
+    if (tx.header.rc_limit === undefined) {
+      if (!provider)
+        throw new Error(
+          "Cannot get the rc_limit because provider is undefined. To skip this call set a rc_limit in the transaction header"       
+        );
+      rcLimit = await provider.getAccountRc(payer);
+    } else {
       rcLimit = tx.header.rc_limit;
     }
 
@@ -316,7 +322,7 @@ export class Transaction {
   }
 
   /**
-   * Functon to prepare the transaction (set headers, merkle
+   * Function to prepare the transaction (set headers, merkle
    * root, etc)
    */
   async prepare(options?: TransactionOptions): Promise<TransactionJson> {
