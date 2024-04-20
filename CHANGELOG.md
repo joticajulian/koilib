@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
-## [v5.7.0](https://github.com/joticajulian/koilib/releases/tag/v5.7.0) (2024-04-06)
+## [v6.0.0](https://github.com/joticajulian/koilib/releases/tag/v6.0.0) (2024-04-19)
 
 ### 🚀 Features
 
@@ -26,6 +26,10 @@ All notable changes to this project will be documented in this file. 🤘
 - getPrivateKey with compressed true by default
 - Fix send function in transaction class: Use signer only when it is not signed
 - Fix export of interfaces
+
+## [v5.7.0](https://github.com/joticajulian/koilib/releases/tag/v5.7.0) (2024-04-06)
+
+Release removed due a conflict with semver. Replaced with v6.0.0.
 
 ## [v5.6.1](https://github.com/joticajulian/koilib/releases/tag/v5.6.1) (2023-07-29)
 
