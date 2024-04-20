@@ -2,6 +2,7 @@
 import { sha256 } from "@noble/hashes/sha256";
 import * as secp from "@noble/secp256k1";
 import { Provider } from "./Provider";
+import { Transaction } from "./Transaction";
 import {
   TransactionJson,
   TransactionJsonWait,
@@ -11,6 +12,7 @@ import {
   TypeField,
   TransactionReceipt,
   SendTransactionOptions,
+  ResourceCreditsOptions,
 } from "./interface";
 import {
   bitcoinAddress,
@@ -157,6 +159,13 @@ export class Signer implements SignerInterface {
   sendOptions?: SendTransactionOptions;
 
   /**
+   * Options related to the estimation of the rcLimit.
+   * By default the estimation is enabled and increased
+   * by 10%.
+   */
+  rcOptions: ResourceCreditsOptions;
+
+  /**
    * The constructor receives de private key as hexstring, bigint or Uint8Array.
    * See also the functions [[Signer.fromWif]] and [[Signer.fromSeed]]
    * to create the signer from the WIF or Seed respectively.
@@ -178,6 +187,7 @@ export class Signer implements SignerInterface {
     chainId?: string;
     provider?: Provider;
     sendOptions?: SendTransactionOptions;
+    rcOptions?: ResourceCreditsOptions;
   }) {
     this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;
     this.privateKey = c.privateKey;
@@ -193,6 +203,16 @@ export class Signer implements SignerInterface {
     this.sendOptions = {
       broadcast: true,
       ...c.sendOptions,
+    };
+    this.rcOptions = c.rcOptions ?? {
+      estimateRc: true,
+      adjustRcLimit: (receipt) =>
+        Promise.resolve(
+          Math.min(
+            Number(receipt.max_payer_rc),
+            Math.floor(1.1 * Number(receipt.rc_used))
+          )
+        ),
     };
   }
 
@@ -324,6 +344,15 @@ export class Signer implements SignerInterface {
   ): Promise<TransactionJson> {
     if (!tx.id) throw new Error("Missing transaction id");
 
+    // estimation of rcLimit
+    if (this.rcOptions.estimateRc) {
+      const receipt = await this.estimateReceipt(tx);
+      tx.header!.rc_limit = this.rcOptions.adjustRcLimit
+        ? await this.rcOptions.adjustRcLimit(receipt)
+        : receipt.rc_used;
+      tx.id = Transaction.computeTransactionId(tx.header!);
+    }
+
     // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
     // tx id is a stringified multihash, need to extract the hash digest only
     const hash = toUint8Array(tx.id.slice(6));
@@ -384,6 +413,45 @@ export class Signer implements SignerInterface {
       await opts.beforeSend(transaction, options);
     }
     return this.provider.sendTransaction(transaction, opts.broadcast);
+  }
+
+  /**
+   * Estimate the receipt associated to the transaction if
+   * it sent to the blockchain. It is useful to estimate the
+   * consumption of mana.
+   * The transaction is signed during this process and sent
+   * to the rpc node with the "broadcast:false" option to
+   * just compute the transaction without broadcasting it to
+   * the network.
+   * After that, the initial signatures are restored (if any)
+   * and the ones used for the estimation will be removed.
+   */
+  async estimateReceipt(
+    tx: TransactionJson | TransactionJsonWait
+  ): Promise<TransactionReceipt> {
+    if (!tx.id) throw new Error("Missing transaction id");
+    if (!tx.signatures) tx.signatures = [];
+    const signaturesCopy = [...tx.signatures];
+
+    // sign if there are no signatures
+    if (tx.signatures.length === 0) {
+      const hash = toUint8Array(tx.id.slice(6));
+      const signature = await this.signHash(hash);
+      tx.signatures.push(encodeBase64url(signature));
+    }
+
+    try {
+      const { receipt } = await this.sendTransaction(tx, {
+        broadcast: false,
+      });
+      // restore signatures
+      tx.signatures = signaturesCopy;
+      return receipt;
+    } catch (error) {
+      // restore signatures
+      tx.signatures = signaturesCopy;
+      throw error;
+    }
   }
 
   /**

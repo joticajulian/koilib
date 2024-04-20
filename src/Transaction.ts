@@ -7,6 +7,7 @@ import {
   Abi,
   OperationJson,
   SendTransactionOptions,
+  TransactionHeaderJson,
   TransactionJson,
   TransactionOptions,
   TransactionReceipt,
@@ -216,6 +217,19 @@ export class Transaction {
     this.transaction.operations.push(operation);
   }
 
+  static computeTransactionId(txHeader: TransactionHeaderJson): string {
+    const headerDecoded = btypeDecode(txHeader, btypeTransactionHeader!, false);
+    const message = koinos.protocol.transaction_header.create(headerDecoded);
+    const headerBytes = koinos.protocol.transaction_header
+      .encode(message)
+      .finish() as Uint8Array;
+
+    const hash = sha256(headerBytes);
+
+    // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
+    return `0x1220${toHexString(hash)}`;
+  }
+
   /**
    * Function to prepare a transaction
    * @param tx - Do not set the nonce to get it from the blockchain
@@ -249,14 +263,8 @@ export class Transaction {
       nonce = tx.header.nonce;
     }
 
-    let rcLimit: string | number;
-    if (tx.header.rc_limit === undefined) {
-      if (!provider)
-        throw new Error(
-          "Cannot get the rc_limit because provider is undefined. To skip this call set a rc_limit in the transaction header"
-        );
-      rcLimit = await provider.getAccountRc(payer);
-    } else {
+    let rcLimit: string | number = 0;
+    if (tx.header.rc_limit) {
       rcLimit = tx.header.rc_limit;
     }
 
@@ -303,20 +311,7 @@ export class Transaction {
       // TODO: Option to resolve names (payer, payee)
     };
 
-    const headerDecoded = btypeDecode(
-      tx.header,
-      btypeTransactionHeader!,
-      false
-    );
-    const message = koinos.protocol.transaction_header.create(headerDecoded);
-    const headerBytes = koinos.protocol.transaction_header
-      .encode(message)
-      .finish() as Uint8Array;
-
-    const hash = sha256(headerBytes);
-
-    // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
-    tx.id = `0x1220${toHexString(hash)}`;
+    tx.id = Transaction.computeTransactionId(tx.header);
     return tx;
   }
 

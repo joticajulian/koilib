@@ -484,12 +484,14 @@ export class Provider {
       "chain.submit_transaction",
       { transaction, broadcast }
     );
-    (transaction as TransactionJsonWait).wait = async (
-      type: "byTransactionId" | "byBlock" = "byBlock",
-      timeout = 15000
-    ) => {
-      return this.wait(transaction.id as string, type, timeout);
-    };
+    if (broadcast) {
+      (transaction as TransactionJsonWait).wait = async (
+        type: "byTransactionId" | "byBlock" = "byBlock",
+        timeout = 15000
+      ) => {
+        return this.wait(transaction.id as string, type, timeout);
+      };
+    }
     return { ...response, transaction: transaction as TransactionJsonWait };
   }
 
