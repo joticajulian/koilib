@@ -142,11 +142,6 @@ export class Signer implements SignerInterface {
   address: string;
 
   /**
-   * Chain id
-   */
-  chainId = "";
-
-  /**
    * Provider to connect with the blockchain
    */
   provider?: Provider;
@@ -173,6 +168,8 @@ export class Signer implements SignerInterface {
    * @param privateKey - Private key as hexstring, bigint or Uint8Array
    * @param compressed - compressed format is true by default
    * @param provider - provider to connect with the blockchain
+   * @param sendOptions - Send options
+   * @param rcOptions - options for mana estimation
    * @example
    * ```ts
    * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
@@ -180,11 +177,42 @@ export class Signer implements SignerInterface {
    * console.log(signer.getAddress());
    * // 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b
    * ```
+   *
+   * By default the mana is estimated as 110% the mana used. This
+   * estimation is computed using the "broadcast:false" option.
+   * For instance, if the transaction consumes 1 mana, the rc_limit
+   * will be set to 1.1 mana.
+   *
+   * You can also adjust the rc limit.
+   * @example
+   * ```ts
+   * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+   * cons signer = new Signer({
+   *   privateKey,
+   *   provider,
+   *   rcOptions: {
+   *     estimateRc: true,
+   *     // use 2 times rc_used as rc_limit
+   *     adjustRcLimit: (r) => 2 * Number(r.rc_used),
+   *   },
+   * });
+   * ```
+   *
+   * The rpc node must be highly trusted because the transaction
+   * is signed during the estimation of the mana. You can also
+   * disable the mana estimation:
+   * @example
+   * ```ts
+   * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+   * cons signer = new Signer({
+   *   privateKey,
+   *   provider,
+   *   rcOptions: { estimateRc: false },
+   * });
    */
   constructor(c: {
     privateKey: string | number | bigint | Uint8Array;
     compressed?: boolean;
-    chainId?: string;
     provider?: Provider;
     sendOptions?: SendTransactionOptions;
     rcOptions?: ResourceCreditsOptions;
@@ -199,7 +227,6 @@ export class Signer implements SignerInterface {
       this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
       this.address = bitcoinAddress(this.publicKey);
     }
-    if (c.chainId) this.chainId = c.chainId;
     this.sendOptions = {
       broadcast: true,
       ...c.sendOptions,
