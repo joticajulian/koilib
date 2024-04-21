@@ -267,7 +267,7 @@ export class Transaction {
     if (tx.header.rc_limit === undefined) {
       if (!provider)
         throw new Error(
-          "Cannot get the rc_limit because provider is undefined. To skip this call set a rc_limit in the transaction header"       
+          "Cannot get the rc_limit because provider is undefined. To skip this call set a rc_limit in the transaction header"
         );
       rcLimit = await provider.getAccountRc(payer);
     } else {
