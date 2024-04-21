@@ -1845,7 +1845,7 @@ describe("Wallet and Contract", () => {
         provider,
         rcOptions: {
           estimateRc: true,
-          adjustRcLimit: (r) => Promise.resolve(2 * Number(r.rc_used)),
+          adjustRcLimit: (r) => 2 * Number(r.rc_used),
         },
       });
       const koinContract2 = new Contract({

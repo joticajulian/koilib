@@ -259,7 +259,9 @@ export interface ResourceCreditsOptions {
    * }
    * ```
    */
-  adjustRcLimit?: (receipt: TransactionReceipt) => Promise<string | number>;
+  adjustRcLimit?: (
+    receipt: TransactionReceipt
+  ) => Promise<string | number> | string | number;
 }
 
 export interface SendTransactionOptions {
