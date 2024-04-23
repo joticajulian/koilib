@@ -37,7 +37,7 @@ You can also load it directly to the browser by downloading the bunble file loca
         const signer = Signer.fromWif("Kzl...");
         signer.provider = provider;
         const koinContract = new Contract({
-          id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+          id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
           abi: utils.tokenAbi,
           provider,
           signer,
