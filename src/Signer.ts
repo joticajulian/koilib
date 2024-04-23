@@ -229,6 +229,7 @@ export class Signer implements SignerInterface {
    *   provider,
    *   rcOptions: { estimateRc: false },
    * });
+   * ```
    */
   constructor(c: {
     privateKey: string | number | bigint | Uint8Array;

@@ -506,8 +506,8 @@ export type WaitFunction = (
 }>;
 
 export interface GetBlockOptions {
-  returnBlock: boolean;
-  returnReceipt: boolean;
+  returnBlock?: boolean;
+  returnReceipt?: boolean;
 }
 
 export interface GenesisDataEntryEncoded {

@@ -96,7 +96,7 @@ export class Provider {
    * Now search the message `get_account_history_request`. This message is telling us
    * the expected fields in the body of the call:
    *
-   * ```proto
+   * ```ts
    * message get_account_history_request {
    *    bytes address = 1 [(btype) = ADDRESS];
    *    optional uint64 seq_num = 2 [jstype = JS_STRING];
@@ -107,7 +107,7 @@ export class Provider {
    * ```
    *
    * And search the message `get_account_history_response` to see the format of the response:
-   * ```proto
+   * ```ts
    * message get_account_history_response {
    *    repeated account_history_entry values = 1;
    * }
@@ -379,12 +379,30 @@ export class Provider {
       return_block:
         opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
       return_receipt:
-        opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
+        opts && opts.returnReceipt !== undefined ? opts.returnReceipt : true,
     });
   }
 
   /**
    * Function to get info from the head block in the blockchain
+   *
+   * @example
+   * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const headInfo = await provider.getHeadInfo();
+   * console.log(headInfo);
+   *
+   * // {
+   * //   head_topology: {
+   * //     id: '0x12209f7c9b4d695eefd6f87465d490654e495fe25a3d7d2e1eb80658acdc49bad962',
+   * //     height: '14957951',
+   * //     previous: '0x1220bc3b94e3a2adc3ca09d61a4418df1f4acfa78a69686f592877c194ea50642cd2'
+   * //   },
+   * //   last_irreversible_block: '14957891',
+   * //   head_state_merkle_root: 'EiCriqXooNUXBG23EUKLz2qq3h9ZAC8w1W7w185YQ9MzIA==',
+   * //   head_block_time: '1713874497290'
+   * // }
+   * ```
    */
   async getHeadInfo(): Promise<{
     head_block_time: string;
@@ -456,13 +474,79 @@ export class Provider {
         return_block:
           opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
         return_receipt:
-          opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
+          opts && opts.returnReceipt !== undefined ? opts.returnReceipt : true,
       })
     ).block_items;
   }
 
   /**
    * Function to get a block by its height
+   *
+   * @example
+   * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const block = await provider.getBlock(14951433);
+   * console.log(block);
+   *
+   * // {
+   * //   block_id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+   * //   block_height: '14951433',
+   * //   block: {
+   * //     id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+   * //     header: {
+   * //       previous: '0x1220a3c4cbc57ccee4d02b4a1849a9e504122ee93b904deff711d926def2ea2cc878',
+   * //       height: '14951433',
+   * //       timestamp: '1713854518430',
+   * //       previous_state_merkle_root: 'EiCPcnYosMvEBYeCcJrdIJJG0mp4TJ796UGxa0NY6EvzbQ==',
+   * //       transaction_merkle_root: 'EiBGPKwttckB7c_BafwnHHmHTBa9S1vKBKauj_yLVNb0tg==',
+   * //       signer: '1EPZaqve43k9Jq5mNeT2ydCjUiytTTU4U',
+   * //       approved_proposals: [Array]
+   * //     },
+   * //     transactions: [ [Object] ],
+   * //     signature: 'ClEDnHKX1F-pQVbFhmz2qnrwGfP-RbEfTdRFUrvmhmqMeoejtmm2Q0yIPbD5kN5xpIEb
+   * //                 8vVwsIJ3lTrgFz2E8w0Paxkgv1E_gMaYNq5UUqtHnl0SIhIgAAbuPHmfMKh9R0Yi5y1D
+   * //                 TpjjdN0DYKaIUseXzLiLg_QaQR9jRinZf0g_qo2_4wOx9gDBunIij0r5CycHrNMsuT_V
+   * //                 _UvrJOYuwj7aUCA-qnF2tCBQoNQZ3ww7WvKHrMdChxxy'
+   * //   },
+   * //   receipt: {
+   * //     id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+   * //     height: '14951433',
+   * //     disk_storage_used: '35',
+   * //     network_bandwidth_used: '760',
+   * //     compute_bandwidth_used: '5253506',
+   * //     events: [ [Object], [Object] ],
+   * //     transaction_receipts: [ [Object] ],
+   * //     disk_storage_charged: '35',
+   * //     network_bandwidth_charged: '760',
+   * //     compute_bandwidth_charged: '5180427',
+   * //     state_delta_entries: [
+   * //       [Object], [Object],
+   * //       [Object], [Object],
+   * //       [Object], [Object],
+   * //       [Object], [Object],
+   * //       [Object], [Object]
+   * //     ]
+   * //   }
+   * // }
+   * ```
+   *
+   * Use the options to get less information. This helps to reduce
+   * the bandwidth of the call.
+   *
+   * @example
+   * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const block = await provider.getBlock(14951433, {
+   *   returnReceipt: false,
+   *   returnBlock: false
+   * });
+   * console.log(block);
+   *
+   * // {
+   * //   block_id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+   * //   block_height: '14951433'
+   * // }
+   * ```
    */
   async getBlock(
     height: number,
