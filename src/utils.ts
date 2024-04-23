@@ -484,6 +484,18 @@ export function btypeEncode(
 
 /**
  * ABI for tokens
+ *
+ * @example
+ * ```ts
+ * import { Contract, Provider, utils } from "koilib";
+ *
+ * const provider = new Provider("https://api.koinos.io");
+ * const koinContract = new Contract({
+ *   id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
+ *   provider,
+ *   abi: utils.tokenAbi,
+ * });
+ * ```
  */
 export const tokenAbi: Abi = {
   methods: {
@@ -1150,6 +1162,29 @@ export const tokenAbi: Abi = {
 
 /**
  * ABI for NFTs
+ *
+ * @example
+ * ```ts
+ * import { Contract, Provider, utils } from "koilib";
+ *
+ * const provider = new Provider("https://api.koinos.io");
+ * const nicknamesContract = new Contract({
+ *   id: "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz",
+ *   provider,
+ *   abi: utils.nftAbi,
+ * });
+ * const nicknames = nicknamesContract.functions;
+ *
+ * ...
+ *
+ * // get the address linked to the nickname "pob"
+ * const pobId = `0x${utils.toHexString(new TextEncoder().encode("pob"))}`;
+ * const { result } = await nicknames.ownerOf({ token_id: pobId });
+ * console.log(result);
+ *
+ * // { value: '159myq5YUhhoVWu3wsHKHiJYKPKGUrGiyv' }
+ })();
+ * ```
  */
 export const nftAbi: Abi = {
   methods: {
