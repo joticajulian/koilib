@@ -6,6 +6,7 @@ import {
   TransactionReceipt,
   TransactionJsonWait,
   BlockTopology,
+  GetBlockOptions,
 } from "./interface";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -365,10 +366,7 @@ export class Provider {
 
   async getBlocksById(
     blockIds: string[],
-    opts?: {
-      returnBlock: boolean;
-      returnReceipt: boolean;
-    }
+    opts?: GetBlockOptions
   ): Promise<{
     block_items: {
       block_id: string;
@@ -425,10 +423,7 @@ export class Provider {
     height: number,
     numBlocks = 1,
     idRef?: string,
-    opts?: {
-      returnBlock: boolean;
-      returnReceipt: boolean;
-    }
+    opts?: GetBlockOptions
   ): Promise<
     {
       block_id: string;
@@ -469,7 +464,10 @@ export class Provider {
   /**
    * Function to get a block by its height
    */
-  async getBlock(height: number): Promise<{
+  async getBlock(
+    height: number,
+    opts?: GetBlockOptions
+  ): Promise<{
     block_id: string;
     block_height: string;
     block: BlockJson;
@@ -477,7 +475,7 @@ export class Provider {
       [x: string]: unknown;
     };
   }> {
-    return (await this.getBlocks(height, 1))[0];
+    return (await this.getBlocks(height, 1, undefined, opts))[0];
   }
 
   /**

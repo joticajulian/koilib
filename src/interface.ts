@@ -505,6 +505,11 @@ export type WaitFunction = (
   blockNumber?: number;
 }>;
 
+export interface GetBlockOptions {
+  returnBlock: boolean;
+  returnReceipt: boolean;
+}
+
 export interface GenesisDataEntryEncoded {
   space: {
     system?: boolean;
