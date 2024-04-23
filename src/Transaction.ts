@@ -138,7 +138,7 @@ export class Transaction {
    * @example
    * ```ts
    * const koin = new Contract({
-   *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
    *   abi: utils.tokenAbi,
    * }).functions;
    * const signer = Signer.fromSeed("my seed");

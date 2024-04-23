@@ -25,45 +25,33 @@ import { Transaction } from "./Transaction";
  *
  * ```ts
  * const { Contract, Provider, Signer, utils } = require("koilib");
- * const rpcNodes = ["http://api.koinos.io:8080"];
+ * const rpcNodes = ["http://api.koinos.io"];
  * const privateKey = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
  * const provider = new Provider(rpcNodes);
  * const signer = new Signer({ privateKey, provider });
  * const koinContract = new Contract({
- *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+ *   id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
  *   abi: utils.tokenAbi,
  *   provider,
  *   signer,
  * });
  * const koin = koinContract.functions;
  *
- * // optional: preformat argument/return
- * koinContract.abi.methods.balanceOf.preformat_argument = (owner) =>
- *   ({ owner });
- * koinContract.abi.methods.balanceOf.preformat_return = (res) =>
- *   utils.formatUnits(res.value, 8);
- * koinContract.abi.methods.transfer.preformat_argument = (arg) => ({
- *   from: signer.getAddress(),
- *   to: arg.to,
- *   value: utils.parseUnits(arg.value, 8),
- * });
- *
  * async funtion main() {
  *   // Get balance
- *   const { result } = await koin.balanceOf("12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD");
+ *   const { result } = await koin.balanceOf({
+ *     owner: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+ *   });
  *   console.log(result)
  *
  *   // Transfer
  *   const { transaction, receipt } = await koin.transfer({
+ *     from: signer.getAddress(),
  *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
- *     value: "10.0001",
+ *     value: "1000010000", // 10.00010000
  *   });
  *   console.log(`Transaction id ${transaction.id} submitted. Receipt:`);
  *   console.log(receipt);
- *
- *   if (receipt.logs) {
- *     console.log(`Transfer failed. Logs: ${receipt.logs.join(",")}`);
- *   }
  *
  *   // wait to be mined
  *   const blockNumber = await transaction.wait();
@@ -94,7 +82,7 @@ export class Contract {
    * ```ts
    * await koinContract.functions.transfer({
    *   from: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
-   *   to: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   to: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
    *   value: "1",
    * },{
    *   chainId: "EiB-hw5ABo-EXy6fGDd1Iq3gbAenxQ4Qe60pRbEVMVrR9A==",
@@ -362,7 +350,7 @@ export class Contract {
    * @example
    * ```ts
    * const privateKey = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
-   * const provider = new Provider(["http://api.koinos.io:8080"]);
+   * const provider = new Provider(["http://api.koinos.io"]);
    * const signer = new Signer({ privateKey, provider });
    * const bytecode = new Uint8Array([1, 2, 3, 4]);
    * const contract = new Contract({ signer, provider, bytecode });
@@ -583,12 +571,12 @@ export class Contract {
    * @example
    * ```ts
    * const contract = new Contract({
-   *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
    *   abi: utils.tokenAbi,
    * });
    * const event = {
    *   sequence: 1,
-   *   source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   source: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
    *   name: "koinos.contracts.token.mint_event",
    *   data: "ChkAxjdqxuwS-B50lPQ-lqhRBA3bf2b2ooAHENrw3Ek=",
    *   impacted: ["1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J"],
@@ -597,7 +585,7 @@ export class Contract {
    * console.log(eventDecoded);
    * // {
    * //   sequence: 1,
-   * //   source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   * //   source: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
    * //   name: "koinos.contracts.token.mint_event",
    * //   data: "ChkAxjdqxuwS-B50lPQ-lqhRBA3bf2b2ooAHENrw3Ek=",
    * //   impacted: ["1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J"],

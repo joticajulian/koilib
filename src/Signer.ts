@@ -157,6 +157,26 @@ export class Signer implements SignerInterface {
    * Options related to the estimation of the rcLimit.
    * By default the estimation is enabled and increased
    * by 10%.
+   *
+   * @example
+   * This code estimates the mana by multiplying the rc_used
+   * by 2.
+   * ```ts
+   * const signer = new Signer({
+   *   privateKey,
+   *   provider,
+   *   rcOptions: {
+   *     estimateRc: true,
+   *     adjustRcLimit: (receipt) => 2 * Number(receipt.rc_used),
+   *   },
+   * });
+   *
+   * // you can also update rcOptions
+   * signer.rcOptions = {
+   *   estimateRc: true,
+   *   adjustRcLimit: (receipt) => 2 * Number(receipt.rc_used),
+   * }
+   * ```
    */
   rcOptions: ResourceCreditsOptions;
 
