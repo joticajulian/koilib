@@ -393,7 +393,10 @@ export class Signer implements SignerInterface {
     if (!tx.id) throw new Error("Missing transaction id");
 
     // estimation of rcLimit
-    if (this.rcOptions.estimateRc) {
+    if (
+      this.rcOptions.estimateRc &&
+      (!tx.signatures || tx.signatures.length === 0)
+    ) {
       const receipt = await this.estimateReceipt(tx);
       tx.header!.rc_limit = this.rcOptions.adjustRcLimit
         ? await this.rcOptions.adjustRcLimit(receipt)

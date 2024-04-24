@@ -1837,6 +1837,11 @@ describe("Wallet and Contract", () => {
         ...expectedTransaction,
         wait: expect.any(Function) as WaitFunction,
       } as TransactionJsonWait);
+
+      // a second signature does not trigger the estimation again
+      // (if it's triggered this command would throw an error
+      // because the mockFetch is not defined)
+      signer2.signTransaction(transaction!);
     });
 
     it("should estimate rc limit with the custom rcOptions", async () => {
