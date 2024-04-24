@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v7.0.0](https://github.com/joticajulian/koilib/releases/tag/v7.0.0) (2024-04-24)
+
+### 🚀 Features
+
+- **breaking change**: Now the signer estimates the mana required to
+  submit the transaction and it adds an extra 10% to it. The `rc_limit`
+  and transaction ID are updated automatically during the signing process.
+  This is executed only in the first signature.
+  If you want skip this breaking change (and continue using the 100% mana
+  used in previous versions) configure the signer in this way:
+  `signer.rcOptions = { estimateRc: false }`.
+  You can also customize the adjustment:
+  ```ts
+  signer.rcOptions = {
+    estimateRc: true,
+    adjustRcLimit: (receipt) => 2 * Number(receipt.rc_used),
+  };
+  ```
+- **breaking change**: `Provider.getBlock()` function now returns
+  the receipt by default. There is also the possibility to configure
+  this in the options argument.
+- The documentation has been improved.
+- The ABI for NFTs has been added to utils.
+
 ## [v6.0.0](https://github.com/joticajulian/koilib/releases/tag/v6.0.0) (2024-04-19)
 
 ### 🚀 Features
