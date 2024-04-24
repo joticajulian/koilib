@@ -33,11 +33,11 @@ You can also load it directly to the browser by downloading the bunble file loca
     <script src="koinos.min.js"></script>
     <script>
       (async () => {
-        const provider = new Provider(["http://api.koinos.io:8080"]);
-        const signer = Signer.fromSeed("my seed");
+        const provider = new Provider(["http://api.koinos.io"]);
+        const signer = Signer.fromWif("Kzl...");
         signer.provider = provider;
         const koinContract = new Contract({
-          id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+          id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
           abi: utils.tokenAbi,
           provider,
           signer,
@@ -103,60 +103,54 @@ a transaction, and read contracts.
 ```typescript
 (async () => {
   // define signer, provider, and contract
-  const provider = new Provider(["http://api.koinos.io:8080"]);
-  const signer = Signer.fromSeed("my seed");
+  const provider = new Provider(["http://api.koinos.io"]);
+  const signer = Signer.fromWif("KwkAq...");
   signer.provider = provider;
   const koinContract = new Contract({
-    id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+    id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
     abi: utils.tokenAbi,
     provider,
     signer,
   });
   const koin = koinContract.functions;
 
-  // optional: preformat input/output
-  koinContract.abi.methods.balanceOf.preformat_argument = (owner) => ({
-    owner,
-  });
-  koinContract.abi.methods.balanceOf.preformat_return = (res) =>
-    utils.formatUnits(res.value, 8);
-  koinContract.abi.methods.transfer.preformat_argument = (input) => ({
-    from: signer.getAddress(),
-    to: input.to,
-    value: utils.parseUnits(input.value, 8),
-  });
-
   // Transfer
   const { transaction, receipt } = await koin.transfer({
+    from: signer.getAddress(),
     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
-    value: "10.0001",
+    value: "1012345678", // 10.12345678 koin
   });
   console.log(`Transaction id ${transaction.id} submitted. Receipt:`);
   console.log(receipt);
-
-  if (receipt.logs) {
-    console.log(`Transfer failed. Logs: ${receipt.logs.join(",")}`);
-  }
 
   // wait to be mined
   const { blockNumber } = await transaction.wait();
   console.log(`Transaction mined. Block number: ${blockNumber}`);
 
   // read the balance
-  const { result } = await koin.balanceOf(signer.getAddress());
+  const { result } = await koin.balanceOf({
+    owner: signer.getAddress(),
+  });
   console.log(result);
 })();
 ```
 
 #### Upload contract
 
-It's also possible to upload contracts. First, follow the instructions in [koinos-sdk](https://github.com/koinos/koinos-sdk-cpp) (for C++ developers) or [koinos-as-sdk-examples](https://github.com/roaminroe/koinos-as-sdk-examples) (for TypeScript developers) to compile the contracts as wasm files. Then you can use koilib to deploy them.
+It's also possible to upload contracts using koilib. You need the wasm file for that. There are several tools that can help you to develop smart contracts on Koinos:
+
+- [Arkinos](https://www.npmjs.com/package/arkinos): Complete tool to develop contracts in Assembly Script and bootstrap a website to interact with them.
+- [koinos/sdk-as-cli](https://www.npmjs.com/@koinos/sdk-as-cli): SDK to develop contracts in Assembly Script.
+- [koinos-sdk-cpp](https://github.com/koinos/koinos-sdk-cpp): SDK to develop contracts in C++.
+- [koinosbox/contracts](https://github.com/joticajulian/koinos-contracts-as/tree/main/contracts): Contract examples created in Assembly Script. You can also import them in your project by using the [npm package](https://www.npmjs.com/package/@koinosbox/contracts).
+
+Here is an example on how deploy a contract:
 
 ```typescript
 (async () => {
   // define signer, provider and bytecode
-  const provider = new Provider(["http://api.koinos.io:8080"]);
-  const signer = Signer.fromSeed("my seed");
+  const provider = new Provider(["http://api.koinos.io"]);
+  const signer = Signer.fromWif("KwkAq...");
   signer.provider = provider;
   const bytecode = fs.readFileSync("my_contract.wasm");
 
@@ -176,9 +170,9 @@ You can also upload a contract in a new address. It is not required that this ne
 ```typescript
 (async () => {
   // define signer, provider and bytecode
-  const provider = new Provider(["http://api.koinos.io:8080"]);
-  const accountWithFunds = Signer.fromSeed("this account has funds");
-  const newAccount = Signer.fromSeed("new account without funds");
+  const provider = new Provider(["http://api.koinos.io"]);
+  const accountWithFunds = Signer.fromWif("K... this account has funds");
+  const newAccount = Signer.fromWif("L... new account without funds");
   accountWithFunds.provider = provider;
   newAccount.provider = provider;
 
@@ -219,9 +213,9 @@ In fact, there are several ways to set a different payer and use it to upload a 
 ```typescript
 (async () => {
   // define signer, provider and bytecode
-  const provider = new Provider(["http://api.koinos.io:8080"]);
-  const accountWithFunds = Signer.fromSeed("this account has funds");
-  const newAccount = Signer.fromSeed("new account without funds");
+  const provider = new Provider(["http://api.koinos.io"]);
+  const accountWithFunds = Signer.fromWif("K... this account has funds");
+  const newAccount = Signer.fromWif("L... new account without funds");
   accountWithFunds.provider = provider;
   newAccount.provider = provider;
 
@@ -262,8 +256,8 @@ In fact, there are several ways to set a different payer and use it to upload a 
 It can be configured to sign a single transaction with multiple accounts. Here is an example:
 
 ```ts
-const signer2 = Signer.fromSeed("signer2");
-const signer3 = Signer.fromSeed("signer3");
+const signer2 = Signer.fromWif("KzP1...");
+const signer3 = Signer.fromWif("L1t...");
 
 const addMoreSignatures = async (tx) => {
   await signer2.signTransaction(tx);
@@ -399,9 +393,7 @@ const abiToken = {
 
 1. Can this library be used to create smart contracts?
 
-   No. You need to install [koinos-sdk](https://github.com/koinos/koinos-sdk-cpp)
-   (for C++ developers) or [koinos-as-sdk-examples](https://github.com/roaminroe/koinos-as-sdk-examples)
-   (for TypeScript developers) for this purpose.
+   No. There are another tools for that. Like [Arkinos](https://www.npmjs.com/package/arkinos) or [koinos/sdk-as-cli](https://www.npmjs.com/@koinos/sdk-as-cli) for Assembly Script, or [koinos-sdk](https://github.com/koinos/koinos-sdk-cpp) for C++.
 
 2. Can this library be used to deploy smart contracts?
 
@@ -413,15 +405,20 @@ const abiToken = {
    For the ABI you need the .proto file and the library
    [protobufjs](https://www.npmjs.com/package/protobufjs). Then follow the format
    for the ABI as described in the previous section. It's important to note that
-   this ABI has a difference with respect to the ABI used in [koinos-cli](https://docs.koinos.io/architecture/contract-abi.html).
+   this ABI has some differences with respect to the ABI used in [koinos-cli](https://docs.koinos.io/architecture/contract-abi).
    In particular, koilib takes the descriptor from `koilib_types`, which is a
    descriptor in json format, while the ABI in koinos-cli takes the descriptor from
-   `types`, which is a descriptor in binary format.
+   `types`, which is a descriptor in binary format. There are also some differences
+   in the format of "entry point" and "read only".
 
 4. Can this library be used to interact with smart contracts?
 
    Yes. You can use it to call read_only functions, or send transactions
    to the contract by calling write functions.
+
+5. How to generate random keys?
+
+   To generate random mnemonic phrases and private keys use [@koinosbox/hdKoinos](https://www.npmjs.com/package/@koinosbox/hdkoinos).
 
 ## Documentation
 
@@ -432,6 +429,8 @@ The complete documentation can be found at https://joticajulian.github.io/koilib
 Many thanks to the sponsors of this library: @levineam, @Amikob, @motoeng, @isaacdozier, @imjwalker, @brklyn8900, and the private sponsors.
 
 If you would like to contribute to the development of this library consider becoming a sponsor in https://github.com/sponsors/joticajulian.
+
+You can also send a donation to the koinos nickname [@julian.donation](https://koinosbox.com/nicknames/@julian.donation).
 
 ## License
 

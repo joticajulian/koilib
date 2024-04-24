@@ -7,6 +7,7 @@ import {
   Abi,
   OperationJson,
   SendTransactionOptions,
+  TransactionHeaderJson,
   TransactionJson,
   TransactionOptions,
   TransactionReceipt,
@@ -137,7 +138,7 @@ export class Transaction {
    * @example
    * ```ts
    * const koin = new Contract({
-   *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+   *   id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
    *   abi: utils.tokenAbi,
    * }).functions;
    * const signer = Signer.fromSeed("my seed");
@@ -214,6 +215,19 @@ export class Transaction {
 
     if (!this.transaction.operations) this.transaction.operations = [];
     this.transaction.operations.push(operation);
+  }
+
+  static computeTransactionId(txHeader: TransactionHeaderJson): string {
+    const headerDecoded = btypeDecode(txHeader, btypeTransactionHeader!, false);
+    const message = koinos.protocol.transaction_header.create(headerDecoded);
+    const headerBytes = koinos.protocol.transaction_header
+      .encode(message)
+      .finish() as Uint8Array;
+
+    const hash = sha256(headerBytes);
+
+    // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
+    return `0x1220${toHexString(hash)}`;
   }
 
   /**
@@ -303,25 +317,12 @@ export class Transaction {
       // TODO: Option to resolve names (payer, payee)
     };
 
-    const headerDecoded = btypeDecode(
-      tx.header,
-      btypeTransactionHeader!,
-      false
-    );
-    const message = koinos.protocol.transaction_header.create(headerDecoded);
-    const headerBytes = koinos.protocol.transaction_header
-      .encode(message)
-      .finish() as Uint8Array;
-
-    const hash = sha256(headerBytes);
-
-    // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
-    tx.id = `0x1220${toHexString(hash)}`;
+    tx.id = Transaction.computeTransactionId(tx.header);
     return tx;
   }
 
   /**
-   * Functon to prepare the transaction (set headers, merkle
+   * Function to prepare the transaction (set headers, merkle
    * root, etc)
    */
   async prepare(options?: TransactionOptions): Promise<TransactionJson> {

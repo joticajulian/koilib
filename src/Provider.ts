@@ -6,6 +6,7 @@ import {
   TransactionReceipt,
   TransactionJsonWait,
   BlockTopology,
+  GetBlockOptions,
 } from "./interface";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -66,8 +67,8 @@ export class Provider {
    * @example
    * ```ts
    * const provider = new Provider([
-   *   "http://45.56.104.152:8080",
-   *   "http://159.203.119.0:8080"
+   *   "https://api.koinos.io",
+   *   "https://api.koinosblocks.com"
    * ]);
    * ```
    */
@@ -83,6 +84,151 @@ export class Provider {
    * @param method - jsonrpc method
    * @param params - jsonrpc params
    * @returns Result of jsonrpc response
+   *
+   * To know the full list of possible calls check the services
+   * listed in the [rpc folder of koinos-proto](https://github.com/koinos/koinos-proto/tree/master/koinos/rpc)
+   * and the corresponding proto files.
+   *
+   * @example
+   * Let's take "account_history" as an example. Go to [account_history_rpc.proto](https://github.com/koinos/koinos-proto/blob/master/koinos/rpc/account_history/account_history_rpc.proto).
+   * The `account_history_request` message has 1 single method: `get_account_history`.
+   *
+   * Now search the message `get_account_history_request`. This message is telling us
+   * the expected fields in the body of the call:
+   *
+   * ```ts
+   * message get_account_history_request {
+   *    bytes address = 1 [(btype) = ADDRESS];
+   *    optional uint64 seq_num = 2 [jstype = JS_STRING];
+   *    uint64 limit = 3 [jstype = JS_STRING];
+   *    bool ascending = 4;
+   *    bool irreversible = 5;
+   * }
+   * ```
+   *
+   * And search the message `get_account_history_response` to see the format of the response:
+   * ```ts
+   * message get_account_history_response {
+   *    repeated account_history_entry values = 1;
+   * }
+   * ```
+   *
+   * With this information we can now call the RPC node. It should be done in this way:
+   * ```ts
+   * const provider = new Provider(["https://api.koinos.io"]);
+   * const result = await provider.call(
+   *   "account_history.get_account_history",
+   *   {
+   *     address: "1z629tURV9KAK6Q5yqFDozwSHeWshxXQe",
+   *     limit: 2,
+   *     ascending: true,
+   *     irreversible: true,
+   *   }
+   * );
+   * console.log(result);
+   *
+   * // {
+   * //   "values": [
+   * //     {
+   * //       "trx": {
+   * //         "transaction": {
+   * //           "id": "0x12205b566701d6afcf1f5e45b5e9f5443def75728c219f7c1e897ed0ce1ef491223c",
+   * //           "header": {
+   * //             "chain_id": "EiBZK_GGVP0H_fXVAM3j6EAuz3-B-l3ejxRSewi7qIBfSA==",
+   * //             "rc_limit": "961224079493",
+   * //             "nonce": "KAE=",
+   * //             "operation_merkle_root": "EiA32K_GrZ2VsvWSrM4QZhyEmvm8ID1P6aE4vP00RnY9hg==",
+   * //             "payer": "1HyzBsd7nmyUp8dyCJqJZoQRUnzifVzP18"
+   * //           },
+   * //           "operations": [
+   * //             {
+   * //               "call_contract": {
+   * //                 "contract_id": "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
+   * //                 "entry_point": 670398154,
+   * //                 "args": "ChkAukkLSXtxbRNRTBtDrdAwDI7I6Ot9GxFHEhkACsvmdCIUj89udQ1R5iLPLXzqJoHdliWrGIDC1y8="
+   * //               }
+   * //             }
+   * //           ],
+   * //           "signatures": [
+   * //             "ICBdTcH6jzhDpl9ZB0ZqNcvSy8wiOokHFtkQ66Lc04K1LhXd77tqaQdMhJOAfYotg5npVmfSgyO9CwgLJmtMIjg="
+   * //           ]
+   * //         },
+   * //         "receipt": {
+   * //           "id": "0x12205b566701d6afcf1f5e45b5e9f5443def75728c219f7c1e897ed0ce1ef491223c",
+   * //           "payer": "1HyzBsd7nmyUp8dyCJqJZoQRUnzifVzP18",
+   * //           "max_payer_rc": "961224079493",
+   * //           "rc_limit": "961224079493",
+   * //           "rc_used": "3009833",
+   * //           "disk_storage_used": "112",
+   * //           "network_bandwidth_used": "313",
+   * //           "compute_bandwidth_used": "561439",
+   * //           "events": [
+   * //             {
+   * //               "sequence": 2,
+   * //               "source": "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
+   * //               "name": "koinos.contracts.token.transfer_event",
+   * //               "data": "ChkAukkLSXtxbRNRTBtDrdAwDI7I6Ot9GxFHEhkACsvmdCIUj89udQ1R5iLPLXzqJoHdliWrGIDC1y8=",
+   * //               "impacted": [
+   * //                 "1z629tURV9KAK6Q5yqFDozwSHeWshxXQe",
+   * //                 "1HyzBsd7nmyUp8dyCJqJZoQRUnzifVzP18"
+   * //               ]
+   * //             }
+   * //           ]
+   * //         }
+   * //       }
+   * //     },
+   * //     {
+   * //       "seq_num": "1",
+   * //       "trx": {
+   * //         "transaction": {
+   * //           "id": "0x1220a08183a5237e57a08e1ae539017c4253ddfbc23f9b7b6f5e263669aacd3fed47",
+   * //           "header": {
+   * //             "chain_id": "EiBZK_GGVP0H_fXVAM3j6EAuz3-B-l3ejxRSewi7qIBfSA==",
+   * //             "rc_limit": "100000000",
+   * //             "nonce": "KAE=",
+   * //             "operation_merkle_root": "EiBAmutXQlPyAGctNBNhKEUUEUtwj2KQeNrdFBqpN9RWDg==",
+   * //             "payer": "1z629tURV9KAK6Q5yqFDozwSHeWshxXQe"
+   * //           },
+   * //           "operations": [
+   * //             {
+   * //               "call_contract": {
+   * //                 "contract_id": "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
+   * //                 "entry_point": 670398154,
+   * //                 "args": "ChkACsvmdCIUj89udQ1R5iLPLXzqJoHdliWrEhkAukkLSXtxbRNRTBtDrdAwDI7I6Ot9GxFHGJBO"
+   * //               }
+   * //             }
+   * //           ],
+   * //           "signatures": [
+   * //             "IF5FBloKjEfnqlGJRL_aPy4L36On-Q8XXzpAQagK_X-xZ6DgioBhZOhKEnhKyhaoROAgGwRuy6BsdRqya8fCHU8="
+   * //           ]
+   * //         },
+   * //         "receipt": {
+   * //           "id": "0x1220a08183a5237e57a08e1ae539017c4253ddfbc23f9b7b6f5e263669aacd3fed47",
+   * //           "payer": "1z629tURV9KAK6Q5yqFDozwSHeWshxXQe",
+   * //           "max_payer_rc": "100000000",
+   * //           "rc_limit": "100000000",
+   * //           "rc_used": "2657385",
+   * //           "disk_storage_used": "35",
+   * //           "network_bandwidth_used": "309",
+   * //           "compute_bandwidth_used": "566375",
+   * //           "events": [
+   * //             {
+   * //               "sequence": 2,
+   * //               "source": "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
+   * //               "name": "koinos.contracts.token.transfer_event",
+   * //               "data": "ChkACsvmdCIUj89udQ1R5iLPLXzqJoHdliWrEhkAukkLSXtxbRNRTBtDrdAwDI7I6Ot9GxFHGJBO",
+   * //               "impacted": [
+   * //                 "1HyzBsd7nmyUp8dyCJqJZoQRUnzifVzP18",
+   * //                 "1z629tURV9KAK6Q5yqFDozwSHeWshxXQe"
+   * //               ]
+   * //             }
+   * //           ]
+   * //         }
+   * //       }
+   * //     }
+   * //   ]
+   * // }
+   * ```
    */
   async call<T = unknown>(method: string, params: unknown): Promise<T> {
     /* eslint-disable no-await-in-loop */
@@ -220,10 +366,7 @@ export class Provider {
 
   async getBlocksById(
     blockIds: string[],
-    opts?: {
-      returnBlock: boolean;
-      returnReceipt: boolean;
-    }
+    opts?: GetBlockOptions
   ): Promise<{
     block_items: {
       block_id: string;
@@ -236,12 +379,30 @@ export class Provider {
       return_block:
         opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
       return_receipt:
-        opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
+        opts && opts.returnReceipt !== undefined ? opts.returnReceipt : true,
     });
   }
 
   /**
    * Function to get info from the head block in the blockchain
+   *
+   * @example
+   * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const headInfo = await provider.getHeadInfo();
+   * console.log(headInfo);
+   *
+   * // {
+   * //   head_topology: {
+   * //     id: '0x12209f7c9b4d695eefd6f87465d490654e495fe25a3d7d2e1eb80658acdc49bad962',
+   * //     height: '14957951',
+   * //     previous: '0x1220bc3b94e3a2adc3ca09d61a4418df1f4acfa78a69686f592877c194ea50642cd2'
+   * //   },
+   * //   last_irreversible_block: '14957891',
+   * //   head_state_merkle_root: 'EiCriqXooNUXBG23EUKLz2qq3h9ZAC8w1W7w185YQ9MzIA==',
+   * //   head_block_time: '1713874497290'
+   * // }
+   * ```
    */
   async getHeadInfo(): Promise<{
     head_block_time: string;
@@ -280,10 +441,7 @@ export class Provider {
     height: number,
     numBlocks = 1,
     idRef?: string,
-    opts?: {
-      returnBlock: boolean;
-      returnReceipt: boolean;
-    }
+    opts?: GetBlockOptions
   ): Promise<
     {
       block_id: string;
@@ -316,15 +474,84 @@ export class Provider {
         return_block:
           opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
         return_receipt:
-          opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
+          opts && opts.returnReceipt !== undefined ? opts.returnReceipt : true,
       })
     ).block_items;
   }
 
   /**
    * Function to get a block by its height
+   *
+   * @example
+   * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const block = await provider.getBlock(14951433);
+   * console.log(block);
+   *
+   * // {
+   * //   block_id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+   * //   block_height: '14951433',
+   * //   block: {
+   * //     id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+   * //     header: {
+   * //       previous: '0x1220a3c4cbc57ccee4d02b4a1849a9e504122ee93b904deff711d926def2ea2cc878',
+   * //       height: '14951433',
+   * //       timestamp: '1713854518430',
+   * //       previous_state_merkle_root: 'EiCPcnYosMvEBYeCcJrdIJJG0mp4TJ796UGxa0NY6EvzbQ==',
+   * //       transaction_merkle_root: 'EiBGPKwttckB7c_BafwnHHmHTBa9S1vKBKauj_yLVNb0tg==',
+   * //       signer: '1EPZaqve43k9Jq5mNeT2ydCjUiytTTU4U',
+   * //       approved_proposals: [Array]
+   * //     },
+   * //     transactions: [ [Object] ],
+   * //     signature: 'ClEDnHKX1F-pQVbFhmz2qnrwGfP-RbEfTdRFUrvmhmqMeoejtmm2Q0yIPbD5kN5xpIEb
+   * //                 8vVwsIJ3lTrgFz2E8w0Paxkgv1E_gMaYNq5UUqtHnl0SIhIgAAbuPHmfMKh9R0Yi5y1D
+   * //                 TpjjdN0DYKaIUseXzLiLg_QaQR9jRinZf0g_qo2_4wOx9gDBunIij0r5CycHrNMsuT_V
+   * //                 _UvrJOYuwj7aUCA-qnF2tCBQoNQZ3ww7WvKHrMdChxxy'
+   * //   },
+   * //   receipt: {
+   * //     id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+   * //     height: '14951433',
+   * //     disk_storage_used: '35',
+   * //     network_bandwidth_used: '760',
+   * //     compute_bandwidth_used: '5253506',
+   * //     events: [ [Object], [Object] ],
+   * //     transaction_receipts: [ [Object] ],
+   * //     disk_storage_charged: '35',
+   * //     network_bandwidth_charged: '760',
+   * //     compute_bandwidth_charged: '5180427',
+   * //     state_delta_entries: [
+   * //       [Object], [Object],
+   * //       [Object], [Object],
+   * //       [Object], [Object],
+   * //       [Object], [Object],
+   * //       [Object], [Object]
+   * //     ]
+   * //   }
+   * // }
+   * ```
+   *
+   * Use the options to get less information. This helps to reduce
+   * the bandwidth of the call.
+   *
+   * @example
+   * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const block = await provider.getBlock(14951433, {
+   *   returnReceipt: false,
+   *   returnBlock: false
+   * });
+   * console.log(block);
+   *
+   * // {
+   * //   block_id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+   * //   block_height: '14951433'
+   * // }
+   * ```
    */
-  async getBlock(height: number): Promise<{
+  async getBlock(
+    height: number,
+    opts?: GetBlockOptions
+  ): Promise<{
     block_id: string;
     block_height: string;
     block: BlockJson;
@@ -332,7 +559,7 @@ export class Provider {
       [x: string]: unknown;
     };
   }> {
-    return (await this.getBlocks(height, 1))[0];
+    return (await this.getBlocks(height, 1, undefined, opts))[0];
   }
 
   /**
@@ -484,12 +711,14 @@ export class Provider {
       "chain.submit_transaction",
       { transaction, broadcast }
     );
-    (transaction as TransactionJsonWait).wait = async (
-      type: "byTransactionId" | "byBlock" = "byBlock",
-      timeout = 15000
-    ) => {
-      return this.wait(transaction.id as string, type, timeout);
-    };
+    if (broadcast) {
+      (transaction as TransactionJsonWait).wait = async (
+        type: "byTransactionId" | "byBlock" = "byBlock",
+        timeout = 15000
+      ) => {
+        return this.wait(transaction.id as string, type, timeout);
+      };
+    }
     return { ...response, transaction: transaction as TransactionJsonWait };
   }
 
@@ -576,6 +805,28 @@ export class Provider {
     return result as T;
   }
 
+  /**
+   * Function to get the contract metadata of a specific contract.
+   * @param contractId contract ID
+   *
+   * @example
+   * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const result = await provider.invokeGetContractMetadata("15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL");
+   * console.log(result);
+   *
+   * // {
+   * //   value: {
+   * //     hash: '0x1220c57e3573189868970a3a1662a667c366b15015d9b7900ffed415c5e944036e88',
+   * //     system: true,
+   * //     authorizes_call_contract: true,
+   * //     authorizes_transaction_application: true,
+   * //     authorizes_upload_contract: true
+   * //   }
+   * // }
+   *
+   * ```
+   */
   async invokeGetContractMetadata(contractId: string) {
     const serializer = new Serializer(
       {

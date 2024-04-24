@@ -70,7 +70,11 @@ const rpcNodes = [
 ];
 
 const provider = new Provider(rpcNodes);
-const signer = new Signer({ privateKey, provider });
+const signer = new Signer({
+  privateKey,
+  provider,
+  rcOptions: { estimateRc: false },
+});
 const koinContract = new Contract({
   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
   abi: tokenAbi,
@@ -78,6 +82,37 @@ const koinContract = new Contract({
   signer,
 });
 const koin = koinContract.functions;
+
+const serializerValueTypeUint64 = new Serializer(
+  {
+    nested: {
+      value_type: {
+        fields: {
+          uint64_value: {
+            id: 5,
+            type: "uint64",
+            options: {
+              jstype: "JS_STRING",
+            },
+          },
+        },
+      },
+    },
+  },
+  { defaultTypeName: "value_type" }
+);
+
+async function encodeValueTypeU64(value: string | number) {
+  const ser = await serializerValueTypeUint64.serialize({
+    uint64_value: value,
+  });
+  return encodeBase64url(ser);
+}
+
+/* async function decodeValueTypeU64(encoded: string) {
+  const des = await serializerValueTypeUint64.deserialize(encoded);
+  return des.uint64_value;
+} */
 
 describe("utils", () => {
   it.each([
@@ -1216,6 +1251,8 @@ describe("Wallet and Contract", () => {
 
     const signer2 = Signer.fromSeed("signer2");
     const signer3 = Signer.fromSeed("signer3");
+    signer2.rcOptions = { estimateRc: false };
+    signer3.rcOptions = { estimateRc: false };
     const addMoreSignatures = async (tx: TransactionJson) => {
       await signer2.signTransaction(tx);
       await signer3.signTransaction(tx);
@@ -1652,6 +1689,235 @@ describe("Wallet and Contract", () => {
       });
       const receiptReceived = await tx.send();
       expect(receiptReceived).toStrictEqual(receipt);
+    });
+  });
+
+  describe("RC Limit estimation", () => {
+    const receiptEstimation = {
+      id: "0x1220cf763bc42c18091fddf7a9d3c2963f95102b64a019d76c20215163ca9d900ff2",
+      payer: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+      max_payer_rc: "930000000",
+      rc_limit: "930000000",
+      rc_used: "470895",
+      network_bandwidth_used: "311",
+      compute_bandwidth_used: "369509",
+      events: [
+        {
+          source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+          name: "koin.transfer",
+          data: "ChkAOraorkYwQTkrfp9ViHFI2CJvmCQh2mz7EhkArriH22GZ1VJLkeJ-x4JUGF4zPAEZrNUiGMCEPQ==",
+          impacted: [
+            "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+            "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          ],
+        },
+      ],
+    };
+
+    it("should not update the rc limit when rcOptions is disabled", async () => {
+      jest.clearAllMocks();
+      mockFetch.mockImplementation(async () =>
+        fetchResponse("mock error", 400)
+      );
+      // getNonce
+      mockFetch.mockImplementationOnce(async () =>
+        fetchResponse({ nonce: await encodeValueTypeU64("95") })
+      );
+      // getAccountRc
+      mockFetch.mockImplementationOnce(async () =>
+        fetchResponse({ rc: "930000000" })
+      );
+
+      const { transaction } = await koin.transfer(
+        {
+          from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+          value: "1000000",
+        },
+        {
+          chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+          sendTransaction: false,
+        }
+      );
+
+      const expectedTransaction: TransactionJson = {
+        operations: [
+          {
+            call_contract: {
+              contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+              entry_point: 670398154,
+              args: "ChkAOraorkYwQTkrfp9ViHFI2CJvmCQh2mz7EhkArriH22GZ1VJLkeJ-x4JUGF4zPAEZrNUiGMCEPQ==",
+            },
+          },
+        ],
+        header: {
+          chain_id: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+          rc_limit: "930000000",
+          nonce: await encodeValueTypeU64("96"),
+          operation_merkle_root:
+            "EiCmVXWAuzW5xo1Pefx4256N_B_78cXvKwUxWFtKiY-PqQ==",
+          payer: addressCompressed,
+        },
+        id: "0x1220978bfee28f4c125a54541a2d9845219ea6c64e7af864135f268b6f059413ae5d",
+        signatures: [
+          "ILc3Bm5w0grhyj_OcECjnsLoXCLu9oyYE9EdcwylQx-CQZjZSbI221O4c8xIm_6t67k_LWy1lVUps76JhbqHn_A=",
+        ],
+      };
+
+      expect(transaction).toMatchObject({
+        ...expectedTransaction,
+        wait: expect.any(Function) as WaitFunction,
+      } as TransactionJsonWait);
+    });
+
+    it("should estimate rc limit with the default signer", async () => {
+      const signer2 = new Signer({ privateKey, provider });
+      const koinContract2 = new Contract({
+        id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+        abi: tokenAbi,
+        provider,
+        signer: signer2,
+      });
+      const koin2 = koinContract2.functions;
+
+      jest.clearAllMocks();
+      mockFetch.mockImplementation(async () =>
+        fetchResponse("mock error", 400)
+      );
+      // getNonce
+      mockFetch.mockImplementationOnce(async () =>
+        fetchResponse({ nonce: await encodeValueTypeU64("95") })
+      );
+      // getAccountRc
+      mockFetch.mockImplementationOnce(async () =>
+        fetchResponse({ rc: "930000000" })
+      );
+      // receipt
+      mockFetch.mockImplementationOnce(async () =>
+        fetchResponse({ receipt: receiptEstimation })
+      );
+
+      const { transaction } = await koin2.transfer(
+        {
+          from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+          value: "1000000",
+        },
+        {
+          chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+          sendTransaction: false,
+        }
+      );
+
+      const expectedTransaction: TransactionJson = {
+        operations: [
+          {
+            call_contract: {
+              contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+              entry_point: 670398154,
+              args: "ChkAOraorkYwQTkrfp9ViHFI2CJvmCQh2mz7EhkArriH22GZ1VJLkeJ-x4JUGF4zPAEZrNUiGMCEPQ==",
+            },
+          },
+        ],
+        header: {
+          chain_id: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+          rc_limit: 517984,
+          nonce: await encodeValueTypeU64("96"),
+          operation_merkle_root:
+            "EiCmVXWAuzW5xo1Pefx4256N_B_78cXvKwUxWFtKiY-PqQ==",
+          payer: addressCompressed,
+        },
+        id: "0x1220741d55f75f091d75f19aca2fe7d9c29f96468acbe3f07efcfab2db5c029ad37d",
+        signatures: [
+          "IA19S8ir7SXFGhaOYR9n8qLhGmVMxkjuFWRMzNWcmQUdZkbcJ9m6p9QKcJjaaW5rP-0hxIofmdjXXxVlVZZmBGM=",
+        ],
+      };
+
+      expect(transaction).toMatchObject({
+        ...expectedTransaction,
+        wait: expect.any(Function) as WaitFunction,
+      } as TransactionJsonWait);
+
+      // a second signature does not trigger the estimation again
+      // (if it's triggered this command would throw an error
+      // because the mockFetch is not defined)
+      signer2.signTransaction(transaction!);
+    });
+
+    it("should estimate rc limit with the custom rcOptions", async () => {
+      const signer2 = new Signer({
+        privateKey,
+        provider,
+        rcOptions: {
+          estimateRc: true,
+          adjustRcLimit: (r) => 2 * Number(r.rc_used),
+        },
+      });
+      const koinContract2 = new Contract({
+        id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+        abi: tokenAbi,
+        provider,
+        signer: signer2,
+      });
+      const koin2 = koinContract2.functions;
+
+      jest.clearAllMocks();
+      mockFetch.mockImplementation(async () =>
+        fetchResponse("mock error", 400)
+      );
+      // getNonce
+      mockFetch.mockImplementationOnce(async () =>
+        fetchResponse({ nonce: await encodeValueTypeU64("95") })
+      );
+      // getAccountRc
+      mockFetch.mockImplementationOnce(async () =>
+        fetchResponse({ rc: "930000000" })
+      );
+      // receipt
+      mockFetch.mockImplementationOnce(async () =>
+        fetchResponse({ receipt: receiptEstimation })
+      );
+
+      const { transaction } = await koin2.transfer(
+        {
+          from: "16MT1VQFgsVxEfJrSGinrA5buiqBsN5ViJ",
+          to: "1Gvqdo9if6v6tFomEuTuMWP1D7H7U9yksb",
+          value: "1000000",
+        },
+        {
+          chainId: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+          sendTransaction: false,
+        }
+      );
+
+      const expectedTransaction: TransactionJson = {
+        operations: [
+          {
+            call_contract: {
+              contract_id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+              entry_point: 670398154,
+              args: "ChkAOraorkYwQTkrfp9ViHFI2CJvmCQh2mz7EhkArriH22GZ1VJLkeJ-x4JUGF4zPAEZrNUiGMCEPQ==",
+            },
+          },
+        ],
+        header: {
+          chain_id: "EiDyWt8BeDCTvG3_2QLJWbDJOnHqIcV4Ssqp69aZJsqPpg==",
+          rc_limit: 2 * 470895,
+          nonce: await encodeValueTypeU64("96"),
+          operation_merkle_root:
+            "EiCmVXWAuzW5xo1Pefx4256N_B_78cXvKwUxWFtKiY-PqQ==",
+          payer: addressCompressed,
+        },
+        id: "0x12204dac57ca925a18c9a061fc512272515378e5aa3d7e5a78c9eebc32dcae74c883",
+        signatures: [
+          "H1SEJ0EpLz9pk1H0gQOpw7pFmCsKNfHX7AOCo5ERpzZyX4hUBF7bqKP1Mny8GkI99cIil3e7bTDmM2-B1-aa4-k=",
+        ],
+      };
+
+      expect(transaction).toMatchObject({
+        ...expectedTransaction,
+        wait: expect.any(Function) as WaitFunction,
+      } as TransactionJsonWait);
     });
   });
 });

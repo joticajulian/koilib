@@ -22712,45 +22712,33 @@ const Transaction_1 = __webpack_require__(7592);
  *
  * ```ts
  * const { Contract, Provider, Signer, utils } = require("koilib");
- * const rpcNodes = ["http://api.koinos.io:8080"];
+ * const rpcNodes = ["http://api.koinos.io"];
  * const privateKey = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
  * const provider = new Provider(rpcNodes);
  * const signer = new Signer({ privateKey, provider });
  * const koinContract = new Contract({
- *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+ *   id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
  *   abi: utils.tokenAbi,
  *   provider,
  *   signer,
  * });
  * const koin = koinContract.functions;
  *
- * // optional: preformat argument/return
- * koinContract.abi.methods.balanceOf.preformat_argument = (owner) =>
- *   ({ owner });
- * koinContract.abi.methods.balanceOf.preformat_return = (res) =>
- *   utils.formatUnits(res.value, 8);
- * koinContract.abi.methods.transfer.preformat_argument = (arg) => ({
- *   from: signer.getAddress(),
- *   to: arg.to,
- *   value: utils.parseUnits(arg.value, 8),
- * });
- *
  * async funtion main() {
  *   // Get balance
- *   const { result } = await koin.balanceOf("12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD");
+ *   const { result } = await koin.balanceOf({
+ *     owner: "12fN2CQnuJM8cMnWZ1hPtM4knjLME8E4PD",
+ *   });
  *   console.log(result)
  *
  *   // Transfer
  *   const { transaction, receipt } = await koin.transfer({
+ *     from: signer.getAddress(),
  *     to: "172AB1FgCsYrRAW5cwQ8KjadgxofvgPFd6",
- *     value: "10.0001",
+ *     value: "1000010000", // 10.00010000
  *   });
  *   console.log(`Transaction id ${transaction.id} submitted. Receipt:`);
  *   console.log(receipt);
- *
- *   if (receipt.logs) {
- *     console.log(`Transfer failed. Logs: ${receipt.logs.join(",")}`);
- *   }
  *
  *   // wait to be mined
  *   const blockNumber = await transaction.wait();
@@ -22921,7 +22909,7 @@ class Contract {
      * @example
      * ```ts
      * const privateKey = "f186a5de49797bfd52dc42505c33d75a46822ed5b60046e09d7c336242e20200";
-     * const provider = new Provider(["http://api.koinos.io:8080"]);
+     * const provider = new Provider(["http://api.koinos.io"]);
      * const signer = new Signer({ privateKey, provider });
      * const bytecode = new Uint8Array([1, 2, 3, 4]);
      * const contract = new Contract({ signer, provider, bytecode });
@@ -23112,12 +23100,12 @@ class Contract {
      * @example
      * ```ts
      * const contract = new Contract({
-     *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+     *   id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
      *   abi: utils.tokenAbi,
      * });
      * const event = {
      *   sequence: 1,
-     *   source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+     *   source: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
      *   name: "koinos.contracts.token.mint_event",
      *   data: "ChkAxjdqxuwS-B50lPQ-lqhRBA3bf2b2ooAHENrw3Ek=",
      *   impacted: ["1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J"],
@@ -23126,7 +23114,7 @@ class Contract {
      * console.log(eventDecoded);
      * // {
      * //   sequence: 1,
-     * //   source: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+     * //   source: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
      * //   name: "koinos.contracts.token.mint_event",
      * //   data: "ChkAxjdqxuwS-B50lPQ-lqhRBA3bf2b2ooAHENrw3Ek=",
      * //   impacted: ["1K55BRw87nd64a7aiRarp6DLGRzYvoJo8J"],
@@ -23183,8 +23171,8 @@ class Provider {
      * @example
      * ```ts
      * const provider = new Provider([
-     *   "http://45.56.104.152:8080",
-     *   "http://159.203.119.0:8080"
+     *   "https://api.koinos.io",
+     *   "https://api.koinosblocks.com"
      * ]);
      * ```
      */
@@ -23201,6 +23189,151 @@ class Provider {
      * @param method - jsonrpc method
      * @param params - jsonrpc params
      * @returns Result of jsonrpc response
+     *
+     * To know the full list of possible calls check the services
+     * listed in the [rpc folder of koinos-proto](https://github.com/koinos/koinos-proto/tree/master/koinos/rpc)
+     * and the corresponding proto files.
+     *
+     * @example
+     * Let's take "account_history" as an example. Go to [account_history_rpc.proto](https://github.com/koinos/koinos-proto/blob/master/koinos/rpc/account_history/account_history_rpc.proto).
+     * The `account_history_request` message has 1 single method: `get_account_history`.
+     *
+     * Now search the message `get_account_history_request`. This message is telling us
+     * the expected fields in the body of the call:
+     *
+     * ```ts
+     * message get_account_history_request {
+     *    bytes address = 1 [(btype) = ADDRESS];
+     *    optional uint64 seq_num = 2 [jstype = JS_STRING];
+     *    uint64 limit = 3 [jstype = JS_STRING];
+     *    bool ascending = 4;
+     *    bool irreversible = 5;
+     * }
+     * ```
+     *
+     * And search the message `get_account_history_response` to see the format of the response:
+     * ```ts
+     * message get_account_history_response {
+     *    repeated account_history_entry values = 1;
+     * }
+     * ```
+     *
+     * With this information we can now call the RPC node. It should be done in this way:
+     * ```ts
+     * const provider = new Provider(["https://api.koinos.io"]);
+     * const result = await provider.call(
+     *   "account_history.get_account_history",
+     *   {
+     *     address: "1z629tURV9KAK6Q5yqFDozwSHeWshxXQe",
+     *     limit: 2,
+     *     ascending: true,
+     *     irreversible: true,
+     *   }
+     * );
+     * console.log(result);
+     *
+     * // {
+     * //   "values": [
+     * //     {
+     * //       "trx": {
+     * //         "transaction": {
+     * //           "id": "0x12205b566701d6afcf1f5e45b5e9f5443def75728c219f7c1e897ed0ce1ef491223c",
+     * //           "header": {
+     * //             "chain_id": "EiBZK_GGVP0H_fXVAM3j6EAuz3-B-l3ejxRSewi7qIBfSA==",
+     * //             "rc_limit": "961224079493",
+     * //             "nonce": "KAE=",
+     * //             "operation_merkle_root": "EiA32K_GrZ2VsvWSrM4QZhyEmvm8ID1P6aE4vP00RnY9hg==",
+     * //             "payer": "1HyzBsd7nmyUp8dyCJqJZoQRUnzifVzP18"
+     * //           },
+     * //           "operations": [
+     * //             {
+     * //               "call_contract": {
+     * //                 "contract_id": "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
+     * //                 "entry_point": 670398154,
+     * //                 "args": "ChkAukkLSXtxbRNRTBtDrdAwDI7I6Ot9GxFHEhkACsvmdCIUj89udQ1R5iLPLXzqJoHdliWrGIDC1y8="
+     * //               }
+     * //             }
+     * //           ],
+     * //           "signatures": [
+     * //             "ICBdTcH6jzhDpl9ZB0ZqNcvSy8wiOokHFtkQ66Lc04K1LhXd77tqaQdMhJOAfYotg5npVmfSgyO9CwgLJmtMIjg="
+     * //           ]
+     * //         },
+     * //         "receipt": {
+     * //           "id": "0x12205b566701d6afcf1f5e45b5e9f5443def75728c219f7c1e897ed0ce1ef491223c",
+     * //           "payer": "1HyzBsd7nmyUp8dyCJqJZoQRUnzifVzP18",
+     * //           "max_payer_rc": "961224079493",
+     * //           "rc_limit": "961224079493",
+     * //           "rc_used": "3009833",
+     * //           "disk_storage_used": "112",
+     * //           "network_bandwidth_used": "313",
+     * //           "compute_bandwidth_used": "561439",
+     * //           "events": [
+     * //             {
+     * //               "sequence": 2,
+     * //               "source": "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
+     * //               "name": "koinos.contracts.token.transfer_event",
+     * //               "data": "ChkAukkLSXtxbRNRTBtDrdAwDI7I6Ot9GxFHEhkACsvmdCIUj89udQ1R5iLPLXzqJoHdliWrGIDC1y8=",
+     * //               "impacted": [
+     * //                 "1z629tURV9KAK6Q5yqFDozwSHeWshxXQe",
+     * //                 "1HyzBsd7nmyUp8dyCJqJZoQRUnzifVzP18"
+     * //               ]
+     * //             }
+     * //           ]
+     * //         }
+     * //       }
+     * //     },
+     * //     {
+     * //       "seq_num": "1",
+     * //       "trx": {
+     * //         "transaction": {
+     * //           "id": "0x1220a08183a5237e57a08e1ae539017c4253ddfbc23f9b7b6f5e263669aacd3fed47",
+     * //           "header": {
+     * //             "chain_id": "EiBZK_GGVP0H_fXVAM3j6EAuz3-B-l3ejxRSewi7qIBfSA==",
+     * //             "rc_limit": "100000000",
+     * //             "nonce": "KAE=",
+     * //             "operation_merkle_root": "EiBAmutXQlPyAGctNBNhKEUUEUtwj2KQeNrdFBqpN9RWDg==",
+     * //             "payer": "1z629tURV9KAK6Q5yqFDozwSHeWshxXQe"
+     * //           },
+     * //           "operations": [
+     * //             {
+     * //               "call_contract": {
+     * //                 "contract_id": "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
+     * //                 "entry_point": 670398154,
+     * //                 "args": "ChkACsvmdCIUj89udQ1R5iLPLXzqJoHdliWrEhkAukkLSXtxbRNRTBtDrdAwDI7I6Ot9GxFHGJBO"
+     * //               }
+     * //             }
+     * //           ],
+     * //           "signatures": [
+     * //             "IF5FBloKjEfnqlGJRL_aPy4L36On-Q8XXzpAQagK_X-xZ6DgioBhZOhKEnhKyhaoROAgGwRuy6BsdRqya8fCHU8="
+     * //           ]
+     * //         },
+     * //         "receipt": {
+     * //           "id": "0x1220a08183a5237e57a08e1ae539017c4253ddfbc23f9b7b6f5e263669aacd3fed47",
+     * //           "payer": "1z629tURV9KAK6Q5yqFDozwSHeWshxXQe",
+     * //           "max_payer_rc": "100000000",
+     * //           "rc_limit": "100000000",
+     * //           "rc_used": "2657385",
+     * //           "disk_storage_used": "35",
+     * //           "network_bandwidth_used": "309",
+     * //           "compute_bandwidth_used": "566375",
+     * //           "events": [
+     * //             {
+     * //               "sequence": 2,
+     * //               "source": "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
+     * //               "name": "koinos.contracts.token.transfer_event",
+     * //               "data": "ChkACsvmdCIUj89udQ1R5iLPLXzqJoHdliWrEhkAukkLSXtxbRNRTBtDrdAwDI7I6Ot9GxFHGJBO",
+     * //               "impacted": [
+     * //                 "1HyzBsd7nmyUp8dyCJqJZoQRUnzifVzP18",
+     * //                 "1z629tURV9KAK6Q5yqFDozwSHeWshxXQe"
+     * //               ]
+     * //             }
+     * //           ]
+     * //         }
+     * //       }
+     * //     }
+     * //   ]
+     * // }
+     * ```
      */
     async call(method, params) {
         /* eslint-disable no-await-in-loop */
@@ -23311,11 +23444,29 @@ class Provider {
         return this.call("block_store.get_blocks_by_id", {
             block_ids: blockIds,
             return_block: opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
-            return_receipt: opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
+            return_receipt: opts && opts.returnReceipt !== undefined ? opts.returnReceipt : true,
         });
     }
     /**
      * Function to get info from the head block in the blockchain
+     *
+     * @example
+     * ```ts
+     * const provider = new Provider("https://api.koinos.io");
+     * const headInfo = await provider.getHeadInfo();
+     * console.log(headInfo);
+     *
+     * // {
+     * //   head_topology: {
+     * //     id: '0x12209f7c9b4d695eefd6f87465d490654e495fe25a3d7d2e1eb80658acdc49bad962',
+     * //     height: '14957951',
+     * //     previous: '0x1220bc3b94e3a2adc3ca09d61a4418df1f4acfa78a69686f592877c194ea50642cd2'
+     * //   },
+     * //   last_irreversible_block: '14957891',
+     * //   head_state_merkle_root: 'EiCriqXooNUXBG23EUKLz2qq3h9ZAC8w1W7w185YQ9MzIA==',
+     * //   head_block_time: '1713874497290'
+     * // }
+     * ```
      */
     async getHeadInfo() {
         return this.call("chain.get_head_info", {});
@@ -23346,14 +23497,80 @@ class Provider {
             ancestor_start_height: height,
             num_blocks: numBlocks,
             return_block: opts && opts.returnBlock !== undefined ? opts.returnBlock : true,
-            return_receipt: opts && opts.returnReceipt !== undefined ? opts.returnReceipt : false,
+            return_receipt: opts && opts.returnReceipt !== undefined ? opts.returnReceipt : true,
         })).block_items;
     }
     /**
      * Function to get a block by its height
+     *
+     * @example
+     * ```ts
+     * const provider = new Provider("https://api.koinos.io");
+     * const block = await provider.getBlock(14951433);
+     * console.log(block);
+     *
+     * // {
+     * //   block_id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+     * //   block_height: '14951433',
+     * //   block: {
+     * //     id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+     * //     header: {
+     * //       previous: '0x1220a3c4cbc57ccee4d02b4a1849a9e504122ee93b904deff711d926def2ea2cc878',
+     * //       height: '14951433',
+     * //       timestamp: '1713854518430',
+     * //       previous_state_merkle_root: 'EiCPcnYosMvEBYeCcJrdIJJG0mp4TJ796UGxa0NY6EvzbQ==',
+     * //       transaction_merkle_root: 'EiBGPKwttckB7c_BafwnHHmHTBa9S1vKBKauj_yLVNb0tg==',
+     * //       signer: '1EPZaqve43k9Jq5mNeT2ydCjUiytTTU4U',
+     * //       approved_proposals: [Array]
+     * //     },
+     * //     transactions: [ [Object] ],
+     * //     signature: 'ClEDnHKX1F-pQVbFhmz2qnrwGfP-RbEfTdRFUrvmhmqMeoejtmm2Q0yIPbD5kN5xpIEb
+     * //                 8vVwsIJ3lTrgFz2E8w0Paxkgv1E_gMaYNq5UUqtHnl0SIhIgAAbuPHmfMKh9R0Yi5y1D
+     * //                 TpjjdN0DYKaIUseXzLiLg_QaQR9jRinZf0g_qo2_4wOx9gDBunIij0r5CycHrNMsuT_V
+     * //                 _UvrJOYuwj7aUCA-qnF2tCBQoNQZ3ww7WvKHrMdChxxy'
+     * //   },
+     * //   receipt: {
+     * //     id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+     * //     height: '14951433',
+     * //     disk_storage_used: '35',
+     * //     network_bandwidth_used: '760',
+     * //     compute_bandwidth_used: '5253506',
+     * //     events: [ [Object], [Object] ],
+     * //     transaction_receipts: [ [Object] ],
+     * //     disk_storage_charged: '35',
+     * //     network_bandwidth_charged: '760',
+     * //     compute_bandwidth_charged: '5180427',
+     * //     state_delta_entries: [
+     * //       [Object], [Object],
+     * //       [Object], [Object],
+     * //       [Object], [Object],
+     * //       [Object], [Object],
+     * //       [Object], [Object]
+     * //     ]
+     * //   }
+     * // }
+     * ```
+     *
+     * Use the options to get less information. This helps to reduce
+     * the bandwidth of the call.
+     *
+     * @example
+     * ```ts
+     * const provider = new Provider("https://api.koinos.io");
+     * const block = await provider.getBlock(14951433, {
+     *   returnReceipt: false,
+     *   returnBlock: false
+     * });
+     * console.log(block);
+     *
+     * // {
+     * //   block_id: '0x1220d5e848eb0f69c590c24cbea4391f89a1055f540bc265c60f6b13c4cc0055ec36',
+     * //   block_height: '14951433'
+     * // }
+     * ```
      */
-    async getBlock(height) {
-        return (await this.getBlocks(height, 1))[0];
+    async getBlock(height, opts) {
+        return (await this.getBlocks(height, 1, undefined, opts))[0];
     }
     /**
      * Function to wait for a transaction to be mined.
@@ -23466,9 +23683,11 @@ class Provider {
      */
     async sendTransaction(transaction, broadcast = true) {
         const response = await this.call("chain.submit_transaction", { transaction, broadcast });
-        transaction.wait = async (type = "byBlock", timeout = 15000) => {
-            return this.wait(transaction.id, type, timeout);
-        };
+        if (broadcast) {
+            transaction.wait = async (type = "byBlock", timeout = 15000) => {
+                return this.wait(transaction.id, type, timeout);
+            };
+        }
         return { ...response, transaction: transaction };
     }
     /**
@@ -23520,6 +23739,28 @@ class Provider {
         const result = await serializer.deserialize(response.value, serializer.returnTypeName);
         return result;
     }
+    /**
+     * Function to get the contract metadata of a specific contract.
+     * @param contractId contract ID
+     *
+     * @example
+     * ```ts
+     * const provider = new Provider("https://api.koinos.io");
+     * const result = await provider.invokeGetContractMetadata("15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL");
+     * console.log(result);
+     *
+     * // {
+     * //   value: {
+     * //     hash: '0x1220c57e3573189868970a3a1662a667c366b15015d9b7900ffed415c5e944036e88',
+     * //     system: true,
+     * //     authorizes_call_contract: true,
+     * //     authorizes_transaction_application: true,
+     * //     authorizes_upload_contract: true
+     * //   }
+     * // }
+     *
+     * ```
+     */
     async invokeGetContractMetadata(contractId) {
         const serializer = new Serializer_1.Serializer({
             nested: {
@@ -23924,6 +24165,7 @@ exports.Signer = void 0;
 /* eslint-disable no-param-reassign, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 const sha256_1 = __webpack_require__(3061);
 const secp = __importStar(__webpack_require__(9656));
+const Transaction_1 = __webpack_require__(7592);
 const utils_1 = __webpack_require__(8593);
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -24007,6 +24249,8 @@ class Signer {
      * @param privateKey - Private key as hexstring, bigint or Uint8Array
      * @param compressed - compressed format is true by default
      * @param provider - provider to connect with the blockchain
+     * @param sendOptions - Send options
+     * @param rcOptions - options for mana estimation
      * @example
      * ```ts
      * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
@@ -24014,12 +24258,42 @@ class Signer {
      * console.log(signer.getAddress());
      * // 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b
      * ```
+     *
+     * By default the mana is estimated as 110% the mana used. This
+     * estimation is computed using the "broadcast:false" option.
+     * For instance, if the transaction consumes 1 mana, the rc_limit
+     * will be set to 1.1 mana.
+     *
+     * You can also adjust the rc limit.
+     * @example
+     * ```ts
+     * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+     * cons signer = new Signer({
+     *   privateKey,
+     *   provider,
+     *   rcOptions: {
+     *     estimateRc: true,
+     *     // use 2 times rc_used as rc_limit
+     *     adjustRcLimit: (r) => 2 * Number(r.rc_used),
+     *   },
+     * });
+     * ```
+     *
+     * The rpc node must be highly trusted because the transaction
+     * is signed during the estimation of the mana. You can also
+     * disable the mana estimation:
+     * @example
+     * ```ts
+     * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
+     * cons signer = new Signer({
+     *   privateKey,
+     *   provider,
+     *   rcOptions: { estimateRc: false },
+     * });
+     * ```
      */
     constructor(c) {
-        /**
-         * Chain id
-         */
-        this.chainId = "";
+        var _a;
         this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;
         this.privateKey = c.privateKey;
         this.provider = c.provider;
@@ -24031,11 +24305,13 @@ class Signer {
             this.publicKey = secp.getPublicKey(c.privateKey, this.compressed);
             this.address = (0, utils_1.bitcoinAddress)(this.publicKey);
         }
-        if (c.chainId)
-            this.chainId = c.chainId;
         this.sendOptions = {
             broadcast: true,
             ...c.sendOptions,
+        };
+        this.rcOptions = (_a = c.rcOptions) !== null && _a !== void 0 ? _a : {
+            estimateRc: true,
+            adjustRcLimit: (receipt) => Promise.resolve(Math.min(Number(receipt.max_payer_rc), Math.floor(1.1 * Number(receipt.rc_used)))),
         };
     }
     /**
@@ -24156,6 +24432,15 @@ class Signer {
     async signTransaction(tx, _abis) {
         if (!tx.id)
             throw new Error("Missing transaction id");
+        // estimation of rcLimit
+        if (this.rcOptions.estimateRc &&
+            (!tx.signatures || tx.signatures.length === 0)) {
+            const receipt = await this.estimateReceipt(tx);
+            tx.header.rc_limit = this.rcOptions.adjustRcLimit
+                ? await this.rcOptions.adjustRcLimit(receipt)
+                : receipt.rc_used;
+            tx.id = Transaction_1.Transaction.computeTransactionId(tx.header);
+        }
         // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
         // tx id is a stringified multihash, need to extract the hash digest only
         const hash = (0, utils_1.toUint8Array)(tx.id.slice(6));
@@ -24203,6 +24488,43 @@ class Signer {
             await opts.beforeSend(transaction, options);
         }
         return this.provider.sendTransaction(transaction, opts.broadcast);
+    }
+    /**
+     * Estimate the receipt associated to the transaction if
+     * it sent to the blockchain. It is useful to estimate the
+     * consumption of mana.
+     * The transaction is signed during this process and sent
+     * to the rpc node with the "broadcast:false" option to
+     * just compute the transaction without broadcasting it to
+     * the network.
+     * After that, the initial signatures are restored (if any)
+     * and the ones used for the estimation will be removed.
+     */
+    async estimateReceipt(tx) {
+        if (!tx.id)
+            throw new Error("Missing transaction id");
+        if (!tx.signatures)
+            tx.signatures = [];
+        const signaturesCopy = [...tx.signatures];
+        // sign if there are no signatures
+        if (tx.signatures.length === 0) {
+            const hash = (0, utils_1.toUint8Array)(tx.id.slice(6));
+            const signature = await this.signHash(hash);
+            tx.signatures.push((0, utils_1.encodeBase64url)(signature));
+        }
+        try {
+            const { receipt } = await this.sendTransaction(tx, {
+                broadcast: false,
+            });
+            // restore signatures
+            tx.signatures = signaturesCopy;
+            return receipt;
+        }
+        catch (error) {
+            // restore signatures
+            tx.signatures = signaturesCopy;
+            throw error;
+        }
     }
     /**
      * Function to recover the public key from hash and signature
@@ -24538,7 +24860,7 @@ class Transaction {
      * @example
      * ```ts
      * const koin = new Contract({
-     *   id: "19JntSm8pSNETT9aHTwAUHC5RMoaSmgZPJ",
+     *   id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
      *   abi: utils.tokenAbi,
      * }).functions;
      * const signer = Signer.fromSeed("my seed");
@@ -24612,6 +24934,16 @@ class Transaction {
             this.transaction.operations = [];
         this.transaction.operations.push(operation);
     }
+    static computeTransactionId(txHeader) {
+        const headerDecoded = (0, utils_1.btypeDecode)(txHeader, btypeTransactionHeader, false);
+        const message = protocol_proto_js_1.koinos.protocol.transaction_header.create(headerDecoded);
+        const headerBytes = protocol_proto_js_1.koinos.protocol.transaction_header
+            .encode(message)
+            .finish();
+        const hash = (0, sha256_1.sha256)(headerBytes);
+        // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
+        return `0x1220${(0, utils_1.toHexString)(hash)}`;
+    }
     /**
      * Function to prepare a transaction
      * @param tx - Do not set the nonce to get it from the blockchain
@@ -24680,18 +25012,11 @@ class Transaction {
             ...(payee && { payee }),
             // TODO: Option to resolve names (payer, payee)
         };
-        const headerDecoded = (0, utils_1.btypeDecode)(tx.header, btypeTransactionHeader, false);
-        const message = protocol_proto_js_1.koinos.protocol.transaction_header.create(headerDecoded);
-        const headerBytes = protocol_proto_js_1.koinos.protocol.transaction_header
-            .encode(message)
-            .finish();
-        const hash = (0, sha256_1.sha256)(headerBytes);
-        // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
-        tx.id = `0x1220${(0, utils_1.toHexString)(hash)}`;
+        tx.id = Transaction.computeTransactionId(tx.header);
         return tx;
     }
     /**
-     * Functon to prepare the transaction (set headers, merkle
+     * Function to prepare the transaction (set headers, merkle
      * root, etc)
      */
     async prepare(options) {
@@ -24836,15 +25161,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.tokenAbi = exports.btypeEncode = exports.btypeDecode = exports.btypeEncodeValue = exports.btypeDecodeValue = exports.parseUnits = exports.formatUnits = exports.isChecksumWif = exports.isChecksumAddress = exports.isChecksum = exports.bitcoinAddress = exports.bitcoinDecode = exports.bitcoinEncode = exports.calculateMerkleRoot = exports.decodeBase64 = exports.multihash = exports.encodeBase64 = exports.decodeBase64url = exports.encodeBase64url = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
+exports.nftAbi = exports.tokenAbi = exports.btypeEncode = exports.btypeDecode = exports.btypeEncodeValue = exports.btypeDecodeValue = exports.parseUnits = exports.formatUnits = exports.isChecksumWif = exports.isChecksumAddress = exports.isChecksum = exports.bitcoinAddress = exports.bitcoinDecode = exports.bitcoinEncode = exports.calculateMerkleRoot = exports.decodeBase64 = exports.multihash = exports.encodeBase64 = exports.decodeBase64url = exports.encodeBase64url = exports.decodeBase58 = exports.encodeBase58 = exports.toHexString = exports.toUint8Array = void 0;
 const multibase = __importStar(__webpack_require__(6957));
 const sha256_1 = __webpack_require__(3061);
 const ripemd160_1 = __webpack_require__(830);
-const token_proto_json_1 = __importDefault(__webpack_require__(6567));
 /**
  * Converts an hex string to Uint8Array
  */
@@ -25268,57 +25589,1310 @@ function btypeEncode(valueDecoded, fields, verifyChecksum) {
 exports.btypeEncode = btypeEncode;
 /**
  * ABI for tokens
+ *
+ * @example
+ * ```ts
+ * import { Contract, Provider, utils } from "koilib";
+ *
+ * const provider = new Provider("https://api.koinos.io");
+ * const koinContract = new Contract({
+ *   id: "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL",
+ *   provider,
+ *   abi: utils.tokenAbi,
+ * });
+ * ```
  */
 exports.tokenAbi = {
     methods: {
         name: {
-            entry_point: 0x82a3537f,
-            argument: "name_arguments",
-            return: "name_result",
+            argument: "",
+            return: "token.str",
+            description: "Get name of the token",
             read_only: true,
+            entry_point: 0x82a3537f,
         },
         symbol: {
-            entry_point: 0xb76a7ca1,
-            argument: "symbol_arguments",
-            return: "symbol_result",
+            argument: "",
+            return: "token.str",
+            description: "Get the symbol of the token",
             read_only: true,
+            entry_point: 0xb76a7ca1,
         },
         decimals: {
-            entry_point: 0xee80fd2f,
-            argument: "decimals_arguments",
-            return: "decimals_result",
+            argument: "",
+            return: "token.uint32",
+            description: "Get the decimals of the token",
             read_only: true,
+            entry_point: 0xee80fd2f,
+        },
+        getInfo: {
+            argument: "",
+            return: "token.info",
+            description: "Get name, symbol and decimals",
+            read_only: true,
+            entry_point: 0xbd7f6850,
         },
         totalSupply: {
-            entry_point: 0xb0da3934,
-            argument: "total_supply_arguments",
-            return: "total_supply_result",
+            argument: "",
+            return: "token.uint64",
+            description: "Get total supply",
             read_only: true,
+            entry_point: 0xb0da3934,
         },
         balanceOf: {
-            entry_point: 0x5c721497,
-            argument: "balance_of_arguments",
-            return: "balance_of_result",
+            argument: "token.balance_of_args",
+            return: "token.uint64",
+            description: "Get balance of an account",
             read_only: true,
+            entry_point: 0x5c721497,
             default_output: { value: "0" },
         },
+        allowance: {
+            argument: "token.allowance_args",
+            return: "token.uint64",
+            description: "Get allowance",
+            read_only: true,
+            entry_point: 0x32f09fa1,
+        },
+        getAllowances: {
+            argument: "token.get_allowances_args",
+            return: "token.get_allowances_return",
+            description: "Get allowances of an account",
+            read_only: true,
+            entry_point: 0x8fa16456,
+        },
+        approve: {
+            argument: "token.approve_args",
+            return: "",
+            description: "Grant permissions to other account to manage the tokens owned by the user. The user must approve only the accounts he trust.",
+            read_only: false,
+            entry_point: 0x74e21680,
+        },
         transfer: {
+            argument: "token.transfer_args",
+            return: "",
+            description: "Transfer tokens",
+            read_only: false,
             entry_point: 0x27f576ca,
-            argument: "transfer_arguments",
-            return: "transfer_result",
         },
         mint: {
+            argument: "token.mint_args",
+            return: "",
+            description: "Mint new tokens",
+            read_only: false,
             entry_point: 0xdc6f17bb,
-            argument: "mint_arguments",
-            return: "mint_result",
-        },
-        burn: {
-            entry_point: 0x859facc5,
-            argument: "burn_arguments",
-            return: "burn_result",
         },
     },
-    koilib_types: token_proto_json_1.default,
+    types: "CpoICiJrb2lub3MvY29udHJhY3RzL3Rva2VuL3Rva2VuLnByb3RvEhZrb2lub3MuY29udHJhY3RzLnRva2VuGhRrb2lub3Mvb3B0aW9ucy5wcm90byIQCg5uYW1lX2FyZ3VtZW50cyIjCgtuYW1lX3Jlc3VsdBIUCgV2YWx1ZRgBIAEoCVIFdmFsdWUiEgoQc3ltYm9sX2FyZ3VtZW50cyIlCg1zeW1ib2xfcmVzdWx0EhQKBXZhbHVlGAEgASgJUgV2YWx1ZSIUChJkZWNpbWFsc19hcmd1bWVudHMiJwoPZGVjaW1hbHNfcmVzdWx0EhQKBXZhbHVlGAEgASgNUgV2YWx1ZSIYChZ0b3RhbF9zdXBwbHlfYXJndW1lbnRzIi8KE3RvdGFsX3N1cHBseV9yZXN1bHQSGAoFdmFsdWUYASABKARCAjABUgV2YWx1ZSIyChRiYWxhbmNlX29mX2FyZ3VtZW50cxIaCgVvd25lchgBIAEoDEIEgLUYBlIFb3duZXIiLQoRYmFsYW5jZV9vZl9yZXN1bHQSGAoFdmFsdWUYASABKARCAjABUgV2YWx1ZSJeChJ0cmFuc2Zlcl9hcmd1bWVudHMSGAoEZnJvbRgBIAEoDEIEgLUYBlIEZnJvbRIUCgJ0bxgCIAEoDEIEgLUYBlICdG8SGAoFdmFsdWUYAyABKARCAjABUgV2YWx1ZSIRCg90cmFuc2Zlcl9yZXN1bHQiQAoObWludF9hcmd1bWVudHMSFAoCdG8YASABKAxCBIC1GAZSAnRvEhgKBXZhbHVlGAIgASgEQgIwAVIFdmFsdWUiDQoLbWludF9yZXN1bHQiRAoOYnVybl9hcmd1bWVudHMSGAoEZnJvbRgBIAEoDEIEgLUYBlIEZnJvbRIYCgV2YWx1ZRgCIAEoBEICMAFSBXZhbHVlIg0KC2J1cm5fcmVzdWx0IioKDmJhbGFuY2Vfb2JqZWN0EhgKBXZhbHVlGAEgASgEQgIwAVIFdmFsdWUiQAoKYnVybl9ldmVudBIYCgRmcm9tGAEgASgMQgSAtRgGUgRmcm9tEhgKBXZhbHVlGAIgASgEQgIwAVIFdmFsdWUiPAoKbWludF9ldmVudBIUCgJ0bxgBIAEoDEIEgLUYBlICdG8SGAoFdmFsdWUYAiABKARCAjABUgV2YWx1ZSJaCg50cmFuc2Zlcl9ldmVudBIYCgRmcm9tGAEgASgMQgSAtRgGUgRmcm9tEhQKAnRvGAIgASgMQgSAtRgGUgJ0bxIYCgV2YWx1ZRgDIAEoBEICMAFSBXZhbHVlQj5aPGdpdGh1Yi5jb20va29pbm9zL2tvaW5vcy1wcm90by1nb2xhbmcva29pbm9zL2NvbnRyYWN0cy90b2tlbmIGcHJvdG8zCvMKCgt0b2tlbi5wcm90bxIFdG9rZW4aFGtvaW5vcy9vcHRpb25zLnByb3RvIhsKA3N0chIUCgV2YWx1ZRgBIAEoCVIFdmFsdWUiHgoGdWludDMyEhQKBXZhbHVlGAEgASgNUgV2YWx1ZSIiCgZ1aW50NjQSGAoFdmFsdWUYASABKARCAjABUgV2YWx1ZSIdCgVib29sZRIUCgV2YWx1ZRgBIAEoCFIFdmFsdWUicAoEaW5mbxISCgRuYW1lGAEgASgJUgRuYW1lEhYKBnN5bWJvbBgCIAEoCVIGc3ltYm9sEhoKCGRlY2ltYWxzGAMgASgNUghkZWNpbWFscxIgCgtkZXNjcmlwdGlvbhgEIAEoCVILZGVzY3JpcHRpb24iLQoPYmFsYW5jZV9vZl9hcmdzEhoKBW93bmVyGAEgASgMQgSAtRgGUgVvd25lciJtCg10cmFuc2Zlcl9hcmdzEhgKBGZyb20YASABKAxCBIC1GAZSBGZyb20SFAoCdG8YAiABKAxCBIC1GAZSAnRvEhgKBXZhbHVlGAMgASgEQgIwAVIFdmFsdWUSEgoEbWVtbxgEIAEoCVIEbWVtbyI7CgltaW50X2FyZ3MSFAoCdG8YASABKAxCBIC1GAZSAnRvEhgKBXZhbHVlGAIgASgEQgIwAVIFdmFsdWUiPwoJYnVybl9hcmdzEhgKBGZyb20YASABKAxCBIC1GAZSBGZyb20SGAoFdmFsdWUYAiABKARCAjABUgV2YWx1ZSJkCgxhcHByb3ZlX2FyZ3MSGgoFb3duZXIYASABKAxCBIC1GAZSBW93bmVyEh4KB3NwZW5kZXIYAiABKAxCBIC1GAZSB3NwZW5kZXISGAoFdmFsdWUYAyABKARCAjABUgV2YWx1ZSJMCg5hbGxvd2FuY2VfYXJncxIaCgVvd25lchgBIAEoDEIEgLUYBlIFb3duZXISHgoHc3BlbmRlchgCIAEoDEIEgLUYBlIHc3BlbmRlciKDAQoTZ2V0X2FsbG93YW5jZXNfYXJncxIaCgVvd25lchgBIAEoDEIEgLUYBlIFb3duZXISGgoFc3RhcnQYAiABKAxCBIC1GAZSBXN0YXJ0EhQKBWxpbWl0GAMgASgFUgVsaW1pdBIeCgpkZXNjZW5kaW5nGAQgASgIUgpkZXNjZW5kaW5nIkkKDXNwZW5kZXJfdmFsdWUSHgoHc3BlbmRlchgBIAEoDEIEgLUYBlIHc3BlbmRlchIYCgV2YWx1ZRgCIAEoBEICMAFSBXZhbHVlImkKFWdldF9hbGxvd2FuY2VzX3JldHVybhIaCgVvd25lchgBIAEoDEIEgLUYBlIFb3duZXISNAoKYWxsb3dhbmNlcxgCIAMoCzIULnRva2VuLnNwZW5kZXJfdmFsdWVSCmFsbG93YW5jZXMiWgoOdHJhbnNmZXJfZXZlbnQSGAoEZnJvbRgBIAEoDEIEgLUYBlIEZnJvbRIUCgJ0bxgCIAEoDEIEgLUYBlICdG8SGAoFdmFsdWUYAyABKARCAjABUgV2YWx1ZSI8CgptaW50X2V2ZW50EhQKAnRvGAEgASgMQgSAtRgGUgJ0bxIYCgV2YWx1ZRgCIAEoBEICMAFSBXZhbHVlIkAKCmJ1cm5fZXZlbnQSGAoEZnJvbRgBIAEoDEIEgLUYBlIEZnJvbRIYCgV2YWx1ZRgCIAEoBEICMAFSBXZhbHVlImUKDWFwcHJvdmVfZXZlbnQSGgoFb3duZXIYASABKAxCBIC1GAZSBW93bmVyEh4KB3NwZW5kZXIYAiABKAxCBIC1GAZSB3NwZW5kZXISGAoFdmFsdWUYAyABKARCAjABUgV2YWx1ZWIGcHJvdG8z",
+    koilib_types: {
+        nested: {
+            koinos: {
+                options: {
+                    go_package: "github.com/koinos/koinos-proto-golang/koinos",
+                },
+                nested: {
+                    contracts: {
+                        nested: {
+                            token: {
+                                options: {
+                                    go_package: "github.com/koinos/koinos-proto-golang/koinos/contracts/token",
+                                },
+                                nested: {
+                                    name_arguments: {
+                                        fields: {},
+                                    },
+                                    name_result: {
+                                        fields: {
+                                            value: {
+                                                type: "string",
+                                                id: 1,
+                                            },
+                                        },
+                                    },
+                                    symbol_arguments: {
+                                        fields: {},
+                                    },
+                                    symbol_result: {
+                                        fields: {
+                                            value: {
+                                                type: "string",
+                                                id: 1,
+                                            },
+                                        },
+                                    },
+                                    decimals_arguments: {
+                                        fields: {},
+                                    },
+                                    decimals_result: {
+                                        fields: {
+                                            value: {
+                                                type: "uint32",
+                                                id: 1,
+                                            },
+                                        },
+                                    },
+                                    total_supply_arguments: {
+                                        fields: {},
+                                    },
+                                    total_supply_result: {
+                                        fields: {
+                                            value: {
+                                                type: "uint64",
+                                                id: 1,
+                                                options: {
+                                                    jstype: "JS_STRING",
+                                                },
+                                            },
+                                        },
+                                    },
+                                    balance_of_arguments: {
+                                        fields: {
+                                            owner: {
+                                                type: "bytes",
+                                                id: 1,
+                                                options: {
+                                                    "(btype)": "ADDRESS",
+                                                },
+                                            },
+                                        },
+                                    },
+                                    balance_of_result: {
+                                        fields: {
+                                            value: {
+                                                type: "uint64",
+                                                id: 1,
+                                                options: {
+                                                    jstype: "JS_STRING",
+                                                },
+                                            },
+                                        },
+                                    },
+                                    transfer_arguments: {
+                                        fields: {
+                                            from: {
+                                                type: "bytes",
+                                                id: 1,
+                                                options: {
+                                                    "(btype)": "ADDRESS",
+                                                },
+                                            },
+                                            to: {
+                                                type: "bytes",
+                                                id: 2,
+                                                options: {
+                                                    "(btype)": "ADDRESS",
+                                                },
+                                            },
+                                            value: {
+                                                type: "uint64",
+                                                id: 3,
+                                                options: {
+                                                    jstype: "JS_STRING",
+                                                },
+                                            },
+                                        },
+                                    },
+                                    transfer_result: {
+                                        fields: {},
+                                    },
+                                    mint_arguments: {
+                                        fields: {
+                                            to: {
+                                                type: "bytes",
+                                                id: 1,
+                                                options: {
+                                                    "(btype)": "ADDRESS",
+                                                },
+                                            },
+                                            value: {
+                                                type: "uint64",
+                                                id: 2,
+                                                options: {
+                                                    jstype: "JS_STRING",
+                                                },
+                                            },
+                                        },
+                                    },
+                                    mint_result: {
+                                        fields: {},
+                                    },
+                                    burn_arguments: {
+                                        fields: {
+                                            from: {
+                                                type: "bytes",
+                                                id: 1,
+                                                options: {
+                                                    "(btype)": "ADDRESS",
+                                                },
+                                            },
+                                            value: {
+                                                type: "uint64",
+                                                id: 2,
+                                                options: {
+                                                    jstype: "JS_STRING",
+                                                },
+                                            },
+                                        },
+                                    },
+                                    burn_result: {
+                                        fields: {},
+                                    },
+                                    balance_object: {
+                                        fields: {
+                                            value: {
+                                                type: "uint64",
+                                                id: 1,
+                                                options: {
+                                                    jstype: "JS_STRING",
+                                                },
+                                            },
+                                        },
+                                    },
+                                    burn_event: {
+                                        fields: {
+                                            from: {
+                                                type: "bytes",
+                                                id: 1,
+                                                options: {
+                                                    "(btype)": "ADDRESS",
+                                                },
+                                            },
+                                            value: {
+                                                type: "uint64",
+                                                id: 2,
+                                                options: {
+                                                    jstype: "JS_STRING",
+                                                },
+                                            },
+                                        },
+                                    },
+                                    mint_event: {
+                                        fields: {
+                                            to: {
+                                                type: "bytes",
+                                                id: 1,
+                                                options: {
+                                                    "(btype)": "ADDRESS",
+                                                },
+                                            },
+                                            value: {
+                                                type: "uint64",
+                                                id: 2,
+                                                options: {
+                                                    jstype: "JS_STRING",
+                                                },
+                                            },
+                                        },
+                                    },
+                                    transfer_event: {
+                                        fields: {
+                                            from: {
+                                                type: "bytes",
+                                                id: 1,
+                                                options: {
+                                                    "(btype)": "ADDRESS",
+                                                },
+                                            },
+                                            to: {
+                                                type: "bytes",
+                                                id: 2,
+                                                options: {
+                                                    "(btype)": "ADDRESS",
+                                                },
+                                            },
+                                            value: {
+                                                type: "uint64",
+                                                id: 3,
+                                                options: {
+                                                    jstype: "JS_STRING",
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    bytes_type: {
+                        values: {
+                            BASE64: 0,
+                            BASE58: 1,
+                            HEX: 2,
+                            BLOCK_ID: 3,
+                            TRANSACTION_ID: 4,
+                            CONTRACT_ID: 5,
+                            ADDRESS: 6,
+                        },
+                    },
+                    btype: {
+                        type: "bytes_type",
+                        id: 50000,
+                        extend: "google.protobuf.FieldOptions",
+                        options: {
+                            proto3_optional: true,
+                        },
+                    },
+                },
+            },
+            token: {
+                nested: {
+                    str: {
+                        fields: {
+                            value: {
+                                type: "string",
+                                id: 1,
+                            },
+                        },
+                    },
+                    uint32: {
+                        fields: {
+                            value: {
+                                type: "uint32",
+                                id: 1,
+                            },
+                        },
+                    },
+                    uint64: {
+                        fields: {
+                            value: {
+                                type: "uint64",
+                                id: 1,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                        },
+                    },
+                    boole: {
+                        fields: {
+                            value: {
+                                type: "bool",
+                                id: 1,
+                            },
+                        },
+                    },
+                    info: {
+                        fields: {
+                            name: {
+                                type: "string",
+                                id: 1,
+                            },
+                            symbol: {
+                                type: "string",
+                                id: 2,
+                            },
+                            decimals: {
+                                type: "uint32",
+                                id: 3,
+                            },
+                            description: {
+                                type: "string",
+                                id: 4,
+                            },
+                        },
+                    },
+                    balance_of_args: {
+                        fields: {
+                            owner: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                        },
+                    },
+                    transfer_args: {
+                        fields: {
+                            from: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            to: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            value: {
+                                type: "uint64",
+                                id: 3,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                            memo: {
+                                type: "string",
+                                id: 4,
+                            },
+                        },
+                    },
+                    mint_args: {
+                        fields: {
+                            to: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            value: {
+                                type: "uint64",
+                                id: 2,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                        },
+                    },
+                    burn_args: {
+                        fields: {
+                            from: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            value: {
+                                type: "uint64",
+                                id: 2,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                        },
+                    },
+                    approve_args: {
+                        fields: {
+                            owner: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            spender: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            value: {
+                                type: "uint64",
+                                id: 3,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                        },
+                    },
+                    allowance_args: {
+                        fields: {
+                            owner: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            spender: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                        },
+                    },
+                    get_allowances_args: {
+                        fields: {
+                            owner: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            start: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            limit: {
+                                type: "int32",
+                                id: 3,
+                            },
+                            descending: {
+                                type: "bool",
+                                id: 4,
+                            },
+                        },
+                    },
+                    spender_value: {
+                        fields: {
+                            spender: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            value: {
+                                type: "uint64",
+                                id: 2,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                        },
+                    },
+                    get_allowances_return: {
+                        fields: {
+                            owner: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            allowances: {
+                                rule: "repeated",
+                                type: "spender_value",
+                                id: 2,
+                            },
+                        },
+                    },
+                    transfer_event: {
+                        fields: {
+                            from: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            to: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            value: {
+                                type: "uint64",
+                                id: 3,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                        },
+                    },
+                    mint_event: {
+                        fields: {
+                            to: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            value: {
+                                type: "uint64",
+                                id: 2,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                        },
+                    },
+                    burn_event: {
+                        fields: {
+                            from: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            value: {
+                                type: "uint64",
+                                id: 2,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                        },
+                    },
+                    approve_event: {
+                        fields: {
+                            owner: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            spender: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            value: {
+                                type: "uint64",
+                                id: 3,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
+};
+/**
+ * ABI for NFTs
+ *
+ * @example
+ * ```ts
+ * import { Contract, Provider, utils } from "koilib";
+ *
+ * const provider = new Provider("https://api.koinos.io");
+ * const nicknamesContract = new Contract({
+ *   id: "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz",
+ *   provider,
+ *   abi: utils.nftAbi,
+ * });
+ * const nicknames = nicknamesContract.functions;
+ *
+ * ...
+ *
+ * // get the address linked to the nickname "pob"
+ * const pobId = `0x${utils.toHexString(new TextEncoder().encode("pob"))}`;
+ * const { result } = await nicknames.ownerOf({ token_id: pobId });
+ * console.log(result);
+ *
+ * // { value: '159myq5YUhhoVWu3wsHKHiJYKPKGUrGiyv' }
+ })();
+ * ```
+ */
+exports.nftAbi = {
+    methods: {
+        name: {
+            argument: "",
+            return: "common.str",
+            description: "Get name of the NFT",
+            read_only: true,
+            entry_point: 0x82a3537f,
+        },
+        symbol: {
+            argument: "",
+            return: "common.str",
+            description: "Get the symbol of the NFT",
+            read_only: true,
+            entry_point: 0xb76a7ca1,
+        },
+        uri: {
+            argument: "",
+            return: "common.str",
+            description: "Get URI of the NFT",
+            read_only: true,
+            entry_point: 0x70e5d7b6,
+        },
+        getInfo: {
+            argument: "",
+            return: "nft.info",
+            description: "Get name, symbol and decimals",
+            read_only: true,
+            entry_point: 0xbd7f6850,
+        },
+        owner: {
+            argument: "",
+            return: "common.address",
+            description: "Get the owner of the collection",
+            read_only: true,
+            entry_point: 0x4c102969,
+        },
+        totalSupply: {
+            argument: "",
+            return: "common.uint64",
+            description: "Get total supply",
+            read_only: true,
+            entry_point: 0xb0da3934,
+        },
+        royalties: {
+            argument: "",
+            return: "nft.royalties",
+            description: "Get royalties",
+            read_only: true,
+            entry_point: 0x36e90cd0,
+        },
+        balanceOf: {
+            argument: "nft.balance_of_args",
+            return: "common.uint64",
+            description: "Get balance of an account",
+            read_only: true,
+            entry_point: 0x5c721497,
+            default_output: { value: "0" },
+        },
+        ownerOf: {
+            argument: "nft.token",
+            return: "common.address",
+            description: "Get the owner of a token",
+            read_only: true,
+            entry_point: 0xed61c847,
+        },
+        metadataOf: {
+            argument: "nft.token",
+            return: "common.str",
+            description: "Get the metadata of a token",
+            read_only: true,
+            entry_point: 0x176c8f7f,
+        },
+        getTokens: {
+            argument: "nft.get_tokens_args",
+            return: "nft.token_ids",
+            description: "Get list of token IDs",
+            read_only: true,
+            entry_point: 0x7d5b5ed7,
+        },
+        getTokensByOwner: {
+            argument: "nft.get_tokens_by_owner_args",
+            return: "nft.token_ids",
+            description: "Get tokens owned by an address",
+            read_only: true,
+            entry_point: 0xfc13eb75,
+        },
+        getApproved: {
+            argument: "nft.token",
+            return: "common.address",
+            description: "Check if an account is approved to operate a token ID",
+            read_only: true,
+            entry_point: 0x4c731020,
+        },
+        isApprovedForAll: {
+            argument: "nft.is_approved_for_all_args",
+            return: "common.boole",
+            description: "Check if an account is approved to operate all tokens owned by other account",
+            read_only: true,
+            entry_point: 0xe7ab8ce5,
+        },
+        getOperatorApprovals: {
+            argument: "nft.get_operators_args",
+            return: "nft.get_operators_return",
+            description: "Get allowances of an account",
+            read_only: true,
+            entry_point: 0xdb1bf60e,
+        },
+        transferOwnership: {
+            argument: "common.address",
+            return: "",
+            description: "Transfer ownership of the collection",
+            read_only: false,
+            entry_point: 0x394be702,
+        },
+        setRoyalties: {
+            argument: "nft.royalties",
+            return: "",
+            description: "Set royalties",
+            read_only: false,
+            entry_point: 0x3b5bb56b,
+        },
+        setMetadata: {
+            argument: "nft.metadata_args",
+            return: "",
+            description: "Set metadata",
+            read_only: false,
+            entry_point: 0x3d59af19,
+        },
+        approve: {
+            argument: "nft.approve_args",
+            return: "",
+            description: "Grant permissions to other account to manage a specific Token owned by the user. The user must approve only the accounts he trust.",
+            read_only: false,
+            entry_point: 0x74e21680,
+        },
+        setApprovalForAll: {
+            argument: "nft.set_approval_for_all_args",
+            return: "",
+            description: "Grant permissions to other account to manage all Tokens owned by the user. The user must approve only the accounts he trust.",
+            read_only: false,
+            entry_point: 0x20442216,
+        },
+        transfer: {
+            argument: "nft.transfer_args",
+            return: "",
+            description: "Transfer NFT",
+            read_only: false,
+            entry_point: 0x27f576ca,
+        },
+        mint: {
+            argument: "nft.mint_args",
+            return: "",
+            description: "Mint NFT",
+            read_only: false,
+            entry_point: 0xdc6f17bb,
+        },
+    },
+    types: "CoQDCidrb2lub3Nib3gtcHJvdG8vbWFuYXNoYXJlci9jb21tb24ucHJvdG8SBmNvbW1vbhoUa29pbm9zL29wdGlvbnMucHJvdG8iGwoDc3RyEhQKBXZhbHVlGAEgASgJUgV2YWx1ZSIeCgZ1aW50MzISFAoFdmFsdWUYASABKA1SBXZhbHVlIiIKBnVpbnQ2NBIYCgV2YWx1ZRgBIAEoBEICMAFSBXZhbHVlIh0KBWJvb2xlEhQKBXZhbHVlGAEgASgIUgV2YWx1ZSIlCgdhZGRyZXNzEhoKBXZhbHVlGAEgASgMQgSAtRgGUgV2YWx1ZSJdCglsaXN0X2FyZ3MSGgoFc3RhcnQYASABKAxCBIC1GAZSBXN0YXJ0EhQKBWxpbWl0GAIgASgFUgVsaW1pdBIeCgpkZXNjZW5kaW5nGAMgASgIUgpkZXNjZW5kaW5nIi0KCWFkZHJlc3NlcxIgCghhY2NvdW50cxgBIAMoDEIEgLUYBlIIYWNjb3VudHNiBnByb3RvMwqQDAoJbmZ0LnByb3RvEgNuZnQaFGtvaW5vcy9vcHRpb25zLnByb3RvIk0KB3JveWFsdHkSIgoKcGVyY2VudGFnZRgBIAEoBEICMAFSCnBlcmNlbnRhZ2USHgoHYWRkcmVzcxgCIAEoDEIEgLUYBlIHYWRkcmVzcyIvCglyb3lhbHRpZXMSIgoFdmFsdWUYASADKAsyDC5uZnQucm95YWx0eVIFdmFsdWUiTAoNbWV0YWRhdGFfYXJncxIfCgh0b2tlbl9pZBgBIAEoDEIEgLUYAlIHdG9rZW5JZBIaCghtZXRhZGF0YRgCIAEoCVIIbWV0YWRhdGEiZgoEaW5mbxISCgRuYW1lGAEgASgJUgRuYW1lEhYKBnN5bWJvbBgCIAEoCVIGc3ltYm9sEhAKA3VyaRgDIAEoCVIDdXJpEiAKC2Rlc2NyaXB0aW9uGAQgASgJUgtkZXNjcmlwdGlvbiItCg9iYWxhbmNlX29mX2FyZ3MSGgoFb3duZXIYASABKAxCBIC1GAZSBW93bmVyIigKBXRva2VuEh8KCHRva2VuX2lkGAEgASgMQgSAtRgCUgd0b2tlbklkIlgKGGlzX2FwcHJvdmVkX2Zvcl9hbGxfYXJncxIaCgVvd25lchgBIAEoDEIEgLUYBlIFb3duZXISIAoIb3BlcmF0b3IYAiABKAxCBIC1GAZSCG9wZXJhdG9yIkIKCW1pbnRfYXJncxIUCgJ0bxgBIAEoDEIEgLUYBlICdG8SHwoIdG9rZW5faWQYAiABKAxCBIC1GAJSB3Rva2VuSWQiLAoJYnVybl9hcmdzEh8KCHRva2VuX2lkGAEgASgMQgSAtRgCUgd0b2tlbklkInQKDXRyYW5zZmVyX2FyZ3MSGAoEZnJvbRgBIAEoDEIEgLUYBlIEZnJvbRIUCgJ0bxgCIAEoDEIEgLUYBlICdG8SHwoIdG9rZW5faWQYAyABKAxCBIC1GAJSB3Rva2VuSWQSEgoEbWVtbxgEIAEoCVIEbWVtbyJ2CgxhcHByb3ZlX2FyZ3MSLwoQYXBwcm92ZXJfYWRkcmVzcxgBIAEoDEIEgLUYBlIPYXBwcm92ZXJBZGRyZXNzEhQKAnRvGAIgASgMQgSAtRgGUgJ0bxIfCgh0b2tlbl9pZBgDIAEoDEIEgLUYAlIHdG9rZW5JZCKZAQoZc2V0X2FwcHJvdmFsX2Zvcl9hbGxfYXJncxIvChBhcHByb3Zlcl9hZGRyZXNzGAEgASgMQgSAtRgGUg9hcHByb3ZlckFkZHJlc3MSLwoQb3BlcmF0b3JfYWRkcmVzcxgCIAEoDEIEgLUYBlIPb3BlcmF0b3JBZGRyZXNzEhoKCGFwcHJvdmVkGAMgASgIUghhcHByb3ZlZCKCAQoSZ2V0X29wZXJhdG9yc19hcmdzEhoKBW93bmVyGAEgASgMQgSAtRgGUgVvd25lchIaCgVzdGFydBgCIAEoDEIEgLUYBlIFc3RhcnQSFAoFbGltaXQYAyABKAVSBWxpbWl0Eh4KCmRlc2NlbmRpbmcYBCABKAhSCmRlc2NlbmRpbmciVgoUZ2V0X29wZXJhdG9yc19yZXR1cm4SGgoFb3duZXIYASABKAxCBIC1GAZSBW93bmVyEiIKCW9wZXJhdG9ycxgCIAMoDEIEgLUYBlIJb3BlcmF0b3JzImMKD2dldF90b2tlbnNfYXJncxIaCgVzdGFydBgBIAEoDEIEgLUYAlIFc3RhcnQSFAoFbGltaXQYAiABKAVSBWxpbWl0Eh4KCmRlc2NlbmRpbmcYAyABKAhSCmRlc2NlbmRpbmciiAEKGGdldF90b2tlbnNfYnlfb3duZXJfYXJncxIaCgVvd25lchgBIAEoDEIEgLUYBlIFb3duZXISGgoFc3RhcnQYAiABKAxCBIC1GAJSBXN0YXJ0EhQKBWxpbWl0GAMgASgFUgVsaW1pdBIeCgpkZXNjZW5kaW5nGAQgASgIUgpkZXNjZW5kaW5nIi4KCXRva2VuX2lkcxIhCgl0b2tlbl9pZHMYASADKAxCBIC1GAJSCHRva2VuSWRzYgZwcm90bzM=",
+    koilib_types: {
+        nested: {
+            common: {
+                nested: {
+                    str: {
+                        fields: {
+                            value: {
+                                type: "string",
+                                id: 1,
+                            },
+                        },
+                    },
+                    uint32: {
+                        fields: {
+                            value: {
+                                type: "uint32",
+                                id: 1,
+                            },
+                        },
+                    },
+                    uint64: {
+                        fields: {
+                            value: {
+                                type: "uint64",
+                                id: 1,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                        },
+                    },
+                    boole: {
+                        fields: {
+                            value: {
+                                type: "bool",
+                                id: 1,
+                            },
+                        },
+                    },
+                    address: {
+                        fields: {
+                            value: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                        },
+                    },
+                    list_args: {
+                        fields: {
+                            start: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            limit: {
+                                type: "int32",
+                                id: 2,
+                            },
+                            descending: {
+                                type: "bool",
+                                id: 3,
+                            },
+                        },
+                    },
+                    addresses: {
+                        fields: {
+                            accounts: {
+                                rule: "repeated",
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            koinos: {
+                options: {
+                    go_package: "github.com/koinos/koinos-proto-golang/koinos",
+                },
+                nested: {
+                    bytes_type: {
+                        values: {
+                            BASE64: 0,
+                            BASE58: 1,
+                            HEX: 2,
+                            BLOCK_ID: 3,
+                            TRANSACTION_ID: 4,
+                            CONTRACT_ID: 5,
+                            ADDRESS: 6,
+                        },
+                    },
+                    btype: {
+                        type: "bytes_type",
+                        id: 50000,
+                        extend: "google.protobuf.FieldOptions",
+                        options: {
+                            proto3_optional: true,
+                        },
+                    },
+                },
+            },
+            nft: {
+                nested: {
+                    royalty: {
+                        fields: {
+                            percentage: {
+                                type: "uint64",
+                                id: 1,
+                                options: {
+                                    jstype: "JS_STRING",
+                                },
+                            },
+                            address: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                        },
+                    },
+                    royalties: {
+                        fields: {
+                            value: {
+                                rule: "repeated",
+                                type: "royalty",
+                                id: 1,
+                            },
+                        },
+                    },
+                    metadata_args: {
+                        fields: {
+                            token_id: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "HEX",
+                                },
+                            },
+                            metadata: {
+                                type: "string",
+                                id: 2,
+                            },
+                        },
+                    },
+                    info: {
+                        fields: {
+                            name: {
+                                type: "string",
+                                id: 1,
+                            },
+                            symbol: {
+                                type: "string",
+                                id: 2,
+                            },
+                            uri: {
+                                type: "string",
+                                id: 3,
+                            },
+                            description: {
+                                type: "string",
+                                id: 4,
+                            },
+                        },
+                    },
+                    balance_of_args: {
+                        fields: {
+                            owner: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                        },
+                    },
+                    token: {
+                        fields: {
+                            token_id: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "HEX",
+                                },
+                            },
+                        },
+                    },
+                    is_approved_for_all_args: {
+                        fields: {
+                            owner: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            operator: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                        },
+                    },
+                    mint_args: {
+                        fields: {
+                            to: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            token_id: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "HEX",
+                                },
+                            },
+                        },
+                    },
+                    burn_args: {
+                        fields: {
+                            token_id: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "HEX",
+                                },
+                            },
+                        },
+                    },
+                    transfer_args: {
+                        fields: {
+                            from: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            to: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            token_id: {
+                                type: "bytes",
+                                id: 3,
+                                options: {
+                                    "(koinos.btype)": "HEX",
+                                },
+                            },
+                            memo: {
+                                type: "string",
+                                id: 4,
+                            },
+                        },
+                    },
+                    approve_args: {
+                        fields: {
+                            approver_address: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            to: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            token_id: {
+                                type: "bytes",
+                                id: 3,
+                                options: {
+                                    "(koinos.btype)": "HEX",
+                                },
+                            },
+                        },
+                    },
+                    set_approval_for_all_args: {
+                        fields: {
+                            approver_address: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            operator_address: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            approved: {
+                                type: "bool",
+                                id: 3,
+                            },
+                        },
+                    },
+                    get_operators_args: {
+                        fields: {
+                            owner: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            start: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            limit: {
+                                type: "int32",
+                                id: 3,
+                            },
+                            descending: {
+                                type: "bool",
+                                id: 4,
+                            },
+                        },
+                    },
+                    get_operators_return: {
+                        fields: {
+                            owner: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            operators: {
+                                rule: "repeated",
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                        },
+                    },
+                    get_tokens_args: {
+                        fields: {
+                            start: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "HEX",
+                                },
+                            },
+                            limit: {
+                                type: "int32",
+                                id: 2,
+                            },
+                            descending: {
+                                type: "bool",
+                                id: 3,
+                            },
+                        },
+                    },
+                    get_tokens_by_owner_args: {
+                        fields: {
+                            owner: {
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "ADDRESS",
+                                },
+                            },
+                            start: {
+                                type: "bytes",
+                                id: 2,
+                                options: {
+                                    "(koinos.btype)": "HEX",
+                                },
+                            },
+                            limit: {
+                                type: "int32",
+                                id: 3,
+                            },
+                            descending: {
+                                type: "bool",
+                                id: 4,
+                            },
+                        },
+                    },
+                    token_ids: {
+                        fields: {
+                            token_ids: {
+                                rule: "repeated",
+                                type: "bytes",
+                                id: 1,
+                                options: {
+                                    "(koinos.btype)": "HEX",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
+    events: {
+        "collections.owner_event": {
+            argument: "common.address",
+        },
+        "collections.royalties_event": {
+            argument: "nft.royalties",
+        },
+        "collections.set_metadata_event": {
+            argument: "nft.metadata_args",
+        },
+        "collections.token_approval_event": {
+            argument: "nft.approve_args",
+        },
+        "collections.operator_approval_event": {
+            argument: "nft.set_approval_for_all_args",
+        },
+        "collections.transfer_event": {
+            argument: "nft.transfer_args",
+        },
+        "collections.mint_event": {
+            argument: "nft.mint_args",
+        },
+    },
 };
 //export const ProtocolTypes = protocolJson;
 
@@ -34510,14 +36084,6 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 /***/ (() => {
 
 /* (ignored) */
-
-/***/ }),
-
-/***/ 6567:
-/***/ ((module) => {
-
-"use strict";
-module.exports = JSON.parse('{"nested":{"koinos":{"nested":{"contracts":{"nested":{"token":{"options":{"go_package":"github.com/koinos/koinos-proto-golang/v2/koinos/contracts/token"},"nested":{"name_arguments":{"fields":{}},"name_result":{"fields":{"value":{"type":"string","id":1}}},"symbol_arguments":{"fields":{}},"symbol_result":{"fields":{"value":{"type":"string","id":1}}},"decimals_arguments":{"fields":{}},"decimals_result":{"fields":{"value":{"type":"uint32","id":1}}},"total_supply_arguments":{"fields":{}},"total_supply_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"balance_of_arguments":{"fields":{"owner":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}}}},"balance_of_result":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"transfer_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}},"memo":{"type":"string","id":4}}},"transfer_result":{"fields":{}},"mint_arguments":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_result":{"fields":{}},"burn_arguments":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"burn_result":{"fields":{}},"balance_object":{"fields":{"value":{"type":"uint64","id":1,"options":{"jstype":"JS_STRING"}}}},"burn_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"mint_event":{"fields":{"to":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":2,"options":{"jstype":"JS_STRING"}}}},"transfer_event":{"fields":{"from":{"type":"bytes","id":1,"options":{"(btype)":"ADDRESS"}},"to":{"type":"bytes","id":2,"options":{"(btype)":"ADDRESS"}},"value":{"type":"uint64","id":3,"options":{"jstype":"JS_STRING"}}}}}}}}}}}}');
 
 /***/ })
 

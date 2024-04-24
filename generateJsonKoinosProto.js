@@ -22,19 +22,6 @@ pbjs.main(
     "--keep-case",
     "--target",
     "json",
-    "./koinos-proto/koinos/contracts/token/token.proto",
-  ],
-  (err, output) => {
-    if (err) throw err;
-    fs.writeFileSync("./src/jsonDescriptors/token-proto.json", output);
-  }
-);
-
-pbjs.main(
-  [
-    "--keep-case",
-    "--target",
-    "json",
     "./koinos-proto/koinos/contracts/pow/pow.proto",
   ],
   (err, output) => {
