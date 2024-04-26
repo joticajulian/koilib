@@ -427,7 +427,7 @@ describe("Signer", () => {
         "II4-lbqNFR7re6fv-9zN0F3Z9d1DZZ67TJZrnYGJwZN1fPwxuurBKPS7ndVG8GyKIWxKTXyC4jLBVgwZvSHc1_U=",
     });
 
-    const blockSigner = await signer.recoverAddresses(signedBlock);
+    const blockSigner = await Signer.recoverAddresses(signedBlock);
     expect(blockSigner).toStrictEqual([addressCompressed]);
   });
 
@@ -909,30 +909,30 @@ describe("Wallet and Contract", () => {
     // recover public key and address
     if (!transaction) throw new Error("transaction is not defined");
 
-    const recoveredPublicKeys = await signer.recoverPublicKeys(transaction, {
+    const recoveredPublicKeys = await Signer.recoverPublicKeys(transaction, {
       compressed: false,
     });
     expect(recoveredPublicKeys).toStrictEqual([publicKey]);
 
-    let recoveredPublicKeysComp = await signer.recoverPublicKeys(transaction, {
+    let recoveredPublicKeysComp = await Signer.recoverPublicKeys(transaction, {
       compressed: true,
     });
     expect(recoveredPublicKeysComp).toStrictEqual([publicKeyCompressed]);
 
-    const recoveredAddresses = await signer.recoverAddresses(transaction, {
+    const recoveredAddresses = await Signer.recoverAddresses(transaction, {
       compressed: false,
     });
     expect(recoveredAddresses).toStrictEqual([address]);
 
-    let recoveredAddressesComp = await signer.recoverAddresses(transaction, {
+    let recoveredAddressesComp = await Signer.recoverAddresses(transaction, {
       compressed: true,
     });
     expect(recoveredAddressesComp).toStrictEqual([addressCompressed]);
 
-    recoveredPublicKeysComp = await signer.recoverPublicKeys(transaction);
+    recoveredPublicKeysComp = await Signer.recoverPublicKeys(transaction);
     expect(recoveredPublicKeysComp).toStrictEqual([publicKeyCompressed]);
 
-    recoveredAddressesComp = await signer.recoverAddresses(transaction);
+    recoveredAddressesComp = await Signer.recoverAddresses(transaction);
     expect(recoveredAddressesComp).toStrictEqual([addressCompressed]);
   });
 
@@ -1472,7 +1472,7 @@ describe("Wallet and Contract", () => {
       });
     });
     const blocks = await provider.getBlocks(1, 1, "randomId");
-    const [signer1] = await signer.recoverAddresses(blocks[0].block);
+    const [signer1] = await Signer.recoverAddresses(blocks[0].block);
     expect(signer1).toBe("1AeXf4DF1DNPmrdcKp8jVPCbSspb9FrCtT");
   });
 
@@ -1535,7 +1535,7 @@ describe("Wallet and Contract", () => {
       nonce: string;
       recoverable_signature: string;
     }
-    const [signer1] = await signer.recoverAddresses(blocks[0].block, {
+    const [signer1] = await Signer.recoverAddresses(blocks[0].block, {
       transformSignature: async (signatureData) => {
         const powSignatureData: PowSigData = await serializer.deserialize(
           signatureData
