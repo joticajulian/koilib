@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v7.1.0](https://github.com/joticajulian/koilib/releases/tag/v7.1.0) (2024-04-30)
+
+### 🐛 Bug Fixes
+
+- Handle "rpc failed, context deadline exceeded" error during the submission of a
+  transaction. This error means that there was a timeout in the jsonrpc microservice.
+  Although this is an error and there is no information about the receipt, the
+  transaction is considered submitted because it goes to the mempool, then no error
+  is thrown in this case. The response is an empty receipt with a new field called
+  "rpc_error".
+
 ## [v7.0.0](https://github.com/joticajulian/koilib/releases/tag/v7.0.0) (2024-04-24)
 
 ### 🚀 Features
