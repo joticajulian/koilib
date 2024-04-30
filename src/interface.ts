@@ -819,4 +819,5 @@ export interface TransactionReceipt {
   events: EventData[];
   state_delta_entries: StateDeltaEntry[];
   logs: string[];
+  rpc_error?: unknown;
 }

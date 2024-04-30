@@ -707,10 +707,38 @@ export class Provider {
     receipt: TransactionReceipt;
     transaction: TransactionJsonWait;
   }> {
-    const response = await this.call<{ receipt: TransactionReceipt }>(
-      "chain.submit_transaction",
-      { transaction, broadcast }
-    );
+    let response: { receipt: TransactionReceipt };
+    try {
+      response = await this.call<{ receipt: TransactionReceipt }>(
+        "chain.submit_transaction",
+        { transaction, broadcast }
+      );
+    } catch (error) {
+      if (
+        !(error as Error).message.includes(
+          "rpc failed, context deadline exceeded"
+        )
+      ) {
+        throw error;
+      }
+      response = {
+        receipt: {
+          id: transaction.id!,
+          payer: transaction.header!.payer!,
+          max_payer_rc: "",
+          rc_limit: transaction.header!.rc_limit!.toString(),
+          rc_used: "",
+          disk_storage_used: "",
+          network_bandwidth_used: "",
+          compute_bandwidth_used: "",
+          reverted: false,
+          events: [],
+          state_delta_entries: [],
+          logs: [],
+          rpc_error: JSON.parse((error as Error).message),
+        },
+      };
+    }
     if (broadcast) {
       (transaction as TransactionJsonWait).wait = async (
         type: "byTransactionId" | "byBlock" = "byBlock",
