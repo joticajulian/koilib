@@ -23682,7 +23682,32 @@ class Provider {
      * and the transaction with the arrow function "wait" (see [[wait]])
      */
     async sendTransaction(transaction, broadcast = true) {
-        const response = await this.call("chain.submit_transaction", { transaction, broadcast });
+        let response;
+        try {
+            response = await this.call("chain.submit_transaction", { transaction, broadcast });
+        }
+        catch (error) {
+            if (!error.message.includes("rpc failed, context deadline exceeded")) {
+                throw error;
+            }
+            response = {
+                receipt: {
+                    id: transaction.id,
+                    payer: transaction.header.payer,
+                    max_payer_rc: "",
+                    rc_limit: transaction.header.rc_limit.toString(),
+                    rc_used: "",
+                    disk_storage_used: "",
+                    network_bandwidth_used: "",
+                    compute_bandwidth_used: "",
+                    reverted: false,
+                    events: [],
+                    state_delta_entries: [],
+                    logs: [],
+                    rpc_error: JSON.parse(error.message),
+                },
+            };
+        }
         if (broadcast) {
             transaction.wait = async (type = "byBlock", timeout = 15000) => {
                 return this.wait(transaction.id, type, timeout);

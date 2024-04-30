@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
-## [v7.1.0](https://github.com/joticajulian/koilib/releases/tag/v7.1.0) (2024-04-30)
+## [v7.1.1](https://github.com/joticajulian/koilib/releases/tag/v7.1.1) (2024-04-30)
 
 ### 🐛 Bug Fixes
 
