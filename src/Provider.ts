@@ -447,7 +447,8 @@ export class Provider {
       block_id: string;
       block_height: string;
       block: BlockJson;
-      block_receipt: {
+      receipt: {
+        transaction_receipts: unknown[];
         [x: string]: unknown;
       };
     }[]
@@ -463,7 +464,8 @@ export class Provider {
           block_id: string;
           block_height: string;
           block: BlockJson;
-          block_receipt: {
+          receipt: {
+            transaction_receipts: unknown[];
             [x: string]: unknown;
           };
         }[];
@@ -555,7 +557,8 @@ export class Provider {
     block_id: string;
     block_height: string;
     block: BlockJson;
-    block_receipt: {
+    receipt: {
+      transaction_receipts: unknown[];
       [x: string]: unknown;
     };
   }> {
