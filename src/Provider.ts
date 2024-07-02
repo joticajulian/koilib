@@ -7,6 +7,7 @@ import {
   TransactionJsonWait,
   BlockTopology,
   GetBlockOptions,
+  BlockReceipt,
 } from "./interface";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -372,6 +373,7 @@ export class Provider {
       block_id: string;
       block_height: string;
       block: BlockJson;
+      receipt: BlockReceipt;
     }[];
   }> {
     return this.call("block_store.get_blocks_by_id", {
@@ -447,10 +449,7 @@ export class Provider {
       block_id: string;
       block_height: string;
       block: BlockJson;
-      receipt: {
-        transaction_receipts: unknown[];
-        [x: string]: unknown;
-      };
+      receipt: BlockReceipt;
     }[]
   > {
     let blockIdRef = idRef;
@@ -464,10 +463,7 @@ export class Provider {
           block_id: string;
           block_height: string;
           block: BlockJson;
-          receipt: {
-            transaction_receipts: unknown[];
-            [x: string]: unknown;
-          };
+          receipt: BlockReceipt;
         }[];
       }>("block_store.get_blocks_by_height", {
         head_block_id: blockIdRef,
@@ -557,10 +553,7 @@ export class Provider {
     block_id: string;
     block_height: string;
     block: BlockJson;
-    receipt: {
-      transaction_receipts: unknown[];
-      [x: string]: unknown;
-    };
+    receipt: BlockReceipt;
   }> {
     return (await this.getBlocks(height, 1, undefined, opts))[0];
   }

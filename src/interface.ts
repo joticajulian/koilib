@@ -821,3 +821,17 @@ export interface TransactionReceipt {
   logs: string[];
   rpc_error?: unknown;
 }
+
+export interface BlockReceipt {
+  id: string;
+  height: string;
+  disk_storage_used: string;
+  network_bandwidth_used: string;
+  compute_bandwidth_used: string;
+  disk_storage_charged: string;
+  network_bandwidth_charged: string;
+  compute_bandwidth_charged: string;
+  events: EventData[];
+  transaction_receipts: TransactionReceipt[];
+  state_delta_entries: StateDeltaEntry[];
+}
