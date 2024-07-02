@@ -596,7 +596,7 @@ export class Signer implements SignerInterface {
    *  });
    * ```
    */
-  async recoverPublicKeys(
+  static async recoverPublicKeys(
     txOrBlock: TransactionJson | BlockJson,
     opts?: RecoverPublicKeyOptions
   ): Promise<string[]> {
@@ -696,7 +696,7 @@ export class Signer implements SignerInterface {
    *  });
    * ```
    */
-  async recoverAddresses(
+  static async recoverAddresses(
     txOrBlock: TransactionJson | BlockJson,
     opts?: RecoverPublicKeyOptions
   ): Promise<string[]> {
