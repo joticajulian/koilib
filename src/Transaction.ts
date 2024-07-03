@@ -110,6 +110,7 @@ export class Transaction {
   constructor(c?: {
     signer?: SignerInterface;
     provider?: Provider;
+    transaction?: TransactionJson;
     options?: TransactionOptions;
   }) {
     this.signer = c?.signer;
@@ -128,6 +129,7 @@ export class Transaction {
         ...(c?.options?.payee && { payee: c.options.payee }),
       },
       operations: [],
+      ...c?.transaction,
     };
   }
 
@@ -345,6 +347,22 @@ export class Transaction {
       this.signer?.getAddress()
     );
     return this.transaction;
+  }
+
+  /**
+   * Update the rc limit with a new value and update the
+   * transaction ID accordingly. The signatures will be removed
+   * if the transaction ID changed
+   */
+  adjustRcLimit(newRcLimit: string | number): void {
+    if (!this.transaction.header)
+      throw new Error("transaction header not defined");
+    this.transaction.header.rc_limit = newRcLimit;
+    const newTxId = Transaction.computeTransactionId(this.transaction.header);
+    if (this.transaction.id !== newTxId) {
+      this.transaction.signatures = [];
+    }
+    this.transaction.id = newTxId;
   }
 
   /**

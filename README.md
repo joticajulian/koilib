@@ -342,6 +342,37 @@ const receipt = await tx.send();
 await tx.wait();
 ```
 
+### Estimate mana
+
+Here is an example to estimate the mana. First create a transaction and sign it:
+
+```ts
+const tx = new Transaction({ signer, provider });
+await tx.pushOperation(koin.transfer, {
+  from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
+  to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
+  value: "1000",
+});
+await tx.sign();
+```
+
+Now send it with broadcast:false. With this option the rpc node will compute the
+transaction but it will not broadcast it, then it will not be included in a block:
+
+```ts
+let receipt = await tx.send({ broadcast: false });
+```
+
+Finally, adjust the mana by taking a look to the rc used. In this example we will
+adjust it by increasing it 10%. Then sign and send with the default option
+(broadcast:true):
+
+```ts
+tx.adjustRcLimit(Math.round(1.1 * Number(receipt.rc_used)));
+await tx.sign();
+receipt = await tx.send();
+```
+
 ### Create ABIs
 
 ABIs are composed of 2 elements: methods and types.

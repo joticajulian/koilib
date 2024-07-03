@@ -23682,7 +23682,32 @@ class Provider {
      * and the transaction with the arrow function "wait" (see [[wait]])
      */
     async sendTransaction(transaction, broadcast = true) {
-        const response = await this.call("chain.submit_transaction", { transaction, broadcast });
+        let response;
+        try {
+            response = await this.call("chain.submit_transaction", { transaction, broadcast });
+        }
+        catch (error) {
+            if (!error.message.includes("rpc failed, context deadline exceeded")) {
+                throw error;
+            }
+            response = {
+                receipt: {
+                    id: transaction.id,
+                    payer: transaction.header.payer,
+                    max_payer_rc: "",
+                    rc_limit: transaction.header.rc_limit.toString(),
+                    rc_used: "",
+                    disk_storage_used: "",
+                    network_bandwidth_used: "",
+                    compute_bandwidth_used: "",
+                    reverted: false,
+                    events: [],
+                    state_delta_entries: [],
+                    logs: [],
+                    rpc_error: JSON.parse(error.message),
+                },
+            };
+        }
         if (broadcast) {
             transaction.wait = async (type = "byBlock", timeout = 15000) => {
                 return this.wait(transaction.id, type, timeout);
@@ -23741,7 +23766,7 @@ class Provider {
     }
     /**
      * Function to get the contract metadata of a specific contract.
-     * @param contractId contract ID
+     * @param contractId - contract ID
      *
      * @example
      * ```ts
@@ -24165,7 +24190,6 @@ exports.Signer = void 0;
 /* eslint-disable no-param-reassign, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 const sha256_1 = __webpack_require__(3061);
 const secp = __importStar(__webpack_require__(9656));
-const Transaction_1 = __webpack_require__(7592);
 const utils_1 = __webpack_require__(8593);
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -24250,7 +24274,6 @@ class Signer {
      * @param compressed - compressed format is true by default
      * @param provider - provider to connect with the blockchain
      * @param sendOptions - Send options
-     * @param rcOptions - options for mana estimation
      * @example
      * ```ts
      * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
@@ -24258,42 +24281,8 @@ class Signer {
      * console.log(signer.getAddress());
      * // 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b
      * ```
-     *
-     * By default the mana is estimated as 110% the mana used. This
-     * estimation is computed using the "broadcast:false" option.
-     * For instance, if the transaction consumes 1 mana, the rc_limit
-     * will be set to 1.1 mana.
-     *
-     * You can also adjust the rc limit.
-     * @example
-     * ```ts
-     * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
-     * cons signer = new Signer({
-     *   privateKey,
-     *   provider,
-     *   rcOptions: {
-     *     estimateRc: true,
-     *     // use 2 times rc_used as rc_limit
-     *     adjustRcLimit: (r) => 2 * Number(r.rc_used),
-     *   },
-     * });
-     * ```
-     *
-     * The rpc node must be highly trusted because the transaction
-     * is signed during the estimation of the mana. You can also
-     * disable the mana estimation:
-     * @example
-     * ```ts
-     * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
-     * cons signer = new Signer({
-     *   privateKey,
-     *   provider,
-     *   rcOptions: { estimateRc: false },
-     * });
-     * ```
      */
     constructor(c) {
-        var _a;
         this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;
         this.privateKey = c.privateKey;
         this.provider = c.provider;
@@ -24308,10 +24297,6 @@ class Signer {
         this.sendOptions = {
             broadcast: true,
             ...c.sendOptions,
-        };
-        this.rcOptions = (_a = c.rcOptions) !== null && _a !== void 0 ? _a : {
-            estimateRc: true,
-            adjustRcLimit: (receipt) => Promise.resolve(Math.min(Number(receipt.max_payer_rc), Math.floor(1.1 * Number(receipt.rc_used)))),
         };
     }
     /**
@@ -24432,15 +24417,6 @@ class Signer {
     async signTransaction(tx, _abis) {
         if (!tx.id)
             throw new Error("Missing transaction id");
-        // estimation of rcLimit
-        if (this.rcOptions.estimateRc &&
-            (!tx.signatures || tx.signatures.length === 0)) {
-            const receipt = await this.estimateReceipt(tx);
-            tx.header.rc_limit = this.rcOptions.adjustRcLimit
-                ? await this.rcOptions.adjustRcLimit(receipt)
-                : receipt.rc_used;
-            tx.id = Transaction_1.Transaction.computeTransactionId(tx.header);
-        }
         // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
         // tx id is a stringified multihash, need to extract the hash digest only
         const hash = (0, utils_1.toUint8Array)(tx.id.slice(6));
@@ -24488,43 +24464,6 @@ class Signer {
             await opts.beforeSend(transaction, options);
         }
         return this.provider.sendTransaction(transaction, opts.broadcast);
-    }
-    /**
-     * Estimate the receipt associated to the transaction if
-     * it sent to the blockchain. It is useful to estimate the
-     * consumption of mana.
-     * The transaction is signed during this process and sent
-     * to the rpc node with the "broadcast:false" option to
-     * just compute the transaction without broadcasting it to
-     * the network.
-     * After that, the initial signatures are restored (if any)
-     * and the ones used for the estimation will be removed.
-     */
-    async estimateReceipt(tx) {
-        if (!tx.id)
-            throw new Error("Missing transaction id");
-        if (!tx.signatures)
-            tx.signatures = [];
-        const signaturesCopy = [...tx.signatures];
-        // sign if there are no signatures
-        if (tx.signatures.length === 0) {
-            const hash = (0, utils_1.toUint8Array)(tx.id.slice(6));
-            const signature = await this.signHash(hash);
-            tx.signatures.push((0, utils_1.encodeBase64url)(signature));
-        }
-        try {
-            const { receipt } = await this.sendTransaction(tx, {
-                broadcast: false,
-            });
-            // restore signatures
-            tx.signatures = signaturesCopy;
-            return receipt;
-        }
-        catch (error) {
-            // restore signatures
-            tx.signatures = signaturesCopy;
-            throw error;
-        }
     }
     /**
      * Function to recover the public key from hash and signature
@@ -24602,7 +24541,7 @@ class Signer {
      *  });
      * ```
      */
-    async recoverPublicKeys(txOrBlock, opts) {
+    static async recoverPublicKeys(txOrBlock, opts) {
         let compressed = true;
         if (opts && opts.compressed !== undefined) {
             compressed = opts.compressed;
@@ -24687,7 +24626,7 @@ class Signer {
      *  });
      * ```
      */
-    async recoverAddresses(txOrBlock, opts) {
+    static async recoverAddresses(txOrBlock, opts) {
         const publicKeys = await this.recoverPublicKeys(txOrBlock, opts);
         return publicKeys.map((publicKey) => (0, utils_1.bitcoinAddress)((0, utils_1.toUint8Array)(publicKey)));
     }
@@ -24851,6 +24790,7 @@ class Transaction {
                 ...(((_f = c === null || c === void 0 ? void 0 : c.options) === null || _f === void 0 ? void 0 : _f.payee) && { payee: c.options.payee }),
             },
             operations: [],
+            ...c === null || c === void 0 ? void 0 : c.transaction,
         };
     }
     /**
@@ -25036,6 +24976,21 @@ class Transaction {
         }
         this.transaction = await Transaction.prepareTransaction(this.transaction, this.provider, (_a = this.signer) === null || _a === void 0 ? void 0 : _a.getAddress());
         return this.transaction;
+    }
+    /**
+     * Update the rc limit with a new value and update the
+     * transaction ID accordingly. The signatures will be removed
+     * if the transaction ID changed
+     */
+    adjustRcLimit(newRcLimit) {
+        if (!this.transaction.header)
+            throw new Error("transaction header not defined");
+        this.transaction.header.rc_limit = newRcLimit;
+        const newTxId = Transaction.computeTransactionId(this.transaction.header);
+        if (this.transaction.id !== newTxId) {
+            this.transaction.signatures = [];
+        }
+        this.transaction.id = newTxId;
     }
     /**
      * Function to sign the transaction

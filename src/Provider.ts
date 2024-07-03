@@ -7,6 +7,7 @@ import {
   TransactionJsonWait,
   BlockTopology,
   GetBlockOptions,
+  BlockReceipt,
 } from "./interface";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -372,6 +373,7 @@ export class Provider {
       block_id: string;
       block_height: string;
       block: BlockJson;
+      receipt: BlockReceipt;
     }[];
   }> {
     return this.call("block_store.get_blocks_by_id", {
@@ -447,9 +449,7 @@ export class Provider {
       block_id: string;
       block_height: string;
       block: BlockJson;
-      block_receipt: {
-        [x: string]: unknown;
-      };
+      receipt: BlockReceipt;
     }[]
   > {
     let blockIdRef = idRef;
@@ -463,9 +463,7 @@ export class Provider {
           block_id: string;
           block_height: string;
           block: BlockJson;
-          block_receipt: {
-            [x: string]: unknown;
-          };
+          receipt: BlockReceipt;
         }[];
       }>("block_store.get_blocks_by_height", {
         head_block_id: blockIdRef,
@@ -555,9 +553,7 @@ export class Provider {
     block_id: string;
     block_height: string;
     block: BlockJson;
-    block_receipt: {
-      [x: string]: unknown;
-    };
+    receipt: BlockReceipt;
   }> {
     return (await this.getBlocks(height, 1, undefined, opts))[0];
   }
@@ -707,10 +703,38 @@ export class Provider {
     receipt: TransactionReceipt;
     transaction: TransactionJsonWait;
   }> {
-    const response = await this.call<{ receipt: TransactionReceipt }>(
-      "chain.submit_transaction",
-      { transaction, broadcast }
-    );
+    let response: { receipt: TransactionReceipt };
+    try {
+      response = await this.call<{ receipt: TransactionReceipt }>(
+        "chain.submit_transaction",
+        { transaction, broadcast }
+      );
+    } catch (error) {
+      if (
+        !(error as Error).message.includes(
+          "rpc failed, context deadline exceeded"
+        )
+      ) {
+        throw error;
+      }
+      response = {
+        receipt: {
+          id: transaction.id!,
+          payer: transaction.header!.payer!,
+          max_payer_rc: "",
+          rc_limit: transaction.header!.rc_limit!.toString(),
+          rc_used: "",
+          disk_storage_used: "",
+          network_bandwidth_used: "",
+          compute_bandwidth_used: "",
+          reverted: false,
+          events: [],
+          state_delta_entries: [],
+          logs: [],
+          rpc_error: JSON.parse((error as Error).message),
+        },
+      };
+    }
     if (broadcast) {
       (transaction as TransactionJsonWait).wait = async (
         type: "byTransactionId" | "byBlock" = "byBlock",
@@ -807,7 +831,7 @@ export class Provider {
 
   /**
    * Function to get the contract metadata of a specific contract.
-   * @param contractId contract ID
+   * @param contractId - contract ID
    *
    * @example
    * ```ts

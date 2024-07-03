@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v8.0.0](https://github.com/joticajulian/koilib/releases/tag/v8.0.0) (2024-07-03)
+
+We found that the previous version v7 had problems between mana estimation
+and multisignature transactions, because the estimation was done after the
+first signature.
+Now this concept has been improved and moved to the Transaction class, which
+has a more intuitive process and supports multisignatures.
+
+### 🚀 Features
+
+- `adjustRcLimit` is a new function in the Transaction class to adjust
+  the rcLimit and at the same time recalculate the transaction ID. This function
+  could be used by wallets during the estimation of the mana.
+- Transaction class now supports the definition of transaction in the
+  constructor.
+- Documentation improved with examples for mana estimation.
+- **breaking changes**:
+  - The rcOptions have been removed from the Signer class and moved to
+    Transaction class (see adjustRcLimit).
+  - `recoverAddresses` and `recoverPublicKeys` from the Signer class
+    are now static functions.
+
+### 🐛 Bug Fixes
+
+- Fix types for receipt and block_receipt
+
+## [v7.1.1](https://github.com/joticajulian/koilib/releases/tag/v7.1.1) (2024-04-30)
+
+### 🐛 Bug Fixes
+
+- Handle "rpc failed, context deadline exceeded" error during the submission of a
+  transaction. This error means that there was a timeout in the jsonrpc microservice.
+  Although this is an error and there is no information about the receipt, the
+  transaction is considered submitted because it goes to the mempool, then no error
+  is thrown in this case. The response is an empty receipt with a new field called
+  "rpc_error".
+
 ## [v7.0.0](https://github.com/joticajulian/koilib/releases/tag/v7.0.0) (2024-04-24)
 
 ### 🚀 Features

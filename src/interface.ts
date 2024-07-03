@@ -231,39 +231,6 @@ export interface DecodedOperationJson {
   args?: Record<string, unknown>;
 }
 
-export interface ResourceCreditsOptions {
-  /**
-   * Boolean to define if the mana should be estimated
-   * and the rcLimit be updated before signing the transaction.
-   * It is true by default
-   */
-  estimateRc?: boolean;
-
-  /**
-   * Function to adjust the rc limit after the estimation.
-   * It is useful to give an extra margin to the rc limit.
-   * By default the Signer will use a function that increases
-   * the rcLimit by 10% with respect to the estimation.
-   *
-   * @example
-   * ```ts
-   * const signer = Signer.fromWif("Kab...");
-   * signer.rcOptions = {
-   *   estimateRc: true,
-   *   adjustRcLimit: async (receipt) => {
-   *     return Math.min(
-   *       Number(receipt.max_payer_rc),
-   *       Math.floor(1.1 * Number(receipt.rc_used))
-   *     );
-   *   },
-   * }
-   * ```
-   */
-  adjustRcLimit?: (
-    receipt: TransactionReceipt
-  ) => Promise<string | number> | string | number;
-}
-
 export interface SendTransactionOptions {
   /**
    * Broadcast
@@ -819,4 +786,19 @@ export interface TransactionReceipt {
   events: EventData[];
   state_delta_entries: StateDeltaEntry[];
   logs: string[];
+  rpc_error?: unknown;
+}
+
+export interface BlockReceipt {
+  id: string;
+  height: string;
+  disk_storage_used: string;
+  network_bandwidth_used: string;
+  compute_bandwidth_used: string;
+  disk_storage_charged: string;
+  network_bandwidth_charged: string;
+  compute_bandwidth_charged: string;
+  events: EventData[];
+  transaction_receipts: TransactionReceipt[];
+  state_delta_entries: StateDeltaEntry[];
 }
