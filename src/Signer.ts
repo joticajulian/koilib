@@ -2,7 +2,6 @@
 import { sha256 } from "@noble/hashes/sha256";
 import * as secp from "@noble/secp256k1";
 import { Provider } from "./Provider";
-import { Transaction } from "./Transaction";
 import {
   TransactionJson,
   TransactionJsonWait,
@@ -12,7 +11,6 @@ import {
   TypeField,
   TransactionReceipt,
   SendTransactionOptions,
-  ResourceCreditsOptions,
 } from "./interface";
 import {
   bitcoinAddress,
@@ -154,33 +152,6 @@ export class Signer implements SignerInterface {
   sendOptions?: SendTransactionOptions;
 
   /**
-   * Options related to the estimation of the rcLimit.
-   * By default the estimation is enabled and increased
-   * by 10%.
-   *
-   * @example
-   * This code estimates the mana by multiplying the rc_used
-   * by 2.
-   * ```ts
-   * const signer = new Signer({
-   *   privateKey,
-   *   provider,
-   *   rcOptions: {
-   *     estimateRc: true,
-   *     adjustRcLimit: (receipt) => 2 * Number(receipt.rc_used),
-   *   },
-   * });
-   *
-   * // you can also update rcOptions
-   * signer.rcOptions = {
-   *   estimateRc: true,
-   *   adjustRcLimit: (receipt) => 2 * Number(receipt.rc_used),
-   * }
-   * ```
-   */
-  rcOptions: ResourceCreditsOptions;
-
-  /**
    * The constructor receives de private key as hexstring, bigint or Uint8Array.
    * See also the functions [[Signer.fromWif]] and [[Signer.fromSeed]]
    * to create the signer from the WIF or Seed respectively.
@@ -189,7 +160,6 @@ export class Signer implements SignerInterface {
    * @param compressed - compressed format is true by default
    * @param provider - provider to connect with the blockchain
    * @param sendOptions - Send options
-   * @param rcOptions - options for mana estimation
    * @example
    * ```ts
    * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
@@ -197,46 +167,12 @@ export class Signer implements SignerInterface {
    * console.log(signer.getAddress());
    * // 1MbL6mG8ASAvSYdoMnGUfG3ZXkmQ2dpL5b
    * ```
-   *
-   * By default the mana is estimated as 110% the mana used. This
-   * estimation is computed using the "broadcast:false" option.
-   * For instance, if the transaction consumes 1 mana, the rc_limit
-   * will be set to 1.1 mana.
-   *
-   * You can also adjust the rc limit.
-   * @example
-   * ```ts
-   * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
-   * cons signer = new Signer({
-   *   privateKey,
-   *   provider,
-   *   rcOptions: {
-   *     estimateRc: true,
-   *     // use 2 times rc_used as rc_limit
-   *     adjustRcLimit: (r) => 2 * Number(r.rc_used),
-   *   },
-   * });
-   * ```
-   *
-   * The rpc node must be highly trusted because the transaction
-   * is signed during the estimation of the mana. You can also
-   * disable the mana estimation:
-   * @example
-   * ```ts
-   * const privateKey = "ec8601a24f81decd57f4b611b5ac6eb801cb3780bb02c0f9cdfe9d09daaddf9c";
-   * cons signer = new Signer({
-   *   privateKey,
-   *   provider,
-   *   rcOptions: { estimateRc: false },
-   * });
-   * ```
    */
   constructor(c: {
     privateKey: string | number | bigint | Uint8Array;
     compressed?: boolean;
     provider?: Provider;
     sendOptions?: SendTransactionOptions;
-    rcOptions?: ResourceCreditsOptions;
   }) {
     this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;
     this.privateKey = c.privateKey;
@@ -251,16 +187,6 @@ export class Signer implements SignerInterface {
     this.sendOptions = {
       broadcast: true,
       ...c.sendOptions,
-    };
-    this.rcOptions = c.rcOptions ?? {
-      estimateRc: true,
-      adjustRcLimit: (receipt) =>
-        Promise.resolve(
-          Math.min(
-            Number(receipt.max_payer_rc),
-            Math.floor(1.1 * Number(receipt.rc_used))
-          )
-        ),
     };
   }
 
@@ -392,18 +318,6 @@ export class Signer implements SignerInterface {
   ): Promise<TransactionJson> {
     if (!tx.id) throw new Error("Missing transaction id");
 
-    // estimation of rcLimit
-    if (
-      this.rcOptions.estimateRc &&
-      (!tx.signatures || tx.signatures.length === 0)
-    ) {
-      const receipt = await this.estimateReceipt(tx);
-      tx.header!.rc_limit = this.rcOptions.adjustRcLimit
-        ? await this.rcOptions.adjustRcLimit(receipt)
-        : receipt.rc_used;
-      tx.id = Transaction.computeTransactionId(tx.header!);
-    }
-
     // multihash 0x1220. 12: code sha2-256. 20: length (32 bytes)
     // tx id is a stringified multihash, need to extract the hash digest only
     const hash = toUint8Array(tx.id.slice(6));
@@ -464,45 +378,6 @@ export class Signer implements SignerInterface {
       await opts.beforeSend(transaction, options);
     }
     return this.provider.sendTransaction(transaction, opts.broadcast);
-  }
-
-  /**
-   * Estimate the receipt associated to the transaction if
-   * it sent to the blockchain. It is useful to estimate the
-   * consumption of mana.
-   * The transaction is signed during this process and sent
-   * to the rpc node with the "broadcast:false" option to
-   * just compute the transaction without broadcasting it to
-   * the network.
-   * After that, the initial signatures are restored (if any)
-   * and the ones used for the estimation will be removed.
-   */
-  async estimateReceipt(
-    tx: TransactionJson | TransactionJsonWait
-  ): Promise<TransactionReceipt> {
-    if (!tx.id) throw new Error("Missing transaction id");
-    if (!tx.signatures) tx.signatures = [];
-    const signaturesCopy = [...tx.signatures];
-
-    // sign if there are no signatures
-    if (tx.signatures.length === 0) {
-      const hash = toUint8Array(tx.id.slice(6));
-      const signature = await this.signHash(hash);
-      tx.signatures.push(encodeBase64url(signature));
-    }
-
-    try {
-      const { receipt } = await this.sendTransaction(tx, {
-        broadcast: false,
-      });
-      // restore signatures
-      tx.signatures = signaturesCopy;
-      return receipt;
-    } catch (error) {
-      // restore signatures
-      tx.signatures = signaturesCopy;
-      throw error;
-    }
   }
 
   /**
