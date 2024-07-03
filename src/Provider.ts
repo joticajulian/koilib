@@ -831,7 +831,7 @@ export class Provider {
 
   /**
    * Function to get the contract metadata of a specific contract.
-   * @param contractId contract ID
+   * @param contractId - contract ID
    *
    * @example
    * ```ts
