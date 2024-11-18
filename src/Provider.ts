@@ -15,6 +15,116 @@ import { koinos } from "./protoModules/protocol-proto.js";
 import { decodeBase64url, encodeBase64url } from "./utils";
 import { Serializer } from "./Serializer";
 
+export interface ProviderInterface {
+  call: <T = unknown>(method: string, params: unknown) => Promise<T>;
+  getNonce: (
+    account: string,
+    deserialize?: boolean
+  ) => Promise<number | string>;
+  getNextNonce: (account: string) => Promise<string>;
+  getAccountRc: (account: string) => Promise<string>;
+  getTransactionsById: (transactionIds: string[]) => Promise<{
+    transactions: {
+      transaction: TransactionJson;
+      containing_blocks: string[];
+    }[];
+  }>;
+  getBlocksById: (
+    blockIds: string[],
+    opts?: GetBlockOptions
+  ) => Promise<{
+    block_items: {
+      block_id: string;
+      block_height: string;
+      block: BlockJson;
+      receipt: BlockReceipt;
+    }[];
+  }>;
+  getHeadInfo: () => Promise<{
+    head_block_time: string;
+    head_topology: BlockTopology;
+    head_state_merkle_root: string;
+    last_irreversible_block: string;
+  }>;
+  getChainId: () => Promise<string>;
+  getBlocks: (
+    height: number,
+    numBlocks?: number,
+    idRef?: string,
+    opts?: GetBlockOptions
+  ) => Promise<
+    {
+      block_id: string;
+      block_height: string;
+      block: BlockJson;
+      receipt: BlockReceipt;
+    }[]
+  >;
+  getBlock: (
+    height: number,
+    opts?: GetBlockOptions
+  ) => Promise<{
+    block_id: string;
+    block_height: string;
+    block: BlockJson;
+    receipt: BlockReceipt;
+  }>;
+  wait: (
+    txId: string,
+    type?: "byTransactionId" | "byBlock",
+    timeout?: number
+  ) => Promise<{
+    blockId: string;
+    blockNumber?: number;
+  }>;
+  sendTransaction: (
+    transaction: TransactionJson | TransactionJsonWait,
+    broadcast?: boolean
+  ) => Promise<{
+    receipt: TransactionReceipt;
+    transaction: TransactionJsonWait;
+  }>;
+  readContract: (operation: CallContractOperationJson) => Promise<{
+    result: string;
+    logs: string;
+  }>;
+  invokeSystemCall: <T = Record<string, unknown>>(
+    serializer: Serializer,
+    nameOrId: string | number,
+    args: Record<string, unknown>,
+    callerData?: { caller: string; caller_privilege: number }
+  ) => Promise<T>;
+
+  // optional functions
+  submitBlock?: (block: BlockJson) => Promise<Record<string, never>>;
+  getForkHeads?: () => Promise<{
+    last_irreversible_block: BlockTopology;
+    fork_heads: BlockTopology[];
+  }>;
+  getResourceLimits?: () => Promise<{
+    resource_limit_data: {
+      disk_storage_limit: string;
+      disk_storage_cost: string;
+      network_bandwidth_limit: string;
+      network_bandwidth_cost: string;
+      compute_bandwidth_limit: string;
+      compute_bandwidth_cost: string;
+    };
+  }>;
+  invokeGetContractMetadata?: (contractId: string) => Promise<{
+    value: {
+      hash: string;
+      system: boolean;
+      authorizes_call_contract: boolean;
+      authorizes_transaction_application: boolean;
+      authorizes_upload_contract: boolean;
+    };
+  }>;
+  invokeGetContractAddress?: (name: string) => Promise<{
+    value: { address: string };
+  }>;
+}
+
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 
 async function sleep(ms: number): Promise<void> {
@@ -24,7 +134,7 @@ async function sleep(ms: number): Promise<void> {
 /**
  * Class to connect with the RPC node
  */
-export class Provider {
+export class Provider implements ProviderInterface {
   /**
    * Array of URLs of RPC nodes
    */
@@ -908,9 +1018,73 @@ export class Provider {
         returnTypeName: "get_contract_metadata_result",
       }
     );
-    return this.invokeSystemCall(serializer, "get_contract_metadata", {
+    return this.invokeSystemCall<{
+      value: {
+        hash: string;
+        system: boolean;
+        authorizes_call_contract: boolean;
+        authorizes_transaction_application: boolean;
+        authorizes_upload_contract: boolean;
+      };
+    }>(serializer, "get_contract_metadata", {
       contract_id: contractId,
     });
+  }
+
+  /**
+   * Function to get the address of a system contract
+   * @param name - contract name
+   *
+   * @example
+   * * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const result = await provider.invokeGetContractAddress("koin");
+   * console.log(result);
+   *
+   * // { value: { address: '15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL' } }
+   * ```
+   */
+  async invokeGetContractAddress(name: string) {
+    const serializer = new Serializer(
+      {
+        nested: {
+          get_address_arguments: {
+            fields: {
+              name: {
+                type: "string",
+                id: 1,
+              },
+            },
+          },
+          get_address_result: {
+            fields: {
+              value: {
+                type: "address_record",
+                id: 1,
+              },
+            },
+          },
+          address_record: {
+            fields: {
+              address: {
+                type: "bytes",
+                id: 1,
+                options: {
+                  "(koinos.btype)": "ADDRESS",
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        argumentsTypeName: "get_address_arguments",
+        returnTypeName: "get_address_result",
+      }
+    );
+    return this.invokeSystemCall<{
+      value: { address: string };
+    }>(serializer, "get_contract_address", { name });
   }
 }
 
