@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop */
 import { SignerInterface } from "./Signer";
-import { Provider } from "./Provider";
+import { ProviderInterface } from "./Provider";
 import { Serializer } from "./Serializer";
 import {
   TransactionJsonWait,
@@ -122,7 +122,7 @@ export class Contract {
   /**
    * Provider to connect with the blockchain
    */
-  provider?: Provider;
+  provider?: ProviderInterface;
 
   /**
    * Serializer to serialize/deserialize data types
@@ -147,7 +147,7 @@ export class Contract {
     bytecode?: Uint8Array;
     options?: CallContractOptions;
     signer?: SignerInterface;
-    provider?: Provider;
+    provider?: ProviderInterface;
     /**
      * Set this option if you can not use _eval_ functions
      * in the current environment. In such cases, the

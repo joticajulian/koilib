@@ -23844,6 +23844,56 @@ class Provider {
             contract_id: contractId,
         });
     }
+    /**
+     * Function to get the address of a system contract
+     * @param name - contract name
+     *
+     * @example
+     * * ```ts
+     * const provider = new Provider("https://api.koinos.io");
+     * const result = await provider.invokeGetContractAddress("koin");
+     * console.log(result);
+     *
+     * // { value: { address: '15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL' } }
+     * ```
+     */
+    async invokeGetContractAddress(name) {
+        const serializer = new Serializer_1.Serializer({
+            nested: {
+                get_address_arguments: {
+                    fields: {
+                        name: {
+                            type: "string",
+                            id: 1,
+                        },
+                    },
+                },
+                get_address_result: {
+                    fields: {
+                        value: {
+                            type: "address_record",
+                            id: 1,
+                        },
+                    },
+                },
+                address_record: {
+                    fields: {
+                        address: {
+                            type: "bytes",
+                            id: 1,
+                            options: {
+                                "(koinos.btype)": "ADDRESS",
+                            },
+                        },
+                    },
+                },
+            },
+        }, {
+            argumentsTypeName: "get_address_arguments",
+            returnTypeName: "get_address_result",
+        });
+        return this.invokeSystemCall(serializer, "get_contract_address", { name });
+    }
 }
 exports.Provider = Provider;
 exports["default"] = Provider;
@@ -24808,14 +24858,17 @@ class Transaction {
      * signer.provider = provider;
      * const tx = new Transaction({ signer });
      *
-     * // method 1
+     * // Method 1 (using 2 arguments)
+     * // note that with 2 arguments it is not necessary to
+     * // set "onlyOperation: true". For the rest of the
+     * // methods it's necessary to do that.
      * await tx.pushOperation(koin.transfer, {
      *   from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
      *   to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
      *   value: "1000",
      * });
      *
-     * // method 2
+     * // Method 2
      * await tx.pushOperation(
      *   koin.transfer({
      *     from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
@@ -24826,7 +24879,7 @@ class Transaction {
      *   })
      * );
      *
-     * // method 3
+     * // Method 3
      * await tx.pushOperation(
      *   await koin.transfer({
      *     from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
@@ -24837,7 +24890,7 @@ class Transaction {
      *   })
      * );
      *
-     * // method 4
+     * // Method 4
      * const { operation } = await koin.transfer({
      *   from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
      *   to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",

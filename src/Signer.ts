@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 import { sha256 } from "@noble/hashes/sha256";
 import * as secp from "@noble/secp256k1";
-import { Provider } from "./Provider";
+import { ProviderInterface } from "./Provider";
 import {
   TransactionJson,
   TransactionJsonWait,
@@ -28,7 +28,7 @@ import {
 import { koinos } from "./protoModules/protocol-proto.js";
 
 export interface SignerInterface {
-  provider?: Provider;
+  provider?: ProviderInterface;
   getAddress: (compressed?: boolean) => string;
   signHash: (hash: Uint8Array) => Promise<Uint8Array>;
   signMessage: (message: string | Uint8Array) => Promise<Uint8Array>;
@@ -142,7 +142,7 @@ export class Signer implements SignerInterface {
   /**
    * Provider to connect with the blockchain
    */
-  provider?: Provider;
+  provider?: ProviderInterface;
 
   /**
    * Options to apply when sending a transaction.
@@ -171,7 +171,7 @@ export class Signer implements SignerInterface {
   constructor(c: {
     privateKey: string | number | bigint | Uint8Array;
     compressed?: boolean;
-    provider?: Provider;
+    provider?: ProviderInterface;
     sendOptions?: SendTransactionOptions;
   }) {
     this.compressed = typeof c.compressed === "undefined" ? true : c.compressed;

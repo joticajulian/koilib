@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 import { sha256 } from "@noble/hashes/sha256";
 import { Contract } from "./Contract";
-import { Provider } from "./Provider";
+import { ProviderInterface } from "./Provider";
 import { SignerInterface } from "./Signer";
 import {
   Abi,
@@ -90,7 +90,7 @@ export class Transaction {
   /**
    * Provider to connect with the blockchain
    */
-  provider?: Provider;
+  provider?: ProviderInterface;
 
   /**
    * Transaction
@@ -109,7 +109,7 @@ export class Transaction {
 
   constructor(c?: {
     signer?: SignerInterface;
-    provider?: Provider;
+    provider?: ProviderInterface;
     transaction?: TransactionJson;
     options?: TransactionOptions;
   }) {
@@ -148,14 +148,17 @@ export class Transaction {
    * signer.provider = provider;
    * const tx = new Transaction({ signer });
    *
-   * // method 1
+   * // Method 1 (using 2 arguments)
+   * // note that with 2 arguments it is not necessary to
+   * // set "onlyOperation: true". For the rest of the
+   * // methods it's necessary to do that.
    * await tx.pushOperation(koin.transfer, {
    *   from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
    *   to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
    *   value: "1000",
    * });
    *
-   * // method 2
+   * // Method 2
    * await tx.pushOperation(
    *   koin.transfer({
    *     from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
@@ -166,7 +169,7 @@ export class Transaction {
    *   })
    * );
    *
-   * // method 3
+   * // Method 3
    * await tx.pushOperation(
    *   await koin.transfer({
    *     from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
@@ -177,7 +180,7 @@ export class Transaction {
    *   })
    * );
    *
-   * // method 4
+   * // Method 4
    * const { operation } = await koin.transfer({
    *   from: "1NRYHBYr9qxYQAeVqfdSvyjJemRQ4qD3Mt",
    *   to: "13UdKjYuzfBYbB6bGLQkUN9DJRFPCmG1mU",
@@ -242,7 +245,7 @@ export class Transaction {
    */
   static async prepareTransaction(
     tx: TransactionJson,
-    provider?: Provider,
+    provider?: ProviderInterface,
     payer?: string
   ): Promise<TransactionJson> {
     if (!tx.header) {
