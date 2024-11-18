@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v8.1.0](https://github.com/joticajulian/koilib/releases/tag/v8.1.0) (2024-11-18)
+
+### 🚀 Features
+
+- New Provider.invokeGetContractAddress to resolve the address to a system contract.
+- We have defined a ProviderInterface and we use it in all classes. This interface is less
+restrictive than the Provider Class which has more functions. Then, the ProviderInterface
+is ideal to develop other implementations for the Provider Class.
+- The documentation has been updated.
+
 ## [v8.0.0](https://github.com/joticajulian/koilib/releases/tag/v8.0.0) (2024-07-03)
 
 We found that the previous version v7 had problems between mana estimation
