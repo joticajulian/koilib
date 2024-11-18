@@ -1036,7 +1036,7 @@ export class Provider implements ProviderInterface {
    * @param name - contract name
    *
    * @example
-   * * ```ts
+   * ```ts
    * const provider = new Provider("https://api.koinos.io");
    * const result = await provider.invokeGetContractAddress("koin");
    * console.log(result);
