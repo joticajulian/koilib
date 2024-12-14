@@ -93,7 +93,7 @@ export interface ProviderInterface {
     nameOrId: string | number,
     args: Record<string, unknown>,
     callerData?: { caller: string; caller_privilege: number }
-  ) => Promise<T>;
+  ) => Promise<T | undefined>;
 
   // optional functions
   submitBlock?: (block: BlockJson) => Promise<Record<string, never>>;
@@ -111,18 +111,24 @@ export interface ProviderInterface {
       compute_bandwidth_cost: string;
     };
   }>;
-  invokeGetContractMetadata?: (contractId: string) => Promise<{
-    value: {
-      hash: string;
-      system: boolean;
-      authorizes_call_contract: boolean;
-      authorizes_transaction_application: boolean;
-      authorizes_upload_contract: boolean;
-    };
-  }>;
-  invokeGetContractAddress?: (name: string) => Promise<{
-    value: { address: string };
-  }>;
+  invokeGetContractMetadata?: (contractId: string) => Promise<
+    | {
+        value: {
+          hash: string;
+          system: boolean;
+          authorizes_call_contract: boolean;
+          authorizes_transaction_application: boolean;
+          authorizes_upload_contract: boolean;
+        };
+      }
+    | undefined
+  >;
+  invokeGetContractAddress?: (name: string) => Promise<
+    | {
+        value: { address: string };
+      }
+    | undefined
+  >;
 }
 
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
@@ -912,7 +918,7 @@ export class Provider implements ProviderInterface {
     nameOrId: string | number,
     args: Record<string, unknown>,
     callerData?: { caller: string; caller_privilege: number }
-  ): Promise<T> {
+  ): Promise<T | undefined> {
     if (!serializer.argumentsTypeName)
       throw new Error("argumentsTypeName not defined");
     if (!serializer.returnTypeName)
@@ -930,8 +936,7 @@ export class Provider implements ProviderInterface {
         caller_data: callerData,
       }
     );
-    if (!response || !response.value)
-      throw new Error("no value in the response");
+    if (!response || !response.value) return undefined;
     const result = await serializer.deserialize(
       response.value,
       serializer.returnTypeName
