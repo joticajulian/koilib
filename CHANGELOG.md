@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v9.0.0](https://github.com/joticajulian/koilib/releases/tag/v9.0.0) (2024-12-16)
+
+### 🚀 Features
+
+- **breaking change**: Provider.invokeSystemCall returns undefined instead of throwing an error if the response from the RPC node is empty.
+- **breaking change**: The Provider.wait function now uses byTransactionId by default since it is more accurate. This function has also been improved by checking that the block is part of the main fork. If you are connecting to an RPC node that does not support the "transaction store microservice" consider changing the type to byBlock.
+- **breaking change**: The ABI now uses events[name].type to define the protobuffer type of the event (in previous versions this was defined as events[name].argument). The library still supports events[name].argument, but this will be removed in future versions.
+- Adding burn to token and NFT ABIs in utils.
+- The documentation has been updated.
+
 ## [v8.1.0](https://github.com/joticajulian/koilib/releases/tag/v8.1.0) (2024-11-18)
 
 ### 🚀 Features
