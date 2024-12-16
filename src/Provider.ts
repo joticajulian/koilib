@@ -93,7 +93,7 @@ export interface ProviderInterface {
     nameOrId: string | number,
     args: Record<string, unknown>,
     callerData?: { caller: string; caller_privilege: number }
-  ) => Promise<T>;
+  ) => Promise<T | undefined>;
 
   // optional functions
   submitBlock?: (block: BlockJson) => Promise<Record<string, never>>;
@@ -111,18 +111,24 @@ export interface ProviderInterface {
       compute_bandwidth_cost: string;
     };
   }>;
-  invokeGetContractMetadata?: (contractId: string) => Promise<{
-    value: {
-      hash: string;
-      system: boolean;
-      authorizes_call_contract: boolean;
-      authorizes_transaction_application: boolean;
-      authorizes_upload_contract: boolean;
-    };
-  }>;
-  invokeGetContractAddress?: (name: string) => Promise<{
-    value: { address: string };
-  }>;
+  invokeGetContractMetadata?: (contractId: string) => Promise<
+    | {
+        value: {
+          hash: string;
+          system: boolean;
+          authorizes_call_contract: boolean;
+          authorizes_transaction_application: boolean;
+          authorizes_upload_contract: boolean;
+        };
+      }
+    | undefined
+  >;
+  invokeGetContractAddress?: (name: string) => Promise<
+    | {
+        value: { address: string };
+      }
+    | undefined
+  >;
 }
 
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
@@ -693,25 +699,49 @@ export class Provider implements ProviderInterface {
    */
   async wait(
     txId: string,
-    type: "byTransactionId" | "byBlock" = "byBlock",
+    type: "byTransactionId" | "byBlock" = "byTransactionId",
     timeout = 15000
   ): Promise<{
     blockId: string;
     blockNumber?: number;
   }> {
-    const iniTime = Date.now();
+    const endTime = Date.now() + timeout;
     if (type === "byTransactionId") {
-      while (Date.now() < iniTime + timeout) {
+      while (Date.now() < endTime) {
         await sleep(1000);
         const { transactions } = await this.getTransactionsById([txId]);
+        // If the API node knows about the transaction and
+        // the transaction has been included in a block
         if (
           transactions &&
           transactions[0] &&
           transactions[0].containing_blocks
-        )
-          return {
-            blockId: transactions[0].containing_blocks[0],
-          };
+        ) {
+          // For each of the blocks containing the transaction,
+          // check to see if that block is a parent of head
+
+          // Get the height of the containing block
+          const blockCandidates = transactions[0].containing_blocks;
+          const blocks = await this.getBlocksById(blockCandidates, {
+            returnBlock: false,
+            returnReceipt: false,
+          });
+
+          if (blocks && blocks.block_items && blocks.block_items.length > 0) {
+            for (let i = 0; i < blocks.block_items.length; i += 1) {
+              // If the ancestor block of head at the height of the containing
+              // block is the containing block, return that block
+              const blockNumber = Number(blocks.block_items[i].block_height);
+              const blocksHeight = await this.getBlocks(blockNumber);
+              if (blocksHeight) {
+                const blockId = blockCandidates.find(
+                  (b) => b === blocksHeight[0].block_id
+                );
+                if (blockId) return { blockId, blockNumber };
+              }
+            }
+          }
+        }
       }
       throw new Error(`Transaction not mined after ${timeout} ms`);
     }
@@ -747,7 +777,7 @@ export class Provider implements ProviderInterface {
     let iniBlock = 0;
     let previousId = "";
 
-    while (Date.now() < iniTime + timeout) {
+    while (Date.now() < endTime) {
       await sleep(1000);
       const { head_topology: headTopology } = await this.getHeadInfo();
       if (blockNumber === 0) {
@@ -912,7 +942,7 @@ export class Provider implements ProviderInterface {
     nameOrId: string | number,
     args: Record<string, unknown>,
     callerData?: { caller: string; caller_privilege: number }
-  ): Promise<T> {
+  ): Promise<T | undefined> {
     if (!serializer.argumentsTypeName)
       throw new Error("argumentsTypeName not defined");
     if (!serializer.returnTypeName)
@@ -930,8 +960,7 @@ export class Provider implements ProviderInterface {
         caller_data: callerData,
       }
     );
-    if (!response || !response.value)
-      throw new Error("no value in the response");
+    if (!response || !response.value) return undefined;
     const result = await serializer.deserialize(
       response.value,
       serializer.returnTypeName
@@ -1036,7 +1065,7 @@ export class Provider implements ProviderInterface {
    * @param name - contract name
    *
    * @example
-   * * ```ts
+   * ```ts
    * const provider = new Provider("https://api.koinos.io");
    * const result = await provider.invokeGetContractAddress("koin");
    * console.log(result);

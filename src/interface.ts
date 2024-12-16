@@ -50,13 +50,13 @@ import { Serializer } from "./Serializer";
  *     },
  *     mint: {
  *       entry_point: 0xc2f82bdc,
- *       argument: "mint_argumnets",
+ *       argument: "mint_arguments",
  *       return: "mint_result",
  *     },
  *   },
  *   events: {
  *     'koinos.contracts.token.mint_event': {
- *       argument: "mint"
+ *       type: "mint_arguments"
  *     },
  *   },
  *   koilib_types: tokenJson,
@@ -151,7 +151,7 @@ import { Serializer } from "./Serializer";
  *   },
  *   events: {
  *     'transfer_event': {
- *       argument: "transfer"
+ *       type: "transfer"
  *     },
  *   },
  *   koilib_types: tokenJson,
@@ -200,8 +200,10 @@ export interface Abi {
    */
   events?: {
     [x: string]: {
-      /** Protobuffer type for argument */
+      /** Deprecated, use type instead */
       argument?: string;
+      /** Protobuffer type for event */
+      type?: string;
       /** Description of the event */
       description?: string;
     };

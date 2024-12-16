@@ -600,7 +600,12 @@ export class Contract {
     if (!this.serializer) throw new Error("Serializer is not defined");
     let typeName = event.name;
     if (this.abi && this.abi.events && this.abi.events[event.name]) {
-      typeName = this.abi.events[event.name].argument as string;
+      typeName = this.abi.events[event.name].type as string;
+      // temporary code for transition between "argument" and "type".
+      // It should be removed in future versions
+      if (!typeName) {
+        typeName = this.abi.events[event.name].argument as string;
+      }
     }
     const args = typeName
       ? await this.serializer.deserialize(event.data, typeName)

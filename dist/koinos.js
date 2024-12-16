@@ -23130,7 +23130,12 @@ class Contract {
             throw new Error("Serializer is not defined");
         let typeName = event.name;
         if (this.abi && this.abi.events && this.abi.events[event.name]) {
-            typeName = this.abi.events[event.name].argument;
+            typeName = this.abi.events[event.name].type;
+            // temporary code for transition between "argument" and "type".
+            // It should be removed in future versions
+            if (!typeName) {
+                typeName = this.abi.events[event.name].argument;
+            }
         }
         const args = typeName
             ? await this.serializer.deserialize(event.data, typeName)
@@ -23595,18 +23600,39 @@ class Provider {
      * console.log("Transaction mined")
      * ```
      */
-    async wait(txId, type = "byBlock", timeout = 15000) {
-        const iniTime = Date.now();
+    async wait(txId, type = "byTransactionId", timeout = 15000) {
+        const endTime = Date.now() + timeout;
         if (type === "byTransactionId") {
-            while (Date.now() < iniTime + timeout) {
+            while (Date.now() < endTime) {
                 await sleep(1000);
                 const { transactions } = await this.getTransactionsById([txId]);
+                // If the API node knows about the transaction and
+                // the transaction has been included in a block
                 if (transactions &&
                     transactions[0] &&
-                    transactions[0].containing_blocks)
-                    return {
-                        blockId: transactions[0].containing_blocks[0],
-                    };
+                    transactions[0].containing_blocks) {
+                    // For each of the blocks containing the transaction,
+                    // check to see if that block is a parent of head
+                    // Get the height of the containing block
+                    const blockCandidates = transactions[0].containing_blocks;
+                    const blocks = await this.getBlocksById(blockCandidates, {
+                        returnBlock: false,
+                        returnReceipt: false,
+                    });
+                    if (blocks && blocks.block_items && blocks.block_items.length > 0) {
+                        for (let i = 0; i < blocks.block_items.length; i += 1) {
+                            // If the ancestor block of head at the height of the containing
+                            // block is the containing block, return that block
+                            const blockNumber = Number(blocks.block_items[i].block_height);
+                            const blocksHeight = await this.getBlocks(blockNumber);
+                            if (blocksHeight) {
+                                const blockId = blockCandidates.find((b) => b === blocksHeight[0].block_id);
+                                if (blockId)
+                                    return { blockId, blockNumber };
+                            }
+                        }
+                    }
+                }
             }
             throw new Error(`Transaction not mined after ${timeout} ms`);
         }
@@ -23633,7 +23659,7 @@ class Provider {
         let blockNumber = 0;
         let iniBlock = 0;
         let previousId = "";
-        while (Date.now() < iniTime + timeout) {
+        while (Date.now() < endTime) {
             await sleep(1000);
             const { head_topology: headTopology } = await this.getHeadInfo();
             if (blockNumber === 0) {
@@ -23760,7 +23786,7 @@ class Provider {
             caller_data: callerData,
         });
         if (!response || !response.value)
-            throw new Error("no value in the response");
+            return undefined;
         const result = await serializer.deserialize(response.value, serializer.returnTypeName);
         return result;
     }
@@ -23849,7 +23875,7 @@ class Provider {
      * @param name - contract name
      *
      * @example
-     * * ```ts
+     * ```ts
      * const provider = new Provider("https://api.koinos.io");
      * const result = await provider.invokeGetContractAddress("koin");
      * console.log(result);
@@ -25690,6 +25716,13 @@ exports.tokenAbi = {
             read_only: false,
             entry_point: 0xdc6f17bb,
         },
+        burn: {
+            argument: "token.burn_args",
+            return: "",
+            description: "Burn tokens",
+            read_only: false,
+            entry_point: 0x859facc5,
+        },
     },
     types: "CpoICiJrb2lub3MvY29udHJhY3RzL3Rva2VuL3Rva2VuLnByb3RvEhZrb2lub3MuY29udHJhY3RzLnRva2VuGhRrb2lub3Mvb3B0aW9ucy5wcm90byIQCg5uYW1lX2FyZ3VtZW50cyIjCgtuYW1lX3Jlc3VsdBIUCgV2YWx1ZRgBIAEoCVIFdmFsdWUiEgoQc3ltYm9sX2FyZ3VtZW50cyIlCg1zeW1ib2xfcmVzdWx0EhQKBXZhbHVlGAEgASgJUgV2YWx1ZSIUChJkZWNpbWFsc19hcmd1bWVudHMiJwoPZGVjaW1hbHNfcmVzdWx0EhQKBXZhbHVlGAEgASgNUgV2YWx1ZSIYChZ0b3RhbF9zdXBwbHlfYXJndW1lbnRzIi8KE3RvdGFsX3N1cHBseV9yZXN1bHQSGAoFdmFsdWUYASABKARCAjABUgV2YWx1ZSIyChRiYWxhbmNlX29mX2FyZ3VtZW50cxIaCgVvd25lchgBIAEoDEIEgLUYBlIFb3duZXIiLQoRYmFsYW5jZV9vZl9yZXN1bHQSGAoFdmFsdWUYASABKARCAjABUgV2YWx1ZSJeChJ0cmFuc2Zlcl9hcmd1bWVudHMSGAoEZnJvbRgBIAEoDEIEgLUYBlIEZnJvbRIUCgJ0bxgCIAEoDEIEgLUYBlICdG8SGAoFdmFsdWUYAyABKARCAjABUgV2YWx1ZSIRCg90cmFuc2Zlcl9yZXN1bHQiQAoObWludF9hcmd1bWVudHMSFAoCdG8YASABKAxCBIC1GAZSAnRvEhgKBXZhbHVlGAIgASgEQgIwAVIFdmFsdWUiDQoLbWludF9yZXN1bHQiRAoOYnVybl9hcmd1bWVudHMSGAoEZnJvbRgBIAEoDEIEgLUYBlIEZnJvbRIYCgV2YWx1ZRgCIAEoBEICMAFSBXZhbHVlIg0KC2J1cm5fcmVzdWx0IioKDmJhbGFuY2Vfb2JqZWN0EhgKBXZhbHVlGAEgASgEQgIwAVIFdmFsdWUiQAoKYnVybl9ldmVudBIYCgRmcm9tGAEgASgMQgSAtRgGUgRmcm9tEhgKBXZhbHVlGAIgASgEQgIwAVIFdmFsdWUiPAoKbWludF9ldmVudBIUCgJ0bxgBIAEoDEIEgLUYBlICdG8SGAoFdmFsdWUYAiABKARCAjABUgV2YWx1ZSJaCg50cmFuc2Zl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",
     koilib_types: {
@@ -26268,6 +26301,20 @@ exports.tokenAbi = {
             },
         },
     },
+    events: {
+        "token.mint_event": {
+            argument: "token.mint_args",
+            type: "token.mint_args",
+        },
+        "token.transfer_event": {
+            argument: "token.transfer_args",
+            type: "token.transfer_args",
+        },
+        "token.burn_event": {
+            argument: "token.burn_args",
+            type: "token.burn_args",
+        },
+    },
 };
 /**
  * ABI for NFTs
@@ -26451,6 +26498,13 @@ exports.nftAbi = {
             description: "Mint NFT",
             read_only: false,
             entry_point: 0xdc6f17bb,
+        },
+        burn: {
+            argument: "nft.burn_args",
+            return: "",
+            description: "Burn NFT",
+            read_only: false,
+            entry_point: 0x859facc5,
         },
     },
     types: "CoQDCidrb2lub3Nib3gtcHJvdG8vbWFuYXNoYXJlci9jb21tb24ucHJvdG8SBmNvbW1vbhoUa29pbm9zL29wdGlvbnMucHJvdG8iGwoDc3RyEhQKBXZhbHVlGAEgASgJUgV2YWx1ZSIeCgZ1aW50MzISFAoFdmFsdWUYASABKA1SBXZhbHVlIiIKBnVpbnQ2NBIYCgV2YWx1ZRgBIAEoBEICMAFSBXZhbHVlIh0KBWJvb2xlEhQKBXZhbHVlGAEgASgIUgV2YWx1ZSIlCgdhZGRyZXNzEhoKBXZhbHVlGAEgASgMQgSAtRgGUgV2YWx1ZSJdCglsaXN0X2FyZ3MSGgoFc3RhcnQYASABKAxCBIC1GAZSBXN0YXJ0EhQKBWxpbWl0GAIgASgFUgVsaW1pdBIeCgpkZXNjZW5kaW5nGAMgASgIUgpkZXNjZW5kaW5nIi0KCWFkZHJlc3NlcxIgCghhY2NvdW50cxgBIAMoDEIEgLUYBlIIYWNjb3VudHNiBnByb3RvMwqQDAoJbmZ0LnByb3RvEgNuZnQaFGtvaW5vcy9vcHRpb25zLnByb3RvIk0KB3JveWFsdHkSIgoKcGVyY2VudGFnZRgBIAEoBEICMAFSCnBlcmNlbnRhZ2USHgoHYWRkcmVzcxgCIAEoDEIEgLUYBlIHYWRkcmVzcyIvCglyb3lhbHRpZXMSIgoFdmFsdWUYASADKAsyDC5uZnQucm95YWx0eVIFdmFsdWUiTAoNbWV0YWRhdGFfYXJncxIfCgh0b2tlbl9pZBgBIAEoDEIEgLUYAlIHdG9rZW5JZBIaCghtZXRhZGF0YRgCIAEoCVIIbWV0YWRhdGEiZgoEaW5mbxISCgRuYW1lGAEgASgJUgRuYW1lEhYKBnN5bWJvbBgCIAEoCVIGc3ltYm9sEhAKA3VyaRgDIAEoCVIDdXJpEiAKC2Rlc2NyaXB0aW9uGAQgASgJUgtkZXNjcmlwdGlvbiItCg9iYWxhbmNlX29mX2FyZ3MSGgoFb3duZXIYASABKAxCBIC1GAZSBW93bmVyIigKBXRva2VuEh8KCHRva2VuX2lkGAEgASgMQgSAtRgCUgd0b2tlbklkIlgKGGlzX2FwcHJvdmVkX2Zvcl9hbGxfYXJncxIaCgVvd25lchgBIAEoDEIEgLUYBlIFb3duZXISIAoIb3BlcmF0b3IYAiABKAxCBIC1GAZSCG9wZXJhdG9yIkIKCW1pbnRfYXJncxIUCgJ0bxgBIAEoDEIEgLUYBlICdG8SHwoIdG9rZW5faWQYAiABKAxCBIC1GAJSB3Rva2VuSWQiLAoJYnVybl9hcmdzEh8KCHRva2VuX2lkGAEgASgMQgSAtRgCUgd0b2tlbklkInQKDXRyYW5zZmVyX2FyZ3MSGAoEZnJvbRgBIAEoDEIEgLUYBlIEZnJvbRIUCgJ0bxgCIAEoDEIEgLUYBlICdG8SHwoIdG9rZW5faWQYAyABKAxCBIC1GAJSB3Rva2VuSWQSEgoEbWVtbxgEIAEoCVIEbWVtbyJ2CgxhcHByb3ZlX2FyZ3MSLwoQYXBwcm92ZXJfYWRkcmVzcxgBIAEoDEIEgLUYBlIPYXBwcm92ZXJBZGRyZXNzEhQKAnRvGAIgASgMQgSAtRgGUgJ0bxIfCgh0b2tlbl9pZBgDIAEoDEIEgLUYAlIHdG9rZW5JZCKZAQoZc2V0X2FwcHJvdmFsX2Zvcl9hbGxfYXJncxIvChBhcHByb3Zlcl9hZGRyZXNzGAEgASgMQgSAtRgGUg9hcHByb3ZlckFkZHJlc3MSLwoQb3BlcmF0b3JfYWRkcmVzcxgCIAEoDEIEgLUYBlIPb3BlcmF0b3JBZGRyZXNzEhoKCGFwcHJvdmVkGAMgASgIUghhcHByb3ZlZCKCAQoSZ2V0X29wZXJhdG9yc19hcmdzEhoKBW93bmVyGAEgASgMQgSAtRgGUgVvd25lchIaCgVzdGFydBgCIAEoDEIEgLUYBlIFc3RhcnQSFAoFbGltaXQYAyABKAVSBWxpbWl0Eh4KCmRlc2NlbmRpbmcYBCABKAhSCmRlc2NlbmRpbmciVgoUZ2V0X29wZXJhdG9yc19yZXR1cm4SGgoFb3duZXIYASABKAxCBIC1GAZSBW93bmVyEiIKCW9wZXJhdG9ycxgCIAMoDEIEgLUYBlIJb3BlcmF0b3JzImMKD2dldF90b2tlbnNfYXJncxIaCgVzdGFydBgBIAEoDEIEgLUYAlIFc3RhcnQSFAoFbGltaXQYAiABKAVSBWxpbWl0Eh4KCmRlc2NlbmRpbmcYAyABKAhSCmRlc2NlbmRpbmciiAEKGGdldF90b2tlbnNfYnlfb3duZXJfYXJncxIaCgVvd25lchgBIAEoDEIEgLUYBlIFb3duZXISGgoFc3RhcnQYAiABKAxCBIC1GAJSBXN0YXJ0EhQKBWxpbWl0GAMgASgFUgVsaW1pdBIeCgpkZXNjZW5kaW5nGAQgASgIUgpkZXNjZW5kaW5nIi4KCXRva2VuX2lkcxIhCgl0b2tlbl9pZHMYASADKAxCBIC1GAJSCHRva2VuSWRzYgZwcm90bzM=",
@@ -26881,24 +26935,35 @@ exports.nftAbi = {
     events: {
         "collections.owner_event": {
             argument: "common.address",
+            type: "common.address",
         },
         "collections.royalties_event": {
             argument: "nft.royalties",
+            type: "nft.royalties",
         },
         "collections.set_metadata_event": {
             argument: "nft.metadata_args",
+            type: "nft.metadata_args",
         },
         "collections.token_approval_event": {
             argument: "nft.approve_args",
+            type: "nft.approve_args",
         },
         "collections.operator_approval_event": {
             argument: "nft.set_approval_for_all_args",
+            type: "nft.set_approval_for_all_args",
         },
         "collections.transfer_event": {
             argument: "nft.transfer_args",
+            type: "nft.transfer_args",
         },
         "collections.mint_event": {
             argument: "nft.mint_args",
+            type: "nft.mint_args",
+        },
+        "collections.burn_event": {
+            argument: "nft.burn_args",
+            type: "nft.burn_args",
         },
     },
 };
