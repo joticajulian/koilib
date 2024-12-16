@@ -1166,9 +1166,18 @@ export const tokenAbi: Abi = {
     },
   },
   events: {
-    "token.mint_event": { argument: "token.mint_args" },
-    "token.transfer_event": { argument: "token.transfer_args" },
-    "token.burn_event": { argument: "token.burn_args" },
+    "token.mint_event": {
+      argument: "token.mint_args",
+      type: "token.mint_args",
+    },
+    "token.transfer_event": {
+      argument: "token.transfer_args",
+      type: "token.transfer_args",
+    },
+    "token.burn_event": {
+      argument: "token.burn_args",
+      type: "token.burn_args",
+    },
   },
 };
 
@@ -1795,27 +1804,35 @@ export const nftAbi: Abi = {
   events: {
     "collections.owner_event": {
       argument: "common.address",
+      type: "common.address",
     },
     "collections.royalties_event": {
       argument: "nft.royalties",
+      type: "nft.royalties",
     },
     "collections.set_metadata_event": {
       argument: "nft.metadata_args",
+      type: "nft.metadata_args",
     },
     "collections.token_approval_event": {
       argument: "nft.approve_args",
+      type: "nft.approve_args",
     },
     "collections.operator_approval_event": {
       argument: "nft.set_approval_for_all_args",
+      type: "nft.set_approval_for_all_args",
     },
     "collections.transfer_event": {
       argument: "nft.transfer_args",
+      type: "nft.transfer_args",
     },
     "collections.mint_event": {
       argument: "nft.mint_args",
+      type: "nft.mint_args",
     },
     "collections.burn_event": {
       argument: "nft.burn_args",
+      type: "nft.burn_args",
     },
   },
 };
