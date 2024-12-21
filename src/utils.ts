@@ -280,6 +280,7 @@ export function formatUnits(
   decimals: number
 ): string {
   let v = typeof value === "string" ? value : BigInt(value).toString();
+  if (!decimals) return v;
   const sign = v[0] === "-" ? "-" : "";
   v = v.replace("-", "").padStart(decimals + 1, "0");
   const integerPart = v
