@@ -209,3 +209,143 @@ const beforeSend = async (tx, opts) => {
 ### 🐛 Bug Fixes
 
 - send abis was missing in Signer.ts
+
+## [v5.2.3](https://github.com/joticajulian/koilib/releases/tag/v5.2.3) (2022-11-27)
+
+### 🚀 Features
+
+- New function in the `Provider` class called `getNextNonce`. It is used to query the actual nonce, and compute the next one. This is useful when creating a new transaction.
+
+The motivation of this feature is related to the use of Koilib + Kondor. When you get a signer from Kondor, this signer comes with its own provider (to get transaction parameters, and to submit transactions). This is a problem when you are not using the same network as the one defined in Kondor, for instance when Kondor is connected to mainnet and you are targeting testnet. To solve this issue the developers normally use their owns providers to compute the correct `chain_id`, `account_rc`, and `nonce`. However, the `nonce` requires more steps when you are submitting transactions (increase nonce and encode it in base64url). The new `getNextNonce` function simplifies this computation.
+
+## [v5.2.1](https://github.com/joticajulian/koilib/releases/tag/v5.2.1) (2022-10-24)
+
+### 🚀 Features
+
+- `onlyOperation` option in Contract class: Boolean to define if the intention is to get only the operation. No transaction or connection with the provider established.
+- `previousOperations` and `nextOperations` as options in Contract class: List of extra operations to be included before/after the actual one in the transaction.
+
+## [v5.2.0](https://github.com/joticajulian/koilib/releases/tag/v5.2.0) (2022-10-17)
+
+### 🚀 Features
+
+- New functions: isChecksum, isChecksumAddress, isChecksumWif
+- isChecksumAddress is called by default during the serialization of addresses. This helps to prevent sending tokens to bad formatted addresses. This option can be disabled as well.
+
+### 🐛 Bug Fixes
+
+- add set_system_contract in btypesOperation #18
+
+## [v5.1.0](https://github.com/joticajulian/koilib/releases/tag/v5.1.0) (2022-09-16)
+
+This version include 2 important changes:
+
+- The multignature process has been simplified with a new function called **beforeSend** which can be defined in the options of the Contract or Signer in order to be triggered just after sending a transaction. Then you can sign the transaction there with other Signers (more info in https://www.npmjs.com/package/koilib/v/5.1.0)
+- The **wait function** now returns an object containing the block Id and block number.
+
+## [v5.0.0](https://github.com/joticajulian/koilib/releases/tag/v5.0.0) (2022-08-26)
+
+This version is **compatible with the Testnet v4**. It introduces the different changes in the protocol.
+
+There is a new argument in Producer.sendTransaction and Signer.sendTransaction called "broadcast" which tells to the RPC node if the transaction should be broadcasted to the whole network or if it should be executed only in that node just for testing purposes (see https://joticajulian.github.io/koilib/classes/Provider.html#sendTransaction).
+
+## [v4.1.0](https://github.com/joticajulian/koilib/releases/tag/v4.1.0) (2022-06-21)
+
+This version introduces changes in the `deploy` function of the Contract class. In previous versions this function defined the `contract_id` as the address of the signer, which may be ok in most of the cases. However, when using multisignature wallets this may not be the case. Then, from version 4.1.0 the `contract_id` is taken from the `id` defined in the constructor of the class, and if it's not defined then it will take the address of the signer as before.
+
+On the other hand the returned `operation` in this function is now an `OperationJson` (instead of `UploadContractOperationNested`) to be aligned with the output of the functions that uses `call_contract` operations.
+
+## [v4.0.0](https://github.com/joticajulian/koilib/releases/tag/v4.0.0) (2022-06-01)
+
+This version introduces a **major change in the definition of the ABI**. The objective is to use an ABI as close as possible as [the official one used in Koinos CLI](https://docs.koinos.io/architecture/contract-abi.html). The principal difference is that koilib uses a descriptor defined in json format while the official ABI uses a descriptor in binary format.
+
+### How to migrate from koilib v3 to koilib v4?
+
+Update the fields of the ABI as follows:
+**koilib v3** | **koilib v4**
+--- | ---
+entryPoint | entry_point
+input | argument
+output | return
+readOnly | read_only
+defaultOutput | default_output
+preformatInput | preformat_argument
+preformatOutput | preformat_return
+description | description (no change)
+types | koilib_types
+
+## [v3.1.0](https://github.com/joticajulian/koilib/releases/tag/v3.1.0) (2022-04-03)
+
+This version fixes some bugs and at the same time adds new features. Summary of changes:
+
+- **btype improvements in the serializer (array support)**. "btype" is a protobuffer option used in koinos to encode bytes in different formats (hex, base64ur, base58). In the previous versions it was not compatible with arrays (aka repeated) or with nested objects. Now it has full support to both of them for serialization and deserialization. At the same time now it supports the label "(koinos.btype)". This change helps to contract developers that have complex variables (with nested object or arrays using btype) to be able to use koilib to submit transactions.
+- The **transactions now return receipts**. Receipts it contains useful information like mana used, logs, and events. Example: `const { transaction, receipt } = await koin.transfer({ ... })`.
+- **bug fixed in provider.call**. The previous version was not handling the errors from rpc node correctly. This version fixes this error.
+- [BREAKING CHANGE] **"krc20Abi" has been renamed to "tokenAbi"**. It was discussed within the community that krc20 (that takes its name from the erc20 from ethereum) was not a good choice because koinos is not using the same erc20 standard, only part of it.
+- [BREAKING CHANGE] **encode/decode operation handle bytes as strings**. If you use encodeOperation or decodeOperation now you don't have to make the conversion from uint8array to string, they do that internally. This change helps to simplify other functions.
+- **default timeout of 60s**. The previous version had a timeout of 30s when waiting for a transaction to be mined. However, this time was not enough for the current consensus algorithm on testnet (PoW) and sometimes it required more time. Then it was increased to 60.
+- **provider.onError stops after the first error**. In previous versions when there was an error from the rpcnode, the provider entered in an indefinite loop where it was switching and trying from different rpc nodes from the list, and you had to configure provider.onError to handle errors. Since this feature is not commonly used the default behavior was changed to throw after a single error. You still have the option to configure it by setting the onError function.
+- The **documentation** was updated with the latest changes. Check it here https://joticajulian.github.io/koilib/
+
+## [v3.0.0](https://github.com/joticajulian/koilib/releases/tag/v3.0.0) (2022-03-15)
+
+Koilib v3.0.0 is now compatible with Koinos Testnet V3 🚀
+
+Here is a summary of the new features that comes with V3:
+
+- Option to set payer, payee, and chainId in the header of the transaction.
+- Option to configure overrides of "authorize" function when uploading a contract.
+- New native operations: set_system_call_operation, and set_system_contract_operation.
+- Encode/decode genesis data: A new tool was added in the _utils_ section to manage the genesis data of the blockchain. This tool can be used to introduce the snapshot of koin balances for the mainnet, as well as for developers that want to create and test new blockchains based on koinos.
+- The serializer of Signer class has been removed and replaced with a static module. This change will facilitate the development of Kondor Wallet because now it no longer depends on reflection functions but uses static code. This static module was also added to the Provider class since now it requires to encode/decode the nonce.
+- Under the hood there are a lot of changes since both transactions and blocks have a complete different structure compared with Koinos V2. However, the way of using koilib v3 is almost the same as koilib v2.
+- The documentation has been revised and expanded following the new features of koinos v3. Please check it out at https://joticajulian.github.io/koilib/ 😃
+
+Special thanks to @roaminroe for his valuable contribution to this release 👍
+
+## [v2.8.0](https://github.com/joticajulian/koilib/releases/tag/v2.8.0) (2022-02-24)
+
+Thanks to a bug report from @ederaleng we found that `recoverPublicKey` was not making the correct computation of the block hash (for blocks in koinos v0.2) because it was not taking into account the header info. This bug is fixed in this new version.
+
+### 🚀 Features
+
+- [BREAKING CHANGE] The functions `recoverPublicKey` and `recoverAddress` from Signer class are no longer static functions but normal functions. The reason is because now we use the serializer of the class to serialize the header object in order to calculate the hash.
+- New Features: Now you can use `signHash` and `signBlock`. The option to sign blocks now enables developers to create their own block producer microservices in Javascript or Typescript 🤩🎉
+
+## [v2.7.0](https://github.com/joticajulian/koilib/releases/tag/v5.3.0) (2022-02-09)
+
+### 🚀 Features
+
+- [BREAKING CHANGE] The response for sending transactions has been changed. Now the `wait` function is included inside the `transaction` and `transactionResponse` has been removed. This gives a better understanding of the code.
+- The Provider now has the "wait" function separated from sendTransaction.
+
+### 🐛 Bug Fixes
+
+- Minor fixes in default values for rc_limit.
+
+**How to migrate to v2.7.0?**
+
+Change this code of v2.6.0:
+
+```
+const { transaction, transactionResponse } = await contract.deploy();
+const blockNumber = await transactionResponse.wait();
+```
+
+to this code:
+
+```
+const { transaction } = await contract.deploy();
+const blockNumber = await transaction.wait();
+```
+
+## [v2.6.0](https://github.com/joticajulian/koilib/releases/tag/v2.6.0) (2022-01-18)
+
+### 🚀 Features
+
+- using @noble/secp256k1 v1.5.0
+- using @noble/hashes v1.0.0
+
+### 🐛 Bug Fixes
+
+- axios has been removed and replaced for cross-fetch (issue #7)
