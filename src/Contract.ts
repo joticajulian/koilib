@@ -365,7 +365,7 @@ export class Contract {
    * ```ts
    * const { transaction, receipt } = await contract.deploy({
    *   // contract options
-   *   abi: "CssCChRrb2lub3Mvb3B0aW9ucy5wc...",
+   *   abi: JSON.stringify(contract.abi),
    *   authorizesCallContract: true,
    *   authorizesTransactionApplication: true,
    *   authorizesUploadContract: true,
