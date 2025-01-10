@@ -1838,4 +1838,6 @@ export const nftAbi: Abi = {
   },
 };
 
+export * from "./abis/nicknamesAbi";
+
 //export const ProtocolTypes = protocolJson;
