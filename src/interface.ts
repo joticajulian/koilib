@@ -456,13 +456,7 @@ export interface RecoverPublicKeyOptions {
  * @param type - Type must be "byBlock" or "byTransactionId" (default).
  * _byBlock_ will query the blockchain to get blocks and search for the
  * transaction there. _byTransactionId_ will query the "transaction store"
- * microservice to search the transaction by its id. If non of them is
- * specified the function will use "byBlock" (as "byTransactionId"
- * requires the transaction store, which is an optional microservice).
- *
- * When _byBlock_ is used it returns the block number.
- *
- * When _byTransactionId_ is used it returns the block id.
+ * microservice to search the transaction by its id.
  *
  * @param timeout - Timeout in milliseconds. By default it is 15000
  */
