@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v9.1.0](https://github.com/joticajulian/koilib/releases/tag/v9.1.0) (2025-01-29)
+
+### 🚀 Features
+
+- Export nicknames abi
+- Minor updates in the documentation
+
+### 🐛 Bug Fixes
+
+- Fix issue in utils.formatUnits for 0 decimals
+- Fix: Use byTransactionId by default in the wait function of Provider.sendTransaction
+
 ## [v9.0.0](https://github.com/joticajulian/koilib/releases/tag/v9.0.0) (2024-12-16)
 
 ### 🚀 Features
