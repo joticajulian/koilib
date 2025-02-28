@@ -50,7 +50,7 @@
     "@roamin/koinos-pb-to-proto": "^0.0.3",
     "cross-fetch": "^3.1.5",
     "multibase": "^4.0.6",
-    "protobufjs": "^7.2.4"
+    "protobufjs": "^7.4.0"
   },
   "devDependencies": {
     "@tsconfig/node12": "^1.0.11",
