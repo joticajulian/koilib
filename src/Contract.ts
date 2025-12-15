@@ -495,7 +495,7 @@ export class Contract {
     if (!this.serializer) throw new Error("Serializer is not defined");
     const method = this.abi.methods[op.name];
 
-    let bufferArguments = new Uint8Array(0);
+    let bufferArguments: Uint8Array = new Uint8Array(0);
     if (method.argument) {
       if (!op.args)
         throw new Error(`No arguments defined for type '${method.argument}'`);

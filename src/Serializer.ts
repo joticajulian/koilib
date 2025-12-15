@@ -8,6 +8,7 @@ import {
   decodeBase64url,
   decodeBase64,
 } from "./utils";
+import { googleProtobufDescriptor } from "./protobuf/googleProtobufDescriptor";
 
 const OP_BYTES_1 = "(btype)";
 const OP_BYTES_2 = "(koinos.btype)";
@@ -166,7 +167,12 @@ export class Serializer {
         parse(proto.definition, this.root, { keepCase: true });
       }
     } else {
-      this.root = Root.fromJSON(types);
+      this.root = Root.fromJSON({
+        // import google protobuf descriptor if not present
+        ...googleProtobufDescriptor,
+        // import types
+        ...types,
+      });
     }
     if (opts?.defaultTypeName)
       this.defaultType = this.root.lookupType(opts.defaultTypeName);
