@@ -92,6 +92,7 @@ There are 5 principal classes:
 - **Transaction**: Class to create transactions.
 - **Serializer**: Class with the protocol buffers definitions to
   serialize/deserialize data types.
+- **Multicall**: Class to make multiple read operations in a single call
 
 ### Examples
 
