@@ -6,6 +6,7 @@ import { Signer } from "./Signer";
 import { Provider } from "./Provider";
 import { Transaction } from "./Transaction";
 import { Serializer } from "./Serializer";
+import { Multicall } from "./Multicall";
 
 declare const window: { [x: string]: unknown };
 
@@ -15,3 +16,4 @@ window.Signer = Signer;
 window.Provider = Provider;
 window.Transaction = Transaction;
 window.Serializer = Serializer;
+window.Multicall = Multicall;
