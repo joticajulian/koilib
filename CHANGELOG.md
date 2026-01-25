@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v9.2.0](https://github.com/joticajulian/koilib/releases/tag/v9.2.0) (2026-01-25)
+
+### 🚀 Features
+
+- Multicall class: This class was created to be able to make multiple read operations in a single http call. It uses the Multicall contract which was designed for this purpose. See [Multicall contract](https://github.com/joticajulian/koinos-contracts-as/blob/main/contracts/multicall/assembly/Multicall.ts).
+
 ## [v9.1.1](https://github.com/joticajulian/koilib/releases/tag/v9.1.1) (2025-12-15)
 
 ### 🐛 Bug Fixes
