@@ -7,3 +7,4 @@ export * from "./Signer";
 export * from "./Provider";
 export * from "./Transaction";
 export * from "./Serializer";
+export * from "./Multicall";
