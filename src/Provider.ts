@@ -15,6 +15,66 @@ import { koinos } from "./protoModules/protocol-proto.js";
 import { decodeBase64url, encodeBase64url } from "./utils";
 import { Serializer } from "./Serializer";
 
+const getObjectTypes = {
+  nested: {
+    get_object_arguments: {
+      fields: {
+        space: {
+          type: "object_space",
+          id: 1,
+        },
+        key: {
+          type: "bytes",
+          id: 2,
+        },
+      },
+    },
+    get_object_result: {
+      fields: {
+        value: {
+          type: "database_object",
+          id: 1,
+        },
+      },
+    },
+    object_space: {
+      fields: {
+        system: {
+          type: "bool",
+          id: 1,
+        },
+        zone: {
+          type: "bytes",
+          id: 2,
+          options: {
+            "(koinos.btype)": "ADDRESS",
+          },
+        },
+        id: {
+          type: "uint32",
+          id: 3,
+        },
+      },
+    },
+    database_object: {
+      fields: {
+        exists: {
+          type: "bool",
+          id: 1,
+        },
+        value: {
+          type: "bytes",
+          id: 2,
+        },
+        key: {
+          type: "bytes",
+          id: 3,
+        },
+      },
+    },
+  },
+};
+
 export interface ProviderInterface {
   call: <T = unknown>(method: string, params: unknown) => Promise<T>;
   getNonce: (
@@ -128,6 +188,56 @@ export interface ProviderInterface {
         value: { address: string };
       }
     | undefined
+  >;
+  invokeGetObject?: (args: {
+    address: string;
+    id: number;
+    key?: string;
+    system?: boolean;
+    zone?: string;
+  }) => Promise<string | undefined>;
+  invokeGetNextObject?: (args: {
+    address: string;
+    id: number;
+    key?: string;
+    system?: boolean;
+    zone?: string;
+  }) => Promise<
+    | {
+        exists: boolean;
+        value: string;
+        key: string;
+      }
+    | undefined
+  >;
+  invokeGetPrevObject?: (args: {
+    address: string;
+    id: number;
+    key?: string;
+    system?: boolean;
+    zone?: string;
+  }) => Promise<
+    | {
+        exists: boolean;
+        value: string;
+        key: string;
+      }
+    | undefined
+  >;
+  invokeGetManyObjects?: (args: {
+    address: string;
+    id: number;
+    key?: string;
+    limit?: number;
+    direction?: "ascending" | "descending";
+    system?: boolean;
+    zone?: string;
+  }) => Promise<
+    {
+      exists: boolean;
+      value: string;
+      key: string;
+    }[]
   >;
 }
 
@@ -1108,6 +1218,285 @@ export class Provider implements ProviderInterface {
     return this.invokeSystemCall<{
       value: { address: string };
     }>(serializer, "get_contract_address", { name });
+  }
+
+  async invokeGetObjectGeneric({
+    systemCallIdOrName,
+    address,
+    id,
+    key = "",
+    system = false,
+    zone = address,
+  }: {
+    systemCallIdOrName: string | number;
+    address: string;
+    id: number;
+    key?: string;
+    system?: boolean;
+    zone?: string;
+  }) {
+    const serializer = new Serializer(getObjectTypes, {
+      argumentsTypeName: "get_object_arguments",
+      returnTypeName: "get_object_result",
+    });
+    const result = await this.invokeSystemCall<{
+      value: {
+        exists: boolean;
+        value: string;
+        key: string;
+      };
+    }>(
+      serializer,
+      systemCallIdOrName,
+      {
+        space: {
+          system,
+          zone,
+          id,
+        },
+        key,
+      },
+      {
+        caller: address,
+        caller_privilege: system ? 0 : 1,
+      }
+    );
+    return result?.value;
+  }
+
+  /**
+   * Function to get an object from the database via the get_object system call.
+   * @param args - object space and key
+   * @param args.address - caller address (also used as zone when zone is omitted)
+   * @param args.id - object space id
+   * @param args.key - object key (defaults to empty)
+   * @param args.zone - object space zone (defaults to address)
+   *
+   * @example
+   * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const result = await provider.invokeGetObject({
+   *   address: "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz",
+   *   id: 0,
+   * });
+   * console.log(result);
+   *
+   * // {
+   * //   exists: true,
+   * //   value: '...',
+   * //   key: ''
+   * // }
+   * ```
+   */
+  async invokeGetObject({
+    address,
+    id,
+    key = "",
+    system = false,
+    zone = address,
+  }: {
+    address: string;
+    id: number;
+    key?: string;
+    system?: boolean;
+    zone?: string;
+  }) {
+    const result = await this.invokeGetObjectGeneric({
+      systemCallIdOrName: "get_object",
+      address,
+      id,
+      key,
+      system,
+      zone,
+    });
+    if (!result || !result.exists) return undefined;
+    return result.value;
+  }
+
+  /**
+   * Function to get the next object from the database via the
+   * get_next_object system call.
+   * @param args - object space and key
+   * @param args.address - caller address (also used as zone when zone is omitted)
+   * @param args.id - object space id
+   * @param args.key - object key to seek from (defaults to empty)
+   * @param args.system - whether the space is a system space
+   * @param args.zone - object space zone (defaults to address)
+   *
+   * @example
+   * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const result = await provider.invokeGetNextObject({
+   *   address: "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz",
+   *   id: 0,
+   * });
+   * console.log(result);
+   *
+   * // {
+   * //   exists: true,
+   * //   value: '...',
+   * //   key: '...'
+   * // }
+   * ```
+   */
+  async invokeGetNextObject({
+    address,
+    id,
+    key = "",
+    system = false,
+    zone = address,
+  }: {
+    address: string;
+    id: number;
+    key?: string;
+    system?: boolean;
+    zone?: string;
+  }) {
+    return this.invokeGetObjectGeneric({
+      systemCallIdOrName: "get_next_object",
+      address,
+      id,
+      key,
+      system,
+      zone,
+    });
+  }
+
+  /**
+   * Function to get the previous object from the database via the
+   * get_prev_object system call.
+   * @param args - object space and key
+   * @param args.address - caller address (also used as zone when zone is omitted)
+   * @param args.id - object space id
+   * @param args.key - object key to seek from (defaults to empty)
+   * @param args.system - whether the space is a system space
+   * @param args.zone - object space zone (defaults to address)
+   *
+   * @example
+   * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const result = await provider.invokeGetPrevObject({
+   *   address: "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz",
+   *   id: 0,
+   *   key: "...",
+   * });
+   * console.log(result);
+   *
+   * // {
+   * //   exists: true,
+   * //   value: '...',
+   * //   key: '...'
+   * // }
+   * ```
+   */
+  async invokeGetPrevObject({
+    address,
+    id,
+    key = "",
+    system = false,
+    zone = address,
+  }: {
+    address: string;
+    id: number;
+    key?: string;
+    system?: boolean;
+    zone?: string;
+  }) {
+    return this.invokeGetObjectGeneric({
+      systemCallIdOrName: "get_prev_object",
+      address,
+      id,
+      key,
+      system,
+      zone,
+    });
+  }
+
+  /**
+   * Function to get many objects from the database by repeatedly
+   * calling get_next_object or get_prev_object.
+   * @param args - object space and pagination options
+   * @param args.address - caller address (also used as zone when zone is omitted)
+   * @param args.id - object space id
+   * @param args.key - offset key to seek from (defaults to empty)
+   * @param args.limit - maximum number of objects to return
+   * @param args.direction - traversal direction ("ascending" or "descending")
+   * @param args.system - whether the space is a system space
+   * @param args.zone - object space zone (defaults to address)
+   *
+   * @example
+   * ```ts
+   * const provider = new Provider("https://api.koinos.io");
+   * const result = await provider.invokeGetManyObjects({
+   *   address: "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz",
+   *   id: 0,
+   *   limit: 10,
+   * });
+   * console.log(result);
+   *
+   * // [
+   * //   {
+   * //     exists: true,
+   * //     value: '...',
+   * //     key: '...'
+   * //   },
+   * //   ...
+   * // ]
+   * ```
+   */
+  async invokeGetManyObjects({
+    address,
+    id,
+    key = "",
+    limit = Number.MAX_SAFE_INTEGER,
+    direction = "ascending",
+    system = false,
+    zone = address,
+  }: {
+    address: string;
+    id: number;
+    key?: string;
+    limit?: number;
+    direction?: "ascending" | "descending";
+    system?: boolean;
+    zone?: string;
+  }) {
+    const result: {
+      exists: boolean;
+      value: string;
+      key: string;
+    }[] = [];
+
+    let currentKey = key;
+    let done = false;
+
+    do {
+      const obj =
+        direction === "ascending"
+          ? await this.invokeGetNextObject({
+              address,
+              id,
+              key: currentKey,
+              system,
+              zone,
+            })
+          : await this.invokeGetPrevObject({
+              address,
+              id,
+              key: currentKey,
+              system,
+              zone,
+            });
+
+      if (obj && obj.exists) {
+        result.push(obj);
+        currentKey = obj.key;
+      }
+
+      done = !obj || !obj.exists || result.length >= limit;
+    } while (!done);
+
+    return result;
   }
 }
 

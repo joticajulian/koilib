@@ -43,15 +43,13 @@ const chainSerializer = new Serializer(utils.ChainTypes);
 // ---- the delta merkle root, exactly as state_delta::merkle_root() ----
 
 async function deltaMerkleRoot(entries) {
-  const genesisData = await utils.encodeGenesisData(
-    {
-      entries: entries.map((e) => ({
-        space: e.object_space || {},
-        key: e.key,
-        value: e.value,
-      })),
-    }
-  );
+  const genesisData = await utils.encodeGenesisData({
+    entries: entries.map((e) => ({
+      space: e.object_space || {},
+      key: e.key,
+      value: e.value,
+    })),
+  });
 
   const pairs = await Promise.all(
     genesisData.entries.map(async (e, i) => ({
@@ -69,7 +67,9 @@ async function deltaMerkleRoot(entries) {
     nodes.push(sha256(value));
   }
 
-  return `0x${utils.toHexString(utils.multihash(utils.calculateMerkleRoot(nodes)))}`;
+  return `0x${utils.toHexString(
+    utils.multihash(utils.calculateMerkleRoot(nodes))
+  )}`;
 }
 
 // ---- main ----
@@ -108,21 +108,33 @@ async function main() {
   const root11 = await deltaMerkleRoot(entries11);
 
   console.log(`\nsigned root in block 32,789,378 header: ${signedHex}`);
-  console.log(`root over all 12 entries:               ${root12}  ${root12 === signedHex ? "MATCH" : "no match"}`);
-  console.log(`root over 11 (drop phantom remove):     ${root11}  ${root11 === signedHex ? "MATCH" : "no match"}`);
+  console.log(
+    `root over all 12 entries:               ${root12}  ${
+      root12 === signedHex ? "MATCH" : "no match"
+    }`
+  );
+  console.log(
+    `root over 11 (drop phantom remove):     ${root11}  ${
+      root11 === signedHex ? "MATCH" : "no match"
+    }`
+  );
 
   console.log("");
   if (root11 === signedHex && root12 !== signedHex) {
     console.log(
       "CONFIRMED: block 32,789,378's header stores the 11-entry (tombstone-dropped)\n" +
-      "root, while the honest delta of 32,789,377 has 12 entries. The consensus\n" +
-      "anchor for this block is the bugged root baked in during the January 2026\n" +
-      "halt recovery..."
+        "root, while the honest delta of 32,789,377 has 12 entries. The consensus\n" +
+        "anchor for this block is the bugged root baked in during the January 2026\n" +
+        "halt recovery..."
     );
   } else if (root12 === signedHex) {
-    console.log("UNEXPECTED: the 12-entry root matches — anomaly not reproduced on this API.");
+    console.log(
+      "UNEXPECTED: the 12-entry root matches — anomaly not reproduced on this API."
+    );
   } else {
-    console.log("UNEXPECTED: neither root matches — check the entry decoding against this API.");
+    console.log(
+      "UNEXPECTED: neither root matches — check the entry decoding against this API."
+    );
   }
 }
 
