@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v9.3.0](https://github.com/joticajulian/koilib/releases/tag/v9.3.0) (2026-08-11)
+
+### 🚀 Features
+
+- New Provider helpers to read database objects via system calls: `invokeGetObject`, `invokeGetNextObject`, `invokeGetPrevObject`, and `invokeGetManyObjects`.
+
 ## [v9.2.0](https://github.com/joticajulian/koilib/releases/tag/v9.2.0) (2026-01-25)
 
 ### 🚀 Features

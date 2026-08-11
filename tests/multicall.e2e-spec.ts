@@ -40,8 +40,12 @@ describe("Multicall", () => {
     // call the multicall
     const results = await multicall.call();
     expect(results).toHaveLength(tokens.length);
-    expect(results).toStrictEqual(expect.arrayContaining([{
-      value: expect.any(String) as string,
-    }]));
+    expect(results).toStrictEqual(
+      expect.arrayContaining([
+        {
+          value: expect.any(String) as string,
+        },
+      ])
+    );
   });
 });

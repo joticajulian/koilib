@@ -23,9 +23,9 @@ export class Multicall {
    *   "12VoHz41a4HtfiyhTWbg9RXqGMRbYk6pXh", // vortex usdt
    *   "1Tf1QKv3gVYLjq34yURSHw5ErTYbFjqTG", // vortex eth
    * ];
-   * 
+   *
    * const provider = new Provider("https://api.koinos.io");
-   * 
+   *
    * // create an array of the different contracts
    * // used in the multicall
    * const contracts = [];
@@ -38,20 +38,20 @@ export class Multicall {
    *     })
    *   );
    * }
-   * 
+   *
    * // create the multicall instance
    * const multicall = new Multicall({
    *   provider,
    *   contracts
    * });
-   * 
+   *
    * // add operations to the multicall
    * for (const contract of contracts) {
    *   await multicall.add(contract.functions.balanceOf, {
    *     owner: "1MdqwaSBy6rbasPJ9vmg2pZFJSVZ29GFpZ",
    *   });
    * }
-   * 
+   *
    * // call the multicall
    * const results = await multicall.call();
    * console.log(results);
@@ -68,7 +68,7 @@ export class Multicall {
    */
   constructor(c: {
     /**
-     * Multicall contract address. Leave it undefined 
+     * Multicall contract address. Leave it undefined
      * to use the mainnet multicall contract address.
      */
     id?: string;
