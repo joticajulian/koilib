@@ -168,10 +168,12 @@ export class Serializer {
       }
     } else {
       this.root = Root.fromJSON({
-        // import google protobuf descriptor if not present
-        ...googleProtobufDescriptor,
-        // import types
-        ...types,
+        nested: {
+          // import google protobuf descriptor if not present
+          ...googleProtobufDescriptor,
+          // import types
+          ...types.nested,
+        },
       });
     }
     if (opts?.defaultTypeName)
