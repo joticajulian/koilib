@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v9.3.1](https://github.com/joticajulian/koilib/releases/tag/v9.3.1) (2026-08-20)
+
+### 🐛 Bug Fixes
+
+- Fix the default import of google protobuffer in all ABIs. This update fixes the issue presented in recent versions of NextJS, that throws an error if the ABI does not include this descriptor.
+
 ## [v9.3.0](https://github.com/joticajulian/koilib/releases/tag/v9.3.0) (2026-08-11)
 
 ### 🚀 Features
