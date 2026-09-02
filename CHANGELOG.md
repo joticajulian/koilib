@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v9.4.0](https://github.com/joticajulian/koilib/releases/tag/v9.4.0) (2026-09-02)
+
+### 🚀 Features
+
+- The provider was added to the sendTransaction options. This is useful in the implementation of Signers because now they can take a provider if it is not defined. This reduces the need of constantly defining a provider for the signer when using Kondor (it is required to upgrade kondor to version ^1.3.0 to take advantage of this feature).
+
 ## [v9.3.1](https://github.com/joticajulian/koilib/releases/tag/v9.3.1) (2026-08-20)
 
 ### 🐛 Bug Fixes
