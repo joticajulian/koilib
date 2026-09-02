@@ -252,6 +252,7 @@ export class Contract {
           ...this.options,
           ...options,
         };
+        if (!opts.provider) opts.provider = this.provider;
 
         const {
           read_only: readOnly,

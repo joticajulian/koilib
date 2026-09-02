@@ -1,5 +1,6 @@
 import { INamespace } from "protobufjs/light";
 import { Serializer } from "./Serializer";
+import { ProviderInterface } from "./Provider";
 
 /**
  * Application Binary Interface (ABI)
@@ -259,6 +260,16 @@ export interface SendTransactionOptions {
    * By default it is true.
    */
   sendAbis?: boolean;
+
+  /**
+   * Provider
+   *
+   * Alternative provider to be used to send the transaction.
+   * The implementation of the signer could use its own provider or
+   * this one as support. It is also useful to define the provider
+   * to wait for the transaction to be mined.
+   */
+  provider?: ProviderInterface;
 
   /**
    * Function to be called before sending a transaction to the
