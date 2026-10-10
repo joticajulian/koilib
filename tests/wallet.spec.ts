@@ -5,6 +5,7 @@ import { Signer } from "../src/Signer";
 import { Contract } from "../src/Contract";
 import { Provider } from "../src/Provider";
 import { Serializer, Transaction } from "../src";
+import { abiGovernanceTypes } from "./abiGovernanceTypes";
 import {
   bitcoinDecode,
   encodeBase64url,
@@ -565,6 +566,79 @@ describe("Serializer", () => {
     const serialized = await serializer.serialize(mainObject);
     const deserialized = await serializer.deserialize(serialized);
     expect(deserialized).toStrictEqual(mainObject);
+  });
+
+  it("should use its own descriptor when JSON types embed an incomplete copy", async () => {
+    expect.assertions(2);
+    // Like the Governance ABI: a partial google.protobuf namespace, here
+    // without the FieldDescriptorProto.Label enum, plus another google type
+    // the contract really uses.
+    const serializer = new Serializer(
+      {
+        nested: {
+          google: {
+            nested: {
+              protobuf: {
+                nested: {
+                  FieldDescriptorProto: {
+                    fields: {
+                      label: {
+                        type: ".google.protobuf.FieldDescriptorProto.Label",
+                        id: 4,
+                      },
+                    },
+                  },
+                  Timestamp: {
+                    fields: {
+                      seconds: { type: "int64", id: 1 },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          my_data: {
+            fields: {
+              owner: {
+                type: "bytes",
+                id: 1,
+                options: { "(koinos.btype)": "ADDRESS" },
+              },
+              created: { type: "google.protobuf.Timestamp", id: 2 },
+            },
+          },
+        },
+      },
+      { defaultTypeName: "my_data" }
+    );
+
+    const value = {
+      owner: encodeBase58(new Uint8Array([1, 2, 3, 4])),
+      created: { seconds: "1700000000" },
+    };
+    const serialized = await serializer.serialize(value, "my_data", {
+      verifyChecksum: false,
+    });
+    expect(await serializer.deserialize(serialized)).toStrictEqual(value);
+    expect(() => serializer.root.resolveAll()).not.toThrow();
+  });
+
+  it("should read binary types that include descriptor.proto", async () => {
+    expect.assertions(1);
+    // The Governance contract's on-chain ABI. Its descriptor.proto is proto2,
+    // which loses its labels when converted to text.
+    const serializer = new Serializer(abiGovernanceTypes);
+    const value = { proposal_id: "0x1234" };
+    const serialized = await serializer.serialize(
+      value,
+      "koinos.contracts.governance.get_proposal_by_id_arguments"
+    );
+    expect(
+      await serializer.deserialize(
+        serialized,
+        "koinos.contracts.governance.get_proposal_by_id_arguments"
+      )
+    ).toStrictEqual(value);
   });
 
   it("should accept options btype and koinos.btype", async () => {
