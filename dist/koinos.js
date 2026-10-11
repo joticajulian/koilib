@@ -23021,6 +23021,8 @@ class Contract {
                     ...this.options,
                     ...options,
                 };
+                if (!opts.provider)
+                    opts.provider = this.provider;
                 const { read_only: readOnly, return: output, default_output: defaultOutput, preformat_argument: preformatArgument, preformat_return: preformatReturn, } = this.abi.methods[name];
                 let args;
                 if (typeof preformatArgument === "function") {
@@ -23457,6 +23459,65 @@ exports.Provider = void 0;
 const protocol_proto_js_1 = __webpack_require__(9104);
 const utils_1 = __webpack_require__(8593);
 const Serializer_1 = __webpack_require__(7187);
+const getObjectTypes = {
+    nested: {
+        get_object_arguments: {
+            fields: {
+                space: {
+                    type: "object_space",
+                    id: 1,
+                },
+                key: {
+                    type: "bytes",
+                    id: 2,
+                },
+            },
+        },
+        get_object_result: {
+            fields: {
+                value: {
+                    type: "database_object",
+                    id: 1,
+                },
+            },
+        },
+        object_space: {
+            fields: {
+                system: {
+                    type: "bool",
+                    id: 1,
+                },
+                zone: {
+                    type: "bytes",
+                    id: 2,
+                    options: {
+                        "(koinos.btype)": "ADDRESS",
+                    },
+                },
+                id: {
+                    type: "uint32",
+                    id: 3,
+                },
+            },
+        },
+        database_object: {
+            fields: {
+                exists: {
+                    type: "bool",
+                    id: 1,
+                },
+                value: {
+                    type: "bytes",
+                    id: 2,
+                },
+                key: {
+                    type: "bytes",
+                    id: 3,
+                },
+            },
+        },
+    },
+};
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 async function sleep(ms) {
     return new Promise((r) => setTimeout(r, ms));
@@ -24210,6 +24271,194 @@ class Provider {
         });
         return this.invokeSystemCall(serializer, "get_contract_address", { name });
     }
+    async invokeGetObjectGeneric({ systemCallIdOrName, address, id, key = "", system = false, zone = address, }) {
+        const serializer = new Serializer_1.Serializer(getObjectTypes, {
+            argumentsTypeName: "get_object_arguments",
+            returnTypeName: "get_object_result",
+        });
+        const result = await this.invokeSystemCall(serializer, systemCallIdOrName, {
+            space: {
+                system,
+                zone,
+                id,
+            },
+            key,
+        }, {
+            caller: address,
+            caller_privilege: system ? 0 : 1,
+        });
+        return result === null || result === void 0 ? void 0 : result.value;
+    }
+    /**
+     * Function to get an object from the database via the get_object system call.
+     * @param args - object space and key
+     * @param args.address - caller address (also used as zone when zone is omitted)
+     * @param args.id - object space id
+     * @param args.key - object key (defaults to empty)
+     * @param args.zone - object space zone (defaults to address)
+     *
+     * @example
+     * ```ts
+     * const provider = new Provider("https://api.koinos.io");
+     * const result = await provider.invokeGetObject({
+     *   address: "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz",
+     *   id: 0,
+     * });
+     * console.log(result);
+     *
+     * // {
+     * //   exists: true,
+     * //   value: '...',
+     * //   key: ''
+     * // }
+     * ```
+     */
+    async invokeGetObject({ address, id, key = "", system = false, zone = address, }) {
+        const result = await this.invokeGetObjectGeneric({
+            systemCallIdOrName: "get_object",
+            address,
+            id,
+            key,
+            system,
+            zone,
+        });
+        if (!result || !result.exists)
+            return undefined;
+        return result.value;
+    }
+    /**
+     * Function to get the next object from the database via the
+     * get_next_object system call.
+     * @param args - object space and key
+     * @param args.address - caller address (also used as zone when zone is omitted)
+     * @param args.id - object space id
+     * @param args.key - object key to seek from (defaults to empty)
+     * @param args.system - whether the space is a system space
+     * @param args.zone - object space zone (defaults to address)
+     *
+     * @example
+     * ```ts
+     * const provider = new Provider("https://api.koinos.io");
+     * const result = await provider.invokeGetNextObject({
+     *   address: "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz",
+     *   id: 0,
+     * });
+     * console.log(result);
+     *
+     * // {
+     * //   exists: true,
+     * //   value: '...',
+     * //   key: '...'
+     * // }
+     * ```
+     */
+    async invokeGetNextObject({ address, id, key = "", system = false, zone = address, }) {
+        return this.invokeGetObjectGeneric({
+            systemCallIdOrName: "get_next_object",
+            address,
+            id,
+            key,
+            system,
+            zone,
+        });
+    }
+    /**
+     * Function to get the previous object from the database via the
+     * get_prev_object system call.
+     * @param args - object space and key
+     * @param args.address - caller address (also used as zone when zone is omitted)
+     * @param args.id - object space id
+     * @param args.key - object key to seek from (defaults to empty)
+     * @param args.system - whether the space is a system space
+     * @param args.zone - object space zone (defaults to address)
+     *
+     * @example
+     * ```ts
+     * const provider = new Provider("https://api.koinos.io");
+     * const result = await provider.invokeGetPrevObject({
+     *   address: "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz",
+     *   id: 0,
+     *   key: "...",
+     * });
+     * console.log(result);
+     *
+     * // {
+     * //   exists: true,
+     * //   value: '...',
+     * //   key: '...'
+     * // }
+     * ```
+     */
+    async invokeGetPrevObject({ address, id, key = "", system = false, zone = address, }) {
+        return this.invokeGetObjectGeneric({
+            systemCallIdOrName: "get_prev_object",
+            address,
+            id,
+            key,
+            system,
+            zone,
+        });
+    }
+    /**
+     * Function to get many objects from the database by repeatedly
+     * calling get_next_object or get_prev_object.
+     * @param args - object space and pagination options
+     * @param args.address - caller address (also used as zone when zone is omitted)
+     * @param args.id - object space id
+     * @param args.key - offset key to seek from (defaults to empty)
+     * @param args.limit - maximum number of objects to return
+     * @param args.direction - traversal direction ("ascending" or "descending")
+     * @param args.system - whether the space is a system space
+     * @param args.zone - object space zone (defaults to address)
+     *
+     * @example
+     * ```ts
+     * const provider = new Provider("https://api.koinos.io");
+     * const result = await provider.invokeGetManyObjects({
+     *   address: "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz",
+     *   id: 0,
+     *   limit: 10,
+     * });
+     * console.log(result);
+     *
+     * // [
+     * //   {
+     * //     exists: true,
+     * //     value: '...',
+     * //     key: '...'
+     * //   },
+     * //   ...
+     * // ]
+     * ```
+     */
+    async invokeGetManyObjects({ address, id, key = "", limit = Number.MAX_SAFE_INTEGER, direction = "ascending", system = false, zone = address, }) {
+        const result = [];
+        let currentKey = key;
+        let done = false;
+        do {
+            const obj = direction === "ascending"
+                ? await this.invokeGetNextObject({
+                    address,
+                    id,
+                    key: currentKey,
+                    system,
+                    zone,
+                })
+                : await this.invokeGetPrevObject({
+                    address,
+                    id,
+                    key: currentKey,
+                    system,
+                    zone,
+                });
+            if (obj && obj.exists) {
+                result.push(obj);
+                currentKey = obj.key;
+            }
+            done = !obj || !obj.exists || result.length >= limit;
+        } while (!done);
+        return result;
+    }
 }
 exports.Provider = Provider;
 exports["default"] = Provider;
@@ -24252,6 +24501,29 @@ const protobufjs_1 = __webpack_require__(3281);
 const koinosPbToProto = __importStar(__webpack_require__(9385));
 const utils_1 = __webpack_require__(8593);
 const googleProtobufDescriptor_1 = __webpack_require__(2722);
+/**
+ * Google namespace of the types with koilib's complete copy of
+ * descriptor.proto. Contracts include descriptor.proto only because
+ * koinos/options.proto extends it, and the embedded copy can be
+ * incomplete (missing FieldDescriptorProto.Label, for instance), so
+ * its types are replaced while any other google types are kept.
+ */
+function withGoogleDescriptor(google) {
+    var _a;
+    const descriptor = googleProtobufDescriptor_1.googleProtobufDescriptor.google.nested.protobuf;
+    const embedded = (_a = google === null || google === void 0 ? void 0 : google.nested) === null || _a === void 0 ? void 0 : _a.protobuf;
+    return {
+        ...google,
+        nested: {
+            ...google === null || google === void 0 ? void 0 : google.nested,
+            protobuf: {
+                ...embedded,
+                ...descriptor,
+                nested: { ...embedded === null || embedded === void 0 ? void 0 : embedded.nested, ...descriptor.nested },
+            },
+        },
+    };
+}
 const OP_BYTES_1 = "(btype)";
 const OP_BYTES_2 = "(koinos.btype)";
 const nativeTypes = [
@@ -24329,6 +24601,7 @@ const nativeTypes = [
  */
 class Serializer {
     constructor(types, opts) {
+        var _a;
         /**
          * Preformat bytes for base64url, base58 or hex string
          */
@@ -24344,17 +24617,21 @@ class Serializer {
         this.types = types;
         if (typeof types === "string") {
             const protos = koinosPbToProto.convert((0, utils_1.decodeBase64)(types));
-            this.root = new protobufjs_1.Root();
+            this.root = protobufjs_1.Root.fromJSON({ nested: googleProtobufDescriptor_1.googleProtobufDescriptor });
             for (const proto of protos) {
+                // descriptor.proto is proto2 and loses its labels when converted
+                // to text, so use the copy loaded above instead
+                if (proto.file === "google/protobuf/descriptor.proto")
+                    continue;
                 (0, protobufjs_1.parse)(proto.definition, this.root, { keepCase: true });
             }
         }
         else {
             this.root = protobufjs_1.Root.fromJSON({
-                // import google protobuf descriptor if not present
-                ...googleProtobufDescriptor_1.googleProtobufDescriptor,
-                // import types
-                ...types,
+                nested: {
+                    ...types.nested,
+                    google: withGoogleDescriptor((_a = types.nested) === null || _a === void 0 ? void 0 : _a.google),
+                },
             });
         }
         if (opts === null || opts === void 0 ? void 0 : opts.defaultTypeName)
