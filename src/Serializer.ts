@@ -10,6 +10,29 @@ import {
 } from "./utils";
 import { googleProtobufDescriptor } from "./protobuf/googleProtobufDescriptor";
 
+/**
+ * Google namespace of the types with koilib's complete copy of
+ * descriptor.proto. Contracts include descriptor.proto only because
+ * koinos/options.proto extends it, and the embedded copy can be
+ * incomplete (missing FieldDescriptorProto.Label, for instance), so
+ * its types are replaced while any other google types are kept.
+ */
+function withGoogleDescriptor(google?: INamespace): INamespace {
+  const descriptor = googleProtobufDescriptor.google.nested.protobuf;
+  const embedded = google?.nested?.protobuf as INamespace | undefined;
+  return {
+    ...google,
+    nested: {
+      ...google?.nested,
+      protobuf: {
+        ...embedded,
+        ...descriptor,
+        nested: { ...embedded?.nested, ...descriptor.nested },
+      },
+    },
+  };
+}
+
 const OP_BYTES_1 = "(btype)";
 const OP_BYTES_2 = "(koinos.btype)";
 
@@ -162,17 +185,18 @@ export class Serializer {
     this.types = types;
     if (typeof types === "string") {
       const protos = koinosPbToProto.convert(decodeBase64(types) as Buffer);
-      this.root = new Root();
+      this.root = Root.fromJSON({ nested: googleProtobufDescriptor });
       for (const proto of protos) {
+        // descriptor.proto is proto2 and loses its labels when converted
+        // to text, so use the copy loaded above instead
+        if (proto.file === "google/protobuf/descriptor.proto") continue;
         parse(proto.definition, this.root, { keepCase: true });
       }
     } else {
       this.root = Root.fromJSON({
         nested: {
-          // import google protobuf descriptor if not present
-          ...googleProtobufDescriptor,
-          // import types
           ...types.nested,
+          google: withGoogleDescriptor(types.nested?.google as INamespace),
         },
       });
     }

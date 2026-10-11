@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v9.4.1](https://github.com/joticajulian/koilib/releases/tag/v9.4.1) (2026-10-11)
+
+### 🐛 Bug Fixes
+
+- Fix the default import of google protobuffer in all ABIs when the provided protos are incomplete.
+
 ## [v9.4.0](https://github.com/joticajulian/koilib/releases/tag/v9.4.0) (2026-09-02)
 
 ### 🚀 Features
