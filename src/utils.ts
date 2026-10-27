@@ -291,32 +291,51 @@ export function formatUnits(
 }
 
 /**
- * Function to format a decimal point number in an integer
+ * Function to format a decimal point number in an integer, without
+ * rounding.
+ *
+ * The value must be a string made of ASCII digits, an optional leading
+ * "-" and at most one "." or "," decimal separator, with at least one
+ * digit. Surrounding whitespace is ignored. Fractional digits beyond
+ * `decimals` are accepted only when they are zeros (the value is still
+ * exact); any other excess digit throws, so that the amount shown to
+ * the user is always the amount that gets encoded.
+ * @throws Error if the value is not a string in that format, cannot be
+ * represented exactly with `decimals` decimals, or `decimals` is not a
+ * non-negative integer.
  * @example
  * ```js
  * const amount = parseUnits("0.00123456", 8);
  * console.log(amount);
  * // '123456'
+ *
+ * parseUnits("1.000000000", 8); // '100000000' (exact)
+ * parseUnits("1.999999995", 8); // throws: not representable
  * ```
  */
 export function parseUnits(value: string, decimals: number): string {
-  const sign = value[0] === "-" ? "-" : "";
-  // eslint-disable-next-line prefer-const
-  let [integerPart, decimalPart] = value
-    .replace("-", "")
-    .replace(",", ".")
-    .split(".");
-  if (!decimalPart) decimalPart = "";
-  decimalPart = decimalPart.padEnd(decimals, "0");
-  if (decimalPart.length > decimals) {
-    // approximate
-    const miniDecimals = decimalPart.substring(decimals);
-    decimalPart = decimalPart.substring(0, decimals);
-    if (miniDecimals.startsWith("5")) {
-      decimalPart = (BigInt(decimalPart) + BigInt(1)).toString();
-    }
+  if (!Number.isInteger(decimals) || decimals < 0) {
+    throw new Error(`invalid decimals: ${String(decimals)}`);
   }
-  return `${sign}${`${integerPart}${decimalPart}`.replace(/^0+(?=\d)/, "")}`;
+  if (typeof value !== "string") {
+    throw new Error(`invalid number: expected a string, got ${typeof value}`);
+  }
+  const match = /^(-?)(\d*)(?:[.,](\d*))?$/.exec(value.trim());
+  if (!match || (match[2] === "" && !match[3])) {
+    throw new Error(`invalid number: ${value}`);
+  }
+  const [, sign, integerPart, decimalPart = ""] = match;
+  if (
+    decimalPart.length > decimals &&
+    /[1-9]/.test(decimalPart.slice(decimals))
+  ) {
+    throw new Error(
+      `invalid number: ${value} cannot be represented with ${decimals} decimals`
+    );
+  }
+  const fraction = decimalPart.slice(0, decimals).padEnd(decimals, "0");
+  const units = `${integerPart || "0"}${fraction}`.replace(/^0+(?=\d)/, "");
+  return `${sign}${units}`;
 }
 
 /**
