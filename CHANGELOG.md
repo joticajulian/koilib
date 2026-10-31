@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. 🤘
 
+## [v10.0.0](https://github.com/joticajulian/koilib/releases/tag/v10.0.0) (2026-10-31)
+
+### 🐛 Bug Fixes
+
+- Validate parseUnits input and never round
+
 ## [v9.4.1](https://github.com/joticajulian/koilib/releases/tag/v9.4.1) (2026-10-11)
 
 ### 🐛 Bug Fixes
