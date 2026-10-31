@@ -159,10 +159,24 @@ describe("utils", () => {
     ["12", 8, "1200000000"],
     ["12.3", 8, "1230000000"],
     ["123", 0, "123"],
-    ["0.500000001", 8, "50000000"],
-    ["0.500000005", 8, "50000001"],
-    ["0.500000000000000056", 8, "50000000"],
-    ["10.500000005001", 8, "1050000001"],
+    ["1.", 8, "100000000"],
+    [".5", 8, "50000000"],
+    ["1,5", 8, "150000000"],
+    [" 1.5 ", 8, "150000000"],
+    ["1.99999999", 8, "199999999"],
+    // excess fractional zeros keep the value exact
+    ["1.000000000", 8, "100000000"],
+    ["0.500000000000000000", 8, "50000000"],
+    ["1.0", 0, "1"],
+    ["-0.10", 1, "-1"],
+    [".0", 0, "0"],
+    [",000", 0, "0"],
+    ["-.000", 0, "-0"],
+    [
+      "123456789012345678901234567890.12345678",
+      8,
+      "12345678901234567890123456789012345678",
+    ],
     // negative numbers
     ["-0.00000001", 8, "-1"],
     ["-0.00123456", 8, "-123456"],
@@ -180,6 +194,54 @@ describe("utils", () => {
       expect(parseUnits(v, d)).toBe(expected);
     }
   );
+
+  it.each<[string, number]>([
+    // more significant fractional digits than the token supports: never round
+    ["1.999999995", 8], // used to become 11.00000000 (carry into the integer part)
+    ["1.000000005", 8], // used to become 11 (leading zeros of the fraction lost)
+    ["0.500000001", 8],
+    ["0.500000005", 8],
+    ["0.500000006", 8],
+    ["0.500000000000000056", 8],
+    ["10.500000005001", 8],
+    ["0.000000006", 8],
+    ["1.5", 0],
+    ["-0.000000001", 8],
+    ["-1.000000005", 8],
+    ["-1.999999995", 8],
+    // not a plain decimal number
+    ["", 8],
+    [" ", 8],
+    [".", 8],
+    [",", 8],
+    ["-", 8],
+    ["-.", 8],
+    ["1.2.3", 8],
+    ["1,2.3", 8],
+    ["1e-8", 8],
+    ["0x10", 8],
+    ["abc", 8],
+    ["1 000", 8],
+    ["+1", 8],
+    ["--1", 8],
+    ["1-2", 8],
+    ["1.0-", 8],
+    ["１.５", 8], // full-width digits
+    ["1 5", 8],
+    // invalid decimals
+    ["1", -1],
+    ["1", 1.5],
+    ["1", NaN],
+    ["1", Infinity],
+    ["1", -Infinity],
+  ])("should reject '%s' with %d decimals", (v, d) => {
+    expect(() => parseUnits(v, d)).toThrow();
+  });
+
+  it("should reject values that are not strings", () => {
+    expect(() => parseUnits(1.5 as unknown as string, 8)).toThrow();
+    expect(() => parseUnits(undefined as unknown as string, 8)).toThrow();
+  });
 
   it("should calculate a merkle root", () => {
     const words = [
